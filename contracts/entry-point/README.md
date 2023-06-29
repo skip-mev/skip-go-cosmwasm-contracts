@@ -49,55 +49,57 @@ Notes:
 
 ``` json
 {
-    "fee_swap": {
-        "swap_venue_name": "neutron-astroport",
-        "coin_out": {
-            "denom": "untrn",
-            "amount": "200000"
+    "swap_and_action": {
+        "fee_swap": {
+            "swap_venue_name": "neutron-astroport",
+            "coin_out": {
+                "denom": "untrn",
+                "amount": "200000"
+            },
+            "operations": [
+                {
+                    "pool": "neutron...",
+                    "denom_in": "uatom",
+                    "denom_out": "untrn"
+                }
+            ]
         },
-        "operations": [
-            {
-                "pool": "neutron...",
-                "denom_in": "uatom",
-                "denom_out": "untrn"
-            }
-        ]
-    },
-    "user_swap": {
-        "swap_venue_name": "neutron-astroport",
-        "coin_in": {
-            "denom": "uatom",
+        "user_swap": {
+            "swap_venue_name": "neutron-astroport",
+            "coin_in": {
+                "denom": "uatom",
+                "amount": "1000000"
+            },
+            "operations": [
+                {
+                    "pool": "neutron...",
+                    "denom_in": "uatom",
+                    "denom_out": "untrn"
+                },
+                {
+                    "pool": "neutron...",
+                    "denom_in": "untrn",
+                    "denom_out": "uosmo"
+                }
+            ]
+        },
+        "min_coin": {
+            "denom": "uosmo",
             "amount": "1000000"
         },
-        "operations": [
+        "timeout_timestamp": 1000000000000,
+        "post_swap_action": {
+            "bank_send": {
+                "to_address": "neutron..."
+            }
+        },
+        "affiliates": [
             {
-                "pool": "neutron...",
-                "denom_in": "uatom",
-                "denom_out": "untrn"
-            },
-            {
-                "pool": "neutron...",
-                "denom_in": "untrn",
-                "denom_out": "uosmo"
+                "basis_points_fee": 10,
+                "address": "neutron..."
             }
         ]
-    },
-    "min_coin": {
-        "denom": "uosmo",
-        "amount": "1000000"
-    },
-    "timeout_timestamp": 1000000000000,
-    "post_swap_action": {
-        "bank_send": {
-            "to_address": "neutron..."
-        }
-    },
-    "affiliates": [
-        {
-            "basis_points_fee": 10,
-            "address": "neutron..."
-        }
-    ]
+    }
 }
 ```
 
@@ -109,22 +111,24 @@ Note: Can only be called by the entry point contract itself, any external calls 
 
 ``` json
 {
-    "min_coin": {
-        "denom": "uosmo",
-        "amount": "1000000"
-    },
-    "timeout_timestamp": 1000000000000,
     "post_swap_action": {
-        "bank_send": {
-            "to_address": "neutron..."
-        }
-    },
-    "affiliates": [
-        {
-            "basis_points_fee": 10,
-            "address": "neutron..."
-        }
-    ]
+        "min_coin": {
+            "denom": "uosmo",
+            "amount": "1000000"
+        },
+        "timeout_timestamp": 1000000000000,
+        "post_swap_action": {
+            "bank_send": {
+                "to_address": "neutron..."
+            }
+        },
+        "affiliates": [
+            {
+                "basis_points_fee": 10,
+                "address": "neutron..."
+            }
+        ]
+    }
 }
 ```
 
@@ -137,7 +141,9 @@ Returns the swap adapter contract set at instantiation for the given swap venue 
 Query:
 ``` json
 {
-    "name": "neutron-astroport"
+    "swap_venue_adapter_contract": {
+        "name": "neutron-astroport"
+    }
 }
 ```
 
@@ -152,7 +158,9 @@ Returns the IBC transfer adapter contract set at instantiation, requires no argu
 
 Query:
 ``` json
-{}
+{
+    "ibc_transfer_adapter_contract": {}
+}
 ```
 
 Response:

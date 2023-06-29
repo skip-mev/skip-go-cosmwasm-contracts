@@ -27,18 +27,20 @@ Note: The `pool` string field provided in the operations must be able to be conv
 
 ``` json
 {
-    "operations": [
-        {
-            "pool": "1",
-            "denom_in": "uosmo",
-            "denom_out": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
-        },
-        {
-            "pool": "2",
-            "denom_in": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-            "denom_out": "ibc/987C17B11ABC2B20019178ACE62929FE9840202CE79498E29FE8E5CB02B7C0A4"
-        }
-    ]
+    "swap": {
+        "operations": [
+            {
+                "pool": "1",
+                "denom_in": "uosmo",
+                "denom_out": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+            },
+            {
+                "pool": "2",
+                "denom_in": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+                "denom_out": "ibc/987C17B11ABC2B20019178ACE62929FE9840202CE79498E29FE8E5CB02B7C0A4"
+            }
+        ]
+    }
 }
 ```
 
@@ -50,7 +52,9 @@ Note: This function can be called by anyone as the contract is assumed to have n
 
 ``` json
 {
-    "caller": "osmo..."
+    "transfer_funds_back": {
+        "caller": "osmo..."
+    }
 }
 ```
 
@@ -63,17 +67,19 @@ Returns the coin in required to receive the `coin_out` specified in the call (sw
 Query:
 ``` json
 {
-    "coin_out": {
-        "denom": "uosmo",
-        "amount": "200000"
-    },
-    "swap_operations": [
-        {
-            "pool": "1",
-            "denom_in": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-            "denom_out": "uosmo"
-        }
-    ]
+    "simulate_swap_exact_coin_out": {
+        "coin_out": {
+            "denom": "uosmo",
+            "amount": "200000"
+        },
+        "swap_operations": [
+            {
+                "pool": "1",
+                "denom_in": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+                "denom_out": "uosmo"
+            }
+        ]
+    }
 }
 ```
 
@@ -92,17 +98,19 @@ Returns the coin out that would be received from swapping the `coin_in` specifie
 Query:
 ``` json
 {
-    "coin_in": {
-        "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-        "amount": "100"
-    },
-    "swap_operations": [
-        {
-            "pool": "1",
-            "denom_in": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-            "denom_out": "uosmo"
-        }
-    ]
+    "simulate_swap_exact_coin_in": {
+        "coin_in": {
+            "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+            "amount": "100"
+        },
+        "swap_operations": [
+            {
+                "pool": "1",
+                "denom_in": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+                "denom_out": "uosmo"
+            }
+        ]
+    }
 }
 ```
 

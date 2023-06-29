@@ -27,18 +27,20 @@ Swaps the coin sent using the operations provided.
 
 ``` json
 {
-    "operations": [
-        {
-            "pool": "neutron...",
-            "denom_in": "uatom",
-            "denom_out": "untrn"
-        },
-        {
-            "pool": "neutron...",
-            "denom_in": "untrn",
-            "denom_out": "uosmo"
-        }
-    ]
+    "swap": {
+        "operations": [
+            {
+                "pool": "neutron...",
+                "denom_in": "uatom",
+                "denom_out": "untrn"
+            },
+            {
+                "pool": "neutron...",
+                "denom_in": "untrn",
+                "denom_out": "uosmo"
+            }
+        ]
+    }
 }
 ```
 
@@ -50,7 +52,9 @@ Note: This function can be called by anyone as the contract is assumed to have n
 
 ``` json
 {
-    "caller": "neutron..."
+    "transfer_funds_back": {
+        "caller": "neutron..."
+    }
 }
 ```
 
@@ -62,7 +66,9 @@ Returns the Astroport router contract address set at instantiation.
 
 Query:
 ``` json
-{}
+{
+    "router_contract_address": {}
+}
 ```
 
 Response:
@@ -77,17 +83,19 @@ Returns the coin in required to receive the `coin_out` specified in the call (sw
 Query:
 ``` json
 {
-    "coin_out": {
-        "denom": "untrn",
-        "amount": "200000"
-    },
-    "swap_operations": [
-        {
-            "pool": "neutron...",
-            "denom_in": "uatom",
-            "denom_out": "untrn"
-        }
-    ]
+    "simulate_swap_exact_coin_out": {
+        "coin_out": {
+            "denom": "untrn",
+            "amount": "200000"
+        },
+        "swap_operations": [
+            {
+                "pool": "neutron...",
+                "denom_in": "uatom",
+                "denom_out": "untrn"
+            }
+        ]
+    }
 }
 ```
 
@@ -106,17 +114,19 @@ Returns the coin out that would be received from swapping the `coin_in` specifie
 Query:
 ``` json
 {
-    "coin_in": {
-        "denom": "uatom",
-        "amount": "100"
-    },
-    "swap_operations": [
-        {
-            "pool": "neutron...",
-            "denom_in": "uatom",
-            "denom_out": "untrn"
-        }
-    ]
+    "simulate_swap_exact_coin_in": {
+        "coin_in": {
+            "denom": "uatom",
+            "amount": "100"
+        },
+        "swap_operations": [
+            {
+                "pool": "neutron...",
+                "denom_in": "uatom",
+                "denom_out": "untrn"
+            }
+        ]
+    }
 }
 ```
 
