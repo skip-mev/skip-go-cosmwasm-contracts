@@ -3,7 +3,7 @@
 The Osmosis Poolmanager swap adapter contract is responsible for:
 1. Taking the standardized entry point swap operations message format and converting it to the Osmosis Poolmanager `SwapAmountInRoute` format.
 2. Swapping by calling the Osmosis Poolmanager module.
-3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out)
+3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out).
 
 Note: Swap adapter contracts expect to be called by an entry point contract that provides basic validation and minimum amount out safety guarantees for the caller. There are no slippage guarantees provided by swap adapter contracts.
 
