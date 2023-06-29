@@ -15,14 +15,14 @@ The on-chain components of the swapping functionality consist of:
 2. Chain/dex-specific swap adapter contracts 
 3. Chain-specific IBC transfer adapter contracts
 
-
 ## Entry Point Contract
 
 The entry point contract is responsible for providing a standardized interface (w/ safety checks) to interact with Skip Swap across all CosmWasm-enabled chains. The contract:
 1. Performs basic validation on the call data
-2. Dispatches the swaps provided in the call data to the relevant swap adapter contracts
-3. Verifies the amount out received from the swaps is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate)
-4. Dispatches one of the following post-swap actions with the received funds from the swap:
+2. If a fee swap is provided, queries the swap adapter contract to determine how much of the coin sent with the contract call is needed to receive the required fee coin(s), and dispatches the swap.
+3. Dispatches the user swap provided in the call data to the relevant swap adapter contract.
+4. Verifies the amount out received from the swap(s) is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate)
+5. Dispatches one of the following post-swap actions with the received funds from the swap:
     - Transfer to an address on the same chain 
     - IBC transfer to an address on a different chain (which allows for multi-hop IBC transfers or contract calls if the destination chains support it)
     - Call a contract on the same chain
