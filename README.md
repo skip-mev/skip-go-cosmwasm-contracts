@@ -18,28 +18,28 @@ The on-chain components of the swapping functionality consist of:
 ## Entry Point Contract
 
 The entry point contract is responsible for providing a standardized interface (w/ safety checks) to interact with Skip Swap across all CosmWasm-enabled chains. The contract:
-1. Performs basic validation on the call data
+1. Performs basic validation on the call data.
 2. If a fee swap is provided, queries the swap adapter contract to determine how much of the coin sent with the contract call is needed to receive the required fee coin(s), and dispatches the swap.
 3. Dispatches the user swap provided in the call data to the relevant swap adapter contract.
-4. Verifies the amount out received from the swap(s) is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate)
+4. Verifies the amount out received from the swap(s) is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate).
 5. Dispatches one of the following post-swap actions with the received funds from the swap:
-    - Transfer to an address on the same chain 
-    - IBC transfer to an address on a different chain (which allows for multi-hop IBC transfers or contract calls if the destination chains support it)
-    - Call a contract on the same chain
+    - Transfer to an address on the same chain.
+    - IBC transfer to an address on a different chain (which allows for multi-hop IBC transfers or contract calls if the destination chains support it).
+    - Call a contract on the same chain.
 
 ## Swap Adapter Contracts
 
 Swap Adapter contracts are developed and deployed for each swap venue supported by Skip Swap. The contracts are responsible for:
-1. Taking the standardized Skip Swap entry point message format and converting it to the specific swap venue's format
-2. Swapping by calling the swap venue's respective smart contract or module
-3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out)
+1. Taking the standardized entry point swap operations message format and converting it to the specific swap venue's format.
+2. Swapping by calling the swap venue's respective smart contract or module.
+3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out).
 
 ## IBC Transfer Adapter Contracts
 
 IBC Transfer adapter contracts are developed and deployed for each chain supported by Skip Swap. The contracts are responsible for:
-1. Dispatching the IBC transfer (with the appropriate IBC fees if required)
-2. Failing the entire transaction if the IBC transfer errors on the swap chain (sending the caller back their original funds)
-3. Refunding the caller on the swap chain if the IBC transfer errors or times out once it reaches the destination chain (also refunding unused IBC fees)
+1. Dispatching the IBC transfer (with the appropriate IBC fees if required).
+2. Failing the entire transaction if the IBC transfer errors on the swap chain (sending the caller back their original funds).
+3. Refunding the caller on the swap chain if the IBC transfer errors or times out once it reaches the destination chain (also refunding unused IBC fees).
 
 # Repository Structure
 

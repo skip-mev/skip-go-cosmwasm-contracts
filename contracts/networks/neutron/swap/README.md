@@ -1,7 +1,7 @@
 # Neutron Astroport Swap Adapter Contract
 
 The Neutron Astroport swap adapter contract is responsible for:
-1. Taking the standardized Skip Swap entry point message format and converting it to the Astroport swap operations format.
+1. Taking the standardized entry point swap operations message format and converting it to the Astroport Router `SwapOperation` format.
 2. Swapping by calling the Astroport router.
 3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out)
 
