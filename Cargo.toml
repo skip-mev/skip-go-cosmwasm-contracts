@@ -1,0 +1,47 @@
+[workspace]
+resolver = "2"
+members  = [
+  "contracts/entry-point",
+  "contracts/networks/neutron/*",
+  "contracts/networks/osmosis/*",
+  "packages/*",
+]
+
+[workspace.package]
+version       = "0.1.0"
+authors       = ["Skip"]
+edition       = "2021"
+rust-version  = "1.68.0"
+license       = "TBD"
+homepage      = "https://skip.money/"
+repository    = "https://github.com/skip-mev/swap-contracts"
+documentation = "https://github.com/skip-mev/swap-contracts#readme"
+keywords      = ["cosmwasm"]
+
+[workspace.dependencies]
+astroport        = "2.8"
+cosmwasm-schema  = "1.2"
+cosmwasm-std     = { version = "1.2", features = ["stargate"] }
+cosmos-sdk-proto = { version = "0.19", default-features = false }
+cw2              = "1.0"
+cw-storage-plus  = "1"
+cw-utils         = "1.0.1"
+ibc-proto        = { version = "0.32.0", default-features = false }
+neutron-proto    = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
+neutron-sdk      = "0.5"
+osmosis-std      = "0.15.3"
+prost            = "0.11"
+serde-cw-value   = "0.7.0"
+serde-json-wasm  = "0.5.1"
+test-case        = "3.1.0"
+thiserror        = "1"
+
+[profile.release]
+codegen-units    = 1
+debug            = false
+debug-assertions = false
+incremental      = false
+lto              = true
+opt-level        = 3
+overflow-checks  = true
+rpath            = false

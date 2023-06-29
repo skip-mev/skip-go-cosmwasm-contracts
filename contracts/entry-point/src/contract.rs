@@ -1,0 +1,123 @@
+use crate::{
+    error::ContractResult,
+    execute::{execute_post_swap_action, execute_swap_and_action},
+    query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
+    state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+};
+use cosmwasm_std::{
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
+use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
+
+///////////////////
+/// INSTANTIATE ///
+///////////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn instantiate(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    msg: InstantiateMsg,
+) -> ContractResult<Response> {
+    // Create response object to return
+    let mut response: Response = Response::new().add_attribute("action", "instantiate");
+
+    // Iterate through the swap venues provided and create a map of venue names to swap adapter contract addresses
+    for swap_venue in msg.swap_venues.iter() {
+        // Validate the swap contract address
+        let checked_swap_contract_address = deps
+            .api
+            .addr_validate(&swap_venue.adapter_contract_address)?;
+
+        // Insert the swap contract address into the map, keyed by the venue name
+        SWAP_VENUE_MAP.save(
+            deps.storage,
+            &swap_venue.name,
+            &checked_swap_contract_address,
+        )?;
+
+        // Add the swap venue and contract address to the response
+        response = response
+            .add_attribute("action", "add_swap_venue")
+            .add_attribute("name", &swap_venue.name)
+            .add_attribute("contract_address", &checked_swap_contract_address);
+    }
+
+    // Validate ibc transfer adapter contract addresses
+    let checked_ibc_transfer_contract_address =
+        deps.api.addr_validate(&msg.ibc_transfer_contract_address)?;
+
+    // Store the ibc transfer adapter contract address
+    IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract_address)?;
+
+    // Add the ibc transfer adapter contract address to the response
+    response = response
+        .add_attribute("action", "add_ibc_transfer_adapter")
+        .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+
+    Ok(response)
+}
+
+///////////////
+/// EXECUTE ///
+///////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn execute(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> ContractResult<Response> {
+    match msg {
+        ExecuteMsg::SwapAndAction {
+            fee_swap,
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        } => execute_swap_and_action(
+            deps,
+            env,
+            info,
+            fee_swap,
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        ),
+        ExecuteMsg::PostSwapAction {
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        } => execute_post_swap_action(
+            deps,
+            env,
+            info,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        ),
+    }
+}
+
+/////////////
+/// QUERY ///
+/////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::SwapVenueAdapterContract { name } => {
+            to_binary(&query_swap_venue_adapter_contract(deps, name)?)
+        }
+        QueryMsg::IbcTransferAdapterContract {} => {
+            to_binary(&query_ibc_transfer_adapter_contract(deps)?)
+        }
+    }
+}

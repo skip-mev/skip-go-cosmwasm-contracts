@@ -1,0 +1,18 @@
+# Chain ID
+chain_id = "pion-1"
+
+# Deployment date
+deployment_date = "2023-06-20"
+
+# Repo commit hash
+repo_commit_hash = "211833bc821e93216e1fedc7fd8ee8b2899932b4"
+
+# Deployment checksums
+entry_point_contract_checksum = "b6c516e3d7001d6e5bafe6b13ef980884c951efcf44dbf8ec93e2f1c3a1f3089"
+astroport_swap_adapter_checksum = "a9ba9e6a9c01d63f172ed05fd0d72283bac097423f394119d2a097d4b5ea9715"
+ibc_transfer_adapter_checksum = "74b33690465bb3e0ef46ad8017e4263c962d213ebeb522529bc9e9aec004b0c3"
+
+# Deployed contracts addresses
+entry_point_contract_address = "neutron1a0f2kt344udfry93s9jflvjfjpl84fmxxzhhku565hpapaclz7jqg5vmr6"
+astroport_swap_adapter_contract_address = "neutron1yqxqqv89vdkr4lxd4rt4qkkcr50u655caylvexgfnvjggex8f0eqtgr29s"
+ibc_transfer_adapter_contract_address = "neutron1sdxzpn5rjzgjcxg6u5vhka9gwvzq05lfchx5pkx4nle6znx4z9cq8wtf9q"

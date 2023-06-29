@@ -1,0 +1,23 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commut Hash
+COMMIT_HASH = "4c6211e7b70eee07f17bd1c8f3a000c5b0731b53"
+
+MAINNET_REST_URL = "rest+https://lcd.osmosis.zone/"
+MAINNET_CHAIN_ID = "osmosis-1"
+
+TESTNET_REST_URL = "rest+https://lcd.osmotest5.osmosis.zone/"
+TESTNET_CHAIN_ID = "osmo-test-5" 
+
+ADDRESS_PREFIX = "osmo"
+DENOM = "uosmo"
+GAS_PRICE = 0.01
+
+# Contract Paths
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_swap_entry_point-aarch64.wasm"
+SWAP_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_poolmanager_swap-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_ibc_transfer-aarch64.wasm"
+
+[[swap_venues]]
+name = "osmosis-poolmanager"
