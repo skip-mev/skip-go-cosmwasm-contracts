@@ -2,7 +2,7 @@
 
 # Skip API Contracts
 
-The Skip Swap contracts in this repository are used in [Skip API](https://api-swagger.skip.money/) to enable any-to-any swaps as part of multi-chain workflows.
+The contracts in this repository are used in [Skip API](https://api-swagger.skip.money/) to enable any-to-any swaps as part of multi-chain workflows.
 
 Skip API is a unified REST API + SDK that helps developers create more seamless cross-chain experiences for their end users with IBC [(Inter-Blockchain Communication protocol)](https://ibcprotocol.dev/). 
 
