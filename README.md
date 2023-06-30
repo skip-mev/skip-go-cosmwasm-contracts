@@ -1,4 +1,4 @@
-![Skip Swap](skip_swirl.png "Skipping and Swapping")
+![Skip Swap Swirl](assets/skip_swirl.png "Skipping, Swapping, and Swirling")
 
 # Skip API Contracts
 
@@ -40,6 +40,21 @@ IBC Transfer adapter contracts are developed and deployed for each chain support
 1. Dispatching the IBC transfer (with the appropriate IBC fees if required).
 2. Failing the entire transaction if the IBC transfer errors on the swap chain (sending the caller back their original funds).
 3. Refunding the caller on the swap chain if the IBC transfer errors or times out once it reaches the destination chain (also refunding unused IBC fees).
+
+# Example Flow
+
+![Skip Swap Flow](assets/skip_swap_flow.png "Skipping, Swapping, and Flowing")
+
+A simplified example flow showcasing the interactions between the contracts is as follows:
+1. A user calls `swap_and_action` on the entry point contract.
+2. The entry point contract performs pre-swap validation checks on the user call.
+3. The entry point contract calls `swap` on the relevant swap adapter contract, sending the coin to swap to the swap adapter contract.
+4. The swap adapter contract swaps the coin sent by the entry point contract to the desired output denom through the relevant swap venue.
+5. The swap adapter contract calls `transfer_funds_back` on itself, which transfers the post-swap contract balance back to the entry point contract.
+6. The entry point contract performs post-swap validation checks, ensuring the minimum amount out specified in the original call is satisfied.
+7. The entry point contract calls `ibc_transfer` on the IBC transfer adapter contract. 
+    - Note: The entry point contract dispatches one of three post swap actions. This simplified example flow is just showing the IBC transfer post swap action.
+8. The IBC transfer adapter contract dispatches the IBC transfer. Bon voyage!
 
 # Repository Structure
 
