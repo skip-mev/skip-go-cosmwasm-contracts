@@ -1,5 +1,5 @@
 use crate::{
-    error::ContractResult,
+    error::{ContractError, ContractResult},
     execute::{execute_post_swap_action, execute_swap_and_action},
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
@@ -29,6 +29,11 @@ pub fn instantiate(
         let checked_swap_contract_address = deps
             .api
             .addr_validate(&swap_venue.adapter_contract_address)?;
+
+        // Prevent duplicate swap venues by erroring if the venue name is already stored
+        if SWAP_VENUE_MAP.has(deps.storage, &swap_venue.name) {
+            return Err(ContractError::DuplicateSwapVenueName);
+        }
 
         // Insert the swap contract address into the map, keyed by the venue name
         SWAP_VENUE_MAP.save(
