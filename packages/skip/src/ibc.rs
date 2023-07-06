@@ -9,7 +9,9 @@ use std::convert::From;
 ///////////////////
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub entry_point_contract_address: String,
+}
 
 ///////////////
 /// EXECUTE ///

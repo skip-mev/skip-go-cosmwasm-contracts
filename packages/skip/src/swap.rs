@@ -15,10 +15,13 @@ use std::{
 ///////////////////
 
 #[cw_serde]
-pub struct OsmosisInstantiateMsg {}
+pub struct OsmosisInstantiateMsg {
+    pub entry_point_contract_address: String,
+}
 
 #[cw_serde]
 pub struct NeutronInstantiateMsg {
+    pub entry_point_contract_address: String,
     pub router_contract_address: String,
 }
 

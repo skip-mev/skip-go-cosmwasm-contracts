@@ -1,6 +1,8 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER, IN_PROGRESS_IBC_TRANSFER},
+    state::{
+        ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_IBC_TRANSFER,
+    },
 };
 use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply,
@@ -26,12 +28,24 @@ const REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> ContractResult<Response> {
-    Ok(Response::new().add_attribute("action", "instantiate"))
+    // Validate entry point contract address
+    let checked_entry_point_contract_address =
+        deps.api.addr_validate(&msg.entry_point_contract_address)?;
+
+    // Store the entry point contract address
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "instantiate")
+        .add_attribute(
+            "entry_point_contract_address",
+            checked_entry_point_contract_address.to_string(),
+        ))
 }
 
 ///////////////
