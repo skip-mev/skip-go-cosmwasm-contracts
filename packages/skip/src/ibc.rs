@@ -62,10 +62,10 @@ pub struct IbcFee {
     pub timeout_fee: Vec<Coin>,
 }
 
-// Coins is a type alias for a BTreeMap of String denom to Uint128 total amount
+// Coins is a struct that wraps a BTreeMap of String denom to Uint128 total amount
 pub struct Coins(BTreeMap<String, Uint128>);
 
-// Converts an IbcFee struct to a BTreeMap of String denom to Uint128 total amount
+// Converts an IbcFee struct to a Coins struct (BTreeMap<String, Uint128>)
 impl TryFrom<IbcFee> for Coins {
     type Error = OverflowError;
 
@@ -83,7 +83,7 @@ impl TryFrom<IbcFee> for Coins {
     }
 }
 
-// Implement add coin and get amount methods for Coins
+// Implement add coin and get amount methods for Coins struct
 impl Coins {
     // Takes a coin and adds it to the Coins map
     pub fn add_coin(&mut self, coin: &Coin) -> Result<(), OverflowError> {
@@ -96,14 +96,14 @@ impl Coins {
         Ok(())
     }
 
-    // Given a denom, returns the total amount of that denom in the Coins map
-    // or returns 0 if the denom is not in the Coins map.
+    // Given a denom, returns the total amount of that denom in the Coins struct
+    // or returns 0 if the denom is not in the Coins struct.
     pub fn get_amount(&self, denom: &str) -> Uint128 {
         self.0.get(denom).cloned().unwrap_or_default()
     }
 }
 
-// Converts a Coins map to a Vec<Coin>
+// Converts a Coins struct to a Vec<Coin>
 impl From<Coins> for Vec<Coin> {
     fn from(coins: Coins) -> Self {
         coins
