@@ -330,8 +330,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     Ok(ibc_msg)
 }
 
-// Verifies the contract address is valid, if so
-// then creates and returns a contract call message
+// Verifies, creates, and returns the contract call message
 fn verify_and_create_contract_call_msg(
     deps: DepsMut,
     contract_address: String,
@@ -358,7 +357,7 @@ fn verify_and_create_contract_call_msg(
 
 // SWAP MESSAGE HELPER FUNCTIONS
 
-// Creates the user swap message and returns it
+// Verifies, creates, and returns the user swap message
 fn verify_and_create_user_swap_msg(
     deps: &DepsMut,
     user_swap: SwapExactCoinIn,
