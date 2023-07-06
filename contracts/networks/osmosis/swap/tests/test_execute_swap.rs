@@ -21,6 +21,7 @@ Expect Success
     - No Swap Operations (This is prevented in the entry point contract; and will fail on Osmosis module if attempted)
 
 Expect Error
+    - Unauthorized Caller (Only the stored entry point contract can call this function)
     - No Coin Sent
     - More Than One Coin Sent
     - Invalid Pool ID Conversion For Swap Operations
@@ -29,6 +30,7 @@ Expect Error
 
 // Define test parameters
 struct Params {
+    caller: String,
     info_funds: Vec<Coin>,
     swap_operations: Vec<SwapOperation>,
     expected_messages: Vec<SubMsg>,
@@ -38,6 +40,7 @@ struct Params {
 // Test execute_swap
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "uosmo")],
         swap_operations: vec![
             SwapOperation {
@@ -74,7 +77,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                        swapper: Addr::unchecked("swapper"),
+                        swapper: Addr::unchecked("entry_point"),
                     })?,
                     funds: vec![],
                 }
@@ -88,6 +91,7 @@ struct Params {
 "One Swap Operation")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "uosmo")],
         swap_operations: vec![
             SwapOperation {
@@ -133,7 +137,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                        swapper: Addr::unchecked("swapper"),
+                        swapper: Addr::unchecked("entry_point"),
                     })?,
                     funds: vec![],
                 }
@@ -147,6 +151,7 @@ struct Params {
 "Multiple Swap Operations")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "uosmo")],
         swap_operations: vec![],
         expected_messages: vec![
@@ -172,7 +177,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                        swapper: Addr::unchecked("swapper"),
+                        swapper: Addr::unchecked("entry_point"),
                     })?,
                     funds: vec![],
                 }
@@ -186,6 +191,7 @@ struct Params {
 "No Swap Operations")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         info_funds: vec![],
         swap_operations: vec![
             SwapOperation {
@@ -200,6 +206,7 @@ struct Params {
     "No Coin Sent - Expect Error")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         info_funds: vec![
             Coin::new(100, "uosmo"),
             Coin::new(100, "uatom"),
@@ -217,6 +224,7 @@ struct Params {
     "More Than One Coin Sent - Expect Error")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "uosmo")],
         swap_operations: vec![
             SwapOperation {
@@ -229,6 +237,18 @@ struct Params {
         expected_error_string: "Parse Int error raised: invalid pool String to pool id u64 conversion".to_string(),
     };
     "Invalid Pool ID Conversion For Swap Operations - Expect Error")]
+#[test_case(
+    Params {
+        caller: "random".to_string(),
+        info_funds: vec![
+            Coin::new(100, "untrn"),
+            Coin::new(100, "uosmo"),
+        ],
+        swap_operations: vec![],
+        expected_messages: vec![],
+        expected_error_string: "Unauthorized".to_string(),
+    };
+    "Unauthorized Caller - Expect Error")]
 fn test_execute_swap(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
@@ -241,10 +261,10 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     let info_funds: &[Coin] = &params.info_funds;
 
     // Create mock info with entry point contract address
-    let info = mock_info("swapper", info_funds);
+    let info = mock_info(&params.caller, info_funds);
 
     // Store the entry point contract address
-    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("swapper"))?;
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_swap with the given test parameters
     let res = skip_swap_osmosis_poolmanager_swap::contract::execute(
