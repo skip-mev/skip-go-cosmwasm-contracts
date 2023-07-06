@@ -8,7 +8,7 @@ use cosmwasm_std::{
 use cw_utils::one_coin;
 use skip::{
     entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
-    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFeeMap, IbcInfo, IbcTransfer},
+    ibc::{Coins, ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, SwapExactCoinIn, SwapExactCoinOut,
     },
@@ -270,12 +270,12 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     deps.api.addr_validate(&ibc_info.recover_address)?;
 
     // Create the ibc_fees map from the given recv_fee, ack_fee, and timeout_fee
-    let ibc_fees: IbcFeeMap = ibc_info.fee.clone().try_into()?;
+    let ibc_fees_map: Coins = ibc_info.fee.clone().try_into()?;
 
     // Get the amount of the IBC fee payment that matches
     // the denom of the ibc transfer out coin.
     // If there is no denom match, then default to zero.
-    let transfer_out_coin_ibc_fee_amount = ibc_fees.get_amount(&min_coin.denom);
+    let transfer_out_coin_ibc_fee_amount = ibc_fees_map.get_amount(&min_coin.denom);
 
     // Subtract the IBC fee amount from the transfer out coin
     transfer_out_coin.amount = transfer_out_coin
@@ -291,7 +291,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     // Calculate the funds to send to the IBC transfer contract
     // (which is the transfer out coin plus the IBC fee amounts)
     // using a map for convenience, and then converting to a vector of coins
-    let mut ibc_msg_funds_map = ibc_fees;
+    let mut ibc_msg_funds_map = ibc_fees_map;
     ibc_msg_funds_map.add_coin(&transfer_out_coin)?;
 
     // Convert the map to a vector of coins

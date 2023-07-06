@@ -62,15 +62,15 @@ pub struct IbcFee {
     pub timeout_fee: Vec<Coin>,
 }
 
-// IbcFeeMap is a type alias for a BTreeMap of String denom to Uint128 total amount
-pub struct IbcFeeMap(BTreeMap<String, Uint128>);
+// Coins is a type alias for a BTreeMap of String denom to Uint128 total amount
+pub struct Coins(BTreeMap<String, Uint128>);
 
 // Converts an IbcFee struct to a BTreeMap of String denom to Uint128 total amount
-impl TryFrom<IbcFee> for IbcFeeMap {
+impl TryFrom<IbcFee> for Coins {
     type Error = OverflowError;
 
     fn try_from(ibc_fee: IbcFee) -> Result<Self, Self::Error> {
-        let mut ibc_fees: IbcFeeMap = IbcFeeMap(BTreeMap::new());
+        let mut ibc_fees = Coins(BTreeMap::new());
 
         for coin in [ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
             .iter()
@@ -83,9 +83,9 @@ impl TryFrom<IbcFee> for IbcFeeMap {
     }
 }
 
-// Implement add coin and get amount methods for IbcFeeMap
-impl IbcFeeMap {
-    // Takes a coin and adds it to the IbcFeeMap
+// Implement add coin and get amount methods for Coins
+impl Coins {
+    // Takes a coin and adds it to the Coins map
     pub fn add_coin(&mut self, coin: &Coin) -> Result<(), OverflowError> {
         let amount = self
             .0
@@ -96,17 +96,17 @@ impl IbcFeeMap {
         Ok(())
     }
 
-    // Given a denom, returns the total amount of that denom in the IbcFeeMap
-    // or returns 0 if the denom is not in the IbcFeeMap.
+    // Given a denom, returns the total amount of that denom in the Coins map
+    // or returns 0 if the denom is not in the Coins map.
     pub fn get_amount(&self, denom: &str) -> Uint128 {
         self.0.get(denom).cloned().unwrap_or_default()
     }
 }
 
-// Converts an IbcFeeMap to a Vec<Coin>
-impl From<IbcFeeMap> for Vec<Coin> {
-    fn from(ibc_fee_map: IbcFeeMap) -> Self {
-        ibc_fee_map
+// Converts a Coins map to a Vec<Coin>
+impl From<Coins> for Vec<Coin> {
+    fn from(coins: Coins) -> Self {
+        coins
             .0
             .into_iter()
             .map(|(denom, amount)| Coin { denom, amount })
