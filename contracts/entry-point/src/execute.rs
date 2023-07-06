@@ -345,6 +345,11 @@ fn verify_and_create_contract_call_msg(
         return Err(ContractError::ContractCallAddressBlocked);
     }
 
+    // Error if the contract address is in the blocked contract addresses map
+    if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &contract_address) {
+        return Err(ContractError::ContractCallAddressBlocked);
+    }
+
     // Create the contract call message
     let contract_call_msg = WasmMsg::Execute {
         contract_addr: contract_address,
