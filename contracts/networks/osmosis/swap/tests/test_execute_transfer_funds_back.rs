@@ -102,7 +102,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::TransferFundsBack {
-            caller: Addr::unchecked("swapper"),
+            swapper: Addr::unchecked("swapper"),
         },
     );
 

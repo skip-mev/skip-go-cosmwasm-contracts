@@ -72,7 +72,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                        caller: Addr::unchecked("swapper"),
+                        swapper: Addr::unchecked("swapper"),
                     })?,
                     funds: vec![],
                 }
@@ -131,7 +131,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                        caller: Addr::unchecked("swapper"),
+                        swapper: Addr::unchecked("swapper"),
                     })?,
                     funds: vec![],
                 }
@@ -170,7 +170,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                        caller: Addr::unchecked("swapper"),
+                        swapper: Addr::unchecked("swapper"),
                     })?,
                     funds: vec![],
                 }

@@ -30,7 +30,7 @@ pub struct NeutronInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Swap { operations: Vec<SwapOperation> },
-    TransferFundsBack { caller: Addr },
+    TransferFundsBack { swapper: Addr },
 }
 
 impl From<SwapExactCoinIn> for ExecuteMsg {

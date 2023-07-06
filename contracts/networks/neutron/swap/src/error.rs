@@ -11,6 +11,9 @@ pub enum ContractError {
     #[error(transparent)]
     Overflow(#[from] OverflowError),
 
+    #[error("Unauthorized")]
+    Unauthorized,
+
     #[error(transparent)]
     Payment(#[from] cw_utils::PaymentError),
 

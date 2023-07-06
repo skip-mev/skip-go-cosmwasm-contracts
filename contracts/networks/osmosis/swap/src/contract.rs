@@ -44,7 +44,9 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Swap { operations } => execute_swap(env, info, operations),
-        ExecuteMsg::TransferFundsBack { caller } => execute_transfer_funds_back(deps, env, caller),
+        ExecuteMsg::TransferFundsBack { swapper } => {
+            execute_transfer_funds_back(deps, env, info, swapper)
+        }
     }
 }
 
@@ -64,7 +66,7 @@ fn execute_swap(
     let transfer_funds_back_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::TransferFundsBack {
-            caller: info.sender,
+            swapper: info.sender,
         })?,
         funds: vec![],
     };
@@ -75,11 +77,21 @@ fn execute_swap(
         .add_attribute("action", "dispatch_swap_and_transfer_back"))
 }
 
-// Query the contract's balance and transfer the funds back to the caller
-fn execute_transfer_funds_back(deps: DepsMut, env: Env, caller: Addr) -> ContractResult<Response> {
+// Query the contract's balance and transfer the funds back to the swapper
+fn execute_transfer_funds_back(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    swapper: Addr,
+) -> ContractResult<Response> {
+    // Ensure the caller is the contract itself
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized);
+    }
+
     // Create the bank message send to transfer the contract funds back to the caller
     let transfer_funds_back_msg = BankMsg::Send {
-        to_address: caller.to_string(),
+        to_address: swapper.to_string(),
         amount: deps.querier.query_all_balances(env.contract.address)?,
     };
 
