@@ -56,15 +56,15 @@ pub fn instantiate(
 pub fn execute(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::IbcTransfer {
-            info,
+            info: ibc_info,
             coin,
             timeout_timestamp,
-        } => execute_ibc_transfer(deps, env, info, coin, timeout_timestamp),
+        } => execute_ibc_transfer(deps, env, info, ibc_info, coin, timeout_timestamp),
     }
 }
 
@@ -74,31 +74,40 @@ pub fn execute(
 fn execute_ibc_transfer(
     deps: DepsMut,
     env: Env,
-    info: IbcInfo,
+    info: MessageInfo,
+    ibc_info: IbcInfo,
     coin: Coin,
     timeout_timestamp: u64,
 ) -> ContractResult<Response> {
+    // Get entry point contract address from storage
+    let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
+
+    // Enforce the caller is the entry point contract
+    if info.sender != entry_point_contract_address {
+        return Err(ContractError::Unauthorized);
+    }
+
     // Create neutron ibc transfer message
     let msg = MsgTransfer {
         source_port: "transfer".to_string(),
-        source_channel: info.source_channel,
+        source_channel: ibc_info.source_channel,
         token: Some(ProtoCoin(coin.clone()).into()),
         sender: env.contract.address.to_string(),
-        receiver: info.receiver,
+        receiver: ibc_info.receiver,
         timeout_height: None,
         timeout_timestamp,
-        memo: info.memo,
-        fee: Some(info.fee.clone().into()),
+        memo: ibc_info.memo,
+        fee: Some(ibc_info.fee.clone().into()),
     };
 
     // Save in progress ibc transfer data (recover address and coin) to storage, to be used in sudo handler
     IN_PROGRESS_IBC_TRANSFER.save(
         deps.storage,
         &InProgressIbcTransfer {
-            recover_address: info.recover_address, // This address is verified in entry point
+            recover_address: ibc_info.recover_address, // This address is verified in entry point
             coin,
-            ack_fee: info.fee.ack_fee,
-            timeout_fee: info.fee.timeout_fee,
+            ack_fee: ibc_info.fee.ack_fee,
+            timeout_fee: ibc_info.fee.timeout_fee,
         },
     )?;
 

@@ -58,15 +58,15 @@ pub fn instantiate(
 pub fn execute(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::IbcTransfer {
-            info,
+            info: ibc_info,
             coin,
             timeout_timestamp,
-        } => execute_ibc_transfer(deps, env, info, coin, timeout_timestamp),
+        } => execute_ibc_transfer(deps, env, info, ibc_info, coin, timeout_timestamp),
     }
 }
 
@@ -76,13 +76,22 @@ pub fn execute(
 fn execute_ibc_transfer(
     deps: DepsMut,
     env: Env,
-    info: IbcInfo,
+    info: MessageInfo,
+    ibc_info: IbcInfo,
     coin: Coin,
     timeout_timestamp: u64,
 ) -> ContractResult<Response> {
+    // Get entry point contract address from storage
+    let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
+
+    // Enforce the caller is the entry point contract
+    if info.sender != entry_point_contract_address {
+        return Err(ContractError::Unauthorized);
+    }
+
     // Error if the ibc_fees specified are not empty since
     // osmosis ibc transfers do not support fees.
-    if !<IbcFee as TryInto<Coins>>::try_into(info.fee)?.is_empty() {
+    if !<IbcFee as TryInto<Coins>>::try_into(ibc_info.fee)?.is_empty() {
         return Err(ContractError::IbcFeesNotSupported);
     }
 
@@ -90,22 +99,22 @@ fn execute_ibc_transfer(
     IN_PROGRESS_IBC_TRANSFER.save(
         deps.storage,
         &InProgressIbcTransfer {
-            recover_address: info.recover_address, // This address is verified in entry point
+            recover_address: ibc_info.recover_address, // This address is verified in entry point
             coin: coin.clone(),
-            channel_id: info.source_channel.clone(),
+            channel_id: ibc_info.source_channel.clone(),
         },
     )?;
 
     // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
-    let memo = verify_and_create_memo(info.memo, env.contract.address.to_string())?;
+    let memo = verify_and_create_memo(ibc_info.memo, env.contract.address.to_string())?;
 
     // Create osmosis ibc transfer message
     let msg = MsgTransfer {
         source_port: "transfer".to_string(),
-        source_channel: info.source_channel,
+        source_channel: ibc_info.source_channel,
         token: Some(ProtoCoin(coin).into()),
         sender: env.contract.address.to_string(),
-        receiver: info.receiver,
+        receiver: ibc_info.receiver,
         timeout_height: None,
         timeout_timestamp,
         memo,

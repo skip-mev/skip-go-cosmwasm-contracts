@@ -18,6 +18,9 @@ pub enum ContractError {
     #[error(transparent)]
     Payment(#[from] cw_utils::PaymentError),
 
+    #[error("Unauthorized")]
+    Unauthorized,
+
     #[error("swap_operations cannot be empty")]
     SwapOperationsEmpty,
 

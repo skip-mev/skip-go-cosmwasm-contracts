@@ -10,7 +10,10 @@ use prost::Message;
 use skip::ibc::{
     ExecuteMsg, IbcFee, IbcInfo, OsmosisInProgressIbcTransfer as InProgressIBCTransfer,
 };
-use skip_swap_osmosis_ibc_transfer::{error::ContractResult, state::IN_PROGRESS_IBC_TRANSFER};
+use skip_swap_osmosis_ibc_transfer::{
+    error::ContractResult,
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_IBC_TRANSFER},
+};
 use test_case::test_case;
 
 /*
@@ -242,6 +245,9 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
 
     // Create mock info
     let info = mock_info("caller", &[]);
+
+    // Store the entry point contract address
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("caller"))?;
 
     // Call execute_ibc_transfer with the given test parameters
     let res = skip_swap_osmosis_ibc_transfer::contract::execute(

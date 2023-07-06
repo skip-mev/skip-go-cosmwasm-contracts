@@ -11,7 +11,7 @@ use cosmwasm_std::{
 use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_swap_neutron_astroport_swap::{
     error::{ContractError, ContractResult},
-    state::ROUTER_CONTRACT_ADDRESS,
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS},
 };
 use test_case::test_case;
 
@@ -227,6 +227,9 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
 
     // Create mock info with entry point contract address
     let info = mock_info("swapper", info_funds);
+
+    // Store the entry point contract address
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("swapper"))?;
 
     // Store the router contract address
     ROUTER_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("router_contract"))?;

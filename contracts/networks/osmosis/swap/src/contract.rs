@@ -58,7 +58,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { operations } => execute_swap(env, info, operations),
+        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
         ExecuteMsg::TransferFundsBack { swapper } => {
             Ok(execute_transfer_funds_back(deps, env, info, swapper)?)
         }
@@ -67,10 +67,19 @@ pub fn execute(
 
 // Executes a swap with the given swap operations and then transfers the funds back to the caller
 fn execute_swap(
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
+    // Get entry point contract address from storage
+    let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
+
+    // Enforce the caller is the entry point contract
+    if info.sender != entry_point_contract_address {
+        return Err(ContractError::Unauthorized);
+    }
+
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
