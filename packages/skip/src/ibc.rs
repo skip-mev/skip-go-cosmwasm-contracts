@@ -63,7 +63,7 @@ pub struct IbcFee {
 }
 
 // IbcFeeMap is a type alias for a BTreeMap of String denom to Uint128 total amount
-pub struct IbcFeeMap(pub BTreeMap<String, Uint128>);
+pub struct IbcFeeMap(BTreeMap<String, Uint128>);
 
 // Converts an IbcFee struct to a BTreeMap of String denom to Uint128 total amount
 impl TryFrom<IbcFee> for IbcFeeMap {
