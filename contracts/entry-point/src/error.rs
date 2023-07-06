@@ -80,4 +80,7 @@ pub enum ContractError {
 
     #[error("Transfer Out Coin Less Than Minimum Required After IBC Fees")]
     TransferOutCoinLessThanMinAfterIbcFees,
+
+    #[error("Contract Call Address Cannot Be The Entry Point Or Adapter Contracts")]
+    ContractCallAddressBlocked,
 }

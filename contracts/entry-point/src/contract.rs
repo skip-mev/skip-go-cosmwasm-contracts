@@ -2,7 +2,7 @@ use crate::{
     error::{ContractError, ContractResult},
     execute::{execute_post_swap_action, execute_swap_and_action},
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
-    state::{BLOCKED_CONTRACT_ADDRESSES_MAP, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
@@ -24,7 +24,7 @@ pub fn instantiate(
     let mut response: Response = Response::new().add_attribute("action", "instantiate");
 
     // Insert the entry point contract address into the blocked contract addresses map
-    BLOCKED_CONTRACT_ADDRESSES_MAP.save(deps.storage, env.contract.address.as_str(), &())?;
+    BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, env.contract.address.as_str(), &())?;
 
     // Iterate through the swap venues provided and create a map of venue names to swap adapter contract addresses
     for swap_venue in msg.swap_venues.iter() {
@@ -46,11 +46,7 @@ pub fn instantiate(
         )?;
 
         // Insert the swap contract address into the blocked contract addresses map
-        BLOCKED_CONTRACT_ADDRESSES_MAP.save(
-            deps.storage,
-            &swap_venue.adapter_contract_address,
-            &(),
-        )?;
+        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &swap_venue.adapter_contract_address, &())?;
 
         // Add the swap venue and contract address to the response
         response = response
@@ -67,7 +63,7 @@ pub fn instantiate(
     IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract_address)?;
 
     // Insert the ibc transfer adapter contract address into the blocked contract addresses map
-    BLOCKED_CONTRACT_ADDRESSES_MAP.save(deps.storage, &msg.ibc_transfer_contract_address, &())?;
+    BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &msg.ibc_transfer_contract_address, &())?;
 
     // Add the ibc transfer adapter contract address to the response
     response = response
