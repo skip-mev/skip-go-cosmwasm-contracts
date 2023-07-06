@@ -346,7 +346,7 @@ fn verify_and_create_contract_call_msg(
     }
 
     // Error if the contract address is in the blocked contract addresses map
-    if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &contract_address) {
+    if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &checked_contract_address) {
         return Err(ContractError::ContractCallAddressBlocked);
     }
 
