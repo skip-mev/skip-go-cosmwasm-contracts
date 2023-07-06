@@ -7,8 +7,9 @@ use cosmwasm_std::{
 };
 use cw_utils::one_coin;
 use skip::{
+    coins::Coins,
     entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
-    ibc::{Coins, ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
+    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, SwapExactCoinIn, SwapExactCoinOut,
     },
