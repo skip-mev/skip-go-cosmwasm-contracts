@@ -338,10 +338,10 @@ fn verify_and_create_contract_call_msg(
     transfer_out_coin: Coin,
 ) -> ContractResult<WasmMsg> {
     // Verify the contract address is valid, error if invalid
-    deps.api.addr_validate(&contract_address)?;
+    let checked_contract_address = deps.api.addr_validate(&contract_address)?;
 
     // Error if the contract address is in the blocked contract addresses map
-    if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &contract_address) {
+    if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &checked_contract_address) {
         return Err(ContractError::ContractCallAddressBlocked);
     }
 

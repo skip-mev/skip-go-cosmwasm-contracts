@@ -553,7 +553,7 @@ fn test_execute_post_swap_action(params: Params) {
 
     // Store the entry point contract address in the blocked contract addresses map
     BLOCKED_CONTRACT_ADDRESSES
-        .save(deps.as_mut().storage, "entry_point", &())
+        .save(deps.as_mut().storage, &Addr::unchecked("entry_point"), &())
         .unwrap();
 
     // Call execute_post_swap_action with the given test parameters
