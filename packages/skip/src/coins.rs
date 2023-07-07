@@ -5,8 +5,19 @@ use std::collections::BTreeMap;
 // Coins is a struct that wraps a BTreeMap of String denom to Uint128 total amount
 pub struct Coins(BTreeMap<String, Uint128>);
 
+impl Default for Coins {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // Implement add coin and get amount methods for Coins struct
 impl Coins {
+    // Create a new Coins struct
+    pub fn new() -> Self {
+        Coins(BTreeMap::new())
+    }
+
     // Takes a coin and adds it to the Coins map
     pub fn add_coin(&mut self, coin: &Coin) -> Result<(), OverflowError> {
         let amount = self
