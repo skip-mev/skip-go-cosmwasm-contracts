@@ -62,8 +62,8 @@ pub enum ContractError {
     #[error("User Swap Last Swap Operation Denom Out Differs From Min Coin Out Denom")]
     UserSwapOperationsMinCoinDenomMismatch,
 
-    #[error("User Swap Coin In Amount Is Greater Than The Remaining Coin Received")]
-    UserSwapCoinInGreaterThanRemainingReceived,
+    #[error("User Swap Coin In Amount Is Not Equal To The Remaining Coin Received")]
+    UserSwapCoinInNotEqualToRemainingReceived,
 
     ////////////////////////
     /// POST SWAP ACTION ///

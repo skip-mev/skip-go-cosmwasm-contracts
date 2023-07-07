@@ -9,7 +9,7 @@ use cw_utils::one_coin;
 use skip::{
     coins::Coins,
     entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
-    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo, IbcTransfer},
+    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, SwapExactCoinIn, SwapExactCoinOut,
     },
@@ -47,17 +47,19 @@ pub fn execute_swap_and_action(
     // Error if there is not exactly one coin sent to the contract
     let mut remaining_coin_received = one_coin(&info)?;
 
+    // Get the ibc_info from the post swap action if the post swap action
+    // is an IBC transfer, otherwise set it to None
+    let ibc_fees = match &post_swap_action {
+        PostSwapAction::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
+        _ => Coins::new(),
+    };
+
     // Process the fee swap if it exists
     if let Some(fee_swap) = fee_swap {
-        // Get the ibc_info from the post swap action
-        // Error if the post swap action is not an ibc transfer
-        // since an ibc transfer is the only action that requires a fee swap
-        let ibc_fees = match &post_swap_action {
-            PostSwapAction::IbcTransfer { ibc_info } => &ibc_info.fee,
-            _ => {
-                return Err(ContractError::FeeSwapNotAllowed);
-            }
-        };
+        // Error if the ibc fees is empty since a fee swap is not needed
+        if ibc_fees.is_empty() {
+            return Err(ContractError::FeeSwapNotAllowed);
+        }
 
         // Create the fee swap message
         // NOTE: this call mutates the user swap coin by subtracting the fee swap in amount
@@ -65,13 +67,18 @@ pub fn execute_swap_and_action(
             &deps,
             fee_swap,
             &mut remaining_coin_received,
-            ibc_fees,
+            &ibc_fees,
         )?;
 
         // Add the fee swap message to the response
         response = response
             .add_message(fee_swap_msg)
             .add_attribute("action", "dispatch_fee_swap");
+    } else {
+        // Subtract the relevant denom's ibc fees from the remaining coin received
+        remaining_coin_received.amount = remaining_coin_received
+            .amount
+            .checked_sub(ibc_fees.get_amount(&remaining_coin_received.denom))?;
     }
 
     // Create the user swap message
@@ -371,9 +378,11 @@ fn verify_and_create_user_swap_msg(
                 return Err(ContractError::UserSwapCoinInDenomMismatch);
             }
 
-            // Verify the coin_in amount is less than or equal to the remaining coin received amount
-            if coin_in.amount > remaining_coin_received.amount {
-                return Err(ContractError::UserSwapCoinInGreaterThanRemainingReceived);
+            // Error if the coin_in amount is not the same as the remaining coin received amount
+            // If it's greater than it is attempting to swap more than is allowed
+            // If it's less than it would leave funds on the contract
+            if coin_in.amount != remaining_coin_received.amount {
+                return Err(ContractError::UserSwapCoinInNotEqualToRemainingReceived);
             }
 
             coin_in
@@ -414,7 +423,7 @@ fn verify_and_create_fee_swap_msg(
     deps: &DepsMut,
     fee_swap: SwapExactCoinOut,
     remaining_coin_received: &mut Coin,
-    ibc_fees: &IbcFee,
+    ibc_fees: &Coins,
 ) -> ContractResult<WasmMsg> {
     // Verify the swap operations are not empty
     let (Some(first_op), Some(last_op)) = (fee_swap.operations.first(), fee_swap.operations.last()) else {
@@ -425,9 +434,6 @@ fn verify_and_create_fee_swap_msg(
     if fee_swap.coin_out.denom != last_op.denom_out {
         return Err(ContractError::FeeSwapOperationsCoinOutDenomMismatch);
     }
-
-    // Convert ibc_fees into a Coins struct
-    let ibc_fees: Coins = ibc_fees.clone().try_into()?;
 
     // Verify the fee swap coin out amount less than or equal to the ibc fee amount
     if fee_swap.coin_out.amount > ibc_fees.get_amount(&fee_swap.coin_out.denom) {
