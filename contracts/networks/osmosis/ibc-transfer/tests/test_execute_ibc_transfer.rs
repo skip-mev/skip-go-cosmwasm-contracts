@@ -23,6 +23,7 @@ Expect Response (Output Message Is Correct, In Progress Ibc Transfer Is Saved, N
 
 Expect Error
     - Non Empty String, Invalid Json Memo
+    - Non Empty IBC Fees, IBC Fees Not Supported
 
  */
 
@@ -204,6 +205,33 @@ struct Params {
         expected_error_string: "Object key is not a string.".to_string(),
     };
     "Non Empty String, Invalid Json Memo - Expect Error")]
+#[test_case(
+    Params {
+        ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
+        coin: Coin::new(100, "osmo"),
+        ibc_info: IbcInfo {
+            source_channel: "source_channel".to_string(),
+            receiver: "receiver".to_string(),
+            fee: IbcFee {
+                recv_fee: vec![
+                    Coin::new(100, "atom"),
+                ],
+                ack_fee: vec![],
+                timeout_fee: vec![],
+            },
+            memo: "{}".to_string(),
+            recover_address: "recover_address".to_string(),
+        },
+        timeout_timestamp: 100,
+        expected_messages: vec![],
+        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
+            recover_address: "recover_address".to_string(),
+            coin: Coin::new(100, "osmo"),
+            channel_id: "source_channel".to_string(),
+        },
+        expected_error_string: "IBC fees are not supported, vectors must be empty".to_string(),
+    };
+    "IBC Fees Not Supported - Expect Error")]
 fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
