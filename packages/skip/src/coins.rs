@@ -14,6 +14,11 @@ impl Coins {
 
     // Takes a coin and adds it to the Coins map
     pub fn add_coin(&mut self, coin: &Coin) -> Result<(), OverflowError> {
+        // Do not allow zero amount coin to create a new entry
+        if coin.amount.is_zero() {
+            return Ok(());
+        }
+
         let amount = self
             .0
             .entry(coin.denom.clone())
