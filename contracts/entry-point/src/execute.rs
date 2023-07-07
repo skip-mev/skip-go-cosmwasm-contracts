@@ -56,11 +56,6 @@ pub fn execute_swap_and_action(
 
     // Process the fee swap if it exists
     if let Some(fee_swap) = fee_swap {
-        // Error if the ibc fees is empty since a fee swap is not needed
-        if ibc_fees.is_empty() {
-            return Err(ContractError::FeeSwapNotAllowed);
-        }
-
         // Create the fee swap message
         // NOTE: this call mutates the user swap coin by subtracting the fee swap in amount
         let fee_swap_msg = verify_and_create_fee_swap_msg(
@@ -426,6 +421,11 @@ fn verify_and_create_fee_swap_msg(
     remaining_coin_received: &mut Coin,
     ibc_fees: &Coins,
 ) -> ContractResult<WasmMsg> {
+    // Error if the ibc fees is empty since a fee swap is not needed
+    if ibc_fees.is_empty() {
+        return Err(ContractError::FeeSwapNotAllowed);
+    }
+
     // Verify the swap operations are not empty
     let (Some(first_op), Some(last_op)) = (fee_swap.operations.first(), fee_swap.operations.last()) else {
         return Err(ContractError::FeeSwapOperationsEmpty);
