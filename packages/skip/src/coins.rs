@@ -34,28 +34,9 @@ impl Coins {
         self.0.get(denom).cloned().unwrap_or_default()
     }
 
-    // Get length of Coins map
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
     // Returns true if Coins map is empty
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
-    }
-
-    // Returns an Option of a Coin struct if the Coins map only has one entry
-    // or returns Option None if the Coins map has more than one entry.
-    pub fn one_coin(&self) -> Option<Coin> {
-        if self.len() == 1 {
-            let (denom, amount) = self.0.iter().next().unwrap();
-            Some(Coin {
-                denom: denom.clone(),
-                amount: *amount,
-            })
-        } else {
-            None
-        }
     }
 }
 
@@ -73,19 +54,6 @@ impl From<Coins> for Vec<Coin> {
             .into_iter()
             .map(|(denom, amount)| Coin { denom, amount })
             .collect()
-    }
-}
-
-// Converts a Vec<Coin> to a Coins struct
-impl TryFrom<Vec<Coin>> for Coins {
-    type Error = OverflowError;
-
-    fn try_from(coin_vec: Vec<Coin>) -> Result<Self, Self::Error> {
-        let mut coin_map = Coins(BTreeMap::new());
-
-        coin_map.add_coin_vec(&coin_vec)?;
-
-        Ok(coin_map)
     }
 }
 

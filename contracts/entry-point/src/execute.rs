@@ -75,7 +75,8 @@ pub fn execute_swap_and_action(
             .add_message(fee_swap_msg)
             .add_attribute("action", "dispatch_fee_swap");
     } else {
-        // Subtract the relevant denom's ibc fees from the remaining coin received
+        // Deduct the amount of the remaining received coin's denomination that matches
+        // with the IBC fees from the remaining coin received amount
         remaining_coin_received.amount = remaining_coin_received
             .amount
             .checked_sub(ibc_fees.get_amount(&remaining_coin_received.denom))?;
