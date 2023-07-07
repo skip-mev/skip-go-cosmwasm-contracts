@@ -43,6 +43,12 @@ pub enum ContractError {
     #[error("Fee Swap Coin Out Denom Differs From Last Denom Out In Swap Operations")]
     FeeSwapOperationsCoinOutDenomMismatch,
 
+    #[error("Fee Swap Coin Out Does Not Equal IBC Fee Coin")]
+    FeeSwapIbcFeeCoinMismatch,
+
+    #[error("IBC Fees Are Provided But Not All The Same Denom")]
+    IbcFeesNotOneCoin,
+
     /////////////////
     /// USER SWAP ///
     /////////////////
