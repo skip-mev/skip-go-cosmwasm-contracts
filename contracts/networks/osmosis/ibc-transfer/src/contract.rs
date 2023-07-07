@@ -10,8 +10,9 @@ use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferRespons
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
+    coins::Coins,
     ibc::{
-        AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg,
+        AckID, ExecuteMsg, IbcFee, IbcInfo, IbcLifecycleComplete, InstantiateMsg,
         OsmosisInProgressIbcTransfer as InProgressIbcTransfer, OsmosisQueryMsg as QueryMsg,
     },
     proto_coin::ProtoCoin,
@@ -65,6 +66,12 @@ fn execute_ibc_transfer(
     coin: Coin,
     timeout_timestamp: u64,
 ) -> ContractResult<Response> {
+    // Error if the ibc_fees specified are not empty since
+    // osmosis ibc transfers do not support fees.
+    if !<IbcFee as TryInto<Coins>>::try_into(info.fee)?.is_empty() {
+        return Err(ContractError::IbcFeesNotSupported);
+    }
+
     // Save in progress ibc transfer data (recover address and coin) to storage, to be used in sudo handler
     IN_PROGRESS_IBC_TRANSFER.save(
         deps.storage,
