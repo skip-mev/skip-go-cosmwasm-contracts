@@ -38,6 +38,20 @@ impl Coins {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    // Returns an Option of a Coin struct if the Coins map only has one entry
+    // or returns Option None if the Coins map has more than one entry.
+    pub fn one_coin(&self) -> Option<Coin> {
+        if self.len() == 1 {
+            let (denom, amount) = self.0.iter().next().unwrap();
+            Some(Coin {
+                denom: denom.clone(),
+                amount: *amount,
+            })
+        } else {
+            None
+        }
+    }
 }
 
 // Converts a Coins struct to a Vec<Coin>
