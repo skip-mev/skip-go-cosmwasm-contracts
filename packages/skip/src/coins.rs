@@ -28,11 +28,6 @@ impl Coins {
         Ok(())
     }
 
-    // Take a vec of coin objects and adds them to the Coins map
-    pub fn add_coin_vec(&mut self, coin_vec: &[Coin]) -> Result<(), OverflowError> {
-        coin_vec.iter().try_for_each(|coin| self.add_coin(coin))
-    }
-
     // Given a denom, returns the total amount of that denom in the Coins struct
     // or returns 0 if the denom is not in the Coins struct.
     pub fn get_amount(&self, denom: &str) -> Uint128 {
@@ -71,7 +66,8 @@ impl TryFrom<IbcFee> for Coins {
 
         [ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
             .iter()
-            .try_for_each(|coins| ibc_fees.add_coin_vec(coins))?;
+            .flatten()
+            .try_for_each(|coin| ibc_fees.add_coin(coin))?;
 
         Ok(ibc_fees)
     }
