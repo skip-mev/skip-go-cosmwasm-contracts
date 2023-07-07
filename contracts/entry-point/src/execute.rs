@@ -426,14 +426,12 @@ fn verify_and_create_fee_swap_msg(
         return Err(ContractError::FeeSwapOperationsCoinOutDenomMismatch);
     }
 
-    // Turn ibc_info.fee into a Coins struct and verify it only has
-    // one coin and that the coin is the same as the fee swap coin out
-    if let Some(ibc_fee_coin) = <IbcFee as TryInto<Coins>>::try_into(ibc_fees.clone())?.one_coin() {
-        if ibc_fee_coin != fee_swap.coin_out {
-            return Err(ContractError::FeeSwapIbcFeeCoinMismatch);
-        }
-    } else {
-        return Err(ContractError::IbcFeesNotOneCoin);
+    // Convert ibc_fees into a Coins struct 
+    let ibc_fees: Coins = ibc_fees.clone().try_into()?;
+
+    // Verify the fee swap coin out amount less than or equal to the ibc fee amount
+    if fee_swap.coin_out.amount > ibc_fees.get_amount(&fee_swap.coin_out.denom) {
+        return Err(ContractError::FeeSwapCoinOutGreaterThanIbcFee);
     }
 
     // Get swap adapter contract address from venue name
