@@ -33,6 +33,11 @@ impl Coins {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+
+    // Returns true if Coins map is empty
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 // Converts a Coins struct to a Vec<Coin>
