@@ -426,7 +426,7 @@ fn verify_and_create_fee_swap_msg(
         return Err(ContractError::FeeSwapOperationsCoinOutDenomMismatch);
     }
 
-    // Convert ibc_fees into a Coins struct 
+    // Convert ibc_fees into a Coins struct
     let ibc_fees: Coins = ibc_fees.clone().try_into()?;
 
     // Verify the fee swap coin out amount less than or equal to the ibc fee amount

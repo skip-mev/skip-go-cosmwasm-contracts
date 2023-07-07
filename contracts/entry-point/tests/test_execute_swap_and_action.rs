@@ -28,6 +28,7 @@ Expect Error
     - Fee Swap Required Denom In Not The Same As First Swap Operation Denom In
     - Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out
     - Fee Swap Without IBC Transfer Post Swap Action
+    - Fee Swap Coin Out Greater Than Ibc Fee Requires
 
     // User Swap
     - User Swap Specified Coin More Than Remaining Coin Sent To Contract After Fee Swap
@@ -604,6 +605,55 @@ struct Params {
         expected_error: Some(ContractError::FeeSwapOperationsCoinOutDenomMismatch),
     };
     "Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out - Expect Error")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "osmo"),
+        ],
+        fee_swap: Some(
+            SwapExactCoinOut {
+                swap_venue_name: "swap_venue_name".to_string(), 
+                coin_out: Coin::new(200_001, "untrn"),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "untrn".to_string(),
+                    }
+                ],
+            }
+        ),
+        user_swap: SwapExactCoinIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            coin_in: Some(Coin::new(799_999, "osmo")),
+            operations: vec![
+                SwapOperation {
+                    pool: "pool_2".to_string(),
+                    denom_in: "osmo".to_string(),
+                    denom_out: "uatom".to_string(),
+                }
+            ],
+        },
+        min_coin: Coin::new(100_000, "uatom"),
+        timeout_timestamp: 101,
+        post_swap_action: PostSwapAction::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                },
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        expected_messages: vec![],
+        expected_error: Some(ContractError::FeeSwapCoinOutGreaterThanIbcFee),
+    };
+    "Fee Swap Coin Out Greater Than Ibc Fee Requires")]
 #[test_case(
     Params {
         info_funds: vec![
