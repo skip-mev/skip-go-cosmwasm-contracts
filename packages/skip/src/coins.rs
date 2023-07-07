@@ -5,24 +5,6 @@ use std::collections::BTreeMap;
 // Coins is a struct that wraps a BTreeMap of String denom to Uint128 total amount
 pub struct Coins(BTreeMap<String, Uint128>);
 
-// Converts an IbcFee struct to a Coins struct (BTreeMap<String, Uint128>)
-impl TryFrom<IbcFee> for Coins {
-    type Error = OverflowError;
-
-    fn try_from(ibc_fee: IbcFee) -> Result<Self, Self::Error> {
-        let mut ibc_fees = Coins(BTreeMap::new());
-
-        for coin in [ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
-            .iter()
-            .flatten()
-        {
-            ibc_fees.add_coin(coin)?;
-        }
-
-        Ok(ibc_fees)
-    }
-}
-
 // Implement add coin and get amount methods for Coins struct
 impl Coins {
     // Takes a coin and adds it to the Coins map
@@ -36,10 +18,20 @@ impl Coins {
         Ok(())
     }
 
+    // Take a vec of coin objects and adds them to the Coins map
+    pub fn add_coin_vec(&mut self, coin_vec: &[Coin]) -> Result<(), OverflowError> {
+        coin_vec.iter().try_for_each(|coin| self.add_coin(coin))
+    }
+
     // Given a denom, returns the total amount of that denom in the Coins struct
     // or returns 0 if the denom is not in the Coins struct.
     pub fn get_amount(&self, denom: &str) -> Uint128 {
         self.0.get(denom).cloned().unwrap_or_default()
+    }
+
+    // Get length of Coins map
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
@@ -51,5 +43,33 @@ impl From<Coins> for Vec<Coin> {
             .into_iter()
             .map(|(denom, amount)| Coin { denom, amount })
             .collect()
+    }
+}
+
+// Converts a Vec<Coin> to a Coins struct
+impl TryFrom<Vec<Coin>> for Coins {
+    type Error = OverflowError;
+
+    fn try_from(coin_vec: Vec<Coin>) -> Result<Self, Self::Error> {
+        let mut coin_map = Coins(BTreeMap::new());
+
+        coin_map.add_coin_vec(&coin_vec)?;
+
+        Ok(coin_map)
+    }
+}
+
+// Converts an IbcFee struct to a Coins struct
+impl TryFrom<IbcFee> for Coins {
+    type Error = OverflowError;
+
+    fn try_from(ibc_fee: IbcFee) -> Result<Self, Self::Error> {
+        let mut ibc_fees = Coins(BTreeMap::new());
+
+        [ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
+            .iter()
+            .try_for_each(|coins| ibc_fees.add_coin_vec(coins))?;
+
+        Ok(ibc_fees)
     }
 }
