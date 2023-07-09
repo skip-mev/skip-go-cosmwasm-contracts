@@ -10,7 +10,10 @@ use prost::Message;
 use skip::ibc::{
     ExecuteMsg, IbcFee, IbcInfo, OsmosisInProgressIbcTransfer as InProgressIBCTransfer,
 };
-use skip_swap_osmosis_ibc_transfer::{error::ContractResult, state::IN_PROGRESS_IBC_TRANSFER};
+use skip_swap_osmosis_ibc_transfer::{
+    error::ContractResult,
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_IBC_TRANSFER},
+};
 use test_case::test_case;
 
 /*
@@ -22,6 +25,7 @@ Expect Response (Output Message Is Correct, In Progress Ibc Transfer Is Saved, N
     - Add Ibc Callback Key/Value Pair To Other Key/Value In Memo
 
 Expect Error
+    - Unauthorized Caller (Only the stored entry point contract can call this function)
     - Non Empty String, Invalid Json Memo
     - Non Empty IBC Fees, IBC Fees Not Supported
 
@@ -29,6 +33,7 @@ Expect Error
 
 // Define test parameters
 struct Params {
+    caller: String,
     ibc_adapter_contract_address: Addr,
     coin: Coin,
     ibc_info: IbcInfo,
@@ -41,6 +46,7 @@ struct Params {
 // Test execute_ibc_transfer
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
         coin: Coin::new(100, "osmo"),
         ibc_info: IbcInfo {
@@ -88,6 +94,7 @@ struct Params {
     "Empty String Memo")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
         coin: Coin::new(100, "osmo"),
         ibc_info: IbcInfo {
@@ -135,6 +142,7 @@ struct Params {
     "Override Already Set Ibc Callback Memo")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
         coin: Coin::new(100, "osmo"),
         ibc_info: IbcInfo {
@@ -182,6 +190,7 @@ struct Params {
     "Add Ibc Callback Key/Value Pair To Other Key/Value In Memo")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
         coin: Coin::new(100, "osmo"),
         ibc_info: IbcInfo {
@@ -207,6 +216,7 @@ struct Params {
     "Non Empty String, Invalid Json Memo - Expect Error")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
         coin: Coin::new(100, "osmo"),
         ibc_info: IbcInfo {
@@ -232,6 +242,32 @@ struct Params {
         expected_error_string: "IBC fees are not supported, vectors must be empty".to_string(),
     };
     "IBC Fees Not Supported - Expect Error")]
+#[test_case(
+    Params {
+        caller: "random".to_string(),
+        ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
+        coin: Coin::new(100, "osmo"),
+        ibc_info: IbcInfo {
+            source_channel: "source_channel".to_string(),
+            receiver: "receiver".to_string(),
+            fee: IbcFee {
+                recv_fee: vec![],
+                ack_fee: vec![],
+                timeout_fee: vec![],
+            },
+            memo: "{}".to_string(),
+            recover_address: "recover_address".to_string(),
+        },
+        timeout_timestamp: 100,
+        expected_messages: vec![],
+        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
+            recover_address: "recover_address".to_string(),
+            coin: Coin::new(100, "osmo"),
+            channel_id: "source_channel".to_string(),
+        },
+        expected_error_string: "Unauthorized".to_string(),
+    };
+    "Unauthorized Caller - Expect Error")]
 fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
@@ -241,7 +277,10 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     env.contract.address = params.ibc_adapter_contract_address.clone();
 
     // Create mock info
-    let info = mock_info("caller", &[]);
+    let info = mock_info(&params.caller, &[]);
+
+    // Store the entry point contract address
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_ibc_transfer with the given test parameters
     let res = skip_swap_osmosis_ibc_transfer::contract::execute(

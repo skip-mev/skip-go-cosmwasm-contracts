@@ -15,6 +15,9 @@ pub enum ContractError {
     #[error(transparent)]
     Payment(#[from] cw_utils::PaymentError),
 
+    #[error("Unauthorized")]
+    Unauthorized,
+
     #[error("Parse Int error raised: invalid pool String to pool id u64 conversion")]
     ParseIntPoolID(#[from] std::num::ParseIntError),
 

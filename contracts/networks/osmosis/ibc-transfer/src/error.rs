@@ -26,6 +26,9 @@ pub enum ContractError {
     #[error("SubMsgResponse does not contain data")]
     MissingResponseData,
 
+    #[error("Unauthorized")]
+    Unauthorized,
+
     #[error("ACK ID already exists for channel ID {channel_id} and sequence ID {sequence_id}")]
     AckIDAlreadyExists {
         channel_id: String,

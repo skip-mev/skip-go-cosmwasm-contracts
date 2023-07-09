@@ -1,6 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::ROUTER_CONTRACT_ADDRESS,
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS},
 };
 use astroport::{
     asset::{Asset, AssetInfo},
@@ -30,6 +30,13 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> ContractResult<Response> {
+    // Validate entry point contract address
+    let checked_entry_point_contract_address =
+        deps.api.addr_validate(&msg.entry_point_contract_address)?;
+
+    // Store the entry point contract address
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
+
     // Validate router contract address
     let checked_router_contract_address = deps.api.addr_validate(&msg.router_contract_address)?;
 
@@ -38,6 +45,10 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
+        .add_attribute(
+            "entry_point_contract_address",
+            checked_entry_point_contract_address.to_string(),
+        )
         .add_attribute(
             "router_contract_address",
             checked_router_contract_address.to_string(),
@@ -69,6 +80,14 @@ fn execute_swap(
     info: MessageInfo,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
+    // Get entry point contract address from storage
+    let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
+
+    // Enforce the caller is the entry point contract
+    if info.sender != entry_point_contract_address {
+        return Err(ContractError::Unauthorized);
+    }
+
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 

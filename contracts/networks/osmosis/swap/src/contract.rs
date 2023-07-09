@@ -1,4 +1,7 @@
-use crate::error::{ContractError, ContractResult};
+use crate::{
+    error::{ContractError, ContractResult},
+    state::ENTRY_POINT_CONTRACT_ADDRESS,
+};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     Uint128, WasmMsg,
@@ -23,12 +26,24 @@ use std::str::FromStr;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> ContractResult<Response> {
-    Ok(Response::new().add_attribute("action", "instantiate"))
+    // Validate entry point contract address
+    let checked_entry_point_contract_address =
+        deps.api.addr_validate(&msg.entry_point_contract_address)?;
+
+    // Store the entry point contract address
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "instantiate")
+        .add_attribute(
+            "entry_point_contract_address",
+            checked_entry_point_contract_address.to_string(),
+        ))
 }
 
 ///////////////
@@ -43,7 +58,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { operations } => execute_swap(env, info, operations),
+        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
         ExecuteMsg::TransferFundsBack { swapper } => {
             Ok(execute_transfer_funds_back(deps, env, info, swapper)?)
         }
@@ -52,10 +67,19 @@ pub fn execute(
 
 // Executes a swap with the given swap operations and then transfers the funds back to the caller
 fn execute_swap(
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
+    // Get entry point contract address from storage
+    let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
+
+    // Enforce the caller is the entry point contract
+    if info.sender != entry_point_contract_address {
+        return Err(ContractError::Unauthorized);
+    }
+
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
