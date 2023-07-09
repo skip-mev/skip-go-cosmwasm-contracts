@@ -24,6 +24,9 @@ pub enum ContractError {
     #[error("Timeout Timestamp Less Than Current Timestamp")]
     Timeout,
 
+    #[error("Duplicate Swap Venue Name Provided")]
+    DuplicateSwapVenueName,
+
     ////////////////
     /// FEE SWAP ///
     ////////////////
