@@ -1,14 +1,13 @@
+use crate::error::SkipError;
+use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Coin};
+use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
+use osmosis_std::types::osmosis::poolmanager::v1beta1::{
+    SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
+};
 use std::{
     convert::{From, TryFrom},
     num::ParseIntError,
-};
-
-use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
-
-use osmosis_std::types::osmosis::poolmanager::v1beta1::{
-    SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
 
 ///////////////////
@@ -30,7 +29,7 @@ pub struct NeutronInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Swap { operations: Vec<SwapOperation> },
-    TransferFundsBack { caller: Addr },
+    TransferFundsBack { swapper: Addr },
 }
 
 impl From<SwapExactCoinIn> for ExecuteMsg {
@@ -167,4 +166,31 @@ pub struct SwapExactCoinIn {
     pub swap_venue_name: String,
     pub coin_in: Option<Coin>,
     pub operations: Vec<SwapOperation>,
+}
+
+////////////////////////
+/// COMMON FUNCTIONS ///
+////////////////////////
+
+// Query the contract's balance and transfer the funds back to the swapper
+pub fn execute_transfer_funds_back(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    swapper: Addr,
+) -> Result<Response, SkipError> {
+    // Ensure the caller is the contract itself
+    if info.sender != env.contract.address {
+        return Err(SkipError::Unauthorized);
+    }
+
+    // Create the bank message send to transfer the contract funds back to the caller
+    let transfer_funds_back_msg = BankMsg::Send {
+        to_address: swapper.to_string(),
+        amount: deps.querier.query_all_balances(env.contract.address)?,
+    };
+
+    Ok(Response::new()
+        .add_message(transfer_funds_back_msg)
+        .add_attribute("action", "dispatch_transfer_funds_back_bank_send"))
 }

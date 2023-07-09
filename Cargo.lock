@@ -1012,6 +1012,7 @@ dependencies = [
  "ibc-proto",
  "neutron-proto",
  "osmosis-std",
+ "thiserror",
 ]
 
 [[package]]

@@ -1,7 +1,7 @@
 use crate::error::{ContractError, ContractResult};
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Response, Uint128, WasmMsg,
+    entry_point, to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    Uint128, WasmMsg,
 };
 use cw_utils::one_coin;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
@@ -11,8 +11,8 @@ use osmosis_std::types::osmosis::poolmanager::v1beta1::{
 use skip::{
     proto_coin::ProtoCoin,
     swap::{
-        convert_swap_operations, ExecuteMsg, OsmosisInstantiateMsg as InstantiateMsg, QueryMsg,
-        SwapOperation,
+        convert_swap_operations, execute_transfer_funds_back, ExecuteMsg,
+        OsmosisInstantiateMsg as InstantiateMsg, QueryMsg, SwapOperation,
     },
 };
 use std::str::FromStr;
@@ -44,7 +44,9 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Swap { operations } => execute_swap(env, info, operations),
-        ExecuteMsg::TransferFundsBack { caller } => execute_transfer_funds_back(deps, env, caller),
+        ExecuteMsg::TransferFundsBack { swapper } => {
+            Ok(execute_transfer_funds_back(deps, env, info, swapper)?)
+        }
     }
 }
 
@@ -64,7 +66,7 @@ fn execute_swap(
     let transfer_funds_back_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::TransferFundsBack {
-            caller: info.sender,
+            swapper: info.sender,
         })?,
         funds: vec![],
     };
@@ -73,19 +75,6 @@ fn execute_swap(
         .add_message(swap_msg)
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swap_and_transfer_back"))
-}
-
-// Query the contract's balance and transfer the funds back to the caller
-fn execute_transfer_funds_back(deps: DepsMut, env: Env, caller: Addr) -> ContractResult<Response> {
-    // Create the bank message send to transfer the contract funds back to the caller
-    let transfer_funds_back_msg = BankMsg::Send {
-        to_address: caller.to_string(),
-        amount: deps.querier.query_all_balances(env.contract.address)?,
-    };
-
-    Ok(Response::new()
-        .add_message(transfer_funds_back_msg)
-        .add_attribute("action", "dispatch_transfer_funds_back_bank_send"))
 }
 
 ////////////////////////

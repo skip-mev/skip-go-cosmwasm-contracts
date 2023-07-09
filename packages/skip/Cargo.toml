@@ -22,3 +22,4 @@ cosmwasm-std        = { workspace = true }
 ibc-proto           = { workspace = true }
 neutron-proto       = { workspace = true }
 osmosis-std         = { workspace = true }
+thiserror           = { workspace = true }

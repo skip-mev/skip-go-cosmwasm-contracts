@@ -4,7 +4,7 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg,
 };
-use skip::swap::ExecuteMsg;
+use skip::{error::SkipError, swap::ExecuteMsg};
 use skip_swap_osmosis_poolmanager_swap::error::{ContractError, ContractResult};
 use test_case::test_case;
 
@@ -15,18 +15,23 @@ Expect Success
     - One Coin Balance
     - Multiple Coin Balance
     - No Coin Balance (This will fail at the bank module if attempted)
+
+Expect Error
+    - Unauthorized Caller (Only contract itself can call this function)
  */
 
 // Define test parameters
 struct Params {
+    caller: String,
     contract_balance: Vec<Coin>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
 
-// Test execute_swap
+// Test execute_transfer_funds_back
 #[test_case(
     Params {
+        caller: "swap_contract_address".to_string(),
         contract_balance: vec![Coin::new(100, "uosmo")],
         expected_messages: vec![
             SubMsg {
@@ -44,6 +49,7 @@ struct Params {
     "Transfers One Coin Balance")]
 #[test_case(
     Params {
+        caller: "swap_contract_address".to_string(),
         contract_balance: vec![
             Coin::new(100, "uosmo"),
             Coin::new(100, "uatom"),
@@ -67,6 +73,7 @@ struct Params {
     "Transfers Multiple Coin Balance")]
 #[test_case(
     Params {
+        caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
         expected_messages: vec![
             SubMsg {
@@ -82,7 +89,25 @@ struct Params {
         expected_error: None,
     };
     "Transfers No Coin Balance")]
-fn test_execute_swap(params: Params) -> ContractResult<()> {
+#[test_case(
+    Params {
+        caller: "random".to_string(),
+        contract_balance: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "swapper".to_string(),
+                    amount: vec![],
+                }.into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: Some(ContractError::Skip(SkipError::Unauthorized)),
+    };
+    "Unauthorized Caller")]
+fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
     // Convert params contract balance to a slice
     let contract_balance: &[Coin] = &params.contract_balance;
 
@@ -94,7 +119,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     env.contract.address = Addr::unchecked("swap_contract_address");
 
     // Create mock info
-    let info = mock_info("swap_contract_address", &[]);
+    let info = mock_info(&params.caller, &[]);
 
     // Call execute_swap with the given test parameters
     let res = skip_swap_osmosis_poolmanager_swap::contract::execute(
@@ -102,7 +127,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::TransferFundsBack {
-            caller: Addr::unchecked("swapper"),
+            swapper: Addr::unchecked("swapper"),
         },
     );
 
