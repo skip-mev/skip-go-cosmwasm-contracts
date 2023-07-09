@@ -91,6 +91,7 @@ pub fn execute(
             min_coin,
             timeout_timestamp,
             post_swap_action,
+            refund_action,
             affiliates,
         } => execute_swap_and_action(
             deps,
@@ -101,6 +102,7 @@ pub fn execute(
             min_coin,
             timeout_timestamp,
             post_swap_action,
+            refund_action,
             affiliates,
         ),
         ExecuteMsg::PostSwapAction {

@@ -999,6 +999,7 @@ fn test_execute_post_swap_action(params: Params) {
             min_coin: params.min_coin,
             timeout_timestamp: params.timeout_timestamp,
             post_swap_action: params.post_swap_action,
+            refund_action: None,
             affiliates,
         },
     );

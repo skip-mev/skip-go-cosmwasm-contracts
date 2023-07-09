@@ -31,6 +31,7 @@ pub fn execute_swap_and_action(
     min_coin: Coin,
     timeout_timestamp: u64,
     post_swap_action: PostSwapAction,
+    _refund_action: Option<PostSwapAction>,
     affiliates: Vec<Affiliate>,
 ) -> ContractResult<Response> {
     // Create a response object to return
