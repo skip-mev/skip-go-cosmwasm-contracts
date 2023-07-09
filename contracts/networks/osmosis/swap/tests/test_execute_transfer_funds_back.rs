@@ -4,7 +4,7 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg,
 };
-use skip::swap::ExecuteMsg;
+use skip::{error::SkipError, swap::ExecuteMsg};
 use skip_swap_osmosis_poolmanager_swap::error::{ContractError, ContractResult};
 use test_case::test_case;
 
@@ -104,7 +104,7 @@ struct Params {
                 reply_on: Never,
             },
         ],
-        expected_error: Some(ContractError::Unauthorized),
+        expected_error: Some(ContractError::Skip(SkipError::Unauthorized)),
     };
     "Unauthorized Caller")]
 fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
