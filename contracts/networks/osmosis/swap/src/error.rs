@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError};
+use cosmwasm_std::StdError;
 use skip::error::SkipError;
 use thiserror::Error;
 
