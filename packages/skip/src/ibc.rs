@@ -1,11 +1,8 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Coin, OverflowError, Uint128};
-use std::convert::From;
-
-use std::collections::BTreeMap;
-
 use crate::proto_coin::ProtoCoin;
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Coin;
 use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
+use std::convert::From;
 
 ///////////////////
 /// INSTANTIATE ///
@@ -60,58 +57,6 @@ pub struct IbcFee {
     pub recv_fee: Vec<Coin>,
     pub ack_fee: Vec<Coin>,
     pub timeout_fee: Vec<Coin>,
-}
-
-// IbcFeeMap is a type alias for a BTreeMap of String denom to Uint128 total amount
-pub struct IbcFeeMap(pub BTreeMap<String, Uint128>);
-
-// Converts an IbcFee struct to a BTreeMap of String denom to Uint128 total amount
-impl TryFrom<IbcFee> for IbcFeeMap {
-    type Error = OverflowError;
-
-    fn try_from(ibc_fee: IbcFee) -> Result<Self, Self::Error> {
-        let mut ibc_fees: IbcFeeMap = IbcFeeMap(BTreeMap::new());
-
-        for coin in [ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
-            .iter()
-            .flatten()
-        {
-            ibc_fees.add_coin(coin)?;
-        }
-
-        Ok(ibc_fees)
-    }
-}
-
-// Implement add coin and get amount methods for IbcFeeMap
-impl IbcFeeMap {
-    // Takes a coin and adds it to the IbcFeeMap
-    pub fn add_coin(&mut self, coin: &Coin) -> Result<(), OverflowError> {
-        let amount = self
-            .0
-            .entry(coin.denom.clone())
-            .or_insert_with(Uint128::zero);
-        *amount = amount.checked_add(coin.amount)?;
-
-        Ok(())
-    }
-
-    // Given a denom, returns the total amount of that denom in the IbcFeeMap
-    // or returns 0 if the denom is not in the IbcFeeMap.
-    pub fn get_amount(&self, denom: &str) -> Uint128 {
-        self.0.get(denom).cloned().unwrap_or_default()
-    }
-}
-
-// Converts an IbcFeeMap to a Vec<Coin>
-impl From<IbcFeeMap> for Vec<Coin> {
-    fn from(ibc_fee_map: IbcFeeMap) -> Self {
-        ibc_fee_map
-            .0
-            .into_iter()
-            .map(|(denom, amount)| Coin { denom, amount })
-            .collect()
-    }
 }
 
 // Converts an IbcFee struct to a neutron_proto Fee

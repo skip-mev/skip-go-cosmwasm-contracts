@@ -1,3 +1,4 @@
+pub mod coins;
 pub mod entry_point;
 pub mod ibc;
 pub mod proto_coin;

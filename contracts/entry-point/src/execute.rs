@@ -7,8 +7,9 @@ use cosmwasm_std::{
 };
 use cw_utils::one_coin;
 use skip::{
+    coins::Coins,
     entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
-    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFeeMap, IbcInfo, IbcTransfer},
+    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, SwapExactCoinIn, SwapExactCoinOut,
     },
@@ -46,23 +47,34 @@ pub fn execute_swap_and_action(
     // Error if there is not exactly one coin sent to the contract
     let mut remaining_coin_received = one_coin(&info)?;
 
+    // Get the ibc_info from the post swap action if the post swap action
+    // is an IBC transfer, otherwise set it to None
+    let ibc_fees = match &post_swap_action {
+        PostSwapAction::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
+        _ => Coins::new(),
+    };
+
     // Process the fee swap if it exists
     if let Some(fee_swap) = fee_swap {
-        // Error if the post swap action is not an ibc transfer
-        // since an ibc transfer is the only action that requires a fee swap
-        if !matches!(post_swap_action, PostSwapAction::IbcTransfer { .. }) {
-            return Err(ContractError::FeeSwapNotAllowed);
-        }
-
         // Create the fee swap message
         // NOTE: this call mutates the user swap coin by subtracting the fee swap in amount
-        let fee_swap_msg =
-            verify_and_create_fee_swap_msg(&deps, fee_swap, &mut remaining_coin_received)?;
+        let fee_swap_msg = verify_and_create_fee_swap_msg(
+            &deps,
+            fee_swap,
+            &mut remaining_coin_received,
+            &ibc_fees,
+        )?;
 
         // Add the fee swap message to the response
         response = response
             .add_message(fee_swap_msg)
             .add_attribute("action", "dispatch_fee_swap");
+    } else {
+        // Deduct the amount of the remaining received coin's denomination that matches
+        // with the IBC fees from the remaining coin received amount
+        remaining_coin_received.amount = remaining_coin_received
+            .amount
+            .checked_sub(ibc_fees.get_amount(&remaining_coin_received.denom))?;
     }
 
     // Create the user swap message
@@ -270,12 +282,12 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     deps.api.addr_validate(&ibc_info.recover_address)?;
 
     // Create the ibc_fees map from the given recv_fee, ack_fee, and timeout_fee
-    let ibc_fees: IbcFeeMap = ibc_info.fee.clone().try_into()?;
+    let ibc_fees_map: Coins = ibc_info.fee.clone().try_into()?;
 
     // Get the amount of the IBC fee payment that matches
     // the denom of the ibc transfer out coin.
     // If there is no denom match, then default to zero.
-    let transfer_out_coin_ibc_fee_amount = ibc_fees.get_amount(&min_coin.denom);
+    let transfer_out_coin_ibc_fee_amount = ibc_fees_map.get_amount(&min_coin.denom);
 
     // Subtract the IBC fee amount from the transfer out coin
     transfer_out_coin.amount = transfer_out_coin
@@ -291,7 +303,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     // Calculate the funds to send to the IBC transfer contract
     // (which is the transfer out coin plus the IBC fee amounts)
     // using a map for convenience, and then converting to a vector of coins
-    let mut ibc_msg_funds_map = ibc_fees;
+    let mut ibc_msg_funds_map = ibc_fees_map;
     ibc_msg_funds_map.add_coin(&transfer_out_coin)?;
 
     // Convert the map to a vector of coins
@@ -362,9 +374,11 @@ fn verify_and_create_user_swap_msg(
                 return Err(ContractError::UserSwapCoinInDenomMismatch);
             }
 
-            // Verify the coin_in amount is less than or equal to the remaining coin received amount
-            if coin_in.amount > remaining_coin_received.amount {
-                return Err(ContractError::UserSwapCoinInGreaterThanRemainingReceived);
+            // Error if the coin_in amount is not the same as the remaining coin received amount
+            // If it's greater than it is attempting to swap more than is allowed
+            // If it's less than it would leave funds on the contract
+            if coin_in.amount != remaining_coin_received.amount {
+                return Err(ContractError::UserSwapCoinInNotEqualToRemainingReceived);
             }
 
             coin_in
@@ -405,7 +419,13 @@ fn verify_and_create_fee_swap_msg(
     deps: &DepsMut,
     fee_swap: SwapExactCoinOut,
     remaining_coin_received: &mut Coin,
+    ibc_fees: &Coins,
 ) -> ContractResult<WasmMsg> {
+    // Error if the ibc fees is empty since a fee swap is not needed
+    if ibc_fees.is_empty() {
+        return Err(ContractError::FeeSwapNotAllowed);
+    }
+
     // Verify the swap operations are not empty
     let (Some(first_op), Some(last_op)) = (fee_swap.operations.first(), fee_swap.operations.last()) else {
         return Err(ContractError::FeeSwapOperationsEmpty);
@@ -414,6 +434,11 @@ fn verify_and_create_fee_swap_msg(
     // Verify the fee swap coin out is the same denom as the last swap operation denom out
     if fee_swap.coin_out.denom != last_op.denom_out {
         return Err(ContractError::FeeSwapOperationsCoinOutDenomMismatch);
+    }
+
+    // Verify the fee swap coin out amount less than or equal to the ibc fee amount
+    if fee_swap.coin_out.amount > ibc_fees.get_amount(&fee_swap.coin_out.denom) {
+        return Err(ContractError::FeeSwapCoinOutGreaterThanIbcFee);
     }
 
     // Get swap adapter contract address from venue name
