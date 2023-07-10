@@ -26,6 +26,7 @@ Expect Error
     - No In Progress Ibc Transfer Mapped To Sudo Ack ID - Expect Error
     - No channel id in TransferSudoMsg - Expect Error
     - No sequence in TransferSudoMsg - Expect Error
+    - No Contract Balance To Refund - Expect Error
 
  */
 

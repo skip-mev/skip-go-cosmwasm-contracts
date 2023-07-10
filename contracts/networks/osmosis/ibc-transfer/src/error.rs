@@ -26,7 +26,7 @@ pub enum ContractError {
     #[error("SubMsgResponse does not contain data")]
     MissingResponseData,
 
-    #[error("Failed to receive funds from Neutron to refund the user")]
+    #[error("Failed to receive ibc funds to refund the user")]
     NoFundsToRefund,
 
     #[error("Unauthorized")]

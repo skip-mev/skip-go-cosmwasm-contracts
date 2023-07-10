@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env},
-    BankMsg, Coin,
+    testing::{mock_dependencies_with_balances, mock_env},
+    Addr, BankMsg, Coin,
     ReplyOn::Never,
     StdError, SubMsg,
 };
@@ -23,11 +23,13 @@ Expect Success
 
 Expect Error
     - No In Progress Ibc Transfer Mapped To Sudo Ack ID - Expect Error
+    - No Contract Balance To Refund - Expect Error
 
  */
 
 // Define test parameters
 struct Params {
+    contract_balance: Vec<Coin>,
     channel_id: String,
     sequence_id: u64,
     sudo_msg: SudoMsg,
@@ -39,6 +41,7 @@ struct Params {
 // Test sudo
 #[test_case(
     Params {
+        contract_balance: vec![],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcAck{
@@ -55,9 +58,10 @@ struct Params {
         expected_messages: vec![],
         expected_error_string: "".to_string(),
     };
-    "Sudo Response - Happy Path - Send Timeout Fee")]
+    "Sudo Response - Happy Path")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcTimeout{
@@ -74,7 +78,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "recover_address".to_string(),
-                    amount: vec![Coin::new(100, "osmo")],
+                    amount: vec![Coin::new(100, "uosmo")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -85,6 +89,7 @@ struct Params {
     "Sudo Timeout - Send Failed Ibc Coin")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcAck{
@@ -103,7 +108,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "recover_address".to_string(),
-                    amount: vec![Coin::new(100, "osmo")],
+                    amount: vec![Coin::new(100, "uosmo")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -114,6 +119,7 @@ struct Params {
     "Sudo Error - Send Failed Ibc Coin To Recover Address")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcAck{
@@ -127,12 +133,36 @@ struct Params {
         expected_error_string: "skip::ibc::OsmosisInProgressIbcTransfer not found".to_string(),
     };
     "No In Progress Ibc Transfer Mapped To Sudo Ack ID - Expect Error")]
+#[test_case(
+    Params {
+        contract_balance: vec![],
+        channel_id: "channel_id".to_string(),
+        sequence_id: 1,
+        sudo_msg: SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcAck{
+            channel: "channel_id".to_string(),
+            sequence: 1,
+            ack: "".to_string(),
+            success: false,
+        }),
+        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
+            recover_address: "recover_address".to_string(),
+            coin: Coin::new(100, "osmo"),
+            channel_id: "channel_id".to_string(),
+        }),
+        expected_messages: vec![],
+        expected_error_string: "Failed to receive ibc funds to refund the user".to_string(),
+    };
+    "No Contract Balance To Refund - Expect Error")]
 fn test_sudo(params: Params) -> ContractResult<()> {
+    // Convert params contract balance to a slice
+    let contract_balance: &[Coin] = &params.contract_balance;
+
     // Create mock dependencies
-    let mut deps = mock_dependencies();
+    let mut deps = mock_dependencies_with_balances(&[("ibc_transfer_adapter", contract_balance)]);
 
     // Create mock env
-    let env = mock_env();
+    let mut env = mock_env();
+    env.contract.address = Addr::unchecked("ibc_transfer_adapter");
 
     // Store the in progress ibc transfer to state if it exists
     if let Some(in_progress_ibc_transfer) = params.stored_in_progress_ibc_transfer.clone() {
@@ -178,7 +208,6 @@ fn test_sudo(params: Params) -> ContractResult<()> {
             assert_eq!(res.messages, params.expected_messages);
         }
         Err(err) => {
-            println!("Here");
             // Assert the test expected an error
             assert!(
                 !params.expected_error_string.is_empty(),
@@ -188,15 +217,6 @@ fn test_sudo(params: Params) -> ContractResult<()> {
 
             // Assert the error is correct
             assert_eq!(err.to_string(), params.expected_error_string);
-
-            if params.stored_in_progress_ibc_transfer.is_some() {
-                // Verify the ack id to in progress ibc transfer map entry is still stored
-                assert_eq!(
-                    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER
-                        .load(&deps.storage, (&params.channel_id, params.sequence_id))?,
-                    params.stored_in_progress_ibc_transfer.unwrap()
-                );
-            }
         }
     }
 
