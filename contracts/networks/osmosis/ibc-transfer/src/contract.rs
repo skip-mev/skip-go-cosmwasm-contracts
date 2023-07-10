@@ -196,7 +196,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
 // Upon success, removes the in progress ibc transfer from storage and returns immediately.
 // Upon error or timeout, sends the attempted ibc transferred funds back to the user's recover address.
 #[entry_point]
-pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> ContractResult<Response> {
+pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
     // Get the channel id, sequence id, and sudo type from the sudo message
     let (channel, sequence, sudo_type) = match msg {
         SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcAck {
@@ -227,10 +227,19 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> ContractResult<Response> 
     let in_progress_ibc_transfer = ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.load(deps.storage, ack_id)?;
     ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.remove(deps.storage, ack_id);
 
+    // Get all coins from contract's balance, which will be the the
+    // failed ibc transfer coin and any leftover dust on the contract
+    let amount = deps.querier.query_all_balances(env.contract.address)?;
+
+    // If amount is empty, return a no funds to refund error
+    if amount.is_empty() {
+        return Err(ContractError::NoFundsToRefund);
+    }
+
     // Create bank send message to send funds back to user's recover address
     let bank_send_msg = BankMsg::Send {
         to_address: in_progress_ibc_transfer.recover_address,
-        amount: vec![in_progress_ibc_transfer.coin],
+        amount,
     };
 
     Ok(Response::new()

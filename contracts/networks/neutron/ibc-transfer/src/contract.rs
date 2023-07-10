@@ -190,11 +190,10 @@ pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Res
         TransferSudoMsg::Timeout { request } => (request, SudoType::Timeout),
     };
 
-    // Get ack id (channel id, sequence id) from request packet
+    // Get and remove the AckID <> in progress ibc transfer from storage
     let ack_id = get_ack_id(&req)?;
-
-    // Get in progress ibc transfer from storage
     let in_progress_ibc_transfer = ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.load(deps.storage, ack_id)?;
+    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.remove(deps.storage, ack_id);
 
     // Get all coins from contract's balance, which will be the refunded fee,
     // the failed ibc transfer coin if response is an error or timeout,
@@ -212,9 +211,6 @@ pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Res
         to_address: in_progress_ibc_transfer.recover_address,
         amount,
     };
-
-    // Remove ack id <> in progress ibc transfer entry from storage
-    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.remove(deps.storage, ack_id);
 
     Ok(Response::new()
         .add_message(bank_send_msg)
