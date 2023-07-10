@@ -33,8 +33,8 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum NeutronQueryMsg {
-    #[returns(NeutronInProgressIbcTransfer)]
-    InProgressIbcTransfer {
+    #[returns(String)]
+    InProgressRecoverAddress {
         channel_id: String,
         sequence_id: u64,
     },

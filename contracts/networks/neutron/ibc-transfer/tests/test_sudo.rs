@@ -5,10 +5,9 @@ use cosmwasm_std::{
     StdError, SubMsg,
 };
 use neutron_sdk::sudo::msg::{RequestPacket, TransferSudoMsg};
-use skip::ibc::NeutronInProgressIbcTransfer as InProgressIBCTransfer;
 use skip_swap_neutron_ibc_transfer::{
     error::{ContractError, ContractResult},
-    state::ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER,
+    state::ACK_ID_TO_RECOVER_ADDRESS,
 };
 use test_case::test_case;
 
@@ -36,7 +35,7 @@ struct Params {
     channel_id: String,
     sequence_id: u64,
     sudo_msg: TransferSudoMsg,
-    stored_in_progress_ibc_transfer: Option<InProgressIBCTransfer>,
+    stored_in_progress_recover_address: Option<String>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -60,12 +59,7 @@ struct Params {
             },
             data: Binary::from(b""),
         },
-        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin::new(10, "osmo")],
-            timeout_fee: vec![Coin::new(20, "osmo")],
-        }),
+        stored_in_progress_recover_address: Some("recover_address".to_string()),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -97,12 +91,7 @@ struct Params {
                 timeout_timestamp: None,
             },
         },
-        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin::new(10, "osmo")],
-            timeout_fee: vec![Coin::new(20, "osmo")],
-        }),
+        stored_in_progress_recover_address: Some("recover_address".to_string()),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -134,12 +123,7 @@ struct Params {
                 timeout_timestamp: None,
             },
         },
-        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin::new(10, "ntrn")],
-            timeout_fee: vec![Coin::new(10, "osmo")],
-        }),
+        stored_in_progress_recover_address: Some("recover_address".to_string()),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -172,12 +156,7 @@ struct Params {
             },
             details: "".to_string(),
         },
-        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin::new(20, "osmo")],
-            timeout_fee: vec![Coin::new(10, "osmo")],
-        }),
+        stored_in_progress_recover_address: Some("recover_address".to_string()),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -210,12 +189,7 @@ struct Params {
             },
             details: "".to_string(),
         },
-        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin::new(20, "osmo")],
-            timeout_fee: vec![Coin::new(10, "ntrn")],
-        }),
+        stored_in_progress_recover_address: Some("recover_address".to_string()),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -248,10 +222,10 @@ struct Params {
             },
             details: "".to_string(),
         },
-        stored_in_progress_ibc_transfer: None,
+        stored_in_progress_recover_address: None,
         expected_messages: vec![],
         expected_error: Some(ContractError::Std(StdError::NotFound {
-            kind: "skip::ibc::NeutronInProgressIbcTransfer".to_string(),
+            kind: "alloc::string::String".to_string(),
         })),
     };
     "No In Progress Ibc Transfer Mapped To Sudo Ack ID - Expect Error")]
@@ -273,7 +247,7 @@ struct Params {
             },
             details: "".to_string(),
         },
-        stored_in_progress_ibc_transfer: None,
+        stored_in_progress_recover_address: None,
         expected_messages: vec![],
         expected_error: Some(ContractError::ChannelIDNotFound),
     };
@@ -296,7 +270,7 @@ struct Params {
             },
             details: "".to_string(),
         },
-        stored_in_progress_ibc_transfer: None,
+        stored_in_progress_recover_address: None,
         expected_messages: vec![],
         expected_error: Some(ContractError::SequenceNotFound),
     };
@@ -319,12 +293,7 @@ struct Params {
             },
             details: "".to_string(),
         },
-        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin::new(20, "osmo")],
-            timeout_fee: vec![Coin::new(10, "ntrn")],
-        }),
+        stored_in_progress_recover_address: Some("recover_address".to_string()),
         expected_messages: vec![],
         expected_error: Some(ContractError::NoFundsToRefund),
     };
@@ -340,12 +309,12 @@ fn test_sudo(params: Params) -> ContractResult<()> {
     let mut env = mock_env();
     env.contract.address = Addr::unchecked("ibc_transfer_adapter");
 
-    // Store the in progress ibc transfer to state if it exists
-    if let Some(in_progress_ibc_transfer) = params.stored_in_progress_ibc_transfer.clone() {
-        ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.save(
+    // Store the in progress recover address to state if it exists
+    if let Some(in_progress_recover_address) = params.stored_in_progress_recover_address.clone() {
+        ACK_ID_TO_RECOVER_ADDRESS.save(
             deps.as_mut().storage,
             (&params.channel_id, params.sequence_id),
-            &in_progress_ibc_transfer,
+            &in_progress_recover_address,
         )?;
     }
 
@@ -362,20 +331,20 @@ fn test_sudo(params: Params) -> ContractResult<()> {
                 params.expected_error
             );
 
-            // Verify the in progress ibc transfer was removed from storage
-            match ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER
+            // Verify the in progress recover address was removed from storage
+            match ACK_ID_TO_RECOVER_ADDRESS
                 .load(&deps.storage, (&params.channel_id, params.sequence_id))
             {
-                Ok(in_progress_ibc_transfer) => {
+                Ok(in_progress_recover_address) => {
                     panic!(
                         "expected in progress ibc transfer to be removed: {:?}",
-                        in_progress_ibc_transfer
+                        in_progress_recover_address
                     )
                 }
                 Err(err) => assert_eq!(
                     err,
                     StdError::NotFound {
-                        kind: "skip::ibc::NeutronInProgressIbcTransfer".to_string()
+                        kind: "alloc::string::String".to_string()
                     }
                 ),
             };

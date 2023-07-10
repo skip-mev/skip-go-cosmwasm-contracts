@@ -1,8 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{
-        ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_IBC_TRANSFER,
-    },
+    state::{ACK_ID_TO_RECOVER_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_RECOVER_ADDRESS},
 };
 use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply,
@@ -12,10 +10,7 @@ use neutron_proto::neutron::transfer::{MsgTransfer, MsgTransferResponse};
 use neutron_sdk::sudo::msg::{RequestPacket, TransferSudoMsg};
 use prost::Message;
 use skip::{
-    ibc::{
-        AckID, ExecuteMsg, IbcInfo, InstantiateMsg,
-        NeutronInProgressIbcTransfer as InProgressIbcTransfer, NeutronQueryMsg as QueryMsg,
-    },
+    ibc::{AckID, ExecuteMsg, IbcInfo, InstantiateMsg, NeutronQueryMsg as QueryMsg},
     proto_coin::ProtoCoin,
     sudo::SudoType,
 };
@@ -91,7 +86,7 @@ fn execute_ibc_transfer(
     let msg = MsgTransfer {
         source_port: "transfer".to_string(),
         source_channel: ibc_info.source_channel,
-        token: Some(ProtoCoin(coin.clone()).into()),
+        token: Some(ProtoCoin(coin).into()),
         sender: env.contract.address.to_string(),
         receiver: ibc_info.receiver,
         timeout_height: None,
@@ -101,14 +96,9 @@ fn execute_ibc_transfer(
     };
 
     // Save in progress ibc transfer data (recover address and coin) to storage, to be used in sudo handler
-    IN_PROGRESS_IBC_TRANSFER.save(
+    IN_PROGRESS_RECOVER_ADDRESS.save(
         deps.storage,
-        &InProgressIbcTransfer {
-            recover_address: ibc_info.recover_address, // This address is verified in entry point
-            coin,
-            ack_fee: ibc_info.fee.ack_fee,
-            timeout_fee: ibc_info.fee.timeout_fee,
-        },
+        &ibc_info.recover_address, // This address is verified in entry point
     )?;
 
     // Create sub message from neutron ibc transfer message to receive a reply
@@ -155,22 +145,20 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
     // Set ack_id to be the channel id and sequence id from the response as a tuple
     let ack_id: AckID = (&resp.channel, resp.sequence_id);
 
-    // Get the in progress ibc transfer from storage
-    let in_progress_ibc_transfer = IN_PROGRESS_IBC_TRANSFER.load(deps.storage)?;
+    // Get and remove the in progress recover address from storage
+    let in_progress_recover_address = IN_PROGRESS_RECOVER_ADDRESS.load(deps.storage)?;
+    IN_PROGRESS_RECOVER_ADDRESS.remove(deps.storage);
 
     // Error if unique ack_id (channel id, sequence id) already exists in storage
-    if ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.has(deps.storage, ack_id) {
+    if ACK_ID_TO_RECOVER_ADDRESS.has(deps.storage, ack_id) {
         return Err(ContractError::AckIDAlreadyExists {
             channel_id: ack_id.0.into(),
             sequence_id: ack_id.1,
         });
     }
 
-    // Set the in progress ibc transfer to storage, keyed by channel id and sequence id
-    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.save(deps.storage, ack_id, &in_progress_ibc_transfer)?;
-
-    // Delete the in progress ibc transfer from storage
-    IN_PROGRESS_IBC_TRANSFER.remove(deps.storage);
+    // Set the in progress recover address to storage, keyed by channel id and sequence id
+    ACK_ID_TO_RECOVER_ADDRESS.save(deps.storage, ack_id, &in_progress_recover_address)?;
 
     Ok(Response::new().add_attribute("action", "sub_msg_reply_success"))
 }
@@ -192,8 +180,8 @@ pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Res
 
     // Get and remove the AckID <> in progress ibc transfer from storage
     let ack_id = get_ack_id(&req)?;
-    let in_progress_ibc_transfer = ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.load(deps.storage, ack_id)?;
-    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.remove(deps.storage, ack_id);
+    let to_address = ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, ack_id)?;
+    ACK_ID_TO_RECOVER_ADDRESS.remove(deps.storage, ack_id);
 
     // Get all coins from contract's balance, which will be the refunded fee,
     // the failed ibc transfer coin if response is an error or timeout,
@@ -207,10 +195,7 @@ pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Res
 
     // Create bank send message to send the contract's funds back
     // to the user's recover address.
-    let bank_send_msg = BankMsg::Send {
-        to_address: in_progress_ibc_transfer.recover_address,
-        amount,
-    };
+    let bank_send_msg = BankMsg::Send { to_address, amount };
 
     Ok(Response::new()
         .add_message(bank_send_msg)
@@ -241,12 +226,10 @@ fn get_ack_id(req: &RequestPacket) -> ContractResult<AckID> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
-        QueryMsg::InProgressIbcTransfer {
+        QueryMsg::InProgressRecoverAddress {
             channel_id,
             sequence_id,
-        } => to_binary(
-            &ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.load(deps.storage, (&channel_id, sequence_id))?,
-        ),
+        } => to_binary(&ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, (&channel_id, sequence_id))?),
     }
     .map_err(From::from)
 }
