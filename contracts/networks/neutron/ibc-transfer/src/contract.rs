@@ -182,7 +182,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
 // Handles the sudo acknowledgement from the neutron transfer module upon receiving
 // a packet acknowledge form the receiving chain of the ibc transfer
 #[entry_point]
-pub fn sudo(deps: DepsMut, _env: Env, msg: TransferSudoMsg) -> ContractResult<Response> {
+pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Response> {
     // Get request and sudo type from sudo message
     let (req, sudo_type) = match msg {
         TransferSudoMsg::Response { request, .. } => (request, SudoType::Response),
@@ -196,40 +196,18 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: TransferSudoMsg) -> ContractResult<Re
     // Get in progress ibc transfer from storage
     let in_progress_ibc_transfer = ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.load(deps.storage, ack_id)?;
 
-    // Create bank transfer message to send funds back to user's recover address
-    // based on the sudo type:
-    // - Response: send the refunded timeout fee back to the user's recover address
-    // - Error: send the failed ibc transferred coin + refunded timeout fee back to the user's recover address
-    // - Timeout: send the failed ibc transferred coin + refunded ack fee back to the user's recover address
-    let amount = match sudo_type {
-        SudoType::Response => in_progress_ibc_transfer.timeout_fee,
-        SudoType::Error => {
-            // Create a single vector of coins to bank send
-            // that merges the failed ibc transfer coin with
-            // the timeout fee vector of coins
-            add_coin_to_vec_coins(
-                in_progress_ibc_transfer.coin,
-                in_progress_ibc_transfer.timeout_fee,
-            )?
-        }
-        SudoType::Timeout => {
-            // Create a single vector of coins to bank send
-            // that merges the failed ibc transfer coin with
-            // the ack fee vector of coins
-            add_coin_to_vec_coins(
-                in_progress_ibc_transfer.coin,
-                in_progress_ibc_transfer.ack_fee,
-            )?
-        }
-    };
+    // Get all coins from contract's balance, which will be the refunded fee,
+    // the failed ibc transfer coin if response is an error or timeout,
+    // and any leftover dust on the contract
+    let amount = deps.querier.query_all_balances(env.contract.address)?;
 
-    // Create bank send message to send funds back to user's recover address
-    // This will error if the contract balances are insufficient for the stored
-    // amount of coins to send (refunded fee + ibc transfer coin if failed).
-    // This error should never happen since the contract should have enough
-    // funds if Neutron sudo call works as expected. If it does, the failure
-    // will be stored in Neutron's ContractManager module, allowing us to query
-    // and investigate the failure.
+    // If amount is empty, return a no funds to refund error
+    if amount.is_empty() {
+        return Err(ContractError::NoFundsToRefund);
+    }
+
+    // Create bank send message to send the contract's funds back
+    // to the user's recover address.
     let bank_send_msg = BankMsg::Send {
         to_address: in_progress_ibc_transfer.recover_address,
         amount,
@@ -246,24 +224,6 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: TransferSudoMsg) -> ContractResult<Re
 ////////////////////////
 /// HELPER FUNCTIONS ///
 ////////////////////////
-
-// Helper function that adds a coin to a vector of coins, and returns the vector.
-fn add_coin_to_vec_coins(coin_to_add: Coin, mut coins: Vec<Coin>) -> ContractResult<Vec<Coin>> {
-    // Iterate through the coins vector and add the coin_to_add to the coin in the vector
-    match coins
-        .iter_mut()
-        .find(|coin| coin.denom == coin_to_add.denom)
-    {
-        Some(coin) => {
-            coin.amount = coin.amount.checked_add(coin_to_add.amount)?;
-        }
-        None => {
-            coins.push(coin_to_add);
-        }
-    }
-
-    Ok(coins)
-}
 
 // Helper function to get the ack_id (channel id, sequence id) from a RequestPacket
 fn get_ack_id(req: &RequestPacket) -> ContractResult<AckID> {
