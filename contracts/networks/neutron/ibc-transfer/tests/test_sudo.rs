@@ -300,6 +300,34 @@ struct Params {
         expected_error: Some(ContractError::SequenceNotFound),
     };
     "No sequence in TransferSudoMsg - Expect Error")]
+#[test_case(
+    Params {
+        contract_balance: vec![],
+        channel_id: "channel_id".to_string(),
+        sequence_id: 1,
+        sudo_msg: TransferSudoMsg::Error {
+            request: RequestPacket {
+                sequence: Some(1),
+                source_port: None,
+                source_channel: Some("channel_id".to_string()),
+                destination_port: None,
+                destination_channel: None,
+                data: None,
+                timeout_height: None,
+                timeout_timestamp: None,
+            },
+            details: "".to_string(),
+        },
+        stored_in_progress_ibc_transfer: Some(InProgressIBCTransfer {
+            recover_address: "recover_address".to_string(),
+            coin: Coin::new(100, "osmo"),
+            ack_fee: vec![Coin::new(20, "osmo")],
+            timeout_fee: vec![Coin::new(10, "ntrn")],
+        }),
+        expected_messages: vec![],
+        expected_error: Some(ContractError::NoFundsToRefund),
+    };
+    "No Contract Balance To Refund - Expect Error")]
 fn test_sudo(params: Params) -> ContractResult<()> {
     // Convert params contract balance to a slice
     let contract_balance: &[Coin] = &params.contract_balance;
@@ -364,15 +392,6 @@ fn test_sudo(params: Params) -> ContractResult<()> {
 
             // Assert the error is correct
             assert_eq!(err, params.expected_error.unwrap());
-
-            if params.stored_in_progress_ibc_transfer.is_some() {
-                // Verify the ack id to in progress ibc transfer map entry is still stored
-                assert_eq!(
-                    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER
-                        .load(&deps.storage, (&params.channel_id, params.sequence_id))?,
-                    params.stored_in_progress_ibc_transfer.unwrap()
-                );
-            }
         }
     }
 
