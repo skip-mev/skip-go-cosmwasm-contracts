@@ -21,7 +21,6 @@ Expect Error
     - Invalid Sub Msg Response Data To Convert To MsgTransferResponse
     - No In Progress Ibc Transfer To Load
     - Ack ID Already Exists
-    - SubMsg Incorrect Reply ID
 
 Expect Panic
     - SubMsgResult Error

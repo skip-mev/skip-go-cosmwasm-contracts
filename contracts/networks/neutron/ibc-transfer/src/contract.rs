@@ -95,7 +95,7 @@ fn execute_ibc_transfer(
         fee: Some(ibc_info.fee.clone().into()),
     };
 
-    // Save in progress ibc transfer data (recover address and coin) to storage, to be used in sudo handler
+    // Save in progress recover address to storage, to be used in sudo handler
     IN_PROGRESS_RECOVER_ADDRESS.save(
         deps.storage,
         &ibc_info.recover_address, // This address is verified in entry point

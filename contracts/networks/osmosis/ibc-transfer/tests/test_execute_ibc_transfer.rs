@@ -7,12 +7,10 @@ use cosmwasm_std::{
 use ibc_proto::cosmos::base::v1beta1::Coin as IbcCoin;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer;
 use prost::Message;
-use skip::ibc::{
-    ExecuteMsg, IbcFee, IbcInfo, OsmosisInProgressIbcTransfer as InProgressIBCTransfer,
-};
+use skip::ibc::{ExecuteMsg, IbcFee, IbcInfo};
 use skip_swap_osmosis_ibc_transfer::{
     error::ContractResult,
-    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_IBC_TRANSFER},
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_CHANNEL_ID, IN_PROGRESS_RECOVER_ADDRESS},
 };
 use test_case::test_case;
 
@@ -39,7 +37,6 @@ struct Params {
     ibc_info: IbcInfo,
     timeout_timestamp: u64,
     expected_messages: Vec<SubMsg>,
-    expected_in_progress_ibc_transfer: InProgressIBCTransfer,
     expected_error_string: String,
 }
 
@@ -84,11 +81,6 @@ struct Params {
             reply_on: Success,
         }
         ],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            channel_id: "source_channel".to_string(),
-        },
         expected_error_string: "".to_string(),
     };
     "Empty String Memo")]
@@ -132,11 +124,6 @@ struct Params {
             reply_on: Success,
         }
         ],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            channel_id: "source_channel".to_string(),
-        },
         expected_error_string: "".to_string(),
     };
     "Override Already Set Ibc Callback Memo")]
@@ -180,11 +167,6 @@ struct Params {
             reply_on: Success,
         }
         ],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            channel_id: "source_channel".to_string(),
-        },
         expected_error_string: "".to_string(),
     };
     "Add Ibc Callback Key/Value Pair To Other Key/Value In Memo")]
@@ -206,11 +188,6 @@ struct Params {
         },
         timeout_timestamp: 100,
         expected_messages: vec![],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            channel_id: "source_channel".to_string(),
-        },
         expected_error_string: "Object key is not a string.".to_string(),
     };
     "Non Empty String, Invalid Json Memo - Expect Error")]
@@ -234,11 +211,6 @@ struct Params {
         },
         timeout_timestamp: 100,
         expected_messages: vec![],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            channel_id: "source_channel".to_string(),
-        },
         expected_error_string: "IBC fees are not supported, vectors must be empty".to_string(),
     };
     "IBC Fees Not Supported - Expect Error")]
@@ -260,11 +232,6 @@ struct Params {
         },
         timeout_timestamp: 100,
         expected_messages: vec![],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            channel_id: "source_channel".to_string(),
-        },
         expected_error_string: "Unauthorized".to_string(),
     };
     "Unauthorized Caller - Expect Error")]
@@ -307,13 +274,23 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
             // Assert the messages in the response are correct
             assert_eq!(res.messages, params.expected_messages);
 
-            // Load the in progress ibc transfer from state and verify it is correct
-            let stored_in_progress_ibc_transfer = IN_PROGRESS_IBC_TRANSFER.load(&deps.storage)?;
+            // Load the in progress recover address from state and verify it is correct
+            let stored_in_progress_recover_address =
+                IN_PROGRESS_RECOVER_ADDRESS.load(&deps.storage)?;
 
-            // Assert the in progress ibc transfer is correct
+            // Assert the in progress recover address is correct
             assert_eq!(
-                stored_in_progress_ibc_transfer,
-                params.expected_in_progress_ibc_transfer
+                stored_in_progress_recover_address,
+                params.ibc_info.recover_address
+            );
+
+            // Load the in progress channel id from state and verify it is correct
+            let stored_in_progress_channel_id = IN_PROGRESS_CHANNEL_ID.load(&deps.storage)?;
+
+            // Assert the in progress channel id is correct
+            assert_eq!(
+                stored_in_progress_channel_id,
+                params.ibc_info.source_channel
             );
         }
         Err(err) => {

@@ -43,8 +43,8 @@ pub enum NeutronQueryMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum OsmosisQueryMsg {
-    #[returns(OsmosisInProgressIbcTransfer)]
-    InProgressIbcTransfer {
+    #[returns(String)]
+    InProgressRecoverAddress {
         channel_id: String,
         sequence_id: u64,
     },

@@ -22,7 +22,7 @@ Expect Success
     - Sudo Error - Send Ibc Coin And Timeout Fee Different Denom
 
 Expect Error
-    - No In Progress Ibc Transfer Mapped To Sudo Ack ID - Expect Error
+    - No In Progress Recover Address Mapped To Sudo Ack ID - Expect Error
     - No channel id in TransferSudoMsg - Expect Error
     - No sequence in TransferSudoMsg - Expect Error
     - No Contract Balance To Refund - Expect Error
@@ -337,7 +337,7 @@ fn test_sudo(params: Params) -> ContractResult<()> {
             {
                 Ok(in_progress_recover_address) => {
                     panic!(
-                        "expected in progress ibc transfer to be removed: {:?}",
+                        "expected in progress recover address to be removed: {:?}",
                         in_progress_recover_address
                     )
                 }
