@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env},
-    BankMsg, Binary, Coin,
+    testing::{mock_dependencies_with_balances, mock_env},
+    Addr, BankMsg, Binary, Coin,
     ReplyOn::Never,
     StdError, SubMsg,
 };
@@ -31,6 +31,7 @@ Expect Error
 
 // Define test parameters
 struct Params {
+    contract_balance: Vec<Coin>,
     channel_id: String,
     sequence_id: u64,
     sudo_msg: TransferSudoMsg,
@@ -42,6 +43,7 @@ struct Params {
 // Test sudo
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Response {
@@ -68,7 +70,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "recover_address".to_string(),
-                    amount: vec![Coin::new(20, "osmo")],
+                    amount: vec![Coin::new(100, "uosmo")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -79,6 +81,7 @@ struct Params {
     "Sudo Response - Happy Path - Send Timeout Fee")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Timeout {
@@ -104,7 +107,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "recover_address".to_string(),
-                    amount: vec![Coin::new(110, "osmo")],
+                    amount: vec![Coin::new(100, "uosmo")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -115,6 +118,7 @@ struct Params {
     "Sudo Timeout - Send Ibc Coin And Ack Fee Same Denom")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Timeout {
@@ -140,7 +144,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "recover_address".to_string(),
-                    amount: vec![ Coin::new(10, "ntrn"), Coin::new(100, "osmo")],
+                    amount: vec![Coin::new(100, "uosmo")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -151,6 +155,7 @@ struct Params {
     "Sudo Timeout - Send Ibc Coin And Ack Fee Different Denom")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Error {
@@ -177,7 +182,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "recover_address".to_string(),
-                    amount: vec![Coin::new(110, "osmo")],
+                    amount: vec![Coin::new(100, "uosmo")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -188,6 +193,7 @@ struct Params {
     "Sudo Error - Send Ibc Coin And Timeout Fee Same Denom")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Error {
@@ -214,7 +220,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "recover_address".to_string(),
-                    amount: vec![ Coin::new(10, "ntrn"), Coin::new(100, "osmo")],
+                    amount: vec![Coin::new(100, "uosmo")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -225,6 +231,7 @@ struct Params {
     "Sudo Error - Send Ibc Coin And Timeout Fee Different Denom")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Error {
@@ -249,6 +256,7 @@ struct Params {
     "No In Progress Ibc Transfer Mapped To Sudo Ack ID - Expect Error")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Error {
@@ -271,6 +279,7 @@ struct Params {
     "No channel id in TransferSudoMsg - Expect Error")]
 #[test_case(
     Params {
+        contract_balance: vec![Coin::new(100, "uosmo")],
         channel_id: "channel_id".to_string(),
         sequence_id: 1,
         sudo_msg: TransferSudoMsg::Error {
@@ -292,11 +301,15 @@ struct Params {
     };
     "No sequence in TransferSudoMsg - Expect Error")]
 fn test_sudo(params: Params) -> ContractResult<()> {
+    // Convert params contract balance to a slice
+    let contract_balance: &[Coin] = &params.contract_balance;
+
     // Create mock dependencies
-    let mut deps = mock_dependencies();
+    let mut deps = mock_dependencies_with_balances(&[("ibc_transfer_adapter", contract_balance)]);
 
     // Create mock env
-    let env = mock_env();
+    let mut env = mock_env();
+    env.contract.address = Addr::unchecked("ibc_transfer_adapter");
 
     // Store the in progress ibc transfer to state if it exists
     if let Some(in_progress_ibc_transfer) = params.stored_in_progress_ibc_transfer.clone() {
@@ -342,7 +355,6 @@ fn test_sudo(params: Params) -> ContractResult<()> {
             assert_eq!(res.messages, params.expected_messages);
         }
         Err(err) => {
-            println!("Here");
             // Assert the test expected an error
             assert!(
                 params.expected_error.is_some(),
