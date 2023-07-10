@@ -115,31 +115,6 @@ impl From<IbcTransfer> for ExecuteMsg {
 // ibc transfer upon receiving a successful sub msg reply.
 pub type AckID<'a> = (&'a str, u64);
 
-// NeutronInProgressIBCTransfer is a struct that is used to store the ibc transfer information
-// upon receiving a successful response from the neutron ibc transfer sub message. Later
-// to be used in the sudo handler to send the coin back to the recover address if the
-// ibc transfer packet acknowledgement is an error or times out. Also used to send the
-// user back the refunded ack fee or timeout fee based on the type of acknowledgement
-#[cw_serde]
-pub struct NeutronInProgressIbcTransfer {
-    pub recover_address: String,
-    pub coin: Coin,
-    pub ack_fee: Vec<Coin>,
-    pub timeout_fee: Vec<Coin>,
-}
-
-// OsmosisInProgressIBCTransfer is a struct that is used to store the ibc transfer information
-// upon receiving a successful sub message reply. Later
-// to be used in the sudo handler to send the coin back to the recover address if the
-// ibc transfer packet acknowledgement is an error or times out. Also used to send the
-// user back the refunded ack fee or timeout fee based on the type of acknowledgement
-#[cw_serde]
-pub struct OsmosisInProgressIbcTransfer {
-    pub recover_address: String,
-    pub coin: Coin,
-    pub channel_id: String,
-}
-
 #[cw_serde]
 pub enum IbcLifecycleComplete {
     IbcAck {
