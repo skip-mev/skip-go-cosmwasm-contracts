@@ -8,7 +8,10 @@ use skip::{
     entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
 };
-use skip_swap_entry_point::{error::ContractError, state::IBC_TRANSFER_CONTRACT_ADDRESS};
+use skip_swap_entry_point::{
+    error::ContractError,
+    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS},
+};
 use test_case::test_case;
 
 /*
@@ -36,6 +39,7 @@ Expect Error
     - Ibc Transfer w/ IBC Fees Decreasing user transfer below min coin
     - Received Less From Swap Than Min Coin
     - Unauthorized Caller
+    - Contract Call Address Blocked
  */
 
 // Define test parameters
@@ -124,14 +128,14 @@ struct Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
         post_swap_action: PostSwapAction::ContractCall {
-            contract_address: "contract_call_address".to_string(),
+            contract_address: "contract_call".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },
         affiliates: vec![],
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
-                contract_addr: "contract_call_address".to_string(),
+                contract_addr: "contract_call".to_string(),
                 msg: to_binary(&"contract_call_msg").unwrap(),
                 funds: vec![Coin::new(1_000_000, "osmo")],
             }
@@ -510,9 +514,22 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Unauthorized {}),
+        expected_error: Some(ContractError::Unauthorized),
     };
     "Unauthorized Caller - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_coin: Coin::new(900_000, "untrn"),
+        post_swap_action: PostSwapAction::ContractCall {
+            contract_address: "entry_point".to_string(),
+            msg: to_binary(&"contract_call_msg").unwrap(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::ContractCallAddressBlocked),
+    };
+    "Contract Call Address Blocked - Expect Error")]
 fn test_execute_post_swap_action(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
@@ -532,6 +549,11 @@ fn test_execute_post_swap_action(params: Params) {
     let ibc_transfer_adapter = Addr::unchecked("ibc_transfer_adapter");
     IBC_TRANSFER_CONTRACT_ADDRESS
         .save(deps.as_mut().storage, &ibc_transfer_adapter)
+        .unwrap();
+
+    // Store the entry point contract address in the blocked contract addresses map
+    BLOCKED_CONTRACT_ADDRESSES
+        .save(deps.as_mut().storage, &Addr::unchecked("entry_point"), &())
         .unwrap();
 
     // Call execute_post_swap_action with the given test parameters

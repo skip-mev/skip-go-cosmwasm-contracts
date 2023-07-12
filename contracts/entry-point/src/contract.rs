@@ -2,7 +2,7 @@ use crate::{
     error::{ContractError, ContractResult},
     execute::{execute_post_swap_action, execute_swap_and_action},
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
-    state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
@@ -16,12 +16,15 @@ use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> ContractResult<Response> {
     // Create response object to return
     let mut response: Response = Response::new().add_attribute("action", "instantiate");
+
+    // Insert the entry point contract address into the blocked contract addresses map
+    BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &env.contract.address, &())?;
 
     // Iterate through the swap venues provided and create a map of venue names to swap adapter contract addresses
     for swap_venue in msg.swap_venues.iter() {
@@ -35,12 +38,15 @@ pub fn instantiate(
             return Err(ContractError::DuplicateSwapVenueName);
         }
 
-        // Insert the swap contract address into the map, keyed by the venue name
+        // Store the swap venue name and contract address inside the swap venue map
         SWAP_VENUE_MAP.save(
             deps.storage,
             &swap_venue.name,
             &checked_swap_contract_address,
         )?;
+
+        // Insert the swap contract address into the blocked contract addresses map
+        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_swap_contract_address, &())?;
 
         // Add the swap venue and contract address to the response
         response = response
@@ -55,6 +61,9 @@ pub fn instantiate(
 
     // Store the ibc transfer adapter contract address
     IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract_address)?;
+
+    // Insert the ibc transfer adapter contract address into the blocked contract addresses map
+    BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_ibc_transfer_contract_address, &())?;
 
     // Add the ibc transfer adapter contract address to the response
     response = response

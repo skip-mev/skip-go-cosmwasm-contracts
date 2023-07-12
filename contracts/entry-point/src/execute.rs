@@ -1,6 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg,
@@ -330,8 +330,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     Ok(ibc_msg)
 }
 
-// Verifies the contract address is valid, if so
-// then creates and returns a contract call message
+// Verifies, creates, and returns the contract call message
 fn verify_and_create_contract_call_msg(
     deps: DepsMut,
     contract_address: String,
@@ -339,7 +338,12 @@ fn verify_and_create_contract_call_msg(
     transfer_out_coin: Coin,
 ) -> ContractResult<WasmMsg> {
     // Verify the contract address is valid, error if invalid
-    deps.api.addr_validate(&contract_address)?;
+    let checked_contract_address = deps.api.addr_validate(&contract_address)?;
+
+    // Error if the contract address is in the blocked contract addresses map
+    if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &checked_contract_address) {
+        return Err(ContractError::ContractCallAddressBlocked);
+    }
 
     // Create the contract call message
     let contract_call_msg = WasmMsg::Execute {
@@ -353,7 +357,7 @@ fn verify_and_create_contract_call_msg(
 
 // SWAP MESSAGE HELPER FUNCTIONS
 
-// Creates the user swap message and returns it
+// Verifies, creates, and returns the user swap message
 fn verify_and_create_user_swap_msg(
     deps: &DepsMut,
     user_swap: SwapExactCoinIn,
