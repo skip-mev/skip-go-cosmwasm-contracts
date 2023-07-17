@@ -105,7 +105,7 @@ fn execute_ibc_transfer(
     // Save in progress channel id to storage, to be used in sudo handler
     IN_PROGRESS_CHANNEL_ID.save(
         deps.storage,
-        &ibc_info.source_channel, // This address is verified in entry point
+        &ibc_info.source_channel,
     )?;
 
     // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
