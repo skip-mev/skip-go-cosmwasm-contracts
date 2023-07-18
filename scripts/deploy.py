@@ -1,17 +1,24 @@
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 
 from cosmpy.aerial.client import LedgerClient, NetworkConfig
-from cosmpy.aerial.contract import LedgerContract, create_cosmwasm_execute_msg, create_cosmwasm_instantiate_msg
+from cosmpy.aerial.contract import create_cosmwasm_execute_msg
 from cosmpy.aerial.tx import Transaction, SigningCfg
 from cosmpy.aerial.wallet import LocalWallet
 from cosmpy.crypto.keypairs import PrivateKey
 from cosmpy.protos.cosmos.base.v1beta1.coin_pb2 import Coin
-from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import MsgStoreCode
+from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import (
+    MsgStoreCode, 
+    MsgInstantiateContract, 
+    MsgInstantiateContract2
+    )
+from cosmpy.common.utils import json_encode
 
 import os
 import sys
 import toml
 from datetime import datetime
+
+SALT = b'1'
 
 CHAIN = sys.argv[1]
 NETWORK = sys.argv[2]
@@ -30,8 +37,8 @@ if not found_config:
     raise Exception(f"Could not find config for chain {CHAIN}; Must enter a chain as 1st command line argument.")
 
 # Create deployed-contracts folder if it doesn't exist
-if not os.path.exists(f"../deployed-contracts"):
-   os.makedirs(f"../deployed-contracts")
+if not os.path.exists("../deployed-contracts"):
+   os.makedirs("../deployed-contracts")
    
 # Create chain folder if it doesn't exist within deployed-contracts
 if not os.path.exists(f"../deployed-contracts/{CHAIN}"):
@@ -55,6 +62,9 @@ GAS_PRICE = config["GAS_PRICE"]
 ENTRY_POINT_CONTRACT_PATH = config["ENTRY_POINT_CONTRACT_PATH"]
 SWAP_ADAPTER_PATH = config["SWAP_ADAPTER_PATH"]
 IBC_TRANSFER_ADAPTER_PATH = config["IBC_TRANSFER_ADAPTER_PATH"]
+
+# Pregenerated Contract Addresses
+ENTRY_POINT_PRE_GENERATED_ADDRESS = config["ENTRY_POINT_PRE_GENERATED_ADDRESS"]
 
 MNEMONIC = config["MNEMONIC"]
 del config["MNEMONIC"]
@@ -95,9 +105,15 @@ def main():
         
     # Intantiate contracts
     if "router_contract_address" in config["swap_venues"][0]:
-        swap_adapter_args = {"router_contract_address": f"{config['swap_venues'][0]['router_contract_address']}"}
+        router_contract_address = config["swap_venues"][0]["router_contract_address"]
+        swap_adapter_args = {
+            "router_contract_address": router_contract_address,
+            "entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS,
+            }
     else:
-        swap_adapter_args = {}
+        swap_adapter_args = {
+            "entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS
+            }
     swap_adapter_contract_address = instantiate_contract(
         client, 
         wallet, 
@@ -110,11 +126,11 @@ def main():
         client, 
         wallet, 
         ibc_transfer_adapter_contract_code_id, 
-        {}, 
+        {"entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS}, 
         "Skip Swap IBC Transfer Adapter", 
         "ibc_transfer_adapter"
     )
-    entry_point_contract_address = instantiate_contract(
+    instantiate2_contract(
         client=client, 
         wallet=wallet, 
         code_id=entry_point_contract_code_id, 
@@ -128,7 +144,8 @@ def main():
             "ibc_transfer_contract_address": ibc_transfer_adapter_contract_address,
         },
         label="Skip Swap Entry Point",
-        name="entry_point"
+        name="entry_point",
+        pre_gen_address=ENTRY_POINT_PRE_GENERATED_ADDRESS
     )
     
 def create_tx(msg,
@@ -167,7 +184,7 @@ def create_wasm_store_tx(client,
                      wallet=wallet, 
                      gas_limit=gas_limit,
                      fee=gas_fee)
-    
+
 def create_wasm_instantiate_tx(
                          client, 
                          wallet, 
@@ -178,12 +195,41 @@ def create_wasm_instantiate_tx(
                          args: dict,
                          label: str,
                          ) -> tuple[bytes, str]:
-    msg = create_cosmwasm_instantiate_msg(
+    
+    msg = MsgInstantiateContract(
+        sender=str(address),
         code_id=code_id,
-        args=args,
+        msg=json_encode(args).encode("UTF8"),
         label=label,
-        sender_address=address,
     )
+        
+    return create_tx(msg=msg, 
+                     client=client, 
+                     wallet=wallet, 
+                     gas_limit=gas_limit,
+                     fee=gas_fee)
+
+    
+def create_wasm_instantiate2_tx(
+                         client, 
+                         wallet, 
+                         address: str,
+                         gas_fee: str,
+                         gas_limit: int, 
+                         code_id: int,
+                         args: dict,
+                         label: str,
+                         ) -> tuple[bytes, str]:
+    
+    msg = MsgInstantiateContract2(
+        sender=address,
+        code_id=code_id,
+        msg=json_encode(args).encode("UTF8"),
+        label=label,
+        salt=SALT,
+        fix_msg=False,
+    )
+        
     return create_tx(msg=msg, 
                      client=client, 
                      wallet=wallet, 
@@ -236,7 +282,7 @@ def init_deployed_contracts_info():
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
 
 def store_contract(client, wallet, file_path, name) -> int:
-    gas_limit = 3000000
+    gas_limit = 4000000
     store_ibc_adapter_tx = create_wasm_store_tx(
         client=client,
         wallet=wallet,
@@ -255,6 +301,7 @@ def store_contract(client, wallet, file_path, name) -> int:
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     return int(contract_code_id)
+
 
 def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
     gas_limit = 200000
@@ -278,6 +325,30 @@ def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     return contract_address
+
+
+def instantiate2_contract(client, wallet, code_id, args, label, name, pre_gen_address) -> str:
+    gas_limit = 200000
+    instantiate_swap_adapter_tx = create_wasm_instantiate2_tx(
+        client=client,
+        wallet=wallet,
+        address=str(wallet.address()),
+        gas_fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}",
+        gas_limit=gas_limit,
+        code_id=code_id,
+        args=args,
+        label=label
+    )
+    submitted_tx = client.broadcast_tx(instantiate_swap_adapter_tx)
+    print("Tx hash: ", submitted_tx.tx_hash)
+    #submitted_tx.wait_to_complete(timeout=60)
+    #contract_address = submitted_tx.contract_address.__str__()
+    print(f"Skip Swap {name} Contract Address:", pre_gen_address)
+    DEPLOYED_CONTRACTS_INFO["contract-addresses"][f"{name}_contract_address"] = pre_gen_address
+    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"instantiate_{name}_tx_hash"] = submitted_tx.tx_hash
+    with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
+        toml.dump(DEPLOYED_CONTRACTS_INFO, f)
+    return pre_gen_address
     
 if __name__ == "__main__":
     main()
