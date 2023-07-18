@@ -2,7 +2,7 @@
 chain_id = "neutron-1"
 network = "mainnet"
 deploy_date = "18/07/2023 15:34:18"
-commit_hash = "4c6211e7b70eee07f17bd1c8f3a000c5b0731b53"
+commit_hash = "80f8044b4400f727c9c765dc72c74ff88508eb68"
 
 [checksums]
 "skip_swap_entry_point-aarch64.wasm" = "57169cdff38440deb5bfa4f6c3f564d3dec3ae06e69e3dc46cc41c3c6d9dad92"

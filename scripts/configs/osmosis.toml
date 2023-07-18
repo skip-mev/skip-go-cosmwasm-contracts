@@ -2,7 +2,7 @@
 MNEMONIC = "<YOUR MNEMONIC HERE>"
 
 # Commut Hash
-COMMIT_HASH = "4c6211e7b70eee07f17bd1c8f3a000c5b0731b53"
+COMMIT_HASH = "80f8044b4400f727c9c765dc72c74ff88508eb68"
 
 MAINNET_REST_URL = "rest+https://lcd.osmosis.zone/"
 MAINNET_CHAIN_ID = "osmosis-1"
