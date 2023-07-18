@@ -2,7 +2,7 @@
 MNEMONIC = "<YOUR MNEMONIC HERE>"
 
 # Commut Hash
-COMMIT_HASH = "4c6211e7b70eee07f17bd1c8f3a000c5b0731b53"
+COMMIT_HASH = "80f8044b4400f727c9c765dc72c74ff88508eb68"
 
 MAINNET_REST_URL = "rest+https://lcd.osmosis.zone/"
 MAINNET_CHAIN_ID = "osmosis-1"
@@ -18,6 +18,15 @@ GAS_PRICE = 0.01
 ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_swap_entry_point-aarch64.wasm"
 SWAP_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_poolmanager_swap-aarch64.wasm"
 IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_ibc_transfer-aarch64.wasm"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+# ADDRESS GRANTED PERMISSION BY GOVERNANCE TO UPLOAD CONTRACATS
+PERMISSIONED_UPLOADER_ADDRESS = "osmo1raa4kyx5ypz75qqk3566c6slx2mw3qzsu6rymw"
 
 [[swap_venues]]
 name = "osmosis-poolmanager"

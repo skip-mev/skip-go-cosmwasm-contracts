@@ -1,0 +1,30 @@
+[info]
+chain_id = "osmosis-1"
+network = "mainnet"
+deploy_date = "18/07/2023 16:42:31"
+commit_hash = "80f8044b4400f727c9c765dc72c74ff88508eb68"
+
+[checksums]
+"skip_swap_entry_point-aarch64.wasm" = "57169cdff38440deb5bfa4f6c3f564d3dec3ae06e69e3dc46cc41c3c6d9dad92"
+"skip_swap_neutron_astroport_swap-aarch64.wasm" = "e259ceae0b68d957717e19fb49cbc0aee5142e64728ff3d9175c8fc1ff68ed21"
+"skip_swap_neutron_ibc_transfer-aarch64.wasm" = "8a8ed75e29e668beb0cb1b4c82935d67143c20234fd562ff9eecef86a6427aac"
+"skip_swap_osmosis_ibc_transfer-aarch64.wasm" = "fd5ff827d82f7ad80c5ed61b7a8449a2ced99c6f0e813358b9867e443ebd82a3"
+"skip_swap_osmosis_poolmanager_swap-aarch64.wasm" = "0e241fc025a63a88953b677ae6d9ea320c87a48890368bb2d91ee09e074b609b"
+
+[code-ids]
+swap_adapter_contract_code_id = 131
+ibc_transfer_adapter_contract_code_id = 132
+entry_point_contract_code_id = 133
+
+[contract-addresses]
+swap_adapter_contract_address = "osmo19fe8w8rmdty8cg3yyr74n43w7fezkyfzuj85gfrhpx3g7etacmrsypya4l"
+ibc_transfer_adapter_contract_address = "osmo1f2z35h7pyuluwcmhm4kkhrc23mnmt206478jtnwvh6w7f3u32crq5g4d63"
+entry_point_contract_address = "osmo1mrm80xxdv8yhrt6gqvx2n638vjh23j023xj5yufha9y02gvskmaqwn2lw8"
+
+[tx-hashes]
+store_swap_adapter_tx_hash = "465E952B22FAEC7F8D442193C9521E684A16669394BD01929BFBD8D1DCE7474B"
+store_ibc_transfer_adapter_tx_hash = "175EEC0779F442E21457BDA017E776559C3DD4CEEF5DBD7AD7B40DBC9AA1CC39"
+store_entry_point_tx_hash = "25D0520C7EB0C9F54BA00FD3496D6A633461D4392066CEFAE204ED43B456F4BD"
+instantiate_swap_adapter_tx_hash = "93A013F008964D871ED51BD17BCD732ED078A9BB24B54B608C8A6B851C9141B1"
+instantiate_ibc_transfer_adapter_tx_hash = "2CEA6DBBAB96D62B1F0D18957634D84E3B6F4F9146D8E43BB45D4E528B142C21"
+instantiate_entry_point_tx_hash = "6A2290069FBC3D76636E28383E91C68BA69AC5D105CAC58D1932F11B496DE630"

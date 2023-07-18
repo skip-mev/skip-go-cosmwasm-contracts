@@ -160,7 +160,24 @@ To deploy the Skip Swap contracts, the steps are as follows:
     MNEMONIC = "<YOUR MNEMONIC HERE>"
     ```
 
-7. Run the deploy script with the following format (changing the chain [options: osmosis, neutron] and network [options: testnet, mainnet] depending on what is to be deployed):
+7. Generate the entry point contract address using `instatiate2` which generates determinsitic cosmwasm contract addresses. This is necessary to allow the adapter contracts to whitelist the entry point contract before it is instantiated. To do this, you will need the daemon of the respective chain you are deploying on, and running the following command for the chain's CLI (replace osmosisd with network client being used):
+    ```
+    osmosisd query wasm build-address <CHECK SUM HASH OF CONTRACT> <ADDRESS THAT WILL INSTANTIATE> <SALT AS HEX STRING (31 is b'1')>
+    ```
+
+8. Add the generated entry point address in the respective chain's config toml file
+    ``` toml
+    # @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+    ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+    ```
+
+9. Update the salt used in the config if needed (default is "1", which is 31 in the chain daemon generator)
+    ``` toml
+    # SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+    SALT = "1"
+    ```
+
+10. Run the deploy script with the following format (changing the chain [options: osmosis, neutron] and network [options: testnet, mainnet] depending on what is to be deployed):
     ``` bash
     python deploy.py <CHAIN> <NETWORK>
     ```
@@ -170,7 +187,7 @@ To deploy the Skip Swap contracts, the steps are as follows:
     python deploy.py osmosis testnet
     ```
 
-8. After running the deploy script, a toml file will be added/updated in the deployed-contracts/{CHAIN} folder with all relevant info for the deployment.
+11. After running the deploy script, a toml file will be added/updated in the deployed-contracts/{CHAIN} folder with all relevant info for the deployment.
 
 # About Skip
 
