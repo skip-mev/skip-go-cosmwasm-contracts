@@ -19,5 +19,8 @@ ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_swap_entry_point-aarch64.wasm"
 SWAP_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_poolmanager_swap-aarch64.wasm"
 IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_ibc_transfer-aarch64.wasm"
 
+# @DEV MUST CHANGE SALT IN FILE ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
 [[swap_venues]]
 name = "osmosis-poolmanager"
