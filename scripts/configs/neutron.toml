@@ -4,7 +4,7 @@ MNEMONIC = "<YOUR MNEMONIC HERE>"
 # Commut Hash
 COMMIT_HASH = "4c6211e7b70eee07f17bd1c8f3a000c5b0731b53"
 
-MAINNET_REST_URL = "rest+https://neutron-api.lavenderfive.com" 
+MAINNET_REST_URL = "rest+https://rest-kralum.neutron-1.neutron.org" 
 MAINNET_CHAIN_ID = "neutron-1"
 
 TESTNET_REST_URL = "rest+https://rest-palvus.pion-1.ntrn.tech"
