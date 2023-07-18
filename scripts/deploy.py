@@ -1,4 +1,9 @@
+import os
+import sys
+import toml
+from datetime import datetime
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
+from google.protobuf import any_pb2
 
 from cosmpy.aerial.client import LedgerClient, NetworkConfig
 from cosmpy.aerial.contract import create_cosmwasm_execute_msg
@@ -12,13 +17,7 @@ from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import (
     MsgInstantiateContract2
     )
 from cosmpy.common.utils import json_encode
-
-import os
-import sys
-import toml
-from datetime import datetime
-
-SALT = b'1'
+from cosmpy.protos.cosmos.authz.v1beta1.tx_pb2 import MsgExec
 
 CHAIN = sys.argv[1]
 NETWORK = sys.argv[2]
@@ -43,11 +42,15 @@ if not os.path.exists("../deployed-contracts"):
 # Create chain folder if it doesn't exist within deployed-contracts
 if not os.path.exists(f"../deployed-contracts/{CHAIN}"):
     os.makedirs(f"../deployed-contracts/{CHAIN}")
+    
+PERMISSIONED_UPLOADER_ADDRESS = None
 
 # Choose network to deploy to based on cli args
 if NETWORK == "mainnet":
     REST_URL = config["MAINNET_REST_URL"]
     CHAIN_ID = config["MAINNET_CHAIN_ID"]
+    if "PERMISSIONED_UPLOADER_ADDRESS" in config:
+        PERMISSIONED_UPLOADER_ADDRESS = config["PERMISSIONED_UPLOADER_ADDRESS"]
 elif NETWORK == "testnet":
     REST_URL = config["TESTNET_REST_URL"]
     CHAIN_ID = config["TESTNET_CHAIN_ID"]
@@ -62,6 +65,9 @@ GAS_PRICE = config["GAS_PRICE"]
 ENTRY_POINT_CONTRACT_PATH = config["ENTRY_POINT_CONTRACT_PATH"]
 SWAP_ADAPTER_PATH = config["SWAP_ADAPTER_PATH"]
 IBC_TRANSFER_ADAPTER_PATH = config["IBC_TRANSFER_ADAPTER_PATH"]
+
+# SALT
+SALT = config["SALT"].encode("utf-8")
 
 # Pregenerated Contract Addresses
 ENTRY_POINT_PRE_GENERATED_ADDRESS = config["ENTRY_POINT_PRE_GENERATED_ADDRESS"]
@@ -99,9 +105,9 @@ def main():
             toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     
     # Store contracts
-    swap_adapter_contract_code_id = store_contract(client, wallet, SWAP_ADAPTER_PATH, "swap_adapter")
-    ibc_transfer_adapter_contract_code_id = store_contract(client, wallet, IBC_TRANSFER_ADAPTER_PATH, "ibc_transfer_adapter")
-    entry_point_contract_code_id = store_contract(client, wallet, ENTRY_POINT_CONTRACT_PATH, "entry_point")
+    swap_adapter_contract_code_id = store_contract(client, wallet, SWAP_ADAPTER_PATH, "swap_adapter", PERMISSIONED_UPLOADER_ADDRESS)
+    ibc_transfer_adapter_contract_code_id = store_contract(client, wallet, IBC_TRANSFER_ADAPTER_PATH, "ibc_transfer_adapter", PERMISSIONED_UPLOADER_ADDRESS)
+    entry_point_contract_code_id = store_contract(client, wallet, ENTRY_POINT_CONTRACT_PATH, "entry_point", PERMISSIONED_UPLOADER_ADDRESS)
         
     # Intantiate contracts
     if "router_contract_address" in config["swap_venues"][0]:
@@ -173,12 +179,22 @@ def create_wasm_store_tx(client,
                          gas_fee: str,
                          gas_limit: int, 
                          file: str,
+                         permissioned_uploader_address: str | None = None
                          ) -> tuple[bytes, str]:
-    msg = MsgStoreCode(
-        sender=address,
-        wasm_byte_code=open(file, "rb").read(),
-        instantiate_permission=None
-    )
+    if permissioned_uploader_address is not None:
+        msg_store_code = MsgStoreCode(
+            sender=permissioned_uploader_address,
+            wasm_byte_code=open(file, "rb").read(),
+            instantiate_permission=None
+        )
+        msg = create_exec_msg(msg=msg_store_code, grantee_address=address)
+    else:
+        msg = MsgStoreCode(
+            sender=address,
+            wasm_byte_code=open(file, "rb").read(),
+            instantiate_permission=None
+        )
+    
     return create_tx(msg=msg, 
                      client=client, 
                      wallet=wallet, 
@@ -236,6 +252,7 @@ def create_wasm_instantiate2_tx(
                      gas_limit=gas_limit,
                      fee=gas_fee)
     
+    
 def create_wasm_execute_tx(
                          client, 
                          wallet, 
@@ -259,6 +276,7 @@ def create_wasm_execute_tx(
                      gas_limit=gas_limit,
                      fee=gas_fee)
     
+    
 def create_wallet(client) -> LocalWallet:
     """ Create a wallet from a mnemonic and return it"""
     seed_bytes = Bip39SeedGenerator(MNEMONIC).Generate()
@@ -267,6 +285,7 @@ def create_wallet(client) -> LocalWallet:
     balance = client.query_bank_balance(str(wallet.address()), DENOM)
     print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
     return wallet
+
 
 def init_deployed_contracts_info():
     DEPLOYED_CONTRACTS_INFO["info"] = {}
@@ -281,17 +300,19 @@ def init_deployed_contracts_info():
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
 
-def store_contract(client, wallet, file_path, name) -> int:
+
+def store_contract(client, wallet, file_path, name, permissioned_uploader_address) -> int:
     gas_limit = 4000000
-    store_ibc_adapter_tx = create_wasm_store_tx(
+    store_tx = create_wasm_store_tx(
         client=client,
         wallet=wallet,
         address=str(wallet.address()),
         gas_fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}",
         gas_limit=gas_limit,
         file=file_path,
+        permissioned_uploader_address=permissioned_uploader_address
     )
-    submitted_tx = client.broadcast_tx(store_ibc_adapter_tx)
+    submitted_tx = client.broadcast_tx(store_tx)
     print("Tx hash: ", submitted_tx.tx_hash)
     submitted_tx.wait_to_complete(timeout=60)
     contract_code_id = submitted_tx.contract_code_id
@@ -349,6 +370,19 @@ def instantiate2_contract(client, wallet, code_id, args, label, name, pre_gen_ad
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     return pre_gen_address
+
+
+def create_any_msg(msg):
+    any_msg = any_pb2.Any()
+    any_msg.Pack(msg, "")
+    return any_msg
+
+
+def create_exec_msg(msg, grantee_address: str) -> MsgExec:
+    authz_exec_any = create_any_msg(msg)
+    msg_exec = MsgExec(grantee=grantee_address, msgs = [authz_exec_any])
+    return msg_exec
+    
     
 if __name__ == "__main__":
     main()
