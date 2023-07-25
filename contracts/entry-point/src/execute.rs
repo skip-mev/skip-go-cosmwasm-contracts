@@ -10,7 +10,10 @@ use skip::{
     coins::Coins,
     entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
-    swap::{ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap, SwapExactCoinOut},
+    swap::{
+        ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap, SwapExactCoinIn,
+        SwapExactCoinOut,
+    },
 };
 
 ///////////////////////////
@@ -45,43 +48,54 @@ pub fn execute_swap_and_action(
     // Error if there is not exactly one coin sent to the contract
     let mut remaining_coin_received = one_coin(&info)?;
 
-    // Get the ibc_info from the post swap action if the post swap action
-    // is an IBC transfer, otherwise set it to None
-    let ibc_fees = match &post_swap_action {
-        Action::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
-        _ => Coins::new(),
+    // TODO: Remove panic and handle SwapExactCoinOut later once implemented
+    match user_swap {
+        Swap::SwapExactCoinIn(user_swap) => {
+            // Get the ibc_info from the post swap action if the post swap action
+            // is an IBC transfer, otherwise set it to None
+            let ibc_fees = match &post_swap_action {
+                Action::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
+                _ => Coins::new(),
+            };
+
+            // Process the fee swap if it exists
+            if let Some(fee_swap) = fee_swap {
+                // Create the fee swap message
+                // NOTE: this call mutates the user swap coin by subtracting the fee swap in amount
+                let fee_swap_msg = verify_and_create_fee_swap_msg(
+                    &deps,
+                    fee_swap,
+                    &mut remaining_coin_received,
+                    &ibc_fees,
+                )?;
+
+                // Add the fee swap message to the response
+                response = response
+                    .add_message(fee_swap_msg)
+                    .add_attribute("action", "dispatch_fee_swap");
+            } else {
+                // Deduct the amount of the remaining received coin's denomination that matches
+                // with the IBC fees from the remaining coin received amount
+                remaining_coin_received.amount = remaining_coin_received
+                    .amount
+                    .checked_sub(ibc_fees.get_amount(&remaining_coin_received.denom))?;
+            }
+
+            // Create the user swap message
+            let user_swap_msg = verify_and_create_user_swap_msg(
+                &deps,
+                user_swap,
+                remaining_coin_received,
+                &min_coin.denom,
+            )?;
+
+            // Add the user swap message to the response
+            response = response
+                .add_message(user_swap_msg)
+                .add_attribute("action", "dispatch_user_swap");
+        }
+        Swap::SwapExactCoinOut(_) => panic!("SwapExactCoinOut not allowed for user swap"),
     };
-
-    // Process the fee swap if it exists
-    if let Some(fee_swap) = fee_swap {
-        // Create the fee swap message
-        // NOTE: this call mutates the user swap coin by subtracting the fee swap in amount
-        let fee_swap_msg = verify_and_create_fee_swap_msg(
-            &deps,
-            fee_swap,
-            &mut remaining_coin_received,
-            &ibc_fees,
-        )?;
-
-        // Add the fee swap message to the response
-        response = response
-            .add_message(fee_swap_msg)
-            .add_attribute("action", "dispatch_fee_swap");
-    } else {
-        // Deduct the amount of the remaining received coin's denomination that matches
-        // with the IBC fees from the remaining coin received amount
-        remaining_coin_received.amount = remaining_coin_received
-            .amount
-            .checked_sub(ibc_fees.get_amount(&remaining_coin_received.denom))?;
-    }
-
-    // Create the user swap message
-    let user_swap_msg = verify_and_create_user_swap_msg(
-        &deps,
-        user_swap,
-        remaining_coin_received,
-        &min_coin.denom,
-    )?;
 
     // Create the transfer message
     let post_swap_action_msg = WasmMsg::Execute {
@@ -97,9 +111,8 @@ pub fn execute_swap_and_action(
 
     // Add the user swap message and post swap action message to the response
     Ok(response
-        .add_message(user_swap_msg)
         .add_message(post_swap_action_msg)
-        .add_attribute("action", "dispatch_user_swap_and_post_swap_action"))
+        .add_attribute("action", "dispatch_post_swap_action"))
 }
 
 // Dispatches the post swap action
@@ -358,16 +371,10 @@ fn verify_and_create_contract_call_msg(
 // Verifies, creates, and returns the user swap message
 fn verify_and_create_user_swap_msg(
     deps: &DepsMut,
-    user_swap: Swap,
+    user_swap: SwapExactCoinIn,
     remaining_coin_received: Coin,
     min_coin_denom: &str,
 ) -> ContractResult<WasmMsg> {
-    // TODO: Remove panic and handle SwapExactCoinOut later once implemented
-    let user_swap = match user_swap {
-        Swap::SwapExactCoinIn(swap_exact_coin_in) => swap_exact_coin_in,
-        Swap::SwapExactCoinOut(_) => panic!("SwapExactCoinOut not allowed for user swap"),
-    };
-
     // Verify the swap operations are not empty
     let (Some(first_op), Some(last_op)) = (user_swap.operations.first(), user_swap.operations.last()) else {
         return Err(ContractError::UserSwapOperationsEmpty);
