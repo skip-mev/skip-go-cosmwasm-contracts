@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{
-    entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
+    entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
 };
@@ -52,7 +52,7 @@ struct Params {
     user_swap: SwapExactCoinIn,
     min_coin: Coin,
     timeout_timestamp: u64,
-    post_swap_action: PostSwapAction,
+    post_swap_action: Action,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -77,7 +77,7 @@ struct Params {
         },
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![
@@ -107,7 +107,7 @@ struct Params {
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
                         min_coin: Coin::new(1_000_000, "osmo"),
                         timeout_timestamp: 101,
-                        post_swap_action: PostSwapAction::BankSend {
+                        post_swap_action: Action::BankSend {
                             to_address: "to_address".to_string(),
                         },
                         affiliates: vec![],
@@ -153,7 +153,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -213,7 +213,7 @@ struct Params {
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
                         min_coin: Coin::new(100_000, "uatom"),
                         timeout_timestamp: 101,
-                        post_swap_action: PostSwapAction::IbcTransfer {
+                        post_swap_action: Action::IbcTransfer {
                             ibc_info: IbcInfo {
                                 source_channel: "channel-0".to_string(),
                                 receiver: "receiver".to_string(),
@@ -270,7 +270,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -330,7 +330,7 @@ struct Params {
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
                         min_coin: Coin::new(100_000, "uatom"),
                         timeout_timestamp: 101,
-                        post_swap_action: PostSwapAction::IbcTransfer {
+                        post_swap_action: Action::IbcTransfer {
                             ibc_info: IbcInfo {
                                 source_channel: "channel-0".to_string(),
                                 receiver: "receiver".to_string(),
@@ -387,7 +387,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -424,7 +424,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -473,7 +473,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -526,7 +526,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -575,7 +575,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -624,7 +624,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -673,7 +673,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -710,7 +710,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
@@ -736,7 +736,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
@@ -762,7 +762,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
@@ -800,7 +800,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "atom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
@@ -824,7 +824,7 @@ struct Params {
         },
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
@@ -851,7 +851,7 @@ struct Params {
         },
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
@@ -871,7 +871,7 @@ struct Params {
         },
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
@@ -903,7 +903,7 @@ struct Params {
         },
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -934,7 +934,7 @@ struct Params {
         },
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 99,
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
