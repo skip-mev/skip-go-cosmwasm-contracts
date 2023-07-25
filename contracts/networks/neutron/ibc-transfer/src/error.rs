@@ -26,6 +26,9 @@ pub enum ContractError {
     #[error("Sequence not found")]
     SequenceNotFound,
 
+    #[error("Failed to receive ibc funds to refund the user")]
+    NoFundsToRefund,
+
     #[error("ACK ID already exists for channel ID {channel_id} and sequence ID {sequence_id}")]
     AckIDAlreadyExists {
         channel_id: String,

@@ -6,12 +6,10 @@ use cosmwasm_std::{
     SubMsg, Uint128,
 };
 use neutron_proto::neutron::{feerefunder::Fee as NeutronFee, transfer::MsgTransfer};
-use skip::ibc::{
-    ExecuteMsg, IbcFee, IbcInfo, NeutronInProgressIbcTransfer as InProgressIBCTransfer,
-};
+use skip::ibc::{ExecuteMsg, IbcFee, IbcInfo};
 use skip_swap_neutron_ibc_transfer::{
     error::ContractResult,
-    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_IBC_TRANSFER},
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_RECOVER_ADDRESS},
 };
 use test_case::test_case;
 
@@ -33,7 +31,6 @@ struct Params {
     ibc_info: IbcInfo,
     timeout_timestamp: u64,
     expected_messages: Vec<SubMsg>,
-    expected_in_progress_ibc_transfer: InProgressIBCTransfer,
     expected_error_string: String,
 }
 
@@ -85,15 +82,6 @@ struct Params {
             gas_limit: None,
             reply_on: Success,
         }],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin {
-                denom: "ntrn".to_string(),
-                amount: Uint128::new(10),
-            }],
-            timeout_fee: vec![],
-        },
         expected_error_string: "".to_string(),
     };
     "Happy Path")]
@@ -118,19 +106,9 @@ struct Params {
         },
         timeout_timestamp: 100,
         expected_messages: vec![],
-        expected_in_progress_ibc_transfer: InProgressIBCTransfer {
-            recover_address: "recover_address".to_string(),
-            coin: Coin::new(100, "osmo"),
-            ack_fee: vec![Coin {
-                denom: "ntrn".to_string(),
-                amount: Uint128::new(10),
-            }],
-            timeout_fee: vec![],
-        },
         expected_error_string: "Unauthorized".to_string(),
     };
     "Unauthorized Caller - Expect Error")]
-
 fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
@@ -171,12 +149,13 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
             assert_eq!(res.messages, params.expected_messages);
 
             // Load the in progress ibc transfer from state and verify it is correct
-            let stored_in_progress_ibc_transfer = IN_PROGRESS_IBC_TRANSFER.load(&deps.storage)?;
+            let stored_in_progress_recover_address =
+                IN_PROGRESS_RECOVER_ADDRESS.load(&deps.storage)?;
 
             // Assert the in progress ibc transfer is correct
             assert_eq!(
-                stored_in_progress_ibc_transfer,
-                params.expected_in_progress_ibc_transfer
+                stored_in_progress_recover_address,
+                params.ibc_info.recover_address
             );
         }
         Err(err) => {

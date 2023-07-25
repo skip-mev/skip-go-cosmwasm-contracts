@@ -33,8 +33,8 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum NeutronQueryMsg {
-    #[returns(NeutronInProgressIbcTransfer)]
-    InProgressIbcTransfer {
+    #[returns(String)]
+    InProgressRecoverAddress {
         channel_id: String,
         sequence_id: u64,
     },
@@ -43,8 +43,8 @@ pub enum NeutronQueryMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum OsmosisQueryMsg {
-    #[returns(OsmosisInProgressIbcTransfer)]
-    InProgressIbcTransfer {
+    #[returns(String)]
+    InProgressRecoverAddress {
         channel_id: String,
         sequence_id: u64,
     },
@@ -114,31 +114,6 @@ impl From<IbcTransfer> for ExecuteMsg {
 // which is used as a lookup key to store the in progress
 // ibc transfer upon receiving a successful sub msg reply.
 pub type AckID<'a> = (&'a str, u64);
-
-// NeutronInProgressIBCTransfer is a struct that is used to store the ibc transfer information
-// upon receiving a successful response from the neutron ibc transfer sub message. Later
-// to be used in the sudo handler to send the coin back to the recover address if the
-// ibc transfer packet acknowledgement is an error or times out. Also used to send the
-// user back the refunded ack fee or timeout fee based on the type of acknowledgement
-#[cw_serde]
-pub struct NeutronInProgressIbcTransfer {
-    pub recover_address: String,
-    pub coin: Coin,
-    pub ack_fee: Vec<Coin>,
-    pub timeout_fee: Vec<Coin>,
-}
-
-// OsmosisInProgressIBCTransfer is a struct that is used to store the ibc transfer information
-// upon receiving a successful sub message reply. Later
-// to be used in the sudo handler to send the coin back to the recover address if the
-// ibc transfer packet acknowledgement is an error or times out. Also used to send the
-// user back the refunded ack fee or timeout fee based on the type of acknowledgement
-#[cw_serde]
-pub struct OsmosisInProgressIbcTransfer {
-    pub recover_address: String,
-    pub coin: Coin,
-    pub channel_id: String,
-}
 
 #[cw_serde]
 pub enum IbcLifecycleComplete {

@@ -1,7 +1,8 @@
 use crate::{
     error::{ContractError, ContractResult},
     state::{
-        ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_IBC_TRANSFER,
+        ACK_ID_TO_RECOVER_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_CHANNEL_ID,
+        IN_PROGRESS_RECOVER_ADDRESS,
     },
 };
 use cosmwasm_std::{
@@ -15,7 +16,7 @@ use skip::{
     coins::Coins,
     ibc::{
         AckID, ExecuteMsg, IbcFee, IbcInfo, IbcLifecycleComplete, InstantiateMsg,
-        OsmosisInProgressIbcTransfer as InProgressIbcTransfer, OsmosisQueryMsg as QueryMsg,
+        OsmosisQueryMsg as QueryMsg,
     },
     proto_coin::ProtoCoin,
     sudo::{OsmosisSudoMsg as SudoMsg, SudoType},
@@ -95,14 +96,16 @@ fn execute_ibc_transfer(
         return Err(ContractError::IbcFeesNotSupported);
     }
 
-    // Save in progress ibc transfer data (recover address and coin) to storage, to be used in sudo handler
-    IN_PROGRESS_IBC_TRANSFER.save(
+    // Save in progress recover address to storage, to be used in sudo handler
+    IN_PROGRESS_RECOVER_ADDRESS.save(
         deps.storage,
-        &InProgressIbcTransfer {
-            recover_address: ibc_info.recover_address, // This address is verified in entry point
-            coin: coin.clone(),
-            channel_id: ibc_info.source_channel.clone(),
-        },
+        &ibc_info.recover_address, // This address is verified in entry point
+    )?;
+
+    // Save in progress channel id to storage, to be used in sudo handler
+    IN_PROGRESS_CHANNEL_ID.save(
+        deps.storage,
+        &ibc_info.source_channel,
     )?;
 
     // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
@@ -167,23 +170,27 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
             .as_slice(),
     )?;
 
-    // Get and delete the in progress ibc transfer from storage
-    let in_progress_ibc_transfer = IN_PROGRESS_IBC_TRANSFER.load(deps.storage)?;
-    IN_PROGRESS_IBC_TRANSFER.remove(deps.storage);
+    // Get and delete the in progress recover address from storage
+    let in_progress_recover_address = IN_PROGRESS_RECOVER_ADDRESS.load(deps.storage)?;
+    IN_PROGRESS_RECOVER_ADDRESS.remove(deps.storage);
+
+    // Get and delete the in progress channel id from storage
+    let in_progress_channel_id = IN_PROGRESS_CHANNEL_ID.load(deps.storage)?;
+    IN_PROGRESS_CHANNEL_ID.remove(deps.storage);
 
     // Set ack_id to be the channel id and sequence id from the response as a tuple
-    let ack_id: AckID = (&in_progress_ibc_transfer.channel_id, resp.sequence);
+    let ack_id: AckID = (&in_progress_channel_id, resp.sequence);
 
     // Error if unique ack_id (channel id, sequence id) already exists in storage
-    if ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.has(deps.storage, ack_id) {
+    if ACK_ID_TO_RECOVER_ADDRESS.has(deps.storage, ack_id) {
         return Err(ContractError::AckIDAlreadyExists {
             channel_id: ack_id.0.into(),
             sequence_id: ack_id.1,
         });
     }
 
-    // Set the in progress ibc transfer to storage, keyed by channel id and sequence id
-    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.save(deps.storage, ack_id, &in_progress_ibc_transfer)?;
+    // Set the in progress recover address to storage, keyed by channel id and sequence id
+    ACK_ID_TO_RECOVER_ADDRESS.save(deps.storage, ack_id, &in_progress_recover_address)?;
 
     Ok(Response::new().add_attribute("action", "sub_msg_reply_success"))
 }
@@ -196,7 +203,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
 // Upon success, removes the in progress ibc transfer from storage and returns immediately.
 // Upon error or timeout, sends the attempted ibc transferred funds back to the user's recover address.
 #[entry_point]
-pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> ContractResult<Response> {
+pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
     // Get the channel id, sequence id, and sudo type from the sudo message
     let (channel, sequence, sudo_type) = match msg {
         SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcAck {
@@ -210,7 +217,7 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> ContractResult<Response> 
             // since no further action is needed.
             if success {
                 let ack_id: AckID = (&channel, sequence);
-                ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.remove(deps.storage, ack_id);
+                ACK_ID_TO_RECOVER_ADDRESS.remove(deps.storage, ack_id);
 
                 return Ok(Response::new().add_attribute("action", SudoType::Response));
             }
@@ -222,16 +229,22 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> ContractResult<Response> 
         }
     };
 
-    // Get and remove the AckID <> in progress ibc transfer from storage
+    // Get and remove the AckID <> in progress recover address from storage
     let ack_id: AckID = (&channel, sequence);
-    let in_progress_ibc_transfer = ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.load(deps.storage, ack_id)?;
-    ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.remove(deps.storage, ack_id);
+    let to_address = ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, ack_id)?;
+    ACK_ID_TO_RECOVER_ADDRESS.remove(deps.storage, ack_id);
+
+    // Get all coins from contract's balance, which will be the the
+    // failed ibc transfer coin and any leftover dust on the contract
+    let amount = deps.querier.query_all_balances(env.contract.address)?;
+
+    // If amount is empty, return a no funds to refund error
+    if amount.is_empty() {
+        return Err(ContractError::NoFundsToRefund);
+    }
 
     // Create bank send message to send funds back to user's recover address
-    let bank_send_msg = BankMsg::Send {
-        to_address: in_progress_ibc_transfer.recover_address,
-        amount: vec![in_progress_ibc_transfer.coin],
-    };
+    let bank_send_msg = BankMsg::Send { to_address, amount };
 
     Ok(Response::new()
         .add_message(bank_send_msg)
@@ -278,12 +291,10 @@ fn verify_and_create_memo(memo: String, contract_address: String) -> ContractRes
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
-        QueryMsg::InProgressIbcTransfer {
+        QueryMsg::InProgressRecoverAddress {
             channel_id,
             sequence_id,
-        } => to_binary(
-            &ACK_ID_TO_IN_PROGRESS_IBC_TRANSFER.load(deps.storage, (&channel_id, sequence_id))?,
-        ),
+        } => to_binary(&ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, (&channel_id, sequence_id))?),
     }
     .map_err(From::from)
 }
