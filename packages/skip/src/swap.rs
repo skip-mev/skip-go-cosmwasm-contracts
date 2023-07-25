@@ -1,4 +1,7 @@
-use crate::error::SkipError;
+use crate::{
+    entry_point::Action,
+    error::SkipError
+};
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
@@ -160,6 +163,7 @@ pub struct SwapExactCoinOut {
     pub swap_venue_name: String,
     pub coin_out: Coin,
     pub operations: Vec<SwapOperation>,
+    pub refund_action: Option<Action>,
 }
 
 // Swap object that swaps the given coin in when present. When not present,
