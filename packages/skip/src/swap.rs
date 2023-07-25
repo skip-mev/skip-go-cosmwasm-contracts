@@ -175,6 +175,12 @@ pub struct SwapExactCoinIn {
     pub operations: Vec<SwapOperation>,
 }
 
+#[cw_serde]
+pub enum Swap {
+    SwapExactCoinIn(SwapExactCoinIn),
+    SwapExactCoinOut(SwapExactCoinOut),
+}
+
 ////////////////////////
 /// COMMON FUNCTIONS ///
 ////////////////////////
