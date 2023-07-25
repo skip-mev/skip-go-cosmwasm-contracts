@@ -3,7 +3,7 @@ use cosmwasm_std::{Binary, Coin, Uint128};
 
 use crate::{
     ibc::IbcInfo,
-    swap::{SwapExactCoinIn, SwapExactCoinOut, SwapVenue},
+    swap::{Swap, SwapVenue},
 };
 
 ///////////////////
@@ -21,20 +21,28 @@ pub struct InstantiateMsg {
 ///////////////
 
 #[cw_serde]
+#[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     SwapAndAction {
-        fee_swap: Option<SwapExactCoinOut>,
-        user_swap: SwapExactCoinIn,
+        fee_swap: Option<Swap>,
+        user_swap: Swap,
         min_coin: Coin,
         timeout_timestamp: u64,
-        post_swap_action: PostSwapAction,
-        refund_action: Option<PostSwapAction>,
+        post_swap_action: Action,
+        refund_action: Option<Action>,
         affiliates: Vec<Affiliate>,
+    },
+    UserSwap {
+        user_swap: Swap,
+        remaining_coin_received: Coin,
+        min_coin: Coin,
+        timeout_timestamp: u64,
+        refund_action: Option<Action>,
     },
     PostSwapAction {
         min_coin: Coin,
         timeout_timestamp: u64,
-        post_swap_action: PostSwapAction,
+        post_swap_action: Action,
         affiliates: Vec<Affiliate>,
     },
 }
@@ -62,7 +70,7 @@ pub enum QueryMsg {
 ////////////////////
 
 #[cw_serde]
-pub enum PostSwapAction {
+pub enum Action {
     BankSend {
         to_address: String,
     },

@@ -35,16 +35,8 @@ pub enum ExecuteMsg {
     TransferFundsBack { swapper: Addr },
 }
 
-impl From<SwapExactCoinIn> for ExecuteMsg {
-    fn from(swap: SwapExactCoinIn) -> Self {
-        ExecuteMsg::Swap {
-            operations: swap.operations,
-        }
-    }
-}
-
-impl From<SwapExactCoinOut> for ExecuteMsg {
-    fn from(swap: SwapExactCoinOut) -> Self {
+impl From<Swap> for ExecuteMsg {
+    fn from(swap: Swap) -> Self {
         ExecuteMsg::Swap {
             operations: swap.operations,
         }
@@ -154,20 +146,9 @@ where
     swap_operations.into_iter().map(T::try_from).collect()
 }
 
-// Swap object to get the exact amount of a given coin with the given vector of swap operations
 #[cw_serde]
-pub struct SwapExactCoinOut {
+pub struct Swap {
     pub swap_venue_name: String,
-    pub coin_out: Coin,
-    pub operations: Vec<SwapOperation>,
-}
-
-// Swap object that swaps the given coin in when present. When not present,
-// swaps the remaining coin recevied from the contract call minus fee swap (if present)
-#[cw_serde]
-pub struct SwapExactCoinIn {
-    pub swap_venue_name: String,
-    pub coin_in: Option<Coin>,
     pub operations: Vec<SwapOperation>,
 }
 

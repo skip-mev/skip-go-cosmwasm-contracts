@@ -8,4 +8,7 @@ pub enum SkipError {
 
     #[error("Unauthorized")]
     Unauthorized,
+
+    #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
+    IbcFeesNotOneCoin,
 }

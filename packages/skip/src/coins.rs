@@ -1,4 +1,4 @@
-use crate::ibc::IbcFee;
+use crate::{error::SkipError, ibc::IbcFee};
 use cosmwasm_std::{Coin, OverflowError, Uint128};
 use std::collections::BTreeMap;
 
@@ -37,6 +37,37 @@ impl Coins {
     // Returns true if Coins map is empty
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    // Returns the legnth of the map
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    // If there exists only one coin in the map, return it, otherwise error
+    pub fn one_coin(&self) -> Result<Coin, SkipError> {
+        if self.len() != 1 {
+            return Err(SkipError::IbcFeesNotOneCoin);
+        }
+
+        let (denom, amount) = self.0.first_key_value().unwrap();
+
+        Ok(Coin {
+            denom: denom.clone(),
+            amount: *amount,
+        })
+    }
+
+    // Adds the given IbcFee to the Coins struct
+    pub fn add_ibc_fee(&mut self, ibc_fee: &IbcFee) -> Result<(), OverflowError> {
+        [
+            ibc_fee.recv_fee.clone(),
+            ibc_fee.ack_fee.clone(),
+            ibc_fee.timeout_fee.clone(),
+        ]
+        .iter()
+        .flatten()
+        .try_for_each(|coin| self.add_coin(coin))
     }
 }
 

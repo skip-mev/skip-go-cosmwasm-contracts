@@ -1,4 +1,5 @@
 use cosmwasm_std::{OverflowError, StdError};
+use skip::error::SkipError;
 use thiserror::Error;
 
 pub type ContractResult<T> = core::result::Result<T, ContractError>;
@@ -27,6 +28,9 @@ pub enum ContractError {
     #[error("Duplicate Swap Venue Name Provided")]
     DuplicateSwapVenueName,
 
+    #[error(transparent)]
+    SkipError(#[from] SkipError),
+
     ////////////////
     /// FEE SWAP ///
     ////////////////
@@ -40,9 +44,8 @@ pub enum ContractError {
     #[error("Fee Swap Coin In Denom Differs From Coin Sent To Contract")]
     FeeSwapCoinInDenomMismatch,
 
-    #[error("Fee Swap Coin In Denom Differs From First Swap Operation Denom In")]
-    FeeSwapOperationsCoinInDenomMismatch,
-
+    //#[error("Fee Swap Coin In Denom Differs From First Swap Operation Denom In")]
+    //FeeSwapOperationsCoinInDenomMismatch,
     #[error("Fee Swap Coin Out Denom Differs From Last Denom Out In Swap Operations")]
     FeeSwapOperationsCoinOutDenomMismatch,
 
@@ -53,20 +56,17 @@ pub enum ContractError {
     /// USER SWAP ///
     /////////////////
 
-    #[error("User Swap Operations Empty")]
-    UserSwapOperationsEmpty,
+    #[error("Swap Operations Empty")]
+    SwapOperationsEmpty,
 
-    #[error("User Swap Coin In Denom Differs From Coin Sent To Contract")]
-    UserSwapCoinInDenomMismatch,
+    #[error("Swap Coin In Denom Differs From First Swap Operation Denom In")]
+    SwapOperationsCoinInDenomMismatch,
 
-    #[error("User Swap Coin In Denom Differs From First Swap Operation Denom In")]
-    UserSwapOperationsCoinInDenomMismatch,
+    #[error("Swap Coin Out Denom Differs From First Swap Operation Denom In")]
+    SwapOperationsCoinOutDenomMismatch,
 
-    #[error("User Swap Last Swap Operation Denom Out Differs From Min Coin Out Denom")]
-    UserSwapOperationsMinCoinDenomMismatch,
-
-    #[error("User Swap Coin In Amount Is Not Equal To The Remaining Coin Received")]
-    UserSwapCoinInNotEqualToRemainingReceived,
+    #[error("Swap Exact Coin In Denom From Query Differs From The Remaining Coin Received")]
+    SwapExactCoinInDenomMismatch,
 
     ////////////////////////
     /// POST SWAP ACTION ///
@@ -77,9 +77,6 @@ pub enum ContractError {
 
     #[error("Transfer Out Coin Less Than Minimum Required After Affiliate Fees")]
     TransferOutCoinLessThanMinAfterAffiliateFees,
-
-    #[error("Transfer Out Coin Less Than Minimum Required After IBC Fees")]
-    TransferOutCoinLessThanMinAfterIbcFees,
 
     #[error("Contract Call Address Cannot Be The Entry Point Or Adapter Contracts")]
     ContractCallAddressBlocked,

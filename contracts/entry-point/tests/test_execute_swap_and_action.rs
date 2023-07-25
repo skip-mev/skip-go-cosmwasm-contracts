@@ -25,16 +25,15 @@ Expect Error
     // Fee Swap
     - Fee Swap Necessary Coin More Than Sent To Contract
     - Fee Swap Required Denom In Not The Same As Coin Sent To Contract
-    - Fee Swap Required Denom In Not The Same As First Swap Operation Denom In
     - Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out
     - Fee Swap Without IBC Transfer Post Swap Action
     - Fee Swap Coin Out Greater Than Ibc Fee Requires
+    TODO: Add fee swap exact coin in not equal to received
 
     // User Swap
-    - User Swap Specified Coin More Than Remaining Coin Sent To Contract After Fee Swap
-    - User Swap Denom In Is Not The Same As Coin Sent To Contract
     - User Swap Denom In Is Not The Same As First Swap Operation Denom In
     - User Swap Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom
+    TODO: Add user swap exact coin in not equal to received
 
     // Invalid Coins Sent To Contract
     - No Coins Sent To Contract
@@ -359,92 +358,6 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-            }
-        ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
-                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
-                    .to_string(),
-            },
-        },
-        expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapCoinInNotEqualToRemainingReceived),
-    };
-    "User Swap Specified Coin More Than Remaining Coin Sent To Contract After Fee Swap - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "untrn"),
-        ],
-        fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(799_999, "untrn")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
-                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
-                    .to_string(),
-            },
-        },
-        expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapCoinInNotEqualToRemainingReceived),
-    };
-    "User Swap Specified Coin Less Than Remaining Coin Left To Swap - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
             Coin::new(100_000, "osmo"),
         ],
         fee_swap: Some(
@@ -557,55 +470,6 @@ struct Params {
                     SwapOperation {
                         pool: "pool".to_string(),
                         denom_in: "uatom".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-            }
-        ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
-                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
-                    .to_string(),
-            },
-        },
-        expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapOperationsCoinInDenomMismatch),
-    };
-    "Fee Swap Required Denom In Not The Same As First Swap Operation Denom In - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "uatom".to_string(),
                         denom_out: "osmo".to_string(),
                     }
                 ],
@@ -694,32 +558,6 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![
-            Coin::new(1_000_000, "uatom"),
-        ],
-        fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
-            to_address: "to_address".to_string(),
-        },
-        expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapCoinInDenomMismatch),
-    };
-    "User Swap Denom In Is Not The Same As Coin Sent To Contract - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
         fee_swap: None,
@@ -740,35 +578,9 @@ struct Params {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapOperationsCoinInDenomMismatch),
+        expected_error: Some(ContractError::SwapOperationsCoinInDenomMismatch),
     };
     "User Swap Denom In Is Not The Same As First Swap Operation Denom In - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(1_000_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "osmo".to_string(),
-                }
-            ],
-        },
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: PostSwapAction::BankSend {
-            to_address: "to_address".to_string(),
-        },
-        expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapOperationsMinCoinDenomMismatch),
-    };
-    "User Swap Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -875,7 +687,7 @@ struct Params {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapOperationsEmpty),
+        expected_error: Some(ContractError::SwapOperationsEmpty),
     };
     "Empty User Swap Operations - Expect Error")]
 #[test_case(
