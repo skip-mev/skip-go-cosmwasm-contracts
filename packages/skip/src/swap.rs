@@ -1,7 +1,4 @@
-use crate::{
-    entry_point::Action,
-    error::SkipError
-};
+use crate::{entry_point::Action, error::SkipError};
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};

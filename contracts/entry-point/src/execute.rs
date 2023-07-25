@@ -10,9 +10,7 @@ use skip::{
     coins::Coins,
     entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
-    swap::{
-        ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, SwapExactCoinIn, SwapExactCoinOut,
-    },
+    swap::{ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap, SwapExactCoinOut},
 };
 
 ///////////////////////////
@@ -27,7 +25,7 @@ pub fn execute_swap_and_action(
     env: Env,
     info: MessageInfo,
     fee_swap: Option<SwapExactCoinOut>,
-    user_swap: SwapExactCoinIn,
+    user_swap: Swap,
     min_coin: Coin,
     timeout_timestamp: u64,
     post_swap_action: Action,
@@ -360,10 +358,16 @@ fn verify_and_create_contract_call_msg(
 // Verifies, creates, and returns the user swap message
 fn verify_and_create_user_swap_msg(
     deps: &DepsMut,
-    user_swap: SwapExactCoinIn,
+    user_swap: Swap,
     remaining_coin_received: Coin,
     min_coin_denom: &str,
 ) -> ContractResult<WasmMsg> {
+    // TODO: Remove panic and handle SwapExactCoinOut later once implemented
+    let user_swap = match user_swap {
+        Swap::SwapExactCoinIn(swap_exact_coin_in) => swap_exact_coin_in,
+        Swap::SwapExactCoinOut(_) => panic!("SwapExactCoinOut not allowed for user swap"),
+    };
+
     // Verify the swap operations are not empty
     let (Some(first_op), Some(last_op)) = (user_swap.operations.first(), user_swap.operations.last()) else {
         return Err(ContractError::UserSwapOperationsEmpty);

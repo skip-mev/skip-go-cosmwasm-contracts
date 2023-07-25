@@ -8,7 +8,7 @@ use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{IbcFee, IbcInfo},
-    swap::{ExecuteMsg as SwapExecuteMsg, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
+    swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
 };
 use skip_swap_entry_point::{error::ContractError, state::SWAP_VENUE_MAP};
 use test_case::test_case;
@@ -49,7 +49,7 @@ Expect Error
 struct Params {
     info_funds: Vec<Coin>,
     fee_swap: Option<SwapExactCoinOut>,
-    user_swap: SwapExactCoinIn,
+    user_swap: Swap,
     min_coin: Coin,
     timeout_timestamp: u64,
     post_swap_action: Action,
@@ -64,17 +64,19 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: None,
-            operations: vec![
-                SwapOperation {
-                    pool: "pool".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "osmo".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: None,
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -141,17 +143,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: None,
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: None,
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -259,17 +263,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(800_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(800_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -377,17 +383,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(900_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -414,17 +422,19 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(799_999, "untrn")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(799_999, "untrn")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -464,17 +474,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(100_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(100_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -518,17 +530,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(900_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -568,17 +582,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(900_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -618,17 +634,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(900_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -668,17 +686,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(799_999, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(799_999, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -705,17 +725,19 @@ struct Params {
             Coin::new(1_000_000, "uatom"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(900_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -731,17 +753,19 @@ struct Params {
             Coin::new(1_000_000, "osmo"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(1_000_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(1_000_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -757,17 +781,19 @@ struct Params {
             Coin::new(1_000_000, "osmo"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(1_000_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "osmo".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(1_000_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -796,17 +822,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: None,
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "atom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: None,
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "atom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "atom"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -820,17 +848,19 @@ struct Params {
     Params {
         info_funds: vec![],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: None,
-            operations: vec![
-                SwapOperation {
-                    pool: "pool".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "osmo".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: None,
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -847,17 +877,19 @@ struct Params {
             Coin::new(1_000_000, "osmo"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: None,
-            operations: vec![
-                SwapOperation {
-                    pool: "pool".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "osmo".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: None,
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -873,11 +905,13 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: None,
-            operations: vec![],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: None,
+                operations: vec![],
+            },
+        ),
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
@@ -900,17 +934,19 @@ struct Params {
                 refund_action: None,
             }
         ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: Some(Coin::new(900_000, "osmo")),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: Some(Coin::new(900_000, "osmo")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
         min_coin: Coin::new(100_000, "uatom"),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
@@ -937,11 +973,13 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
         ],
         fee_swap: None,
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            coin_in: None,
-            operations: vec![],
-        },
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn {
+                swap_venue_name: "swap_venue_name".to_string(),
+                coin_in: None,
+                operations: vec![],
+            },
+        ),
         min_coin: Coin::new(1_000_000, "osmo"),
         timeout_timestamp: 99,
         post_swap_action: Action::BankSend {
