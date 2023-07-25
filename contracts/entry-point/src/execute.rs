@@ -76,12 +76,15 @@ pub fn execute_swap_and_action(
     }
 
     // Create the user swap message
-    let user_swap_msg = verify_and_create_user_swap_msg(
-        &deps,
-        user_swap,
-        remaining_coin_received,
-        &min_coin.denom,
-    )?;
+    let user_swap_msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::UserSwap {
+            user_swap,
+            remaining_coin_received,
+            min_coin: min_coin.clone(),
+        })?,
+        funds: vec![],
+    };
 
     // Create the transfer message
     let post_swap_action_msg = WasmMsg::Execute {
@@ -100,6 +103,35 @@ pub fn execute_swap_and_action(
         .add_message(user_swap_msg)
         .add_message(post_swap_action_msg)
         .add_attribute("action", "dispatch_user_swap_and_post_swap_action"))
+}
+
+// Dispatches the user swap
+// Can only be called by the contract itself
+#[allow(clippy::too_many_arguments)]
+pub fn execute_user_swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    user_swap: Swap,
+    remaining_coin_received: Coin,
+    min_coin: Coin,
+) -> ContractResult<Response> {
+    // Enforce the caller is the contract itself
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized);
+    }
+
+    // Create a response object to return
+    let response: Response = Response::new().add_attribute("action", "execute_user_swap");
+
+    let user_swap_msg = verify_and_create_user_swap_msg(
+        &deps,
+        user_swap,
+        remaining_coin_received,
+        &min_coin.denom,
+    )?;
+
+    Ok(response.add_message(user_swap_msg))
 }
 
 // Dispatches the post swap action
