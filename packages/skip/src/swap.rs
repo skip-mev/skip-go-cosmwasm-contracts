@@ -160,6 +160,7 @@ pub struct SwapExactCoinOut {
     pub swap_venue_name: String,
     pub coin_out: Coin,
     pub operations: Vec<SwapOperation>,
+    pub refund_address: Option<String>,
 }
 
 // Swap object that swaps the given coin in when present. When not present,
