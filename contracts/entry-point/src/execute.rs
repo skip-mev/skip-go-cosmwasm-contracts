@@ -228,6 +228,96 @@ pub fn execute_post_swap_action(
 /// HELPER FUNCTIONS ///
 ////////////////////////
 
+// SWAP MESSAGE HELPER FUNCTIONS
+
+// Creates the fee swap message and returns it
+// Also deducts the fee swap in amount from the mutable user swap coin
+fn verify_and_create_fee_swap_msg(
+    deps: &DepsMut,
+    fee_swap: SwapExactCoinOut,
+    remaining_coin_received: &mut Coin,
+    ibc_fees: &Coins,
+) -> ContractResult<WasmMsg> {
+    // Error if the ibc fees is empty since a fee swap is not needed
+    if ibc_fees.is_empty() {
+        return Err(ContractError::FeeSwapNotAllowed);
+    }
+
+    // Validate swap operations
+    validate_swap_operations(
+        &fee_swap.operations,
+        &remaining_coin_received.denom,
+        &fee_swap.coin_out.denom,
+    )?;
+
+    // Verify the fee swap coin out amount less than or equal to the ibc fee amount
+    if fee_swap.coin_out.amount > ibc_fees.amount_of(&fee_swap.coin_out.denom) {
+        return Err(ContractError::FeeSwapCoinOutGreaterThanIbcFee);
+    }
+
+    // Get swap adapter contract address from venue name
+    let fee_swap_adapter_contract_address =
+        SWAP_VENUE_MAP.load(deps.storage, &fee_swap.swap_venue_name)?;
+
+    // Query the swap adapter to get the coin in needed for the fee swap
+    let fee_swap_coin_in =
+        query_swap_coin_in(deps, &fee_swap_adapter_contract_address, fee_swap.clone())?;
+
+    // Verify the fee swap in denom is the same as the denom received from the message to the contract
+    if fee_swap_coin_in.denom != remaining_coin_received.denom {
+        return Err(ContractError::FeeSwapCoinInDenomMismatch);
+    }
+
+    // Deduct the fee swap in amount from the swappable coin
+    // Error if swap requires more than the swappable coin amount
+    remaining_coin_received.amount = remaining_coin_received
+        .amount
+        .checked_sub(fee_swap_coin_in.amount)?;
+
+    // Create the fee swap message args
+    let fee_swap_msg_args: SwapExecuteMsg = fee_swap.into();
+
+    // Create the fee swap message
+    let fee_swap_msg = WasmMsg::Execute {
+        contract_addr: fee_swap_adapter_contract_address.to_string(),
+        msg: to_binary(&fee_swap_msg_args)?,
+        funds: vec![fee_swap_coin_in],
+    };
+
+    Ok(fee_swap_msg)
+}
+
+// Verifies, creates, and returns the user swap message
+fn verify_and_create_user_swap_msg(
+    deps: &DepsMut,
+    user_swap: SwapExactCoinIn,
+    remaining_coin_received: Coin,
+    min_coin_denom: &str,
+) -> ContractResult<WasmMsg> {
+    // Validate swap operations
+    validate_swap_operations(
+        &user_swap.operations,
+        &remaining_coin_received.denom,
+        min_coin_denom,
+    )?;
+
+    // Get swap adapter contract address from venue name
+    let user_swap_adapter_contract_address =
+        SWAP_VENUE_MAP.load(deps.storage, &user_swap.swap_venue_name)?;
+
+    // Create the user swap message args
+    let user_swap_msg_args: SwapExecuteMsg = user_swap.into();
+
+    // Create the user swap message
+    let user_swap_msg = WasmMsg::Execute {
+        contract_addr: user_swap_adapter_contract_address.to_string(),
+        msg: to_binary(&user_swap_msg_args)?,
+        funds: vec![remaining_coin_received],
+    };
+
+    Ok(user_swap_msg)
+}
+
 // AFFILIATE FEE HELPER FUNCTIONS
 
 // Verifies the affiliate address is valid, if so then
@@ -354,96 +444,6 @@ fn verify_and_create_contract_call_msg(
     };
 
     Ok(contract_call_msg)
-}
-
-// SWAP MESSAGE HELPER FUNCTIONS
-
-// Verifies, creates, and returns the user swap message
-fn verify_and_create_user_swap_msg(
-    deps: &DepsMut,
-    user_swap: SwapExactCoinIn,
-    remaining_coin_received: Coin,
-    min_coin_denom: &str,
-) -> ContractResult<WasmMsg> {
-    // Validate swap operations
-    validate_swap_operations(
-        &user_swap.operations,
-        &remaining_coin_received.denom,
-        min_coin_denom,
-    )?;
-
-    // Get swap adapter contract address from venue name
-    let user_swap_adapter_contract_address =
-        SWAP_VENUE_MAP.load(deps.storage, &user_swap.swap_venue_name)?;
-
-    // Create the user swap message args
-    let user_swap_msg_args: SwapExecuteMsg = user_swap.into();
-
-    // Create the user swap message
-    let user_swap_msg = WasmMsg::Execute {
-        contract_addr: user_swap_adapter_contract_address.to_string(),
-        msg: to_binary(&user_swap_msg_args)?,
-        funds: vec![remaining_coin_received],
-    };
-
-    Ok(user_swap_msg)
-}
-
-// Creates the fee swap message and returns it
-// Also deducts the fee swap in amount from the mutable user swap coin
-fn verify_and_create_fee_swap_msg(
-    deps: &DepsMut,
-    fee_swap: SwapExactCoinOut,
-    remaining_coin_received: &mut Coin,
-    ibc_fees: &Coins,
-) -> ContractResult<WasmMsg> {
-    // Error if the ibc fees is empty since a fee swap is not needed
-    if ibc_fees.is_empty() {
-        return Err(ContractError::FeeSwapNotAllowed);
-    }
-
-    // Validate swap operations
-    validate_swap_operations(
-        &fee_swap.operations,
-        &remaining_coin_received.denom,
-        &fee_swap.coin_out.denom,
-    )?;
-
-    // Verify the fee swap coin out amount less than or equal to the ibc fee amount
-    if fee_swap.coin_out.amount > ibc_fees.amount_of(&fee_swap.coin_out.denom) {
-        return Err(ContractError::FeeSwapCoinOutGreaterThanIbcFee);
-    }
-
-    // Get swap adapter contract address from venue name
-    let fee_swap_adapter_contract_address =
-        SWAP_VENUE_MAP.load(deps.storage, &fee_swap.swap_venue_name)?;
-
-    // Query the swap adapter to get the coin in needed for the fee swap
-    let fee_swap_coin_in =
-        query_swap_coin_in(deps, &fee_swap_adapter_contract_address, fee_swap.clone())?;
-
-    // Verify the fee swap in denom is the same as the denom received from the message to the contract
-    if fee_swap_coin_in.denom != remaining_coin_received.denom {
-        return Err(ContractError::FeeSwapCoinInDenomMismatch);
-    }
-
-    // Deduct the fee swap in amount from the swappable coin
-    // Error if swap requires more than the swappable coin amount
-    remaining_coin_received.amount = remaining_coin_received
-        .amount
-        .checked_sub(fee_swap_coin_in.amount)?;
-
-    // Create the fee swap message args
-    let fee_swap_msg_args: SwapExecuteMsg = fee_swap.into();
-
-    // Create the fee swap message
-    let fee_swap_msg = WasmMsg::Execute {
-        contract_addr: fee_swap_adapter_contract_address.to_string(),
-        msg: to_binary(&fee_swap_msg_args)?,
-        funds: vec![fee_swap_coin_in],
-    };
-
-    Ok(fee_swap_msg)
 }
 
 // QUERY HELPER FUNCTIONS
