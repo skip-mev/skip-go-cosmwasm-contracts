@@ -7,6 +7,9 @@ use cosmwasm_std::{
 use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
+    error::SkipError::{
+        SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
+    },
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
 };
@@ -511,7 +514,7 @@ struct Params {
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
+                        denom_in: "uatom".to_string(),
                         denom_out: "untrn".to_string(),
                     }
                 ],
@@ -596,7 +599,7 @@ struct Params {
             },
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapOperationsCoinInDenomMismatch),
+        expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
     };
     "Fee Swap Required Denom In Not The Same As First Swap Operation Denom In - Expect Error")]
 #[test_case(
@@ -611,7 +614,7 @@ struct Params {
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "uatom".to_string(),
+                        denom_in: "osmo".to_string(),
                         denom_out: "osmo".to_string(),
                     }
                 ],
@@ -646,7 +649,7 @@ struct Params {
             },
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapOperationsCoinOutDenomMismatch),
+        expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
     };
     "Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out - Expect Error")]
 #[test_case(
@@ -748,7 +751,7 @@ struct Params {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapOperationsCoinInDenomMismatch),
+        expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
     };
     "User Swap Denom In Is Not The Same As First Swap Operation Denom In - Expect Error")]
 #[test_case(
@@ -774,7 +777,7 @@ struct Params {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapOperationsMinCoinDenomMismatch),
+        expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
     };
     "User Swap Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom - Expect Error")]
 #[test_case(
@@ -884,7 +887,7 @@ struct Params {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapOperationsEmpty),
+        expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
     };
     "Empty User Swap Operations - Expect Error")]
 #[test_case(
@@ -928,7 +931,7 @@ struct Params {
             },
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapOperationsEmpty),
+        expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
     };
     "Empty Fee Swap Operations - Expect Error")]
 #[test_case(

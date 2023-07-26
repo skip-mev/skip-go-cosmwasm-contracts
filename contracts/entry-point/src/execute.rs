@@ -11,7 +11,8 @@ use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
-        ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, SwapExactCoinIn, SwapExactCoinOut,
+        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
+        SwapExactCoinIn, SwapExactCoinOut,
     },
 };
 
@@ -364,11 +365,6 @@ fn verify_and_create_user_swap_msg(
     remaining_coin_received: Coin,
     min_coin_denom: &str,
 ) -> ContractResult<WasmMsg> {
-    // Verify the swap operations are not empty
-    let (Some(first_op), Some(last_op)) = (user_swap.operations.first(), user_swap.operations.last()) else {
-        return Err(ContractError::UserSwapOperationsEmpty);
-    };
-
     // Set the user swap coin in to the remaining coin received if it is not provided
     // Otherwise, use the provided user swap coin in, erroring if it doesn't pass validation
     let user_swap_coin_in = match user_swap.coin_in.clone() {
@@ -390,15 +386,12 @@ fn verify_and_create_user_swap_msg(
         None => remaining_coin_received,
     };
 
-    // Verify the user_swap_coin is the same denom as the first swap operation denom in
-    if user_swap_coin_in.denom != first_op.denom_in {
-        return Err(ContractError::UserSwapOperationsCoinInDenomMismatch);
-    }
-
-    // Verify the last swap operation denom out is the same as the min coin denom
-    if min_coin_denom != last_op.denom_out {
-        return Err(ContractError::UserSwapOperationsMinCoinDenomMismatch);
-    }
+    // Validate swap operations
+    validate_swap_operations(
+        &user_swap.operations,
+        &user_swap_coin_in.denom,
+        min_coin_denom,
+    )?;
 
     // Get swap adapter contract address from venue name
     let user_swap_adapter_contract_address =
@@ -430,15 +423,12 @@ fn verify_and_create_fee_swap_msg(
         return Err(ContractError::FeeSwapNotAllowed);
     }
 
-    // Verify the swap operations are not empty
-    let (Some(first_op), Some(last_op)) = (fee_swap.operations.first(), fee_swap.operations.last()) else {
-        return Err(ContractError::FeeSwapOperationsEmpty);
-    };
-
-    // Verify the fee swap coin out is the same denom as the last swap operation denom out
-    if fee_swap.coin_out.denom != last_op.denom_out {
-        return Err(ContractError::FeeSwapOperationsCoinOutDenomMismatch);
-    }
+    // Validate swap operations
+    validate_swap_operations(
+        &fee_swap.operations,
+        &remaining_coin_received.denom,
+        &fee_swap.coin_out.denom,
+    )?;
 
     // Verify the fee swap coin out amount less than or equal to the ibc fee amount
     if fee_swap.coin_out.amount > ibc_fees.get_amount(&fee_swap.coin_out.denom) {
@@ -452,11 +442,6 @@ fn verify_and_create_fee_swap_msg(
     // Query the swap adapter to get the coin in needed for the fee swap
     let fee_swap_coin_in =
         query_swap_coin_in(deps, &fee_swap_adapter_contract_address, fee_swap.clone())?;
-
-    // Verify the fee_swap_coin_in is the same denom as the first swap operation denom in
-    if fee_swap_coin_in.denom != first_op.denom_in {
-        return Err(ContractError::FeeSwapOperationsCoinInDenomMismatch);
-    }
 
     // Verify the fee swap in denom is the same as the denom received from the message to the contract
     if fee_swap_coin_in.denom != remaining_coin_received.denom {

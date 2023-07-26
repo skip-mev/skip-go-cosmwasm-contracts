@@ -198,3 +198,27 @@ pub fn execute_transfer_funds_back(
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_transfer_funds_back_bank_send"))
 }
+
+// Validates the swap operations
+pub fn validate_swap_operations(
+    swap_operations: &[SwapOperation],
+    coin_in_denom: &str,
+    coin_out_denom: &str,
+) -> Result<(), SkipError> {
+    // Verify the swap operations are not empty
+    let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
+        return Err(SkipError::SwapOperationsEmpty);
+    };
+
+    // Verify the first swap operation denom in is the same as the coin in denom
+    if first_op.denom_in != coin_in_denom {
+        return Err(SkipError::SwapOperationsCoinInDenomMismatch);
+    }
+
+    // Verify the last swap operation denom out is the same as the coin out denom
+    if last_op.denom_out != coin_out_denom {
+        return Err(SkipError::SwapOperationsCoinOutDenomMismatch);
+    }
+
+    Ok(())
+}
