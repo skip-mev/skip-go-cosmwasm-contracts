@@ -21,6 +21,7 @@ pub struct InstantiateMsg {
 ///////////////
 
 #[cw_serde]
+#[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     SwapAndAction {
         fee_swap: Option<SwapExactCoinOut>,

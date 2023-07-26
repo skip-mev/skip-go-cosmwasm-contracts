@@ -138,6 +138,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -255,6 +256,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -372,6 +374,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -458,6 +461,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -511,6 +515,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -560,6 +565,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -609,6 +615,7 @@ struct Params {
                         denom_out: "osmo".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -658,6 +665,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -785,6 +793,7 @@ struct Params {
                         denom_out: "untrn".to_string(),
                     }
                 ],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
@@ -888,6 +897,7 @@ struct Params {
                 swap_venue_name: "swap_venue_name".to_string(), 
                 coin_out: Coin::new(200_000, "osmo"),
                 operations: vec![],
+                refund_address: None,
             }
         ),
         user_swap: SwapExactCoinIn {
