@@ -1,4 +1,5 @@
 use cosmwasm_std::{OverflowError, StdError};
+use skip::error::SkipError;
 use thiserror::Error;
 
 pub type ContractResult<T> = core::result::Result<T, ContractError>;
@@ -11,6 +12,9 @@ pub enum ContractError {
 
     #[error(transparent)]
     Std(#[from] StdError),
+
+    #[error(transparent)]
+    Skip(#[from] SkipError),
 
     #[error(transparent)]
     Overflow(#[from] OverflowError),
@@ -53,17 +57,8 @@ pub enum ContractError {
     /// USER SWAP ///
     /////////////////
 
-    #[error("User Swap Operations Empty")]
-    UserSwapOperationsEmpty,
-
     #[error("User Swap Coin In Denom Differs From Coin Sent To Contract")]
     UserSwapCoinInDenomMismatch,
-
-    #[error("User Swap Coin In Denom Differs From First Swap Operation Denom In")]
-    UserSwapOperationsCoinInDenomMismatch,
-
-    #[error("User Swap Last Swap Operation Denom Out Differs From Min Coin Out Denom")]
-    UserSwapOperationsMinCoinDenomMismatch,
 
     #[error("User Swap Coin In Amount Is Not Equal To The Remaining Coin Received")]
     UserSwapCoinInNotEqualToRemainingReceived,
