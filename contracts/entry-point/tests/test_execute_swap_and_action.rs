@@ -951,7 +951,7 @@ struct Params {
         expected_error: Some(ContractError::Timeout),
     };
     "Current Block Time Greater Than Timeout Timestamp - Expect Error")]
-fn test_execute_post_swap_action(params: Params) {
+fn test_execute_swap_and_action(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
         "entry_point",
