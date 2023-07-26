@@ -3,11 +3,11 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Binary, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Binary, Coin, Coins, DepsMut, Env, MessageInfo, Response, Uint128,
+    WasmMsg,
 };
 use cw_utils::one_coin;
 use skip::{
-    coins::Coins,
     entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
@@ -52,7 +52,7 @@ pub fn execute_swap_and_action(
     // is an IBC transfer, otherwise set it to None
     let ibc_fees = match &post_swap_action {
         Action::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
-        _ => Coins::new(),
+        _ => Coins::default(),
     };
 
     // Process the fee swap if it exists
@@ -75,7 +75,7 @@ pub fn execute_swap_and_action(
         // with the IBC fees from the remaining coin received amount
         remaining_coin_received.amount = remaining_coin_received
             .amount
-            .checked_sub(ibc_fees.get_amount(&remaining_coin_received.denom))?;
+            .checked_sub(ibc_fees.amount_of(&remaining_coin_received.denom))?;
     }
 
     // Create the user swap message
@@ -288,7 +288,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     // Get the amount of the IBC fee payment that matches
     // the denom of the ibc transfer out coin.
     // If there is no denom match, then default to zero.
-    let transfer_out_coin_ibc_fee_amount = ibc_fees_map.get_amount(&min_coin.denom);
+    let transfer_out_coin_ibc_fee_amount = ibc_fees_map.amount_of(&min_coin.denom);
 
     // Subtract the IBC fee amount from the transfer out coin
     transfer_out_coin.amount = transfer_out_coin
@@ -305,7 +305,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     // (which is the transfer out coin plus the IBC fee amounts)
     // using a map for convenience, and then converting to a vector of coins
     let mut ibc_msg_funds_map = ibc_fees_map;
-    ibc_msg_funds_map.add_coin(&transfer_out_coin)?;
+    ibc_msg_funds_map.add(transfer_out_coin.clone())?;
 
     // Convert the map to a vector of coins
     let ibc_msg_funds: Vec<Coin> = ibc_msg_funds_map.into();
@@ -410,7 +410,7 @@ fn verify_and_create_fee_swap_msg(
     )?;
 
     // Verify the fee swap coin out amount less than or equal to the ibc fee amount
-    if fee_swap.coin_out.amount > ibc_fees.get_amount(&fee_swap.coin_out.denom) {
+    if fee_swap.coin_out.amount > ibc_fees.amount_of(&fee_swap.coin_out.denom) {
         return Err(ContractError::FeeSwapCoinOutGreaterThanIbcFee);
     }
 

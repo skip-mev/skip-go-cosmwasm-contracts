@@ -6,14 +6,13 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, SubMsg, SubMsgResult,
+    entry_point, to_binary, BankMsg, Binary, Coin, Coins, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Reply, Response, SubMsg, SubMsgResult,
 };
 use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferResponse};
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
-    coins::Coins,
     ibc::{
         AckID, ExecuteMsg, IbcFee, IbcInfo, IbcLifecycleComplete, InstantiateMsg,
         OsmosisQueryMsg as QueryMsg,
