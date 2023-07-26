@@ -5,7 +5,7 @@ use cosmwasm_std::{
     SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use skip::{
-    entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
+    entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
 };
 use skip_swap_entry_point::{
@@ -46,7 +46,7 @@ Expect Error
 struct Params {
     caller: String,
     min_coin: Coin,
-    post_swap_action: PostSwapAction,
+    post_swap_action: Action,
     affiliates: Vec<Affiliate>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
@@ -57,7 +57,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
         affiliates: vec![],
@@ -78,7 +78,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -127,7 +127,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
-        post_swap_action: PostSwapAction::ContractCall {
+        post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },
@@ -151,7 +151,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -203,7 +203,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(800_000, "untrn"),
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -252,7 +252,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(900_000, "osmo"),
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
         affiliates: vec![Affiliate {
@@ -288,7 +288,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(900_000, "osmo"),
-        post_swap_action: PostSwapAction::ContractCall {
+        post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },
@@ -326,7 +326,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(900_000, "osmo"),
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -388,7 +388,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(700_000, "untrn"),
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -450,7 +450,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(950_000, "osmo"),
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -475,7 +475,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(900_000, "untrn"),
-        post_swap_action: PostSwapAction::IbcTransfer {
+        post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
@@ -497,7 +497,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(1_100_000, "untrn"),
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
         affiliates: vec![],
@@ -509,7 +509,7 @@ struct Params {
     Params {
         caller: "unauthorized".to_string(),
         min_coin: Coin::new(1_100_000, "untrn"),
-        post_swap_action: PostSwapAction::BankSend {
+        post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
         affiliates: vec![],
@@ -521,7 +521,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_coin: Coin::new(900_000, "untrn"),
-        post_swap_action: PostSwapAction::ContractCall {
+        post_swap_action: Action::ContractCall {
             contract_address: "entry_point".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },

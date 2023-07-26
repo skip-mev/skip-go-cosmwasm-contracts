@@ -8,7 +8,7 @@ use cosmwasm_std::{
 use cw_utils::one_coin;
 use skip::{
     coins::Coins,
-    entry_point::{Affiliate, ExecuteMsg, PostSwapAction},
+    entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, SwapExactCoinIn, SwapExactCoinOut,
@@ -30,7 +30,7 @@ pub fn execute_swap_and_action(
     user_swap: SwapExactCoinIn,
     min_coin: Coin,
     timeout_timestamp: u64,
-    post_swap_action: PostSwapAction,
+    post_swap_action: Action,
     affiliates: Vec<Affiliate>,
 ) -> ContractResult<Response> {
     // Create a response object to return
@@ -50,7 +50,7 @@ pub fn execute_swap_and_action(
     // Get the ibc_info from the post swap action if the post swap action
     // is an IBC transfer, otherwise set it to None
     let ibc_fees = match &post_swap_action {
-        PostSwapAction::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
+        Action::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
         _ => Coins::new(),
     };
 
@@ -112,7 +112,7 @@ pub fn execute_post_swap_action(
     info: MessageInfo,
     min_coin: Coin,
     timeout_timestamp: u64,
-    post_swap_action: PostSwapAction,
+    post_swap_action: Action,
     affiliates: Vec<Affiliate>,
 ) -> ContractResult<Response> {
     // Enforce the caller is the contract itself
@@ -176,7 +176,7 @@ pub fn execute_post_swap_action(
     }
 
     match post_swap_action {
-        PostSwapAction::BankSend { to_address } => {
+        Action::BankSend { to_address } => {
             // Create the bank send message
             let bank_send_msg =
                 verify_and_create_bank_send_msg(deps, to_address, transfer_out_coin)?;
@@ -186,7 +186,7 @@ pub fn execute_post_swap_action(
                 .add_message(bank_send_msg)
                 .add_attribute("action", "dispatch_post_swap_bank_send");
         }
-        PostSwapAction::IbcTransfer { ibc_info } => {
+        Action::IbcTransfer { ibc_info } => {
             // Enforce min out w/ ibc fees and create the IBC Transfer adapter contract call message
             let ibc_transfer_adapter_msg = verify_and_create_ibc_transfer_adapter_msg(
                 deps,
@@ -201,7 +201,7 @@ pub fn execute_post_swap_action(
                 .add_message(ibc_transfer_adapter_msg)
                 .add_attribute("action", "dispatch_post_swap_ibc_transfer");
         }
-        PostSwapAction::ContractCall {
+        Action::ContractCall {
             contract_address,
             msg,
         } => {

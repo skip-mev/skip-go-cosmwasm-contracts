@@ -103,10 +103,7 @@ fn execute_ibc_transfer(
     )?;
 
     // Save in progress channel id to storage, to be used in sudo handler
-    IN_PROGRESS_CHANNEL_ID.save(
-        deps.storage,
-        &ibc_info.source_channel,
-    )?;
+    IN_PROGRESS_CHANNEL_ID.save(deps.storage, &ibc_info.source_channel)?;
 
     // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
     let memo = verify_and_create_memo(ibc_info.memo, env.contract.address.to_string())?;
