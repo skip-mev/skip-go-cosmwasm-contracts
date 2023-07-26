@@ -1,6 +1,6 @@
 use crate::proto_coin::ProtoCoin;
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Coin;
+use cosmwasm_std::{Coin, Coins, StdError};
 use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
 use std::convert::From;
 
@@ -81,6 +81,22 @@ impl From<IbcFee> for NeutronFee {
                 .map(|coin| ProtoCoin(coin.clone()).into())
                 .collect(),
         }
+    }
+}
+
+// Converts an IbcFee struct to a Coins struct
+impl TryFrom<IbcFee> for Coins {
+    type Error = StdError;
+
+    fn try_from(ibc_fee: IbcFee) -> Result<Self, Self::Error> {
+        let mut ibc_fees = Coins::default();
+
+        [ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
+            .into_iter()
+            .flatten()
+            .try_for_each(|coin| ibc_fees.add(coin))?;
+
+        Ok(ibc_fees)
     }
 }
 
