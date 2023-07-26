@@ -10,6 +10,9 @@ fmt:
 test:
 	cargo test --locked --workspace
 
+update:
+	cargo update
+
 # copied from DAO DAO:
 # https://github.com/DA0-DA0/polytone/blob/main/devtools/optimize.sh
 optimize:
