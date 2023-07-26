@@ -44,16 +44,6 @@ pub enum ContractError {
     #[error("Fee Swap Coin Out Greater Than IBC Fee")]
     FeeSwapCoinOutGreaterThanIbcFee,
 
-    /////////////////
-    /// USER SWAP ///
-    /////////////////
-
-    #[error("User Swap Coin In Denom Differs From Coin Sent To Contract")]
-    UserSwapCoinInDenomMismatch,
-
-    #[error("User Swap Coin In Amount Is Not Equal To The Remaining Coin Received")]
-    UserSwapCoinInNotEqualToRemainingReceived,
-
     ////////////////////////
     /// POST SWAP ACTION ///
     ////////////////////////

@@ -365,31 +365,10 @@ fn verify_and_create_user_swap_msg(
     remaining_coin_received: Coin,
     min_coin_denom: &str,
 ) -> ContractResult<WasmMsg> {
-    // Set the user swap coin in to the remaining coin received if it is not provided
-    // Otherwise, use the provided user swap coin in, erroring if it doesn't pass validation
-    let user_swap_coin_in = match user_swap.coin_in.clone() {
-        Some(coin_in) => {
-            // Verify the coin_in denom is the same as the remaining coin received denom
-            if coin_in.denom != remaining_coin_received.denom {
-                return Err(ContractError::UserSwapCoinInDenomMismatch);
-            }
-
-            // Error if the coin_in amount is not the same as the remaining coin received amount
-            // If it's greater than it is attempting to swap more than is allowed
-            // If it's less than it would leave funds on the contract
-            if coin_in.amount != remaining_coin_received.amount {
-                return Err(ContractError::UserSwapCoinInNotEqualToRemainingReceived);
-            }
-
-            coin_in
-        }
-        None => remaining_coin_received,
-    };
-
     // Validate swap operations
     validate_swap_operations(
         &user_swap.operations,
-        &user_swap_coin_in.denom,
+        &remaining_coin_received.denom,
         min_coin_denom,
     )?;
 
@@ -404,7 +383,7 @@ fn verify_and_create_user_swap_msg(
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: user_swap_adapter_contract_address.to_string(),
         msg: to_binary(&user_swap_msg_args)?,
-        funds: vec![user_swap_coin_in],
+        funds: vec![remaining_coin_received],
     };
 
     Ok(user_swap_msg)

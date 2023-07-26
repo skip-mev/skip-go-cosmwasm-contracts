@@ -163,12 +163,11 @@ pub struct SwapExactCoinOut {
     pub refund_address: Option<String>,
 }
 
-// Swap object that swaps the given coin in when present. When not present,
-// swaps the remaining coin recevied from the contract call minus fee swap (if present)
+// Swap object that swaps the remaining coin recevied
+// from the contract call minus fee swap (if present)
 #[cw_serde]
 pub struct SwapExactCoinIn {
     pub swap_venue_name: String,
-    pub coin_in: Option<Coin>,
     pub operations: Vec<SwapOperation>,
 }
 
