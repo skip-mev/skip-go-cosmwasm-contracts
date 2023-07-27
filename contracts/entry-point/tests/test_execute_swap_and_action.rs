@@ -20,9 +20,10 @@ use test_case::test_case;
 Test Cases:
 
 Expect Response
-    - User Swap
-    - Fee Swap And User Swap Using Leftover Coin
-    - Fee Swap And User Swap Using Specified Coin
+    - User Swap With Bank Send
+    - User Swap With IBC Transfer With IBC Fees
+    - User Swap With IBC Transfer Without IBC Fees
+    - Fee Swap And User Swap With IBC Fees
 
 Expect Error
     // Fee Swap
@@ -30,7 +31,7 @@ Expect Error
     - Fee Swap Required Denom In Not The Same As Coin Sent To Contract
     - Fee Swap Required Denom In Not The Same As First Swap Operation Denom In
     - Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out
-    - Fee Swap Without IBC Transfer Post Swap Action
+    - Fee Swap And User Swap Without IBC Fees
     - Fee Swap Coin Out Greater Than Ibc Fee Requires
 
     // User Swap
@@ -44,6 +45,9 @@ Expect Error
     // Empty Swap Operations
     - Empty User Swap Operations
     - Empty Fee Swap Operations
+
+    // Timeout
+    - Current Block Time Greater Than Timeout Timestamp
  */
 
 // Define test parameters
@@ -121,7 +125,169 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap")]
+    "User Swap With Bank Send")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "untrn"),
+        ],
+        fee_swap: None,
+        user_swap: SwapExactCoinIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![
+                SwapOperation {
+                    pool: "pool".to_string(),
+                    denom_in: "untrn".to_string(),
+                    denom_out: "osmo".to_string(),
+                }
+            ],
+        },
+        min_coin: Coin::new(800_000, "osmo"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "untrn".to_string(),
+                                denom_out: "osmo".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(800_000, "untrn")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_coin: Coin::new(800_000, "osmo"),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::IbcTransfer {
+                            ibc_info: IbcInfo {
+                                source_channel: "channel-0".to_string(),
+                                receiver: "receiver".to_string(),
+                                memo: "".to_string(),
+                                fee: Some(IbcFee {
+                                    recv_fee: vec![],
+                                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                                }),
+                                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                                    .to_string(),
+                            },
+                        },
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap With IBC Transfer With IBC Fees")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "untrn"),
+        ],
+        fee_swap: None,
+        user_swap: SwapExactCoinIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![
+                SwapOperation {
+                    pool: "pool".to_string(),
+                    denom_in: "untrn".to_string(),
+                    denom_out: "osmo".to_string(),
+                }
+            ],
+        },
+        min_coin: Coin::new(1_000_000, "osmo"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "untrn".to_string(),
+                                denom_out: "osmo".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_coin: Coin::new(1_000_000, "osmo"),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::IbcTransfer {
+                            ibc_info: IbcInfo {
+                                source_channel: "channel-0".to_string(),
+                                receiver: "receiver".to_string(),
+                                memo: "".to_string(),
+                                fee: None,
+                                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                                    .to_string(),
+                            },
+                        },
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap With IBC Transfer Without IBC Fees")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -158,11 +324,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -218,11 +384,11 @@ struct Params {
                                 source_channel: "channel-0".to_string(),
                                 receiver: "receiver".to_string(),
                                 memo: "".to_string(),
-                                fee: IbcFee {
+                                fee: Some(IbcFee {
                                     recv_fee: vec![],
                                     ack_fee: vec![Coin::new(100_000, "untrn")],
                                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                                },
+                                }),
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
                             },
@@ -238,124 +404,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "Fee Swap And User Swap Using Leftover Coin")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: Action::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
-                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
-                    .to_string(),
-            },
-        },
-        expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "untrn".to_string(),
-                            }
-                        ],
-                    }).unwrap(),
-                    funds: vec![Coin::new(200_000, "osmo")], 
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                            }
-                        ],
-                    }).unwrap(),
-                    funds: vec![Coin::new(800_000, "osmo")], 
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "entry_point".to_string(), 
-                    msg: to_binary(&ExecuteMsg::PostSwapAction {
-                        min_coin: Coin::new(100_000, "uatom"),
-                        timeout_timestamp: 101,
-                        post_swap_action: Action::IbcTransfer {
-                            ibc_info: IbcInfo {
-                                source_channel: "channel-0".to_string(),
-                                receiver: "receiver".to_string(),
-                                memo: "".to_string(),
-                                fee: IbcFee {
-                                    recv_fee: vec![],
-                                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                                },
-                                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
-                                    .to_string(),
-                            },
-                        },
-                        affiliates: vec![],
-                    }).unwrap(),
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-        ],
-        expected_error: None,
-    };
-    "Fee Swap And User Swap Using Specified Coin")]
+    "Fee Swap And User Swap With IBC Fees")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -392,11 +441,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -445,11 +494,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -494,11 +543,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -543,11 +592,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -592,11 +641,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -690,9 +739,9 @@ struct Params {
             to_address: "to_address".to_string(),
         },
         expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapNotAllowed),
+        expected_error: Some(ContractError::FeeSwapWithoutIbcFees),
     };
-    "Fee Swap Without IBC Transfer Post Swap Action - Expect Error")]
+    "Fee Swap And User Swap Without IBC Fees - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![],
@@ -791,11 +840,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
