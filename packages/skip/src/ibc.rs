@@ -55,6 +55,7 @@ pub enum OsmosisQueryMsg {
 ////////////////////
 
 #[cw_serde]
+#[derive(Default)]
 pub struct IbcFee {
     pub recv_fee: Vec<Coin>,
     pub ack_fee: Vec<Coin>,
@@ -104,7 +105,7 @@ impl TryFrom<IbcFee> for Coins {
 pub struct IbcInfo {
     pub source_channel: String,
     pub receiver: String,
-    pub fee: IbcFee,
+    pub fee: Option<IbcFee>,
     pub memo: String,
     pub recover_address: String,
 }

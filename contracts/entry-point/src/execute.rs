@@ -51,7 +51,7 @@ pub fn execute_swap_and_action(
     // Get the ibc_info from the post swap action if the post swap action
     // is an IBC transfer, otherwise set it to None
     let ibc_fees = match &post_swap_action {
-        Action::IbcTransfer { ibc_info } => ibc_info.fee.clone().try_into()?,
+        Action::IbcTransfer { ibc_info } => ibc_info.fee.clone().unwrap_or_default().try_into()?,
         _ => Coins::default(),
     };
 
@@ -240,7 +240,7 @@ fn verify_and_create_fee_swap_msg(
 ) -> ContractResult<WasmMsg> {
     // Error if the ibc fees is empty since a fee swap is not needed
     if ibc_fees.is_empty() {
-        return Err(ContractError::FeeSwapNotAllowed);
+        return Err(ContractError::FeeSwapWithoutIbcFees);
     }
 
     // Validate swap operations
@@ -373,7 +373,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     deps.api.addr_validate(&ibc_info.recover_address)?;
 
     // Create the ibc_fees map from the given recv_fee, ack_fee, and timeout_fee
-    let ibc_fees_map: Coins = ibc_info.fee.clone().try_into()?;
+    let ibc_fees_map: Coins = ibc_info.fee.clone().unwrap_or_default().try_into()?;
 
     // Get the amount of the IBC fee payment that matches
     // the denom of the ibc transfer out coin.
