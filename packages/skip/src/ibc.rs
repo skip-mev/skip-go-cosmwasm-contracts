@@ -104,7 +104,7 @@ impl TryFrom<IbcFee> for Coins {
 pub struct IbcInfo {
     pub source_channel: String,
     pub receiver: String,
-    pub fee: IbcFee,
+    pub fee: Option<IbcFee>,
     pub memo: String,
     pub recover_address: String,
 }
