@@ -6,15 +6,15 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, BankMsg, Binary, Coin, Coins, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Reply, Response, SubMsg, SubMsgResult,
+    entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    Reply, Response, SubMsg, SubMsgResult,
 };
 use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferResponse};
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
     ibc::{
-        AckID, ExecuteMsg, IbcFee, IbcInfo, IbcLifecycleComplete, InstantiateMsg,
+        AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg,
         OsmosisQueryMsg as QueryMsg,
     },
     proto_coin::ProtoCoin,
@@ -89,9 +89,8 @@ fn execute_ibc_transfer(
         return Err(ContractError::Unauthorized);
     }
 
-    // Error if the ibc_fees specified are not empty since
-    // osmosis ibc transfers do not support fees.
-    if !<IbcFee as TryInto<Coins>>::try_into(ibc_info.fee)?.is_empty() {
+    // Error if ibc_info.fee is not None since Osmosis does not support fees
+    if ibc_info.fee.is_some() {
         return Err(ContractError::IbcFeesNotSupported);
     }
 

@@ -49,11 +49,7 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
-                recv_fee: vec![],
-                ack_fee: vec![],
-                timeout_fee: vec![],
-            },
+            fee: None,
             memo: "".to_string(),
             recover_address: "recover_address".to_string(),
         },
@@ -92,11 +88,7 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
-                recv_fee: vec![],
-                ack_fee: vec![],
-                timeout_fee: vec![],
-            },
+            fee: None,
             memo: r#"{"ibc_callback":"random_address"}"#.to_string(),
             recover_address: "recover_address".to_string(),
         },
@@ -135,11 +127,7 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
-                recv_fee: vec![],
-                ack_fee: vec![],
-                timeout_fee: vec![],
-            },
+            fee: None,
             memo: r#"{"pfm":"example_value","wasm":"example_contract"}"#.to_string(),
             recover_address: "recover_address".to_string(),
         },
@@ -178,11 +166,7 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
-                recv_fee: vec![],
-                ack_fee: vec![],
-                timeout_fee: vec![],
-            },
+            fee: None,
             memo: "{invalid}".to_string(),
             recover_address: "recover_address".to_string(),
         },
@@ -199,13 +183,13 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
+            fee: Some(IbcFee {
                 recv_fee: vec![
                     Coin::new(100, "atom"),
                 ],
                 ack_fee: vec![],
                 timeout_fee: vec![],
-            },
+            }),
             memo: "{}".to_string(),
             recover_address: "recover_address".to_string(),
         },
@@ -222,11 +206,7 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
-                recv_fee: vec![],
-                ack_fee: vec![],
-                timeout_fee: vec![],
-            },
+            fee: None,
             memo: "{}".to_string(),
             recover_address: "recover_address".to_string(),
         },
