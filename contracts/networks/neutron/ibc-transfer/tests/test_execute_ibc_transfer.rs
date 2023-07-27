@@ -21,6 +21,7 @@ Expect Response
 
 Expect Error
     - Unauthorized Caller (Only the stored entry point contract can call this function)
+    - No IBC Fees Provided (IBC fees are required for Osmosis)
  */
 
 // Define test parameters
@@ -43,14 +44,14 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
+            fee: Some(IbcFee {
                 recv_fee: vec![],
                 ack_fee: vec![Coin {
                     denom: "ntrn".to_string(),
                     amount: Uint128::new(10),
                 }],
                 timeout_fee: vec![],
-            },
+            }),
             memo: "memo".to_string(),
             recover_address: "recover_address".to_string(),
         },
@@ -93,14 +94,14 @@ struct Params {
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
-            fee: IbcFee {
+            fee: Some(IbcFee {
                 recv_fee: vec![],
                 ack_fee: vec![Coin {
                     denom: "ntrn".to_string(),
                     amount: Uint128::new(10),
                 }],
                 timeout_fee: vec![],
-            },
+            }),
             memo: "memo".to_string(),
             recover_address: "recover_address".to_string(),
         },
@@ -109,6 +110,23 @@ struct Params {
         expected_error_string: "Unauthorized".to_string(),
     };
     "Unauthorized Caller - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
+        coin: Coin::new(100, "osmo"),
+        ibc_info: IbcInfo {
+            source_channel: "source_channel".to_string(),
+            receiver: "receiver".to_string(),
+            fee: None,
+            memo: "memo".to_string(),
+            recover_address: "recover_address".to_string(),
+        },
+        timeout_timestamp: 100,
+        expected_messages: vec![],
+        expected_error_string: "IBC fees are required".to_string(),
+    };
+    "No IBC Fees Provided - Expect Error")]
 fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();

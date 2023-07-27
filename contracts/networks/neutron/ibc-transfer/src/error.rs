@@ -17,6 +17,9 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized,
 
+    #[error("IBC fees are required")]
+    IbcFeesRequired,
+
     #[error("SubMsgResponse does not contain data")]
     MissingResponseData,
 

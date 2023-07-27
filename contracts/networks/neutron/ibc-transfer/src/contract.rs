@@ -82,6 +82,12 @@ fn execute_ibc_transfer(
         return Err(ContractError::Unauthorized);
     }
 
+    // Error if ibc_info.fee is not Some since they are required on Neutron.
+    let ibc_fee = match ibc_info.fee {
+        Some(fee) => fee,
+        None => return Err(ContractError::IbcFeesRequired),
+    };
+
     // Create neutron ibc transfer message
     let msg = MsgTransfer {
         source_port: "transfer".to_string(),
@@ -92,7 +98,7 @@ fn execute_ibc_transfer(
         timeout_height: None,
         timeout_timestamp,
         memo: ibc_info.memo,
-        fee: Some(ibc_info.fee.clone().into()),
+        fee: Some(ibc_fee.into()),
     };
 
     // Save in progress recover address to storage, to be used in sudo handler
