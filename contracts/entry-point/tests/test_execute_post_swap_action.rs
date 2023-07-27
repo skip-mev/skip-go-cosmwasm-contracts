@@ -83,11 +83,7 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![],
-                    timeout_fee: vec![],
-                },
+                fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -102,11 +98,7 @@ struct Params {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
                         memo: "".to_string(),
-                        fee: IbcFee {
-                            recv_fee: vec![],
-                            ack_fee: vec![],
-                            timeout_fee: vec![],
-                        },
+                        fee: None,
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
@@ -156,11 +148,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -175,11 +167,11 @@ struct Params {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
                         memo: "".to_string(),
-                        fee: IbcFee {
+                        fee: Some(IbcFee {
                             recv_fee: vec![],
                             ack_fee: vec![Coin::new(100_000, "untrn")],
                             timeout_fee: vec![Coin::new(100_000, "untrn")],
-                        },
+                        }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
@@ -208,11 +200,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
@@ -227,11 +219,11 @@ struct Params {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
                         memo: "".to_string(),
-                        fee: IbcFee {
+                        fee: Some(IbcFee {
                             recv_fee: vec![],
                             ack_fee: vec![Coin::new(100_000, "untrn")],
                             timeout_fee: vec![Coin::new(100_000, "untrn")],
-                        },
+                        }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
@@ -331,11 +323,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "recover".to_string(),
             },
         },
@@ -363,11 +355,11 @@ struct Params {
                             source_channel: "channel-0".to_string(),
                             receiver: "receiver".to_string(),
                             memo: "".to_string(),
-                            fee: IbcFee {
+                            fee: Some(IbcFee {
                                 recv_fee: vec![],
                                 ack_fee: vec![Coin::new(100_000, "untrn")],
                                 timeout_fee: vec![Coin::new(100_000, "untrn")],
-                            },
+                            }),
                             recover_address: "recover".to_string(),
                         },
                         coin: Coin::new(900_000, "osmo"),
@@ -393,11 +385,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "recover".to_string(),
             },
         },
@@ -425,11 +417,11 @@ struct Params {
                             source_channel: "channel-0".to_string(),
                             receiver: "receiver".to_string(),
                             memo: "".to_string(),
-                            fee: IbcFee {
+                            fee: Some(IbcFee {
                                 recv_fee: vec![],
                                 ack_fee: vec![Coin::new(100_000, "untrn")],
                                 timeout_fee: vec![Coin::new(100_000, "untrn")],
-                            },
+                            }),
                             recover_address: "recover".to_string(),
                         },
                         coin: Coin::new(700_000, "untrn"),
@@ -455,11 +447,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "recover".to_string(),
             },
         },
@@ -480,11 +472,11 @@ struct Params {
                 source_channel: "channel-0".to_string(),
                 receiver: "receiver".to_string(),
                 memo: "".to_string(),
-                fee: IbcFee {
+                fee: Some(IbcFee {
                     recv_fee: vec![],
                     ack_fee: vec![Coin::new(100_000, "untrn")],
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
-                },
+                }),
                 recover_address: "recover".to_string(),
             },
         },
