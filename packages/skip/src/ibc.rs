@@ -55,6 +55,7 @@ pub enum OsmosisQueryMsg {
 ////////////////////
 
 #[cw_serde]
+#[derive(Default)]
 pub struct IbcFee {
     pub recv_fee: Vec<Coin>,
     pub ack_fee: Vec<Coin>,
