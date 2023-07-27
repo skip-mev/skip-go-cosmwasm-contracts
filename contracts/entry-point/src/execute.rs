@@ -240,7 +240,7 @@ fn verify_and_create_fee_swap_msg(
 ) -> ContractResult<WasmMsg> {
     // Error if the ibc fees is empty since a fee swap is not needed
     if ibc_fees.is_empty() {
-        return Err(ContractError::FeeSwapNotAllowed);
+        return Err(ContractError::FeeSwapWithoutIbcFees);
     }
 
     // Validate swap operations
