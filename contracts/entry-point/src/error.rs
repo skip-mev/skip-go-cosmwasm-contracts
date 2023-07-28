@@ -31,6 +31,9 @@ pub enum ContractError {
     #[error("Duplicate Swap Venue Name Provided")]
     DuplicateSwapVenueName,
 
+    #[error("IBC fee denom differs from coin received without a fee swap to convert")]
+    IBCFeeDenomDiffersFromCoinReceived,
+
     ////////////////
     /// FEE SWAP ///
     ////////////////
@@ -38,11 +41,11 @@ pub enum ContractError {
     #[error("Fee Swap Not Allowed: No IBC Fees Provided")]
     FeeSwapWithoutIbcFees,
 
+    #[error("Fee Swap Not Allowed: No Post Swap Action IBC Transfer")]
+    FeeSwapWithoutIbcTransfer,
+
     #[error("Fee Swap Coin In Denom Differs From Coin Sent To Contract")]
     FeeSwapCoinInDenomMismatch,
-
-    #[error("Fee Swap Coin Out Greater Than IBC Fee")]
-    FeeSwapCoinOutGreaterThanIbcFee,
 
     ////////////////////////
     /// POST SWAP ACTION ///

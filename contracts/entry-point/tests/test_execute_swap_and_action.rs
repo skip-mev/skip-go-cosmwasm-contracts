@@ -31,8 +31,8 @@ Expect Error
     - Fee Swap Required Denom In Not The Same As Coin Sent To Contract
     - Fee Swap Required Denom In Not The Same As First Swap Operation Denom In
     - Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out
+    - Fee Swap And User Swap Without IBC Transfer
     - Fee Swap And User Swap Without IBC Fees
-    - Fee Swap Coin Out Greater Than Ibc Fee Requires
 
     // User Swap
     - User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
@@ -296,7 +296,6 @@ struct Params {
         fee_swap: Some(
             SwapExactCoinOut {
                 swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
@@ -413,7 +412,6 @@ struct Params {
         fee_swap: Some(
             SwapExactCoinOut {
                 swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
@@ -466,7 +464,6 @@ struct Params {
         fee_swap: Some(
             SwapExactCoinOut {
                 swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
@@ -515,7 +512,6 @@ struct Params {
         fee_swap: Some(
             SwapExactCoinOut {
                 swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
@@ -564,7 +560,6 @@ struct Params {
         fee_swap: Some(
             SwapExactCoinOut {
                 swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
@@ -605,55 +600,6 @@ struct Params {
         expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
     };
     "Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_001, "untrn"),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
-        user_swap: SwapExactCoinIn {
-            swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![
-                SwapOperation {
-                    pool: "pool_2".to_string(),
-                    denom_in: "osmo".to_string(),
-                    denom_out: "uatom".to_string(),
-                }
-            ],
-        },
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: Action::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: Some(IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                }),
-                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
-                    .to_string(),
-            },
-        },
-        expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapCoinOutGreaterThanIbcFee),
-    };
-    "Fee Swap Coin Out Greater Than Ibc Fee Requires")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -712,7 +658,6 @@ struct Params {
         fee_swap: Some(
             SwapExactCoinOut {
                 swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "untrn"),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
@@ -737,6 +682,50 @@ struct Params {
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
+        },
+        expected_messages: vec![],
+        expected_error: Some(ContractError::FeeSwapWithoutIbcTransfer),
+    };
+    "Fee Swap And User Swap Without IBC Transfer - Expect Error")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "osmo"),
+        ],
+        fee_swap: Some(
+            SwapExactCoinOut {
+                swap_venue_name: "swap_venue_name".to_string(), 
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "untrn".to_string(),
+                    }
+                ],
+                refund_address: None,
+            }
+        ),
+        user_swap: SwapExactCoinIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![
+                SwapOperation {
+                    pool: "pool_2".to_string(),
+                    denom_in: "osmo".to_string(),
+                    denom_out: "atom".to_string(),
+                }
+            ],
+        },
+        min_coin: Coin::new(100_000, "atom"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
         },
         expected_messages: vec![],
         expected_error: Some(ContractError::FeeSwapWithoutIbcFees),
@@ -818,7 +807,6 @@ struct Params {
         fee_swap: Some(
             SwapExactCoinOut {
                 swap_venue_name: "swap_venue_name".to_string(), 
-                coin_out: Coin::new(200_000, "osmo"),
                 operations: vec![],
                 refund_address: None,
             }
