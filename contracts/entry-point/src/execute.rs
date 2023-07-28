@@ -99,6 +99,11 @@ pub fn execute_swap_and_action(
         &min_coin.denom,
     )?;
 
+    // Add the user swap message to the response
+    response = response
+        .add_message(user_swap_msg)
+        .add_attribute("action", "dispatch_user_swap");
+
     // Create the transfer message
     let post_swap_action_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
@@ -113,9 +118,8 @@ pub fn execute_swap_and_action(
 
     // Add the user swap message and post swap action message to the response
     Ok(response
-        .add_message(user_swap_msg)
         .add_message(post_swap_action_msg)
-        .add_attribute("action", "dispatch_user_swap_and_post_swap_action"))
+        .add_attribute("action", "dispatch_post_swap_action"))
 }
 
 // Dispatches the post swap action
