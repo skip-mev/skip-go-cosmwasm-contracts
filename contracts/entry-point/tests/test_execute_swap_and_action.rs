@@ -1,8 +1,9 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, Coin, ContractResult, OverflowError, OverflowOperation, QuerierResult,
+    to_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
+    QuerierResult,
     ReplyOn::Never,
-    SubMsg, SystemResult, Timestamp, WasmMsg, WasmQuery,
+    SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{
@@ -25,6 +26,8 @@ Expect Response
     - User Swap With IBC Transfer With IBC Fees
     - User Swap With IBC Transfer Without IBC Fees
     - Fee Swap And User Swap With IBC Fees
+    - User Swap With Single Affiliate
+    - User Swap With Multiple Affiliates
 
 Expect Error
     // Fee Swap
@@ -64,6 +67,7 @@ struct Params {
     min_coin: Coin,
     timeout_timestamp: u64,
     post_swap_action: Action,
+    affiliates: Vec<Affiliate>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -92,6 +96,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -122,7 +127,6 @@ struct Params {
                         post_swap_action: Action::BankSend {
                             to_address: "to_address".to_string(),
                         },
-                        affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -168,6 +172,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -209,7 +214,6 @@ struct Params {
                                     .to_string(),
                             },
                         },
-                        affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -251,6 +255,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -288,7 +293,6 @@ struct Params {
                                     .to_string(),
                             },
                         },
-                        affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -346,6 +350,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -406,7 +411,6 @@ struct Params {
                                     .to_string(),
                             },
                         },
-                        affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -418,6 +422,178 @@ struct Params {
         expected_error: None,
     };
     "Fee Swap And User Swap With IBC Fees")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "untrn"),
+        ],
+        fee_swap: None,
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        min_coin: Coin::new(1_000_000, "osmo"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::BankSend {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![Affiliate {
+            address: "affiliate".to_string(),
+            basis_points_fee: Uint128::new(1000),
+        }],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "untrn".to_string(),
+                                denom_out: "osmo".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "affiliate".to_string(),
+                    amount: vec![Coin::new(100_000, "osmo")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_coin: Coin::new(1_000_000, "osmo"),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::BankSend {
+                            to_address: "to_address".to_string(),
+                        },
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap With Single Affiliate")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "untrn"),
+        ],
+        fee_swap: None,
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        min_coin: Coin::new(1_000_000, "osmo"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::BankSend {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![
+            Affiliate {
+                address: "affiliate_1".to_string(),
+                basis_points_fee: Uint128::new(1000),
+            },
+            Affiliate {
+                address: "affiliate_2".to_string(),
+                basis_points_fee: Uint128::new(1000),
+            },
+        ],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "untrn".to_string(),
+                                denom_out: "osmo".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "affiliate_1".to_string(),
+                    amount: vec![Coin::new(100_000, "osmo")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "affiliate_2".to_string(),
+                    amount: vec![Coin::new(100_000, "osmo")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_coin: Coin::new(1_000_000, "osmo"),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::BankSend {
+                            to_address: "to_address".to_string(),
+                        },
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap With Multiple Affiliates")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -464,6 +640,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Overflow(OverflowError {
             operation: OverflowOperation::Sub,
@@ -518,6 +695,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::FeeSwapCoinInDenomMismatch),
     };
@@ -568,6 +746,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
     };
@@ -618,6 +797,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
     };
@@ -645,6 +825,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
     };
@@ -683,6 +864,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::IBCFeeDenomDiffersFromCoinReceived),
     };
@@ -710,6 +892,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
     };
@@ -749,6 +932,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::FeeSwapWithoutIbcTransfer),
     };
@@ -795,6 +979,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::FeeSwapWithoutIbcFees),
     };
@@ -845,6 +1030,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(IbcFeesNotOneCoin)),
     };
@@ -895,6 +1081,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(IbcFeesNotOneCoin)),
     };
@@ -920,6 +1107,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Payment(NoFunds{})),
     };
@@ -948,6 +1136,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Payment(MultipleDenoms{})),
     };
@@ -969,6 +1158,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
     };
@@ -1013,6 +1203,7 @@ struct Params {
                     .to_string(),
             },
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
     };
@@ -1034,6 +1225,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
+        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Timeout),
     };
@@ -1080,11 +1272,6 @@ fn test_execute_swap_and_action(params: Params) {
         )
         .unwrap();
 
-    // Create standardized params used across all tests
-    // The reason for these params to not need to be defined in each test case is because
-    // they have no direct impact on the test case
-    let affiliates: Vec<Affiliate> = vec![];
-
     // Call execute_swap_and_action with the given test case params
     let res = skip_swap_entry_point::contract::execute(
         deps.as_mut(),
@@ -1096,7 +1283,7 @@ fn test_execute_swap_and_action(params: Params) {
             min_coin: params.min_coin,
             timeout_timestamp: params.timeout_timestamp,
             post_swap_action: params.post_swap_action,
-            affiliates,
+            affiliates: params.affiliates,
         },
     );
 
