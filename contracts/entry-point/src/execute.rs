@@ -11,8 +11,8 @@ use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
-        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
-        Swap, SwapExactCoinOut,
+        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
+        SwapExactCoinOut,
     },
 };
 
@@ -108,11 +108,8 @@ pub fn execute_swap_and_action(
     // response, decreasing the transfer out coin amount by each affiliate fee amount
     for affiliate in affiliates.iter() {
         // Verify, calculate, and get the affiliate fee amount
-        let affiliate_fee_amount = verify_and_calculate_affiliate_fee_amount(
-            &deps,
-            &min_coin,
-            affiliate,
-        )?;
+        let affiliate_fee_amount =
+            verify_and_calculate_affiliate_fee_amount(&deps, &min_coin, affiliate)?;
 
         // Create the affiliate fee bank send message
         let affiliate_fee_msg = BankMsg::Send {
@@ -314,10 +311,10 @@ fn verify_and_create_user_swap_msg(
             };
 
             Ok(user_swap_msg)
-        },
+        }
         Swap::SwapExactCoinOut(_) => {
             unimplemented!()
-        },
+        }
     }
 }
 
