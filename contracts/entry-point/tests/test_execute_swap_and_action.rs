@@ -27,12 +27,12 @@ Expect Response
 
 Expect Error
     // Fee Swap
-    - Fee Swap Necessary Coin More Than Sent To Contract
-    - Fee Swap Required Denom In Not The Same As Coin Sent To Contract
-    - Fee Swap Required Denom In Not The Same As First Swap Operation Denom In
-    - Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out
-    - Fee Swap And User Swap Without IBC Transfer
-    - Fee Swap And User Swap Without IBC Fees
+    - Fee Swap Coin In Amount More Than Remaining Coin Received Amount
+    - Fee Swap Coin In Denom In Not The Same As Remaining Coin Received Denom
+    - Fee Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
+    - Fee Swap Last Swap Operation Denom Out Is Not The Same As IBC Fee Coin Denom
+    - Fee Swap Without IBC Transfer
+    - Fee Swap With IBC Trnasfer But Without IBC Fees
 
     // User Swap
     - User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
@@ -455,7 +455,7 @@ struct Params {
             operand2: "200000".to_string(),
         })),
     };
-    "Fee Swap Necessary Coin More Than Sent To Contract - Expect Error")]
+    "Fee Swap Coin In Amount More Than Remaining Coin Received Amount- Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -503,7 +503,7 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::FeeSwapCoinInDenomMismatch),
     };
-    "Fee Swap Required Denom In Not The Same As Coin Sent To Contract - Expect Error")]
+    "Fee Swap Coin In Denom In Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -551,7 +551,7 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
     };
-    "Fee Swap Required Denom In Not The Same As First Swap Operation Denom In - Expect Error")]
+    "Fee Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -599,7 +599,7 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
     };
-    "Fee Swap Coin Out Denom Is Not The Same As Last Swap Operation Denom Out - Expect Error")]
+    "Fee Swap Last Swap Operation Denom Out Is Not The Same As IBC Fee Coin Denom- Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -686,7 +686,7 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::FeeSwapWithoutIbcTransfer),
     };
-    "Fee Swap And User Swap Without IBC Transfer - Expect Error")]
+    "Fee Swap Without IBC Transfer - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -730,7 +730,7 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::FeeSwapWithoutIbcFees),
     };
-    "Fee Swap And User Swap Without IBC Fees - Expect Error")]
+    "Fee Swap With IBC Trnasfer But Without IBC Fees - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![],
