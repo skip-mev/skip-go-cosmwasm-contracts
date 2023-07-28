@@ -8,7 +8,7 @@ use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
+        SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty, IbcFeesNotOneCoin
     },
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
@@ -33,6 +33,8 @@ Expect Error
     - Fee Swap Last Swap Operation Denom Out Is Not The Same As IBC Fee Coin Denom
     - Fee Swap Without IBC Transfer
     - Fee Swap With IBC Trnasfer But Without IBC Fees
+    - Fee Swap With IBC Transfer With IBC Fees But More Than One IBC Fee Denom Specified
+    - Fee Swap With IBC Transfer With IBC Fees But No IBC Fee Coins Specified
 
     // User Swap
     - User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
@@ -731,6 +733,102 @@ struct Params {
         expected_error: Some(ContractError::FeeSwapWithoutIbcFees),
     };
     "Fee Swap With IBC Trnasfer But Without IBC Fees - Expect Error")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "osmo"),
+        ],
+        fee_swap: Some(
+            SwapExactCoinOut {
+                swap_venue_name: "swap_venue_name".to_string(), 
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "untrn".to_string(),
+                    }
+                ],
+                refund_address: None,
+            }
+        ),
+        user_swap: SwapExactCoinIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![
+                SwapOperation {
+                    pool: "pool_2".to_string(),
+                    denom_in: "osmo".to_string(),
+                    denom_out: "atom".to_string(),
+                }
+            ],
+        },
+        min_coin: Coin::new(100_000, "atom"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "uatom")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(IbcFeesNotOneCoin)),
+    };
+    "Fee Swap With IBC Transfer With IBC Fees But More Than One IBC Fee Denom Specified - Expect Error")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "osmo"),
+        ],
+        fee_swap: Some(
+            SwapExactCoinOut {
+                swap_venue_name: "swap_venue_name".to_string(), 
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "untrn".to_string(),
+                    }
+                ],
+                refund_address: None,
+            }
+        ),
+        user_swap: SwapExactCoinIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![
+                SwapOperation {
+                    pool: "pool_2".to_string(),
+                    denom_in: "osmo".to_string(),
+                    denom_out: "atom".to_string(),
+                }
+            ],
+        },
+        min_coin: Coin::new(100_000, "atom"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![],
+                    timeout_fee: vec![],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(IbcFeesNotOneCoin)),
+    };
+    "Fee Swap With IBC Transfer With IBC Fees But No IBC Fee Coins Specified - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![],
