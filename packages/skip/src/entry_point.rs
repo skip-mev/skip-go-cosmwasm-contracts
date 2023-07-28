@@ -3,7 +3,7 @@ use cosmwasm_std::{Binary, Coin, Uint128};
 
 use crate::{
     ibc::IbcInfo,
-    swap::{SwapExactCoinIn, SwapExactCoinOut, SwapVenue},
+    swap::{Swap, SwapExactCoinOut, SwapVenue},
 };
 
 ///////////////////
@@ -25,7 +25,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     SwapAndAction {
         fee_swap: Option<SwapExactCoinOut>,
-        user_swap: SwapExactCoinIn,
+        user_swap: Swap,
         min_coin: Coin,
         timeout_timestamp: u64,
         post_swap_action: Action,
