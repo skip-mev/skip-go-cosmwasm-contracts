@@ -1,4 +1,4 @@
-use crate::proto_coin::ProtoCoin;
+use crate::{error::SkipError, proto_coin::ProtoCoin};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Coins, StdError};
 use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
@@ -98,6 +98,18 @@ impl TryFrom<IbcFee> for Coins {
             .try_for_each(|coin| ibc_fees.add(coin))?;
 
         Ok(ibc_fees)
+    }
+}
+
+impl IbcFee {
+    pub fn one_coin(&self) -> Result<Coin, SkipError> {
+        let ibc_fees_map: Coins = self.clone().try_into()?;
+
+        if ibc_fees_map.len() != 1 {
+            return Err(SkipError::IbcFeesNotOneCoin);
+        }
+
+        Ok(ibc_fees_map.to_vec().first().unwrap().clone())
     }
 }
 

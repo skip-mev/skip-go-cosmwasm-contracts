@@ -158,7 +158,6 @@ where
 #[cw_serde]
 pub struct SwapExactCoinOut {
     pub swap_venue_name: String,
-    pub coin_out: Coin,
     pub operations: Vec<SwapOperation>,
     pub refund_address: Option<String>,
 }
