@@ -19,4 +19,8 @@ pub enum SkipError {
 
     #[error("Last Swap Operations' Denom Out Differs From Swap Coin Out Denom")]
     SwapOperationsCoinOutDenomMismatch,
+
+    // IBC FEES
+    #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
+    IbcFeesNotOneCoin,
 }
