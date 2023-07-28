@@ -35,7 +35,6 @@ pub enum ExecuteMsg {
         min_coin: Coin,
         timeout_timestamp: u64,
         post_swap_action: Action,
-        affiliates: Vec<Affiliate>,
     },
 }
 
