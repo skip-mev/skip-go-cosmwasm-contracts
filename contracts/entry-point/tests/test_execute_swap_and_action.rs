@@ -8,7 +8,8 @@ use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty, IbcFeesNotOneCoin
+        IbcFeesNotOneCoin, SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch,
+        SwapOperationsEmpty,
     },
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
