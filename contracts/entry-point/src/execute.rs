@@ -140,21 +140,20 @@ pub fn execute_user_swap(
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_user_swap");
 
-    // Create the user swap message
-    let user_swap_msg =
-        verify_and_create_user_swap_msg(&deps, swap, remaining_coin, &min_coin.denom)?;
+    // Create affiliate response and total affiliate fee amount
+    let mut affiliate_response: Response = Response::new();
+    let mut total_affiliate_fee_amount: Uint128 = Uint128::zero();
 
-    // Add the user swap message to the response
-    response = response
-        .add_message(user_swap_msg)
-        .add_attribute("action", "dispatch_user_swap");
-
-    // If affiliates exist, create the affiliate fee messages and add them to the
-    // response, decreasing the transfer out coin amount by each affiliate fee amount
+    // If affiliates exist, create the affiliate fee messages and attributes and
+    // add them to the affiliate response, updating the total affiliate fee amount
     for affiliate in affiliates.iter() {
         // Verify, calculate, and get the affiliate fee amount
         let affiliate_fee_amount =
             verify_and_calculate_affiliate_fee_amount(&deps, &min_coin, affiliate)?;
+
+        // Add the affiliate fee amount to the total affiliate fee amount
+        total_affiliate_fee_amount =
+            total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
 
         // Create the affiliate fee bank send message
         let affiliate_fee_msg = BankMsg::Send {
@@ -166,14 +165,112 @@ pub fn execute_user_swap(
         };
 
         // Add the affiliate fee message and attributes to the response
-        response = response
+        affiliate_response = affiliate_response
             .add_message(affiliate_fee_msg)
             .add_attribute("action", "dispatch_affiliate_fee_bank_send")
             .add_attribute("address", &affiliate.address)
             .add_attribute("amount", affiliate_fee_amount);
     }
 
-    Ok(response)
+    // Create the user swap message
+    match swap {
+        Swap::SwapExactCoinIn(swap) => {
+            // Validate swap operations
+            validate_swap_operations(&swap.operations, &remaining_coin.denom, &min_coin.denom)?;
+
+            // Get swap adapter contract address from venue name
+            let user_swap_adapter_contract_address =
+                SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
+
+            // Create the user swap message args
+            let user_swap_msg_args: SwapExecuteMsg = swap.into();
+
+            // Create the user swap message
+            let user_swap_msg = WasmMsg::Execute {
+                contract_addr: user_swap_adapter_contract_address.to_string(),
+                msg: to_binary(&user_swap_msg_args)?,
+                funds: vec![remaining_coin],
+            };
+
+            response = response
+                .add_message(user_swap_msg)
+                .add_attribute("action", "dispatch_user_swap_exact_coin_in");
+        }
+        Swap::SwapExactCoinOut(swap) => {
+            // Validate swap operations
+            validate_swap_operations(&swap.operations, &remaining_coin.denom, &min_coin.denom)?;
+
+            // Get swap adapter contract address from venue name
+            let user_swap_adapter_contract_address =
+                SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
+
+            // Calculate the swap coin out by adding the min coin amount to the total affiliate fee amount
+            let swap_coin_out = Coin {
+                denom: min_coin.denom,
+                amount: min_coin.amount.checked_add(total_affiliate_fee_amount)?,
+            };
+
+            // Query the swap adapter to get the coin in needed for the user swap plus affiliates
+            let user_swap_coin_in = query_swap_coin_in(
+                &deps,
+                &user_swap_adapter_contract_address,
+                &swap,
+                &swap_coin_out,
+            )?;
+
+            // Verify the user swap in denom is the same as the denom received from the message to the contract
+            if user_swap_coin_in.denom != remaining_coin.denom {
+                return Err(ContractError::UserSwapCoinInDenomMismatch);
+            }
+
+            // Calculate refund amount to send back to the user
+            let refund_amount = remaining_coin
+                .amount
+                .checked_sub(user_swap_coin_in.amount)?;
+
+            // If the refund amount is greater than zero, then create the refund message
+            // and add it to the response
+            if refund_amount > Uint128::zero() {
+                // Create the refund message
+                let refund_msg = BankMsg::Send {
+                    to_address: swap
+                        .refund_address
+                        .clone()
+                        .ok_or(ContractError::NoRefundAddress)?,
+                    amount: vec![Coin {
+                        denom: remaining_coin.denom.clone(),
+                        amount: refund_amount,
+                    }],
+                };
+
+                // Add the refund message and attributes to the response
+                response = response
+                    .add_message(refund_msg)
+                    .add_attribute("action", "dispatch_refund")
+                    .add_attribute("address", &info.sender)
+                    .add_attribute("amount", refund_amount);
+            }
+
+            // Create the user swap message args
+            let user_swap_msg_args: SwapExecuteMsg = swap.into();
+
+            // Create the user swap message
+            let user_swap_msg = WasmMsg::Execute {
+                contract_addr: user_swap_adapter_contract_address.to_string(),
+                msg: to_binary(&user_swap_msg_args)?,
+                funds: vec![user_swap_coin_in],
+            };
+
+            response = response
+                .add_message(user_swap_msg)
+                .add_attribute("action", "dispatch_user_swap_exact_coin_out");
+        }
+    }
+
+    // Add the affiliate messages and attributes to the response and return the response
+    Ok(response
+        .add_submessages(affiliate_response.messages)
+        .add_attributes(affiliate_response.attributes))
 }
 
 // Dispatches the post swap action
@@ -307,40 +404,6 @@ fn verify_and_create_fee_swap_msg(
     };
 
     Ok(fee_swap_msg)
-}
-
-// Verifies, creates, and returns the user swap message
-fn verify_and_create_user_swap_msg(
-    deps: &DepsMut,
-    swap: Swap,
-    remaining_coin: Coin,
-    min_coin_denom: &str,
-) -> ContractResult<WasmMsg> {
-    match swap {
-        Swap::SwapExactCoinIn(swap) => {
-            // Validate swap operations
-            validate_swap_operations(&swap.operations, &remaining_coin.denom, min_coin_denom)?;
-
-            // Get swap adapter contract address from venue name
-            let user_swap_adapter_contract_address =
-                SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
-
-            // Create the user swap message args
-            let user_swap_msg_args: SwapExecuteMsg = swap.into();
-
-            // Create the user swap message
-            let user_swap_msg = WasmMsg::Execute {
-                contract_addr: user_swap_adapter_contract_address.to_string(),
-                msg: to_binary(&user_swap_msg_args)?,
-                funds: vec![remaining_coin],
-            };
-
-            Ok(user_swap_msg)
-        }
-        Swap::SwapExactCoinOut(_) => {
-            unimplemented!()
-        }
-    }
 }
 
 // AFFILIATE FEE HELPER FUNCTIONS
@@ -479,15 +542,15 @@ fn verify_and_create_contract_call_msg(
 fn query_swap_coin_in(
     deps: &DepsMut,
     swap_adapter_contract_address: &Addr,
-    fee_swap: &SwapExactCoinOut,
-    fee_swap_coin_out: &Coin,
+    swap: &SwapExactCoinOut,
+    swap_coin_out: &Coin,
 ) -> ContractResult<Coin> {
     // Query the swap adapter to get the coin in needed for the fee swap
     let fee_swap_coin_in: Coin = deps.querier.query_wasm_smart(
         swap_adapter_contract_address,
         &SwapQueryMsg::SimulateSwapExactCoinOut {
-            coin_out: fee_swap_coin_out.clone(),
-            swap_operations: fee_swap.operations.clone(),
+            coin_out: swap_coin_out.clone(),
+            swap_operations: swap.operations.clone(),
         },
     )?;
 
