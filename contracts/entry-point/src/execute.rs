@@ -79,9 +79,7 @@ pub fn execute_swap_and_action(
                 }
 
                 // Deduct the ibc_fee_coin amount from the remaining coin received amount
-                remaining_coin.amount = remaining_coin
-                    .amount
-                    .checked_sub(ibc_fee_coin.amount)?;
+                remaining_coin.amount = remaining_coin.amount.checked_sub(ibc_fee_coin.amount)?;
             }
         }
         _ => {
@@ -296,9 +294,7 @@ fn verify_and_create_fee_swap_msg(
 
     // Deduct the fee swap in amount from the swappable coin
     // Error if swap requires more than the swappable coin amount
-    remaining_coin.amount = remaining_coin
-        .amount
-        .checked_sub(fee_swap_coin_in.amount)?;
+    remaining_coin.amount = remaining_coin.amount.checked_sub(fee_swap_coin_in.amount)?;
 
     // Create the fee swap message args
     let fee_swap_msg_args: SwapExecuteMsg = fee_swap.into();

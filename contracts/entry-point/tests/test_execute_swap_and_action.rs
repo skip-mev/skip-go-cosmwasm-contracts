@@ -1,9 +1,8 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
-    QuerierResult,
+    to_binary, Addr, Coin, ContractResult, OverflowError, OverflowOperation, QuerierResult,
     ReplyOn::Never,
-    SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
+    SubMsg, SystemResult, Timestamp, WasmMsg, WasmQuery,
 };
 use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{

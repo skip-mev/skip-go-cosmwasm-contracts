@@ -1,18 +1,20 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
+    to_binary, Addr, BankMsg, Coin, ContractResult, QuerierResult,
     ReplyOn::Never,
-    to_binary, Addr, Coin, ContractResult, QuerierResult,
-    SubMsg, SystemResult, Timestamp, WasmQuery, Uint128, WasmMsg, BankMsg, 
+    SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use skip::{
-    entry_point::{ExecuteMsg, Affiliate},
-    error::SkipError::{SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty},
+    entry_point::{Affiliate, ExecuteMsg},
+    error::SkipError::{
+        SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
+    },
     swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapOperation},
 };
 use skip_swap_entry_point::{error::ContractError, state::SWAP_VENUE_MAP};
 use test_case::test_case;
 
- /*
+/*
 Test Cases:
 
 Expect Response
