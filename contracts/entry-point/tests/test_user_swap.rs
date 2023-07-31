@@ -1,12 +1,13 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
+    ReplyOn::Never,
     to_binary, Addr, Coin, ContractResult, QuerierResult,
-    SubMsg, SystemResult, Timestamp, WasmQuery,
+    SubMsg, SystemResult, Timestamp, WasmQuery, Uint128, WasmMsg, BankMsg, 
 };
 use skip::{
     entry_point::{ExecuteMsg, Affiliate},
     error::SkipError::{SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty},
-    swap::{Swap, SwapExactCoinIn, SwapOperation},
+    swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapOperation},
 };
 use skip_swap_entry_point::{error::ContractError, state::SWAP_VENUE_MAP};
 use test_case::test_case;
@@ -15,6 +16,9 @@ use test_case::test_case;
 Test Cases:
 
 Expect Response
+    - User Swap With No Affiliates
+    - User Swap With Single Affiliate
+    - User Swap With Multiple Affiliates
 
 Expect Error
     - User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
@@ -36,6 +40,174 @@ struct Params {
 }
 
 // Test execute_swap_and_action
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        remaining_coin: Coin::new(1_000_000, "untrn"),
+        min_coin: Coin::new(1_000_000, "osmo"),
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "untrn".to_string(),
+                                denom_out: "osmo".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap With No Affiliates")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        remaining_coin: Coin::new(1_000_000, "untrn"),
+        min_coin: Coin::new(1_000_000, "osmo"),
+        affiliates: vec![Affiliate {
+            address: "affiliate".to_string(),
+            basis_points_fee: Uint128::new(1000),
+        }],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "untrn".to_string(),
+                                denom_out: "osmo".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "affiliate".to_string(),
+                    amount: vec![Coin::new(100_000, "osmo")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap With Single Affiliate")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        remaining_coin: Coin::new(1_000_000, "untrn"),
+        min_coin: Coin::new(1_000_000, "osmo"),
+        affiliates: vec![
+            Affiliate {
+                address: "affiliate_1".to_string(),
+                basis_points_fee: Uint128::new(1000),
+            },
+            Affiliate {
+                address: "affiliate_2".to_string(),
+                basis_points_fee: Uint128::new(1000),
+            },
+        ],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "untrn".to_string(),
+                                denom_out: "osmo".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "affiliate_1".to_string(),
+                    amount: vec![Coin::new(100_000, "osmo")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "affiliate_2".to_string(),
+                    amount: vec![Coin::new(100_000, "osmo")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap With Multiple Affiliates")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
