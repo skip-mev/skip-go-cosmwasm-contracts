@@ -211,7 +211,7 @@ pub fn execute_user_swap(
                 amount: min_coin.amount.checked_add(total_affiliate_fee_amount)?,
             };
 
-            // Query the swap adapter to get the coin in needed for the user swap plus affiliates
+            // Query the swap adapter to get the coin in needed to obtain the min coin plus affiliates
             let user_swap_coin_in = query_swap_coin_in(
                 &deps,
                 &user_swap_adapter_contract_address,
@@ -229,8 +229,7 @@ pub fn execute_user_swap(
                 .amount
                 .checked_sub(user_swap_coin_in.amount)?;
 
-            // If the refund amount is greater than zero, then create the refund message
-            // and add it to the response
+            // If refund amount gt zero, then create the refund message and add it to the response
             if refund_amount > Uint128::zero() {
                 // Get the refund address from the swap
                 let to_address = swap
@@ -243,7 +242,7 @@ pub fn execute_user_swap(
 
                 // Create the refund message
                 let refund_msg = BankMsg::Send {
-                    to_address,
+                    to_address: to_address.clone(),
                     amount: vec![Coin {
                         denom: remaining_coin.denom,
                         amount: refund_amount,
@@ -254,7 +253,7 @@ pub fn execute_user_swap(
                 response = response
                     .add_message(refund_msg)
                     .add_attribute("action", "dispatch_refund")
-                    .add_attribute("address", &info.sender)
+                    .add_attribute("address", &to_address)
                     .add_attribute("amount", refund_amount);
             }
 
