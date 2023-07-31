@@ -1,6 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    execute::{execute_post_swap_action, execute_swap_and_action},
+    execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
@@ -103,6 +103,12 @@ pub fn execute(
             post_swap_action,
             affiliates,
         ),
+        ExecuteMsg::UserSwap {
+            swap,
+            min_coin,
+            remaining_coin,
+            affiliates,
+        } => execute_user_swap(deps, env, info, swap, min_coin, remaining_coin, affiliates),
         ExecuteMsg::PostSwapAction {
             min_coin,
             timeout_timestamp,
