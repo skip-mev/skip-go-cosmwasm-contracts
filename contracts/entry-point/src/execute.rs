@@ -12,7 +12,7 @@ use skip::{
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
-        SwapExactCoinIn, SwapExactCoinOut,
+        Swap, SwapExactCoinOut,
     },
 };
 
@@ -28,7 +28,7 @@ pub fn execute_swap_and_action(
     env: Env,
     info: MessageInfo,
     fee_swap: Option<SwapExactCoinOut>,
-    user_swap: SwapExactCoinIn,
+    user_swap: Swap,
     min_coin: Coin,
     timeout_timestamp: u64,
     post_swap_action: Action,
@@ -297,32 +297,39 @@ fn verify_and_create_fee_swap_msg(
 // Verifies, creates, and returns the user swap message
 fn verify_and_create_user_swap_msg(
     deps: &DepsMut,
-    user_swap: SwapExactCoinIn,
+    user_swap: Swap,
     remaining_coin_received: Coin,
     min_coin_denom: &str,
 ) -> ContractResult<WasmMsg> {
-    // Validate swap operations
-    validate_swap_operations(
-        &user_swap.operations,
-        &remaining_coin_received.denom,
-        min_coin_denom,
-    )?;
+    match user_swap {
+        Swap::SwapExactCoinIn(user_swap) => {
+            // Validate swap operations
+            validate_swap_operations(
+                &user_swap.operations,
+                &remaining_coin_received.denom,
+                min_coin_denom,
+            )?;
 
-    // Get swap adapter contract address from venue name
-    let user_swap_adapter_contract_address =
-        SWAP_VENUE_MAP.load(deps.storage, &user_swap.swap_venue_name)?;
+            // Get swap adapter contract address from venue name
+            let user_swap_adapter_contract_address =
+                SWAP_VENUE_MAP.load(deps.storage, &user_swap.swap_venue_name)?;
 
-    // Create the user swap message args
-    let user_swap_msg_args: SwapExecuteMsg = user_swap.into();
+            // Create the user swap message args
+            let user_swap_msg_args: SwapExecuteMsg = user_swap.into();
 
-    // Create the user swap message
-    let user_swap_msg = WasmMsg::Execute {
-        contract_addr: user_swap_adapter_contract_address.to_string(),
-        msg: to_binary(&user_swap_msg_args)?,
-        funds: vec![remaining_coin_received],
-    };
+            // Create the user swap message
+            let user_swap_msg = WasmMsg::Execute {
+                contract_addr: user_swap_adapter_contract_address.to_string(),
+                msg: to_binary(&user_swap_msg_args)?,
+                funds: vec![remaining_coin_received],
+            };
 
-    Ok(user_swap_msg)
+            Ok(user_swap_msg)
+        },
+        Swap::SwapExactCoinOut(_) => {
+            unimplemented!()
+        },
+    }
 }
 
 // AFFILIATE FEE HELPER FUNCTIONS
