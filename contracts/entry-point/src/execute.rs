@@ -4,7 +4,7 @@ use crate::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, Coin, Coins, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg,
+    WasmMsg, Deps,
 };
 use cw_utils::one_coin;
 use skip::{
@@ -143,6 +143,17 @@ pub fn execute_swap_and_action(
     Ok(response
         .add_message(post_swap_action_msg)
         .add_attribute("action", "dispatch_post_swap_action"))
+}
+
+pub fn execute_user_swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    swap: Swap,
+    min_coin: Coin,
+    affiliates: Vec<Affiliate>,
+) -> ContractResult<Response> {
+    unimplemented!()
 }
 
 // Dispatches the post swap action

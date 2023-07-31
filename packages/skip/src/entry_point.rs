@@ -31,6 +31,11 @@ pub enum ExecuteMsg {
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
     },
+    UserSwap {
+        swap: Swap,
+        min_coin: Coin,
+        affiliates: Vec<Affiliate>,
+    },
     PostSwapAction {
         min_coin: Coin,
         timeout_timestamp: u64,
