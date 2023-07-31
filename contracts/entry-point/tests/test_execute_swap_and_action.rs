@@ -33,7 +33,7 @@ Expect Error
     - Fee Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
     - Fee Swap Last Swap Operation Denom Out Is Not The Same As IBC Fee Coin Denom
     - Fee Swap Without IBC Transfer
-    - Fee Swap With IBC Trnasfer But Without IBC Fees
+    - Fee Swap With IBC Transfer But Without IBC Fees
 
     // User Swap
     - User Swap With IBC Transfer With IBC Fees But IBC Fee Coin Denom Is Not The Same As Remaining Coin Received Denom
@@ -95,17 +95,25 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactCoinIn (
+                            SwapExactCoinIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }
+                                ],
                             }
-                        ],
+                        ),
+                        remaining_coin: Coin::new(1_000_000, "untrn"),
+                        min_coin: Coin::new(1_000_000, "osmo"),
+                        affiliates: vec![],
                     }).unwrap(),
-                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                    funds: vec![],
                 }
                 .into(),
                 gas_limit: None,
@@ -171,17 +179,25 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactCoinIn (
+                            SwapExactCoinIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }
+                                ],
                             }
-                        ],
+                        ),
+                        remaining_coin: Coin::new(800_000, "untrn"),
+                        min_coin: Coin::new(800_000, "osmo"),
+                        affiliates: vec![],
                     }).unwrap(),
-                    funds: vec![Coin::new(800_000, "untrn")], 
+                    funds: vec![],
                 }
                 .into(),
                 gas_limit: None,
@@ -254,17 +270,25 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactCoinIn (
+                            SwapExactCoinIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }
+                                ],
                             }
-                        ],
+                        ),
+                        remaining_coin: Coin::new(1_000_000, "untrn"),
+                        min_coin: Coin::new(1_000_000, "osmo"),
+                        affiliates: vec![],
                     }).unwrap(),
-                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                    funds: vec![],
                 }
                 .into(),
                 gas_limit: None,
@@ -368,17 +392,25 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactCoinIn (
+                            SwapExactCoinIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool_2".to_string(),
+                                        denom_in: "osmo".to_string(),
+                                        denom_out: "uatom".to_string(),
+                                    }
+                                ],
                             }
-                        ],
+                        ),
+                        remaining_coin: Coin::new(800_000, "osmo"),
+                        min_coin: Coin::new(100_000, "uatom"),
+                        affiliates: vec![],
                     }).unwrap(),
-                    funds: vec![Coin::new(800_000, "osmo")], 
+                    funds: vec![],
                 }
                 .into(),
                 gas_limit: None,
