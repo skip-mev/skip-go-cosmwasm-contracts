@@ -238,7 +238,7 @@ pub fn execute_user_swap(
                         .clone()
                         .ok_or(ContractError::NoRefundAddress)?,
                     amount: vec![Coin {
-                        denom: remaining_coin.denom.clone(),
+                        denom: remaining_coin.denom,
                         amount: refund_amount,
                     }],
                 };
