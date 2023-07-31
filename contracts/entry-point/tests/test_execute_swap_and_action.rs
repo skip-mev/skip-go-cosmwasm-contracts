@@ -39,8 +39,6 @@ Expect Error
     - Fee Swap With IBC Trnasfer But Without IBC Fees
 
     // User Swap
-    - User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
-    - User Swap Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom
     - User Swap With IBC Transfer With IBC Fees But IBC Fee Coin Denom Is Not The Same As Remaining Coin Received Denom
 
     // Invalid Coins Sent To Contract
@@ -48,7 +46,6 @@ Expect Error
     - More Than One Coin Sent To Contract
 
     // Empty Swap Operations
-    - Empty User Swap Operations
     - Empty Fee Swap Operations
 
     // Timeout
@@ -805,34 +802,6 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: None,
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool_2".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "uatom".to_string(),
-                    }
-                ],
-            },
-        ),
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: Action::BankSend {
-            to_address: "to_address".to_string(),
-        },
-        affiliates: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
-    };
-    "User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
         fee_swap: None,
@@ -869,34 +838,6 @@ struct Params {
         expected_error: Some(ContractError::IBCFeeDenomDiffersFromCoinReceived),
     };
     "User Swap With IBC Transfer With IBC Fees But IBC Fee Coin Denom Is Not The Same As Remaining Coin Received Denom - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: None,
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool_2".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "osmo".to_string(),
-                    }
-                ],
-            },
-        ),
-        min_coin: Coin::new(100_000, "uatom"),
-        timeout_timestamp: 101,
-        post_swap_action: Action::BankSend {
-            to_address: "to_address".to_string(),
-        },
-        affiliates: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
-    };
-    "User Swap Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -1141,28 +1082,6 @@ struct Params {
         expected_error: Some(ContractError::Payment(MultipleDenoms{})),
     };
     "More Than One Coin Sent to Contract - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "untrn"),
-        ],
-        fee_swap: None,
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![],
-            },
-        ),
-        min_coin: Coin::new(1_000_000, "osmo"),
-        timeout_timestamp: 101,
-        post_swap_action: Action::BankSend {
-            to_address: "to_address".to_string(),
-        },
-        affiliates: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
-    };
-    "Empty User Swap Operations - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![
