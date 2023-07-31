@@ -107,7 +107,6 @@ pub fn execute(
             min_coin,
             timeout_timestamp,
             post_swap_action,
-            affiliates,
         } => execute_post_swap_action(
             deps,
             env,
@@ -115,7 +114,6 @@ pub fn execute(
             min_coin,
             timeout_timestamp,
             post_swap_action,
-            affiliates,
         ),
     }
 }

@@ -2,10 +2,10 @@ use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
     to_binary, Addr, BankMsg, Coin,
     ReplyOn::Never,
-    SubMsg, Timestamp, Uint128, WasmMsg,
+    SubMsg, Timestamp, WasmMsg,
 };
 use skip::{
-    entry_point::{Action, Affiliate, ExecuteMsg},
+    entry_point::{Action, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
 };
 use skip_swap_entry_point::{
@@ -27,15 +27,8 @@ Expect Response
     - Ibc Transfer w/ IBC Fees of different denom than min coin
     - Ibc Transfer w/ IBC Fees of same denom as min coin
 
-    // With Affiliates
-    - Bank Send w/ Affiliate
-    - Contract Call w/ Affiliate
-    - Ibc Transfer w/ IBC Fees of different denom than min coin w/ Affiliate
-    - Ibc Transfer w/ IBC Fees of same denom as min coin w/ Affiliate
-
 Expect Error
     - Bank Send Timeout
-    - Ibc Transfer w/ Affiliates Decreasing user transfer below min coin
     - Ibc Transfer w/ IBC Fees Decreasing user transfer below min coin
     - Received Less From Swap Than Min Coin
     - Unauthorized Caller
@@ -47,7 +40,6 @@ struct Params {
     caller: String,
     min_coin: Coin,
     post_swap_action: Action,
-    affiliates: Vec<Affiliate>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -60,7 +52,6 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
-        affiliates: vec![],
         expected_messages: vec![SubMsg {
             id: 0,
             msg: BankMsg::Send {
@@ -88,7 +79,6 @@ struct Params {
                     .to_string(),
             },
         },
-        affiliates: vec![],
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -123,7 +113,6 @@ struct Params {
             contract_address: "contract_call".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },
-        affiliates: vec![],
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -157,7 +146,6 @@ struct Params {
                     .to_string(),
             },
         },
-        affiliates: vec![],
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -209,7 +197,6 @@ struct Params {
                     .to_string(),
             },
         },
-        affiliates: vec![],
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -243,229 +230,6 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(900_000, "osmo"),
-        post_swap_action: Action::BankSend {
-            to_address: "swapper".to_string(),
-        },
-        affiliates: vec![Affiliate {
-            address: "affiliate".to_string(),
-            basis_points_fee: Uint128::new(1000),
-        }],
-        expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: BankMsg::Send {
-                    to_address: "affiliate".to_string(),
-                    amount: vec![Coin::new(100_000, "osmo")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: BankMsg::Send {
-                    to_address: "swapper".to_string(),
-                    amount: vec![Coin::new(900_000, "osmo")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-        ],
-        expected_error: None,
-    };
-    "Bank Send w/ Affiliate")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        min_coin: Coin::new(900_000, "osmo"),
-        post_swap_action: Action::ContractCall {
-            contract_address: "contract_call".to_string(),
-            msg: to_binary(&"contract_call_msg").unwrap(),
-        },
-        affiliates: vec![Affiliate {
-            address: "affiliate".to_string(),
-            basis_points_fee: Uint128::new(1000),
-        }],
-        expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: BankMsg::Send {
-                    to_address: "affiliate".to_string(),
-                    amount: vec![Coin::new(100_000, "osmo")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "contract_call".to_string(),
-                    msg: to_binary(&"contract_call_msg").unwrap(),
-                    funds: vec![Coin::new(900_000, "osmo")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-        ],
-        expected_error: None,
-    };
-    "Contract Call w/ Affiliate")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        min_coin: Coin::new(900_000, "osmo"),
-        post_swap_action: Action::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: Some(IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                }),
-                recover_address: "recover".to_string(),
-            },
-        },
-        affiliates: vec![Affiliate {
-            address: "affiliate".to_string(),
-            basis_points_fee: Uint128::new(1000),
-        }],
-        expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: BankMsg::Send {
-                    to_address: "affiliate".to_string(),
-                    amount: vec![Coin::new(100_000, "osmo")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "ibc_transfer_adapter".to_string(),
-                    msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
-                        info: IbcInfo {
-                            source_channel: "channel-0".to_string(),
-                            receiver: "receiver".to_string(),
-                            memo: "".to_string(),
-                            fee: Some(IbcFee {
-                                recv_fee: vec![],
-                                ack_fee: vec![Coin::new(100_000, "untrn")],
-                                timeout_fee: vec![Coin::new(100_000, "untrn")],
-                            }),
-                            recover_address: "recover".to_string(),
-                        },
-                        coin: Coin::new(900_000, "osmo"),
-                        timeout_timestamp: 101,
-                    })
-                    .unwrap(),
-                    funds: vec![Coin::new(900_000, "osmo"), Coin::new(200_000, "untrn")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-        ],
-        expected_error: None,
-    };
-    "Ibc Transfer w/ IBC Fees of different denom than min coin w/ Affiliate")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        min_coin: Coin::new(700_000, "untrn"),
-        post_swap_action: Action::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: Some(IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                }),
-                recover_address: "recover".to_string(),
-            },
-        },
-        affiliates: vec![Affiliate {
-            address: "affiliate".to_string(),
-            basis_points_fee: Uint128::new(1000),
-        }],
-        expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: BankMsg::Send {
-                    to_address: "affiliate".to_string(),
-                    amount: vec![Coin::new(100_000, "untrn")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "ibc_transfer_adapter".to_string(),
-                    msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
-                        info: IbcInfo {
-                            source_channel: "channel-0".to_string(),
-                            receiver: "receiver".to_string(),
-                            memo: "".to_string(),
-                            fee: Some(IbcFee {
-                                recv_fee: vec![],
-                                ack_fee: vec![Coin::new(100_000, "untrn")],
-                                timeout_fee: vec![Coin::new(100_000, "untrn")],
-                            }),
-                            recover_address: "recover".to_string(),
-                        },
-                        coin: Coin::new(700_000, "untrn"),
-                        timeout_timestamp: 101,
-                    })
-                    .unwrap(),
-                    funds: vec![Coin::new(900_000, "untrn")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-        ],
-        expected_error: None,
-    };
-    "Ibc Transfer w/ IBC Fees of same denom as min coin w/ Affiliate")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        min_coin: Coin::new(950_000, "osmo"),
-        post_swap_action: Action::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: Some(IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                }),
-                recover_address: "recover".to_string(),
-            },
-        },
-        affiliates: vec![Affiliate {
-            address: "affiliate".to_string(),
-            basis_points_fee: Uint128::new(1000),
-        }],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::TransferOutCoinLessThanMinAfterAffiliateFees),
-    };
-    "Ibc Transfer w/ Affiliates Decreasing user transfer below min coin - Expect Error")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
         min_coin: Coin::new(900_000, "untrn"),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -480,7 +244,6 @@ struct Params {
                 recover_address: "recover".to_string(),
             },
         },
-        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::TransferOutCoinLessThanMinAfterIbcFees),
     };
@@ -492,7 +255,6 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
-        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::ReceivedLessCoinFromSwapsThanMinCoin),
     };
@@ -504,7 +266,6 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
-        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Unauthorized),
     };
@@ -517,7 +278,6 @@ struct Params {
             contract_address: "entry_point".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },
-        affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::ContractCallAddressBlocked),
     };
@@ -557,7 +317,6 @@ fn test_execute_post_swap_action(params: Params) {
             min_coin: params.min_coin,
             timeout_timestamp: 101,
             post_swap_action: params.post_swap_action,
-            affiliates: params.affiliates,
         },
     );
 

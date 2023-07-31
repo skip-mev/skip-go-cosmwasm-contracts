@@ -54,9 +54,6 @@ pub enum ContractError {
     #[error("Received Less Coin From Swaps Than Minimum Coin Required")]
     ReceivedLessCoinFromSwapsThanMinCoin,
 
-    #[error("Transfer Out Coin Less Than Minimum Required After Affiliate Fees")]
-    TransferOutCoinLessThanMinAfterAffiliateFees,
-
     #[error("Transfer Out Coin Less Than Minimum Required After IBC Fees")]
     TransferOutCoinLessThanMinAfterIbcFees,
 

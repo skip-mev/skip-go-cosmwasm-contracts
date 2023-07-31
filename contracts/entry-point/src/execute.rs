@@ -11,8 +11,8 @@ use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
-        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
-        Swap, SwapExactCoinOut,
+        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
+        SwapExactCoinOut,
     },
 };
 
@@ -99,23 +99,50 @@ pub fn execute_swap_and_action(
         &min_coin.denom,
     )?;
 
-    // Create the transfer message
+    // Add the user swap message to the response
+    response = response
+        .add_message(user_swap_msg)
+        .add_attribute("action", "dispatch_user_swap");
+
+    // If affiliates exist, create the affiliate fee messages and add them to the
+    // response, decreasing the transfer out coin amount by each affiliate fee amount
+    for affiliate in affiliates.iter() {
+        // Verify, calculate, and get the affiliate fee amount
+        let affiliate_fee_amount =
+            verify_and_calculate_affiliate_fee_amount(&deps, &min_coin, affiliate)?;
+
+        // Create the affiliate fee bank send message
+        let affiliate_fee_msg = BankMsg::Send {
+            to_address: affiliate.address.clone(),
+            amount: vec![Coin {
+                denom: min_coin.denom.clone(),
+                amount: affiliate_fee_amount,
+            }],
+        };
+
+        // Add the affiliate fee message and attributes to the response
+        response = response
+            .add_message(affiliate_fee_msg)
+            .add_attribute("action", "dispatch_affiliate_fee_bank_send")
+            .add_attribute("address", &affiliate.address)
+            .add_attribute("amount", affiliate_fee_amount);
+    }
+
+    // Create the post swap action message
     let post_swap_action_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::PostSwapAction {
             min_coin,
             timeout_timestamp,
             post_swap_action,
-            affiliates,
         })?,
         funds: vec![],
     };
 
-    // Add the user swap message and post swap action message to the response
+    // Add the post swap action message to the response and return the response
     Ok(response
-        .add_message(user_swap_msg)
         .add_message(post_swap_action_msg)
-        .add_attribute("action", "dispatch_user_swap_and_post_swap_action"))
+        .add_attribute("action", "dispatch_post_swap_action"))
 }
 
 // Dispatches the post swap action
@@ -127,7 +154,6 @@ pub fn execute_post_swap_action(
     min_coin: Coin,
     timeout_timestamp: u64,
     post_swap_action: Action,
-    affiliates: Vec<Affiliate>,
 ) -> ContractResult<Response> {
     // Enforce the caller is the contract itself
     if info.sender != env.contract.address {
@@ -140,53 +166,13 @@ pub fn execute_post_swap_action(
 
     // Get contract balance of min out coin immediately after swap
     // for fee deduction and transfer out amount enforcement
-    let transfer_out_coin_contract_balance_after_swaps = deps
+    let transfer_out_coin = deps
         .querier
         .query_balance(&env.contract.address, &min_coin.denom)?;
 
     // Error if the contract balance is less than the min out coin amount
-    if transfer_out_coin_contract_balance_after_swaps.amount < min_coin.amount {
+    if transfer_out_coin.amount < min_coin.amount {
         return Err(ContractError::ReceivedLessCoinFromSwapsThanMinCoin);
-    }
-
-    // Mutable copy of the transfer out coin to subtract fees from
-    // to become the final transfer out coin we send to the user
-    let mut transfer_out_coin = transfer_out_coin_contract_balance_after_swaps.clone();
-
-    // If affiliates exist, create the affiliate fee messages and add them to the
-    // response, decreasing the transfer out coin amount by each affiliate fee amount
-    for affiliate in affiliates.iter() {
-        // Verify, calculate, and get the affiliate fee amount
-        let affiliate_fee_amount = verify_and_calculate_affiliate_fee_amount(
-            &deps,
-            &transfer_out_coin_contract_balance_after_swaps,
-            affiliate,
-        )?;
-
-        // Subtract the affiliate fee from the transfer out coin
-        transfer_out_coin.amount = transfer_out_coin.amount.checked_sub(affiliate_fee_amount)?;
-
-        // Create the affiliate fee bank send message
-        let affiliate_fee_msg = BankMsg::Send {
-            to_address: affiliate.address.clone(),
-            amount: vec![Coin {
-                denom: transfer_out_coin_contract_balance_after_swaps.denom.clone(),
-                amount: affiliate_fee_amount,
-            }],
-        };
-
-        // Add the affiliate fee message and logs to the response
-        response = response
-            .add_message(affiliate_fee_msg)
-            .add_attribute("action", "dispatch_affiliate_fee_bank_send")
-            .add_attribute("address", &affiliate.address)
-            .add_attribute("amount", affiliate_fee_amount);
-    }
-
-    // If affiliates exist, then error if the transfer out coin amount
-    // is less than the min coin amount after affiliate fees
-    if !affiliates.is_empty() && transfer_out_coin.amount < min_coin.amount {
-        return Err(ContractError::TransferOutCoinLessThanMinAfterAffiliateFees);
     }
 
     match post_swap_action {
@@ -325,10 +311,10 @@ fn verify_and_create_user_swap_msg(
             };
 
             Ok(user_swap_msg)
-        },
+        }
         Swap::SwapExactCoinOut(_) => {
             unimplemented!()
-        },
+        }
     }
 }
 
@@ -338,15 +324,15 @@ fn verify_and_create_user_swap_msg(
 // returns the calculated affiliate fee amount.
 fn verify_and_calculate_affiliate_fee_amount(
     deps: &DepsMut,
-    transfer_out_coin_contract_balance_after_swaps: &Coin,
+    min_coin: &Coin,
     affiliate: &Affiliate,
 ) -> ContractResult<Uint128> {
     // Verify the affiliate address is valid
     deps.api.addr_validate(&affiliate.address)?;
 
-    // Get the affiliate fee amount by multiplying the transfer out coin amount
-    // immediately after the swaps by the affiliate basis points fee divided by 10000
-    let affiliate_fee_amount = transfer_out_coin_contract_balance_after_swaps
+    // Get the affiliate fee amount by multiplying the min_coin
+    // amount by the affiliate basis points fee divided by 10000
+    let affiliate_fee_amount = min_coin
         .amount
         .multiply_ratio(affiliate.basis_points_fee, Uint128::new(10000));
 
