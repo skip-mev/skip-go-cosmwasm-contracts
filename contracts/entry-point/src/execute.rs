@@ -232,12 +232,18 @@ pub fn execute_user_swap(
             // If the refund amount is greater than zero, then create the refund message
             // and add it to the response
             if refund_amount > Uint128::zero() {
+                // Get the refund address from the swap
+                let to_address = swap
+                    .refund_address
+                    .clone()
+                    .ok_or(ContractError::NoRefundAddress)?;
+
+                // Validate the refund address
+                deps.api.addr_validate(&to_address)?;
+
                 // Create the refund message
                 let refund_msg = BankMsg::Send {
-                    to_address: swap
-                        .refund_address
-                        .clone()
-                        .ok_or(ContractError::NoRefundAddress)?,
+                    to_address,
                     amount: vec![Coin {
                         denom: remaining_coin.denom,
                         amount: refund_amount,
@@ -269,6 +275,8 @@ pub fn execute_user_swap(
     }
 
     // Add the affiliate messages and attributes to the response and return the response
+    // Having the affiliate messages after the swap is purposeful, so that the affiliate
+    // bank sends are valid and the contract has funds to send to the affiliates.
     Ok(response
         .add_submessages(affiliate_response.messages)
         .add_attributes(affiliate_response.attributes))
