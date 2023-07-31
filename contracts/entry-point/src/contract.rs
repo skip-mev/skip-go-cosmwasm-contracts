@@ -104,17 +104,11 @@ pub fn execute(
             affiliates,
         ),
         ExecuteMsg::UserSwap {
-            swap, 
-            min_coin, 
-            affiliates,
-        } => execute_user_swap(
-            deps,
-            env,
-            info,
             swap,
             min_coin,
+            remaining_coin,
             affiliates,
-        ),
+        } => execute_user_swap(deps, env, info, swap, min_coin, remaining_coin, affiliates),
         ExecuteMsg::PostSwapAction {
             min_coin,
             timeout_timestamp,
