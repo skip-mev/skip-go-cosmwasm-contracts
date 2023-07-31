@@ -18,9 +18,9 @@ use test_case::test_case;
 Test Cases:
 
 Expect Response
-    - User Swap With No Affiliates
-    - User Swap With Single Affiliate
-    - User Swap With Multiple Affiliates
+    - User Swap Exact Coin In With No Affiliates
+    - User Swap Exact Coin In With Single Affiliate
+    - User Swap Exact Coin In With Multiple Affiliates
 
 Expect Error
     - User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
@@ -83,7 +83,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap With No Affiliates")]
+    "User Swap Exact Coin In With No Affiliates")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
@@ -138,7 +138,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap With Single Affiliate")]
+    "User Swap Exact Coin In With Single Affiliate")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
@@ -209,7 +209,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap With Multiple Affiliates")]
+    "User Swap Exact Coin In With Multiple Affiliates")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),

@@ -123,6 +123,7 @@ pub fn execute_swap_and_action(
         .add_attribute("action", "dispatch_post_swap_action"))
 }
 
+// Dispatches the user swap and refund/affiliate fee bank sends if needed
 pub fn execute_user_swap(
     deps: DepsMut,
     env: Env,
