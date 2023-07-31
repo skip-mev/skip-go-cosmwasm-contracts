@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, BankMsg, Coin, ContractResult, QuerierResult,
+    to_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
+    QuerierResult,
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
@@ -18,26 +19,30 @@ use test_case::test_case;
 Test Cases:
 
 Expect Response
+    // Swap Exact Coin In
     - User Swap Exact Coin In With No Affiliates
     - User Swap Exact Coin In With Single Affiliate
     - User Swap Exact Coin In With Multiple Affiliates
 
+    // Swap Exact Coin Out
     - User Swap Exact Coin Out With No Affiliates
     - User Swap Exact Coin Out With Single Affiliate
     - User Swap Exact Coin Out With Multiple Affiliates
     - User Swap Exact Coin Out With Refund Amount Zero (Ensure No Refund Message Included)
 
 Expect Error
-    - User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
-    - User Swap Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom
-    - Empty User Swap Operations
-    - Unauthorized Caller
+    // Swap Exact Coin In
+    - User Swap Exact Coin In First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
+    - User Swap Exact Coin In Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom
+    - User Swap Exact Coin In Empty Swap Operations
 
-    // TODO
+    // Swap Exact Coin Out
     - User Swap Exact Coin Out With No Refund Address
-    - User Swap Exact Coin Out With Invalid Refund Address
     - User Swap Exact Coin Out Where Coin In Denom Is Not The Same As Remaining Coin Received Denom
     - User Swap Exact Coin Out Where Coin In Amount More Than Remaining Coin Received Amount
+
+    // General
+    - Unauthorized Caller
 
  */
 
@@ -488,7 +493,7 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
     };
-    "User Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom - Expect Error")]
+    "User Swap Exact Coin In First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
@@ -510,7 +515,7 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
     };
-    "User Swap Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom - Expect Error")]
+    "User Swap Exact Coin In Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
@@ -526,7 +531,80 @@ struct Params {
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
     };
-    "Empty User Swap Operations - Expect Error")]
+    "User Swap Exact Coin In Empty Swap Operations - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinOut (
+            SwapExactCoinOut{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+                refund_address: None,
+            }
+        ),
+        remaining_coin: Coin::new(1_000_000, "untrn"),
+        min_coin: Coin::new(500_000, "osmo"),
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::NoRefundAddress),
+    };
+    "User Swap Exact Coin Out With No Refund Address - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinOut (
+            SwapExactCoinOut{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "uatom".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+                refund_address: Some("refund_address".to_string()),
+            }
+        ),
+        remaining_coin: Coin::new(1_000_000, "uatom"),
+        min_coin: Coin::new(500_000, "osmo"),
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::UserSwapCoinInDenomMismatch),
+    };
+    "User Swap Exact Coin Out Where Coin In Denom Is Not The Same As Remaining Coin Received Denom - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinOut (
+            SwapExactCoinOut{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+                refund_address: Some("refund_address".to_string()),
+            }
+        ),
+        remaining_coin: Coin::new(499_999, "untrn"),
+        min_coin: Coin::new(500_000, "osmo"),
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Overflow(OverflowError {
+            operation: OverflowOperation::Sub,
+            operand1: "499999".to_string(),
+            operand2: "500000".to_string(),
+        })),
+    };
+    "User Swap Exact Coin Out Where Coin In Amount More Than Remaining Coin Received Amount - Expect Error")]
 #[test_case(
     Params {
         caller: "random".to_string(),
