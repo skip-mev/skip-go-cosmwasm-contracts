@@ -29,7 +29,7 @@ Expect Response
 Expect Error
     // Fee Swap
     - Fee Swap Coin In Amount More Than Remaining Coin Received Amount
-    - Fee Swap Coin In Denom In Not The Same As Remaining Coin Received Denom
+    - Fee Swap Coin In Denom Is Not The Same As Remaining Coin Received Denom
     - Fee Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
     - Fee Swap Last Swap Operation Denom Out Is Not The Same As IBC Fee Coin Denom
     - Fee Swap Without IBC Transfer

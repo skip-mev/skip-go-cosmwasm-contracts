@@ -47,6 +47,16 @@ pub enum ContractError {
     #[error("Fee Swap Coin In Denom Differs From Coin Sent To Contract")]
     FeeSwapCoinInDenomMismatch,
 
+    /////////////////
+    /// USER SWAP ///
+    /////////////////
+
+    #[error("User Swap Coin In Denom Differs From Coin Sent To Contract")]
+    UserSwapCoinInDenomMismatch,
+
+    #[error("No Refund Address Provided For Swap Exact Coin Out User Swap")]
+    NoRefundAddress,
+
     ////////////////////////
     /// POST SWAP ACTION ///
     ////////////////////////
