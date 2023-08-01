@@ -50,7 +50,6 @@ pub enum ContractError {
     /////////////////
     /// USER SWAP ///
     /////////////////
-
     #[error("User Swap Coin In Denom Differs From Coin Sent To Contract")]
     UserSwapCoinInDenomMismatch,
 

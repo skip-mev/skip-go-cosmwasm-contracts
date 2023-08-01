@@ -47,6 +47,14 @@ Expect Error
     // General
     - Unauthorized Caller
 
+    // Swap Exact Coin Out
+    - User Swap Exact Coin Out With No Refund Address
+    - User Swap Exact Coin Out Where Coin In Denom Is Not The Same As Remaining Coin Received Denom
+    - User Swap Exact Coin Out Where Coin In Amount More Than Remaining Coin Received Amount
+
+    // General
+    - Unauthorized Caller
+
  */
 
 // Define test parameters
