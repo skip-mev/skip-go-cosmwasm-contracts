@@ -89,6 +89,12 @@ pub fn execute_swap_and_action(
         }
     }
 
+    // Set a boolean to determine if the user swap is exact out or not
+    let exact_out = match &user_swap {
+        Swap::SwapExactCoinIn(_) => false,
+        Swap::SwapExactCoinOut(_) => true,
+    };
+
     // Create the user swap message
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
@@ -113,6 +119,7 @@ pub fn execute_swap_and_action(
             min_coin,
             timeout_timestamp,
             post_swap_action,
+            exact_out,
         })?,
         funds: vec![],
     };
@@ -290,6 +297,7 @@ pub fn execute_post_swap_action(
     min_coin: Coin,
     timeout_timestamp: u64,
     post_swap_action: Action,
+    exact_out: bool,
 ) -> ContractResult<Response> {
     // Enforce the caller is the contract itself
     if info.sender != env.contract.address {
@@ -313,6 +321,13 @@ pub fn execute_post_swap_action(
 
     match post_swap_action {
         Action::BankSend { to_address } => {
+            // Set the transfer out coin to the min coin if exact out is true
+            let transfer_out_coin = if exact_out {
+                min_coin
+            } else {
+                transfer_out_coin
+            };
+
             // Create the bank send message
             let bank_send_msg =
                 verify_and_create_bank_send_msg(deps, to_address, transfer_out_coin)?;
@@ -330,6 +345,7 @@ pub fn execute_post_swap_action(
                 timeout_timestamp,
                 ibc_info,
                 transfer_out_coin,
+                exact_out,
             )?;
 
             // Add the IBC transfer message to the response
@@ -341,6 +357,13 @@ pub fn execute_post_swap_action(
             contract_address,
             msg,
         } => {
+            // Set the transfer out coin to the min coin if exact out is true
+            let transfer_out_coin = if exact_out {
+                min_coin
+            } else {
+                transfer_out_coin
+            };
+
             // Verify and create the contract call message
             let contract_call_msg = verify_and_create_contract_call_msg(
                 deps,
@@ -464,6 +487,7 @@ fn verify_and_create_ibc_transfer_adapter_msg(
     timeout_timestamp: u64,
     ibc_info: IbcInfo,
     mut transfer_out_coin: Coin,
+    exact_out: bool,
 ) -> ContractResult<WasmMsg> {
     // Validates recover address, errors if invalid
     deps.api.addr_validate(&ibc_info.recover_address)?;
@@ -495,6 +519,13 @@ fn verify_and_create_ibc_transfer_adapter_msg(
 
     // Convert the map to a vector of coins
     let ibc_msg_funds: Vec<Coin> = ibc_msg_funds_map.into();
+
+    // Set the transfer out coin to the min coin if exact out is true
+    let transfer_out_coin = if exact_out {
+        min_coin
+    } else {
+        transfer_out_coin
+    };
 
     // Create the IBC transfer message
     let ibc_transfer_msg: IbcTransferExecuteMsg = IbcTransfer {
