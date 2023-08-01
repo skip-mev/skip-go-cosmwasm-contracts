@@ -8,10 +8,10 @@ members  = [
 ]
 
 [workspace.package]
-version       = "0.1.0"
+version       = "0.2.0"
 authors       = ["Skip"]
 edition       = "2021"
-rust-version  = "1.68.0"
+rust-version  = "1.71.0"
 license       = "TBD"
 homepage      = "https://skip.money/"
 repository    = "https://github.com/skip-mev/swap-contracts"
