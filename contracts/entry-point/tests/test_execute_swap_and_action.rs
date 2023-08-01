@@ -21,10 +21,11 @@ use test_case::test_case;
 Test Cases:
 
 Expect Response
-    - User Swap With Bank Send
-    - User Swap With IBC Transfer With IBC Fees
-    - User Swap With IBC Transfer Without IBC Fees
-    - Fee Swap And User Swap With IBC Fees
+    - User Swap Exact Coin In With Bank Send
+    - User Swap Exact Coin Out With Bank Send
+    - User Swap Exact Coin In With IBC Transfer With IBC Fees
+    - User Swap Exact Coin In With IBC Transfer Without IBC Fees
+    - Fee Swap And User Swap Exact Coin In With IBC Fees
 
 Expect Error
     // Fee Swap
@@ -129,6 +130,7 @@ struct Params {
                         post_swap_action: Action::BankSend {
                             to_address: "to_address".to_string(),
                         },
+                        exact_out: false,
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -139,7 +141,83 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap With Bank Send")]
+    "User Swap Exact Coin In With Bank Send")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "untrn"),
+        ],
+        fee_swap: None,
+        user_swap: Swap::SwapExactCoinOut (
+            SwapExactCoinOut{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+                refund_address: Some("refund_address".to_string()),
+            }
+        ),
+        min_coin: Coin::new(1_000_000, "osmo"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::BankSend {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactCoinOut (
+                            SwapExactCoinOut{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }
+                                ],
+                                refund_address: Some("refund_address".to_string()),
+                            }
+                        ),
+                        remaining_coin: Coin::new(1_000_000, "untrn"),
+                        min_coin: Coin::new(1_000_000, "osmo"),
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_coin: Coin::new(1_000_000, "osmo"),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::BankSend {
+                            to_address: "to_address".to_string(),
+                        },
+                        exact_out: true,
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap Exact Coin Out With Bank Send")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -224,6 +302,7 @@ struct Params {
                                     .to_string(),
                             },
                         },
+                        exact_out: false,
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -234,7 +313,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap With IBC Transfer With IBC Fees")]
+    "User Swap Exact Coin In With IBC Transfer With IBC Fees")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -311,6 +390,7 @@ struct Params {
                                     .to_string(),
                             },
                         },
+                        exact_out: false,
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -321,7 +401,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap With IBC Transfer Without IBC Fees")]
+    "User Swap Exact Coin In With IBC Transfer Without IBC Fees")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -437,6 +517,7 @@ struct Params {
                                     .to_string(),
                             },
                         },
+                        exact_out: false,
                     }).unwrap(),
                     funds: vec![],
                 }
@@ -447,7 +528,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "Fee Swap And User Swap With IBC Fees")]
+    "Fee Swap And User Swap Exact Coin In With IBC Fees")]
 #[test_case(
     Params {
         info_funds: vec![

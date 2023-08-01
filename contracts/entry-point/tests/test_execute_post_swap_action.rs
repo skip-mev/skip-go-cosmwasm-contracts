@@ -27,6 +27,13 @@ Expect Response
     - Ibc Transfer w/ IBC Fees of different denom than min coin
     - Ibc Transfer w/ IBC Fees of same denom as min coin
 
+    // Exact Out
+    - Bank Send With Exact Out Set To True
+    - Ibc Transfer With Exact Out Set To True
+    - Ibc Transfer w/ IBC Fees of different denom than min coin With Exact Out Set To True
+    - Ibc Transfer w/ IBC Fees of same denom as min coin With Exact Out Set To True
+    - Contract Call With Exact Out Set To True
+
 Expect Error
     - Bank Send Timeout
     - Ibc Transfer w/ IBC Fees Decreasing user transfer below min coin
@@ -40,6 +47,7 @@ struct Params {
     caller: String,
     min_coin: Coin,
     post_swap_action: Action,
+    exact_out: bool,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -48,10 +56,32 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
+        min_coin: Coin::new(100_000, "osmo"),
+        post_swap_action: Action::BankSend {
+            to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+        },
+        exact_out: true,
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: BankMsg::Send {
+                to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                amount: vec![Coin::new(100_000, "osmo")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Bank Send With Exact Out Set To True")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
         post_swap_action: Action::BankSend {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
+        exact_out: false,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: BankMsg::Send {
@@ -79,6 +109,7 @@ struct Params {
                     .to_string(),
             },
         },
+        exact_out: false,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -108,11 +139,154 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
+        min_coin: Coin::new(100_000, "osmo"),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        exact_out: true,
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: WasmMsg::Execute {
+                contract_addr: "ibc_transfer_adapter".to_string(),
+                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                    info: IbcInfo {
+                        source_channel: "channel-0".to_string(),
+                        receiver: "receiver".to_string(),
+                        memo: "".to_string(),
+                        fee: None,
+                        recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                            .to_string(),
+                    },
+                    coin: Coin::new(100_000, "osmo"),
+                    timeout_timestamp: 101,
+                })
+                .unwrap(),
+                funds: vec![Coin::new(1_000_000, "osmo")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Ibc Transfer With Exact Out Set To True")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_coin: Coin::new(100_000, "osmo"),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        exact_out: true,
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: WasmMsg::Execute {
+                contract_addr: "ibc_transfer_adapter".to_string(),
+                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                    info: IbcInfo {
+                        source_channel: "channel-0".to_string(),
+                        receiver: "receiver".to_string(),
+                        memo: "".to_string(),
+                        fee: Some(IbcFee {
+                            recv_fee: vec![],
+                            ack_fee: vec![Coin::new(100_000, "untrn")],
+                            timeout_fee: vec![Coin::new(100_000, "untrn")],
+                        }),
+                        recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                            .to_string(),
+                    },
+                    coin: Coin::new(100_000, "osmo"),
+                    timeout_timestamp: 101,
+                })
+                .unwrap(),
+                funds: vec![
+                    Coin::new(1_000_000, "osmo"),
+                    Coin::new(200_000, "untrn"),
+                ],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Ibc Transfer w/ IBC Fees of different denom than min coin With Exact Out Set To True")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_coin: Coin::new(100_000, "untrn"),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        exact_out: true,
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: WasmMsg::Execute {
+                contract_addr: "ibc_transfer_adapter".to_string(),
+                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                    info: IbcInfo {
+                        source_channel: "channel-0".to_string(),
+                        receiver: "receiver".to_string(),
+                        memo: "".to_string(),
+                        fee: Some(IbcFee {
+                            recv_fee: vec![],
+                            ack_fee: vec![Coin::new(100_000, "untrn")],
+                            timeout_fee: vec![Coin::new(100_000, "untrn")],
+                        }),
+                        recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                            .to_string(),
+                    },
+                    coin: Coin::new(100_000, "untrn"),
+                    timeout_timestamp: 101,
+                })
+                .unwrap(),
+                funds: vec![Coin::new(1_000_000, "untrn")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Ibc Transfer w/ IBC Fees of same denom as min coin With Exact Out Set To True")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
         post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },
+        exact_out: false,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -131,6 +305,29 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
+        min_coin: Coin::new(100_000, "osmo"),
+        post_swap_action: Action::ContractCall {
+            contract_address: "contract_call".to_string(),
+            msg: to_binary(&"contract_call_msg").unwrap(),
+        },
+        exact_out: true,
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: WasmMsg::Execute {
+                contract_addr: "contract_call".to_string(),
+                msg: to_binary(&"contract_call_msg").unwrap(),
+                funds: vec![Coin::new(100_000, "osmo")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Contract Call With Exact Out Set To True")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
         min_coin: Coin::new(1_000_000, "osmo"),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -146,6 +343,7 @@ struct Params {
                     .to_string(),
             },
         },
+        exact_out: false,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -197,6 +395,7 @@ struct Params {
                     .to_string(),
             },
         },
+        exact_out: false,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -244,6 +443,7 @@ struct Params {
                 recover_address: "recover".to_string(),
             },
         },
+        exact_out: false,
         expected_messages: vec![],
         expected_error: Some(ContractError::TransferOutCoinLessThanMinAfterIbcFees),
     };
@@ -255,6 +455,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
+        exact_out: false,
         expected_messages: vec![],
         expected_error: Some(ContractError::ReceivedLessCoinFromSwapsThanMinCoin),
     };
@@ -266,6 +467,7 @@ struct Params {
         post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
+        exact_out: false,
         expected_messages: vec![],
         expected_error: Some(ContractError::Unauthorized),
     };
@@ -278,6 +480,7 @@ struct Params {
             contract_address: "entry_point".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
         },
+        exact_out: false,
         expected_messages: vec![],
         expected_error: Some(ContractError::ContractCallAddressBlocked),
     };
@@ -317,6 +520,7 @@ fn test_execute_post_swap_action(params: Params) {
             min_coin: params.min_coin,
             timeout_timestamp: 101,
             post_swap_action: params.post_swap_action,
+            exact_out: params.exact_out,
         },
     );
 
