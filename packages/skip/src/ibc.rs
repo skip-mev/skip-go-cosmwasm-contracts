@@ -109,13 +109,7 @@ impl IbcFee {
             return Err(SkipError::IbcFeesNotOneCoin);
         }
 
-        let ibc_fee_coin = ibc_fees_map.to_vec().first().unwrap().clone();
-
-        if ibc_fee_coin.amount.is_zero() {
-            return Err(SkipError::IbcFeeCoinAmountIsZero);
-        }
-
-        Ok(ibc_fee_coin)
+        Ok(ibc_fees_map.to_vec().first().unwrap().clone())
     }
 }
 

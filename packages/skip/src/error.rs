@@ -23,7 +23,4 @@ pub enum SkipError {
     // IBC FEES
     #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
     IbcFeesNotOneCoin,
-
-    #[error("Ibc Fee Coin Amount Is Zero")]
-    IbcFeeCoinAmountIsZero,
 }
