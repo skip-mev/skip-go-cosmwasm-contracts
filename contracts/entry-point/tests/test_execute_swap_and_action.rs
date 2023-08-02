@@ -52,6 +52,7 @@ Expect Error
     // IBC Transfer
     - IBC Transfer With IBC Fees But More Than One IBC Fee Denom Specified
     - IBC Transfer With IBC Fees But No IBC Fee Coins Specified
+    - IBC Transfer With IBC Fee Coin Amount Zero
  */
 
 // Define test parameters
@@ -965,6 +966,57 @@ struct Params {
         expected_error: Some(ContractError::Skip(IbcFeesNotOneCoin)),
     };
     "IBC Transfer With IBC Fees But No IBC Fee Coins Specified - Expect Error")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "osmo"),
+        ],
+        fee_swap: Some(
+            SwapExactCoinOut {
+                swap_venue_name: "swap_venue_name".to_string(), 
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "untrn".to_string(),
+                    }
+                ],
+                refund_address: None,
+            }
+        ),
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "atom".to_string(),
+                    }
+                ],
+            },
+        ),
+        min_coin: Coin::new(100_000, "atom"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![Coin::new(0, "uatom")],
+                    ack_fee: vec![],
+                    timeout_fee: vec![],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(IbcFeesNotOneCoin)),
+    };
+    "IBC Transfer With IBC Fee Coin Amount Zero - Expect Error")]
 #[test_case(
     Params {
         info_funds: vec![],
