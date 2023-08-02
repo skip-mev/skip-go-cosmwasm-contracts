@@ -167,7 +167,7 @@ struct Params {
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(1_000_000, "osmo")],
+                funds: vec![Coin::new(100_000, "osmo")],
             }
             .into(),
             gas_limit: None,
@@ -217,8 +217,7 @@ struct Params {
                 })
                 .unwrap(),
                 funds: vec![
-                    Coin::new(1_000_000, "osmo"),
-                    Coin::new(200_000, "untrn"),
+                    Coin::new(100_000, "osmo"),
                 ],
             }
             .into(),
@@ -268,7 +267,7 @@ struct Params {
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(1_000_000, "untrn")],
+                funds: vec![Coin::new(100_000, "untrn")],
             }
             .into(),
             gas_limit: None,
@@ -366,7 +365,6 @@ struct Params {
                 .unwrap(),
                 funds: vec![
                     Coin::new(1_000_000, "osmo"),
-                    Coin::new(200_000, "untrn"),
                 ],
             }
             .into(),
@@ -412,7 +410,7 @@ struct Params {
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(800_000, "untrn"),
+                    coin: Coin::new(1_000_000, "untrn"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
