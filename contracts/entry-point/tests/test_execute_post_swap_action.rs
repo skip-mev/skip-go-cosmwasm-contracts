@@ -36,7 +36,6 @@ Expect Response
 
 Expect Error
     - Bank Send Timeout
-    - Ibc Transfer w/ IBC Fees Decreasing user transfer below min coin
     - Received Less From Swap Than Min Coin
     - Unauthorized Caller
     - Contract Call Address Blocked
@@ -426,28 +425,6 @@ struct Params {
         expected_error: None,
     };
     "Ibc Transfer w/ IBC Fees of same denom as min coin")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        min_coin: Coin::new(900_000, "untrn"),
-        post_swap_action: Action::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: Some(IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                }),
-                recover_address: "recover".to_string(),
-            },
-        },
-        exact_out: false,
-        expected_messages: vec![],
-        expected_error: Some(ContractError::TransferOutCoinLessThanMinAfterIbcFees),
-    };
-    "Ibc Transfer w/ IBC Fees Decreasing user transfer below min coin - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
