@@ -59,7 +59,9 @@ pub fn execute_swap_and_action(
                 .transpose()?;
 
             if let Some(fee_swap) = fee_swap {
-                let ibc_fee_coin = ibc_fee_coin.ok_or(ContractError::FeeSwapWithoutIbcFees)?;
+                let ibc_fee_coin = ibc_fee_coin
+                    .clone()
+                    .ok_or(ContractError::FeeSwapWithoutIbcFees)?;
 
                 // NOTE: this call mutates remaining_coin_received by deducting ibc_fee_coin's amount from it
                 let fee_swap_msg = verify_and_create_fee_swap_msg(
@@ -73,13 +75,31 @@ pub fn execute_swap_and_action(
                 response = response
                     .add_message(fee_swap_msg)
                     .add_attribute("action", "dispatch_fee_swap");
-            } else if let Some(ibc_fee_coin) = ibc_fee_coin {
+            } else if let Some(ibc_fee_coin) = &ibc_fee_coin {
                 if remaining_coin.denom != ibc_fee_coin.denom {
                     return Err(ContractError::IBCFeeDenomDiffersFromCoinReceived);
                 }
 
                 // Deduct the ibc_fee_coin amount from the remaining coin received amount
                 remaining_coin.amount = remaining_coin.amount.checked_sub(ibc_fee_coin.amount)?;
+            }
+
+            // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
+            if let Some(ibc_fee_coin) = ibc_fee_coin {
+                // Get the ibc transfer adapter contract address
+                let ibc_transfer_contract_address =
+                    IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+
+                // Create the ibc fee bank send message
+                let ibc_fee_msg = BankMsg::Send {
+                    to_address: ibc_transfer_contract_address.to_string(),
+                    amount: vec![ibc_fee_coin],
+                };
+
+                // Add the ibc fee message to the response
+                response = response
+                    .add_message(ibc_fee_msg)
+                    .add_attribute("action", "dispatch_ibc_fee_bank_send");
             }
         }
         _ => {
