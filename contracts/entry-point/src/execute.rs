@@ -3,13 +3,12 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Binary, Coin, Coins, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg,
+    to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg,
 };
 use cw_utils::one_coin;
 use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
-    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
+    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
         SwapExactCoinOut,
@@ -59,7 +58,9 @@ pub fn execute_swap_and_action(
                 .transpose()?;
 
             if let Some(fee_swap) = fee_swap {
-                let ibc_fee_coin = ibc_fee_coin.ok_or(ContractError::FeeSwapWithoutIbcFees)?;
+                let ibc_fee_coin = ibc_fee_coin
+                    .clone()
+                    .ok_or(ContractError::FeeSwapWithoutIbcFees)?;
 
                 // NOTE: this call mutates remaining_coin_received by deducting ibc_fee_coin's amount from it
                 let fee_swap_msg = verify_and_create_fee_swap_msg(
@@ -73,13 +74,31 @@ pub fn execute_swap_and_action(
                 response = response
                     .add_message(fee_swap_msg)
                     .add_attribute("action", "dispatch_fee_swap");
-            } else if let Some(ibc_fee_coin) = ibc_fee_coin {
+            } else if let Some(ibc_fee_coin) = &ibc_fee_coin {
                 if remaining_coin.denom != ibc_fee_coin.denom {
                     return Err(ContractError::IBCFeeDenomDiffersFromCoinReceived);
                 }
 
                 // Deduct the ibc_fee_coin amount from the remaining coin received amount
                 remaining_coin.amount = remaining_coin.amount.checked_sub(ibc_fee_coin.amount)?;
+            }
+
+            // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
+            if let Some(ibc_fee_coin) = ibc_fee_coin {
+                // Get the ibc transfer adapter contract address
+                let ibc_transfer_contract_address =
+                    IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+
+                // Create the ibc fee bank send message
+                let ibc_fee_msg = BankMsg::Send {
+                    to_address: ibc_transfer_contract_address.to_string(),
+                    amount: vec![ibc_fee_coin],
+                };
+
+                // Add the ibc fee message to the response
+                response = response
+                    .add_message(ibc_fee_msg)
+                    .add_attribute("action", "dispatch_ibc_fee_bank_send");
             }
         }
         _ => {
@@ -319,18 +338,23 @@ pub fn execute_post_swap_action(
         return Err(ContractError::ReceivedLessCoinFromSwapsThanMinCoin);
     }
 
+    // Set the transfer out coin to the min coin if exact out is true
+    let transfer_out_coin = if exact_out {
+        min_coin
+    } else {
+        transfer_out_coin
+    };
+
     match post_swap_action {
         Action::BankSend { to_address } => {
-            // Set the transfer out coin to the min coin if exact out is true
-            let transfer_out_coin = if exact_out {
-                min_coin
-            } else {
-                transfer_out_coin
-            };
+            // Error if the destination address is not a valid address on the current chain
+            deps.api.addr_validate(&to_address)?;
 
             // Create the bank send message
-            let bank_send_msg =
-                verify_and_create_bank_send_msg(deps, to_address, transfer_out_coin)?;
+            let bank_send_msg = BankMsg::Send {
+                to_address,
+                amount: vec![transfer_out_coin],
+            };
 
             // Add the bank send message to the response
             response = response
@@ -338,39 +362,50 @@ pub fn execute_post_swap_action(
                 .add_attribute("action", "dispatch_post_swap_bank_send");
         }
         Action::IbcTransfer { ibc_info } => {
-            // Enforce min out w/ ibc fees and create the IBC Transfer adapter contract call message
-            let ibc_transfer_adapter_msg = verify_and_create_ibc_transfer_adapter_msg(
-                deps,
-                min_coin,
+            // Validates recover address, errors if invalid
+            deps.api.addr_validate(&ibc_info.recover_address)?;
+
+            // Create the IBC transfer message
+            let ibc_transfer_msg: IbcTransferExecuteMsg = IbcTransfer {
+                info: ibc_info,
+                coin: transfer_out_coin.clone(),
                 timeout_timestamp,
-                ibc_info,
-                transfer_out_coin,
-                exact_out,
-            )?;
+            }
+            .into();
+
+            // Get the IBC transfer adapter contract address
+            let ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+
+            // Send the IBC transfer by calling the IBC transfer contract
+            let ibc_transfer_msg = WasmMsg::Execute {
+                contract_addr: ibc_transfer_contract_address.to_string(),
+                msg: to_binary(&ibc_transfer_msg)?,
+                funds: vec![transfer_out_coin],
+            };
 
             // Add the IBC transfer message to the response
             response = response
-                .add_message(ibc_transfer_adapter_msg)
+                .add_message(ibc_transfer_msg)
                 .add_attribute("action", "dispatch_post_swap_ibc_transfer");
         }
         Action::ContractCall {
             contract_address,
             msg,
         } => {
-            // Set the transfer out coin to the min coin if exact out is true
-            let transfer_out_coin = if exact_out {
-                min_coin
-            } else {
-                transfer_out_coin
-            };
+            // Verify the contract address is valid, error if invalid
+            let checked_contract_address = deps.api.addr_validate(&contract_address)?;
 
-            // Verify and create the contract call message
-            let contract_call_msg = verify_and_create_contract_call_msg(
-                deps,
-                contract_address,
+            // Error if the contract address is in the blocked contract addresses map
+            if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &checked_contract_address) {
+                return Err(ContractError::ContractCallAddressBlocked);
+            }
+
+            // Create the contract call message
+            let contract_call_msg = WasmMsg::Execute {
+                contract_addr: contract_address,
                 msg,
-                transfer_out_coin,
-            )?;
+                funds: vec![transfer_out_coin],
+            };
 
             // Add the contract call message to the response
             response = response
@@ -456,121 +491,6 @@ fn verify_and_calculate_affiliate_fee_amount(
         .multiply_ratio(affiliate.basis_points_fee, Uint128::new(10000));
 
     Ok(affiliate_fee_amount)
-}
-
-// POST SWAP ACTION MESSAGE HELPER FUNCTIONS
-
-// Do min transfer coin out verification,
-// Then create and return a bank send message
-fn verify_and_create_bank_send_msg(
-    deps: DepsMut,
-    to_address: String,
-    transfer_out_coin: Coin,
-) -> ContractResult<BankMsg> {
-    // Error if the destination address is not a valid address on the current chain
-    deps.api.addr_validate(&to_address)?;
-
-    // Create the bank send message
-    let bank_send_msg = BankMsg::Send {
-        to_address,
-        amount: vec![transfer_out_coin],
-    };
-
-    Ok(bank_send_msg)
-}
-
-// Do min transfer coin out and ibc fee verification,
-// Then create and return a message that calls the IBC Transfer adapter contract
-fn verify_and_create_ibc_transfer_adapter_msg(
-    deps: DepsMut,
-    min_coin: Coin,
-    timeout_timestamp: u64,
-    ibc_info: IbcInfo,
-    mut transfer_out_coin: Coin,
-    exact_out: bool,
-) -> ContractResult<WasmMsg> {
-    // Validates recover address, errors if invalid
-    deps.api.addr_validate(&ibc_info.recover_address)?;
-
-    // Create the ibc_fees map from the given recv_fee, ack_fee, and timeout_fee
-    let ibc_fees_map: Coins = ibc_info.fee.clone().unwrap_or_default().try_into()?;
-
-    // Get the amount of the IBC fee payment that matches
-    // the denom of the ibc transfer out coin.
-    // If there is no denom match, then default to zero.
-    let transfer_out_coin_ibc_fee_amount = ibc_fees_map.amount_of(&min_coin.denom);
-
-    // Subtract the IBC fee amount from the transfer out coin
-    transfer_out_coin.amount = transfer_out_coin
-        .amount
-        .checked_sub(transfer_out_coin_ibc_fee_amount)?;
-
-    // Check if the swap out amount after IBC fee is greater than the minimum amount out
-    // If it is, then send the IBC transfer, otherwise, return an error
-    if transfer_out_coin.amount < min_coin.amount {
-        return Err(ContractError::TransferOutCoinLessThanMinAfterIbcFees);
-    }
-
-    // Calculate the funds to send to the IBC transfer contract
-    // (which is the transfer out coin plus the IBC fee amounts)
-    // using a map for convenience, and then converting to a vector of coins
-    let mut ibc_msg_funds_map = ibc_fees_map;
-    ibc_msg_funds_map.add(transfer_out_coin.clone())?;
-
-    // Convert the map to a vector of coins
-    let ibc_msg_funds: Vec<Coin> = ibc_msg_funds_map.into();
-
-    // Set the transfer out coin to the min coin if exact out is true
-    let transfer_out_coin = if exact_out {
-        min_coin
-    } else {
-        transfer_out_coin
-    };
-
-    // Create the IBC transfer message
-    let ibc_transfer_msg: IbcTransferExecuteMsg = IbcTransfer {
-        info: ibc_info,
-        coin: transfer_out_coin,
-        timeout_timestamp,
-    }
-    .into();
-
-    // Get the IBC transfer adapter contract address
-    let ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
-
-    // Send the IBC transfer by calling the IBC transfer contract
-    let ibc_msg = WasmMsg::Execute {
-        contract_addr: ibc_transfer_contract_address.to_string(),
-        msg: to_binary(&ibc_transfer_msg)?,
-        funds: ibc_msg_funds,
-    };
-
-    Ok(ibc_msg)
-}
-
-// Verifies, creates, and returns the contract call message
-fn verify_and_create_contract_call_msg(
-    deps: DepsMut,
-    contract_address: String,
-    msg: Binary,
-    transfer_out_coin: Coin,
-) -> ContractResult<WasmMsg> {
-    // Verify the contract address is valid, error if invalid
-    let checked_contract_address = deps.api.addr_validate(&contract_address)?;
-
-    // Error if the contract address is in the blocked contract addresses map
-    if BLOCKED_CONTRACT_ADDRESSES.has(deps.storage, &checked_contract_address) {
-        return Err(ContractError::ContractCallAddressBlocked);
-    }
-
-    // Create the contract call message
-    let contract_call_msg = WasmMsg::Execute {
-        contract_addr: contract_address,
-        msg,
-        funds: vec![transfer_out_coin],
-    };
-
-    Ok(contract_call_msg)
 }
 
 // QUERY HELPER FUNCTIONS

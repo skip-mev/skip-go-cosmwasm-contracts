@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, Coin, ContractResult, OverflowError, OverflowOperation, QuerierResult,
+    to_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
+    QuerierResult,
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, WasmMsg, WasmQuery,
 };
@@ -14,7 +15,10 @@ use skip::{
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
 };
-use skip_swap_entry_point::{error::ContractError, state::SWAP_VENUE_MAP};
+use skip_swap_entry_point::{
+    error::ContractError,
+    state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+};
 use test_case::test_case;
 
 /*
@@ -52,6 +56,7 @@ Expect Error
     // IBC Transfer
     - IBC Transfer With IBC Fees But More Than One IBC Fee Denom Specified
     - IBC Transfer With IBC Fees But No IBC Fee Coins Specified
+    - IBC Transfer With IBC Fee Coin Amount Zero
  */
 
 // Define test parameters
@@ -254,6 +259,16 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "ibc_transfer_adapter".to_string(),
+                    amount: vec![Coin::new(200_000, "untrn")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
@@ -464,6 +479,16 @@ struct Params {
                         ],
                     }).unwrap(),
                     funds: vec![Coin::new(200_000, "osmo")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "ibc_transfer_adapter".to_string(),
+                    amount: vec![Coin::new(200_000, "untrn")],
                 }
                 .into(),
                 gas_limit: None,
@@ -967,6 +992,57 @@ struct Params {
     "IBC Transfer With IBC Fees But No IBC Fee Coins Specified - Expect Error")]
 #[test_case(
     Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "osmo"),
+        ],
+        fee_swap: Some(
+            SwapExactCoinOut {
+                swap_venue_name: "swap_venue_name".to_string(), 
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "untrn".to_string(),
+                    }
+                ],
+                refund_address: None,
+            }
+        ),
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "atom".to_string(),
+                    }
+                ],
+            },
+        ),
+        min_coin: Coin::new(100_000, "atom"),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![Coin::new(0, "uatom")],
+                    ack_fee: vec![],
+                    timeout_fee: vec![],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+        },
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(IbcFeesNotOneCoin)),
+    };
+    "IBC Transfer With IBC Fee Coin Amount Zero - Expect Error")]
+#[test_case(
+    Params {
         info_funds: vec![],
         fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
@@ -1119,7 +1195,7 @@ fn test_execute_swap_and_action(params: Params) {
     // Create mock info with entry point contract address
     let info = mock_info("swapper", info_funds);
 
-    // Store the ibc transfer adapter contract address
+    // Store the swap venue adapter contract address
     let swap_venue_adapter = Addr::unchecked("swap_venue_adapter");
     SWAP_VENUE_MAP
         .save(
@@ -1127,6 +1203,12 @@ fn test_execute_swap_and_action(params: Params) {
             "swap_venue_name",
             &swap_venue_adapter,
         )
+        .unwrap();
+
+    // Store the ibc transfer adapter contract address
+    let ibc_transfer_adapter = Addr::unchecked("ibc_transfer_adapter");
+    IBC_TRANSFER_CONTRACT_ADDRESS
+        .save(deps.as_mut().storage, &ibc_transfer_adapter)
         .unwrap();
 
     // Call execute_swap_and_action with the given test case params

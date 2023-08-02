@@ -36,7 +36,6 @@ Expect Response
 
 Expect Error
     - Bank Send Timeout
-    - Ibc Transfer w/ IBC Fees Decreasing user transfer below min coin
     - Received Less From Swap Than Min Coin
     - Unauthorized Caller
     - Contract Call Address Blocked
@@ -168,7 +167,7 @@ struct Params {
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(1_000_000, "osmo")],
+                funds: vec![Coin::new(100_000, "osmo")],
             }
             .into(),
             gas_limit: None,
@@ -218,8 +217,7 @@ struct Params {
                 })
                 .unwrap(),
                 funds: vec![
-                    Coin::new(1_000_000, "osmo"),
-                    Coin::new(200_000, "untrn"),
+                    Coin::new(100_000, "osmo"),
                 ],
             }
             .into(),
@@ -269,7 +267,7 @@ struct Params {
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(1_000_000, "untrn")],
+                funds: vec![Coin::new(100_000, "untrn")],
             }
             .into(),
             gas_limit: None,
@@ -367,7 +365,6 @@ struct Params {
                 .unwrap(),
                 funds: vec![
                     Coin::new(1_000_000, "osmo"),
-                    Coin::new(200_000, "untrn"),
                 ],
             }
             .into(),
@@ -413,7 +410,7 @@ struct Params {
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(800_000, "untrn"),
+                    coin: Coin::new(1_000_000, "untrn"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
@@ -426,28 +423,6 @@ struct Params {
         expected_error: None,
     };
     "Ibc Transfer w/ IBC Fees of same denom as min coin")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        min_coin: Coin::new(900_000, "untrn"),
-        post_swap_action: Action::IbcTransfer {
-            ibc_info: IbcInfo {
-                source_channel: "channel-0".to_string(),
-                receiver: "receiver".to_string(),
-                memo: "".to_string(),
-                fee: Some(IbcFee {
-                    recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
-                }),
-                recover_address: "recover".to_string(),
-            },
-        },
-        exact_out: false,
-        expected_messages: vec![],
-        expected_error: Some(ContractError::TransferOutCoinLessThanMinAfterIbcFees),
-    };
-    "Ibc Transfer w/ IBC Fees Decreasing user transfer below min coin - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
