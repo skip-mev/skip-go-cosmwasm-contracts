@@ -56,14 +56,14 @@ Dispatches an ICS-20 IBC Transfer given the parameters provided in the contract 
 
 ## QueryMsg
 
-### `in_progress_ibc_transfer`
+### `in_progress_recover_address`
 
-Returns the in progress ibc transfer info associated with the given `channel_id` and `sequence_id` (which make up a unique identifier mapped to in progress ibc transfers in the sub msg reply handler).
+Returns the in progress recover address associated with the given `channel_id` and `sequence_id` (which make up a unique identifier mapped to in progress ibc transfers in the sub msg reply handler).
 
 Query:
 ``` json
 {
-    "in_progress_ibc_transfer": {
+    "in_progress_recover_address": {
         "channel_id": "channel-1",
         "sequence_id": 420
     }
@@ -72,23 +72,5 @@ Query:
 
 Response:
 ``` json
-{
-    "recover_address": "neutron...",
-    "coin": {
-        "denom": "uatom",
-        "amount": "1000000"
-    },
-    "ack_fee": [
-        {
-            "denom": "untrn",
-            "amount": "100000"
-        }
-    ],
-    "timeout_fee": [
-        {
-            "denom": "untrn",
-            "amount": "100000"
-        }
-    ]
-}
+"neutron..."
 ```
