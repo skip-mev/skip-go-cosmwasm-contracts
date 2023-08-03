@@ -4,8 +4,9 @@ The entry point contract is responsible for providing a standardized interface (
 1. Performs basic validation on the call data
 2. If a fee swap is provided, queries the swap adapter contract to determine how much of the coin sent with the contract call is needed to receive the required fee coin(s), and dispatches the swap.
 3. Dispatches the user swap provided in the call data to the relevant swap adapter contract.
-4. Verifies the amount out received from the swap(s) is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate)
-5. Dispatches one of the following post-swap actions with the received funds from the swap:
+4. Handles affiliate fee payments if provided.
+5. Verifies the amount out received from the swap(s) is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate)
+6. Dispatches one of the following post-swap actions with the received funds from the swap:
     - Transfer to an address on the same chain 
     - IBC transfer to an address on a different chain (which allows for multi-hop IBC transfers or contract calls if the destination chains support it)
     - Call a contract on the same chain
@@ -40,22 +41,24 @@ Optional fields:
 Notes:
 - Only one coin can be sent to the contract when calling `swap_and_action` otherwise the transaction will fail.
 - `timeout_timestamp` is Unix epoch time in nanoseconds. The transaction will fail if the `timeout_timestamp` has passed when the contract is called.
-- The `coin_in` field in `user_swap` is optional. If provided, the contract will attempt to swap the provided `coin_in`. If not provided, the contract will attempt to swap the coin that was sent to the contract by the caller minus the amount of that coin used by the `fee_swap`.
 - `post_swap_action` can be one of three actions: `bank_send`, `ibc_transfer`, or `contract_call`. 
   - `bank_send`: Sends the assets received from the `user_swap` to an address on the same chain the swap occured on.
   - `ibc_transfer`: ICS-20 transfers the assets received from the swap(s) to an address on a different chain than the swap occured on. The ICS-20 transfer supports including a memo in the outgoing transfer, allowing for multi-hop transfers via Packet Forward Middleware and/or contract calls via IBC-hooks.
   - `contract_call`: Calls a contract on the same chain the swap occured, using the assets received from the swap as the contract call's funds.
-- `affiliates` is a list of affiliates that will take a fee (in basis points) from the coin received from the `user_swap`. If no affiliates are associated with a call then an empty list is to be provided.
+- `affiliates` is a list of affiliates that will take a fee (in basis points) from the `min_coin` provided. If no affiliates are associated with a call then an empty list is to be provided.
+- The vector of coins provided in `ibc_info.fee` must all be the same denom.
+- A `fee_swap` is only valid if the `post_swap_action` is an `ibc_transfer` with a provided `ibc_info.fee`. The `coin_out` used for the fee swap is dervied from the provided `ibc_info.fee`.
+- The `coin_in` used in the `user_swap` is derived based on the coin sent to the contract from the user's contract call, after accounting for the fee swap and if the `user_swap` is a `SwapExactCoinIn` or `SwapExactCoinOut`
+
+#### Examples
+
+SwapExactCoinIn:
 
 ``` json
 {
     "swap_and_action": {
         "fee_swap": {
             "swap_venue_name": "neutron-astroport",
-            "coin_out": {
-                "denom": "untrn",
-                "amount": "200000"
-            },
             "operations": [
                 {
                     "pool": "neutron...",
@@ -65,23 +68,74 @@ Notes:
             ]
         },
         "user_swap": {
-            "swap_venue_name": "neutron-astroport",
-            "coin_in": {
-                "denom": "uatom",
-                "amount": "1000000"
+            "swap_exact_coin_in": {
+                "swap_venue_name": "neutron-astroport",
+                "operations": [
+                    {
+                        "pool": "neutron...",
+                        "denom_in": "uatom",
+                        "denom_out": "untrn"
+                    },
+                    {
+                        "pool": "neutron...",
+                        "denom_in": "untrn",
+                        "denom_out": "uosmo"
+                    }
+                ]
             },
+        },
+        "min_coin": {
+            "denom": "uosmo",
+            "amount": "1000000"
+        },
+        "timeout_timestamp": 1000000000000,
+        "post_swap_action": {
+            "bank_send": {
+                "to_address": "neutron..."
+            }
+        },
+        "affiliates": [
+            {
+                "basis_points_fee": 10,
+                "address": "neutron..."
+            }
+        ]
+    }
+}
+```
+
+SwapExactCoinOut:
+
+``` json
+{
+    "swap_and_action": {
+        "fee_swap": {
+            "swap_venue_name": "neutron-astroport",
             "operations": [
                 {
                     "pool": "neutron...",
                     "denom_in": "uatom",
                     "denom_out": "untrn"
-                },
-                {
-                    "pool": "neutron...",
-                    "denom_in": "untrn",
-                    "denom_out": "uosmo"
                 }
             ]
+        },
+        "user_swap": {
+            "swap_exact_coin_out": {
+                "swap_venue_name": "neutron-astroport",
+                "operations": [
+                    {
+                        "pool": "neutron...",
+                        "denom_in": "uatom",
+                        "denom_out": "untrn"
+                    },
+                    {
+                        "pool": "neutron...",
+                        "denom_in": "untrn",
+                        "denom_out": "uosmo"
+                    }
+                ],
+                "refund_address": "neutron..."
+            },
         },
         "min_coin": {
             "denom": "uosmo",
@@ -122,12 +176,7 @@ Note: Can only be called by the entry point contract itself, any external calls 
                 "to_address": "neutron..."
             }
         },
-        "affiliates": [
-            {
-                "basis_points_fee": 10,
-                "address": "neutron..."
-            }
-        ]
+        "exact_out": false,
     }
 }
 ```
