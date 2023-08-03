@@ -157,6 +157,46 @@ SwapExactCoinOut:
 }
 ```
 
+### `user_swap`
+
+Dispatches the user swap to the relevant swap adapter contract and affiliate fee bank send messages. If the user swap is a `SwapExactCoinOut` it also dispatches the refund bank send message to the provided `refund_address`
+
+Note: Can only be called by the entry point contract itself, any external calls to this function will fail.
+
+``` json
+{
+    "user_swap": {
+        "swap": {
+            "swap_exact_coin_out": {
+                "swap_venue_name": "neutron-astroport",
+                "operations": [
+                    {
+                        "pool": "neutron...",
+                        "denom_in": "uatom",
+                        "denom_out": "untrn"
+                    },
+                    {
+                        "pool": "neutron...",
+                        "denom_in": "untrn",
+                        "denom_out": "uosmo"
+                    }
+                ],
+                "refund_address": "neutron..."
+            },
+        },
+        "min_coin": {
+            "denom": "uosmo",
+            "amount": "1000000"
+        },
+        "remaining_coin": {
+            "denom": "uatom",
+            "amount": "100000"
+        },
+        "affiliates": []
+    }
+}
+```
+
 ### `post_swap_action`
 
 Performs a post swap action.
