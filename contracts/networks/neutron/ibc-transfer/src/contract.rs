@@ -10,7 +10,7 @@ use neutron_proto::neutron::transfer::{MsgTransfer, MsgTransferResponse};
 use neutron_sdk::sudo::msg::{RequestPacket, TransferSudoMsg};
 use prost::Message;
 use skip::{
-    ibc::{AckID, ExecuteMsg, IbcInfo, InstantiateMsg, NeutronQueryMsg as QueryMsg},
+    ibc::{AckID, ExecuteMsg, IbcInfo, InstantiateMsg, QueryMsg},
     proto_coin::ProtoCoin,
     sudo::SudoType,
 };

@@ -34,23 +34,10 @@ pub enum ExecuteMsg {
 /// QUERY ///
 /////////////
 
-// TODO: Consolidate into one enum now that the return types are the same
-
-// The NeutronQueryMsg enum defines the queries the Neutron IBC Transfer Adapter Contract provides.
+// The QueryMsg enum defines the queries the IBC Transfer Adapter Contract provides.
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum NeutronQueryMsg {
-    #[returns(String)]
-    InProgressRecoverAddress {
-        channel_id: String,
-        sequence_id: u64,
-    },
-}
-
-// The OsmosisQueryMsg enum defines the queries the Osmosis IBC Transfer Adapter Contract provides.
-#[cw_serde]
-#[derive(QueryResponses)]
-pub enum OsmosisQueryMsg {
+pub enum QueryMsg {
     #[returns(String)]
     InProgressRecoverAddress {
         channel_id: String,
