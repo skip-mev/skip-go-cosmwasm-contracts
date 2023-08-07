@@ -36,6 +36,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Minor Improvements
 - [#52](https://github.com/skip-mev/skip-api-contracts/pull/52) Ensure Skip package types, methods, and functions are well documented.
+- [#53](https://github.com/skip-mev/skip-api-contracts/pull/53) Consolidate Neutron and Osmosis QueryMsg enum's into one enum.
 
 ## [v0.2.0](https://github.com/skip-mev/skip-api-contracts/releases/tag/v0.2.0) - 2023-08-03
 
