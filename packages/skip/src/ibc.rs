@@ -172,3 +172,100 @@ pub enum IbcLifecycleComplete {
         sequence: u64,
     },
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::Uint128;
+
+    #[test]
+    fn test_from_ibc_fee_for_neutron_proto_fee() {
+        let ibc_fee = IbcFee {
+            recv_fee: vec![Coin::new(100, "atom")],
+            ack_fee: vec![Coin::new(100, "osmo")],
+            timeout_fee: vec![Coin::new(100, "ntrn")],
+        };
+
+        let neutron_fee: NeutronFee = ibc_fee.into();
+
+        assert_eq!(neutron_fee.recv_fee.len(), 1);
+        assert_eq!(neutron_fee.ack_fee.len(), 1);
+        assert_eq!(neutron_fee.timeout_fee.len(), 1);
+
+        assert_eq!(neutron_fee.recv_fee[0].denom, "atom");
+        assert_eq!(neutron_fee.recv_fee[0].amount, "100");
+
+        assert_eq!(neutron_fee.ack_fee[0].denom, "osmo");
+        assert_eq!(neutron_fee.ack_fee[0].amount, "100");
+
+        assert_eq!(neutron_fee.timeout_fee[0].denom, "ntrn");
+        assert_eq!(neutron_fee.timeout_fee[0].amount, "100");
+    }
+
+    #[test]
+    fn test_try_from_ibc_fee_for_coins() {
+        // TEST CASE 1: Same Denom For All Fees
+        let ibc_fee = IbcFee {
+            recv_fee: vec![Coin::new(100, "atom")],
+            ack_fee: vec![Coin::new(100, "atom")],
+            timeout_fee: vec![Coin::new(100, "atom")],
+        };
+
+        let coins: Coins = ibc_fee.try_into().unwrap();
+
+        assert_eq!(coins.len(), 1);
+        assert_eq!(coins.amount_of("atom"), Uint128::from(300u128));
+
+        // TEST CASE 2: Different Denom For Some Fees
+        let ibc_fee = IbcFee {
+            recv_fee: vec![Coin::new(100, "atom")],
+            ack_fee: vec![Coin::new(100, "osmo")],
+            timeout_fee: vec![Coin::new(100, "atom")],
+        };
+
+        let coins: Coins = ibc_fee.try_into().unwrap();
+
+        assert_eq!(coins.len(), 2);
+        assert_eq!(coins.amount_of("atom"), Uint128::from(200u128));
+        assert_eq!(coins.amount_of("osmo"), Uint128::from(100u128));
+    }
+
+    #[test]
+    fn test_one_coin() {
+        // TEST CASE 1: No Coins
+        let ibc_fee = IbcFee {
+            recv_fee: vec![],
+            ack_fee: vec![],
+            timeout_fee: vec![],
+        };
+
+        let result = ibc_fee.one_coin();
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), SkipError::IbcFeesNotOneCoin);
+
+        // TEST CASE 2: One Coin
+        let ibc_fee = IbcFee {
+            recv_fee: vec![Coin::new(100, "atom")],
+            ack_fee: vec![],
+            timeout_fee: vec![],
+        };
+
+        let result = ibc_fee.one_coin();
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Coin::new(100, "atom"));
+
+        // TEST CASE 3: More Than One Coin
+        let ibc_fee = IbcFee {
+            recv_fee: vec![Coin::new(100, "atom")],
+            ack_fee: vec![Coin::new(100, "osmo")],
+            timeout_fee: vec![],
+        };
+
+        let result = ibc_fee.one_coin();
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), SkipError::IbcFeesNotOneCoin);
+    }
+}
