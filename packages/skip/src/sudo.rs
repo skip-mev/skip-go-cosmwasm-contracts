@@ -1,4 +1,5 @@
 use crate::ibc::IbcLifecycleComplete;
+
 use cosmwasm_schema::cw_serde;
 
 // SudoType used to give info in response attributes when the sudo function is called

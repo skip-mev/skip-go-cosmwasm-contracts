@@ -1,24 +1,32 @@
 use crate::error::SkipError;
+
+use std::{
+    convert::{From, TryFrom},
+    num::ParseIntError,
+};
+
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
-use std::{
-    convert::{From, TryFrom},
-    num::ParseIntError,
-};
 
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////
 
+// The OsmosisInstantiateMsg struct defines the initialization parameters for the
+// Osmosis Poolmanager swap adapter contract.
 #[cw_serde]
 pub struct OsmosisInstantiateMsg {
     pub entry_point_contract_address: String,
 }
 
+// TODO: Change to AstroportInstantiateMsg as part of restructuring
+
+// The NeutronInstantiateMsg struct defines the initialization parameters for the
+// Neutron Astroport swap adapter contract.
 #[cw_serde]
 pub struct NeutronInstantiateMsg {
     pub entry_point_contract_address: String,
@@ -29,12 +37,16 @@ pub struct NeutronInstantiateMsg {
 ///      EXECUTE      ///
 /////////////////////////
 
+// The ExecuteMsg enum defines the execution message that the swap adapter contracts can handle.
+// Only the Swap message is callable by external users.
 #[cw_serde]
 pub enum ExecuteMsg {
     Swap { operations: Vec<SwapOperation> },
     TransferFundsBack { swapper: Addr },
 }
 
+// Converts a SwapExactCoinIn used in the entry point contract
+// to a swap adapter Swap execute message
 impl From<SwapExactCoinIn> for ExecuteMsg {
     fn from(swap: SwapExactCoinIn) -> Self {
         ExecuteMsg::Swap {
@@ -43,6 +55,8 @@ impl From<SwapExactCoinIn> for ExecuteMsg {
     }
 }
 
+// Converts a SwapExactCoinOut used in the entry point contract
+// to a swap adapter Swap execute message
 impl From<SwapExactCoinOut> for ExecuteMsg {
     fn from(swap: SwapExactCoinOut) -> Self {
         ExecuteMsg::Swap {
@@ -55,6 +69,8 @@ impl From<SwapExactCoinOut> for ExecuteMsg {
 ///       QUERY       ///
 /////////////////////////
 
+// The QueryMsg enum defines the queries the swap adapter contracts provide.
+// RouterContractAddress is only implemented for Astroport swap adapter contracts.
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {

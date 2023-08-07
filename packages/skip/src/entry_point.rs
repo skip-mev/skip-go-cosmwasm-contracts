@@ -1,15 +1,16 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Coin, Uint128};
-
 use crate::{
     ibc::IbcInfo,
     swap::{Swap, SwapExactCoinOut, SwapVenue},
 };
 
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Binary, Coin, Uint128};
+
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////
 
+// The InstantiateMsg struct defines the initialization parameters for the entry point contract.
 #[cw_serde]
 pub struct InstantiateMsg {
     pub swap_venues: Vec<SwapVenue>,
@@ -20,6 +21,8 @@ pub struct InstantiateMsg {
 /// EXECUTE ///
 ///////////////
 
+// The ExecuteMsg enum defines the execution messages that the entry point contract can handle.
+// Only the SwapAndAction message is callable by external users.
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
@@ -49,6 +52,7 @@ pub enum ExecuteMsg {
 /// QUERY ///
 /////////////
 
+// The QueryMsg enum defines the queries the entry point contract provides.
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
@@ -67,6 +71,7 @@ pub enum QueryMsg {
 /// COMMON TYPES ///
 ////////////////////
 
+// The Action enum is used to specify what action to take after a swap.
 #[cw_serde]
 pub enum Action {
     BankSend {
@@ -81,6 +86,8 @@ pub enum Action {
     },
 }
 
+// The Affiliate struct is used to specify an affiliate address and BPS fee taken
+// from the min_coin to send to that address.
 #[cw_serde]
 pub struct Affiliate {
     pub basis_points_fee: Uint128,

@@ -32,6 +32,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### Minor Improvements
+- [#52](https://github.com/skip-mev/skip-api-contracts/pull/52) Ensure Skip package types, methods, and functions are well documented.
+
 ## [v0.2.0](https://github.com/skip-mev/skip-api-contracts/releases/tag/v0.2.0) - 2023-08-03
 
 [Tracking](https://github.com/skip-mev/skip-api-contracts/issues/28)
