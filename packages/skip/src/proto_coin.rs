@@ -1,6 +1,5 @@
-use cosmwasm_schema::cw_serde;
-
 use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as CosmosSdkCoin;
+use cosmwasm_schema::cw_serde;
 use ibc_proto::cosmos::base::v1beta1::Coin as IbcCoin;
 use osmosis_std::types::cosmos::base::v1beta1::Coin as OsmosisStdCoin;
 

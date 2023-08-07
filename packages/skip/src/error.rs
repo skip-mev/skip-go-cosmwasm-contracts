@@ -3,14 +3,20 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum SkipError {
-    // GENERAL
+    ///////////////
+    /// GENERAL ///
+    ///////////////
+
     #[error(transparent)]
     Std(#[from] StdError),
 
     #[error("Unauthorized")]
     Unauthorized,
 
-    // SWAP OPERATIONS
+    ////////////
+    /// SWAP ///
+    ////////////
+
     #[error("Swap Operations Empty")]
     SwapOperationsEmpty,
 
@@ -20,7 +26,10 @@ pub enum SkipError {
     #[error("Last Swap Operations' Denom Out Differs From Swap Coin Out Denom")]
     SwapOperationsCoinOutDenomMismatch,
 
-    // IBC FEES
+    ///////////
+    /// IBC ///
+    ///////////
+
     #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
     IbcFeesNotOneCoin,
 }
