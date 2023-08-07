@@ -13,10 +13,7 @@ use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferRespons
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
-    ibc::{
-        AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg,
-        OsmosisQueryMsg as QueryMsg,
-    },
+    ibc::{AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, QueryMsg},
     proto_coin::ProtoCoin,
     sudo::{OsmosisSudoMsg as SudoMsg, SudoType},
 };
