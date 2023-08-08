@@ -28,9 +28,6 @@ pub enum ContractError {
     #[error("Timeout Timestamp Less Than Current Timestamp")]
     Timeout,
 
-    #[error("Duplicate Swap Venue Name Provided")]
-    DuplicateSwapVenueName,
-
     #[error("IBC fee denom differs from coin received without a fee swap to convert")]
     IBCFeeDenomDiffersFromCoinReceived,
 

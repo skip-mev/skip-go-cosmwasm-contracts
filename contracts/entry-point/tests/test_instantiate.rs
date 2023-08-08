@@ -56,7 +56,7 @@ struct Params {
             },
         ],
         ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
-        expected_error: Some(ContractError::DuplicateSwapVenueName),
+        expected_error: Some(ContractError::Skip(DuplicateSwapVenueName)),
     };
     "Duplicate Swap Venue Names")]
 fn test_instantiate(params: Params) {

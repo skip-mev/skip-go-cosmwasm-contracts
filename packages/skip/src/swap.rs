@@ -8,6 +8,7 @@ use std::{
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
+use cw_storage_plus::Map;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -100,6 +101,25 @@ pub enum QueryMsg {
 pub struct SwapVenue {
     pub name: String,
     pub adapter_contract_address: String,
+}
+
+impl SwapVenue {
+    pub fn validate(
+        &self,
+        deps: &DepsMut,
+        swap_venue_map: Map<&str, Addr>,
+    ) -> Result<Addr, SkipError> {
+        // Validate the swap contract address
+        let checked_swap_contract_address =
+            deps.api.addr_validate(&self.adapter_contract_address)?;
+
+        // Prevent duplicate swap venues by erroring if the venue name is already stored
+        if swap_venue_map.has(deps.storage, &self.name) {
+            return Err(SkipError::DuplicateSwapVenueName);
+        }
+
+        Ok(checked_swap_contract_address)
+    }
 }
 
 // Standard swap operation type that contains the pool, denom in, and denom out
