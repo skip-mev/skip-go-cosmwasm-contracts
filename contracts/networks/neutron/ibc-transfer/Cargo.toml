@@ -25,7 +25,7 @@ cw-storage-plus  = { workspace = true }
 neutron-proto    = { workspace = true }
 neutron-sdk      = { workspace = true }
 prost            = { workspace = true }
-skip             = { path = "../../../../packages/skip" }
+skip             = { workspace = true }
 thiserror        = { workspace = true }
 
 [dev-dependencies]

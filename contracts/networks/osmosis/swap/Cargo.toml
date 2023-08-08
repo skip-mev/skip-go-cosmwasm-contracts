@@ -25,7 +25,7 @@ cosmwasm-std     = { workspace = true }
 cw-storage-plus  = { workspace = true }
 cw-utils         = { workspace = true }
 osmosis-std      = { workspace = true }
-skip             = { path = "../../../../packages/skip" }
+skip             = { workspace = true }
 thiserror        = { workspace = true }
 
 [dev-dependencies]

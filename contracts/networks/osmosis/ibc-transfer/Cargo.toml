@@ -26,7 +26,7 @@ ibc-proto        = { workspace = true }
 prost            = { workspace = true }
 serde-json-wasm  = { workspace = true }
 serde-cw-value   = { workspace = true }
-skip             = { path = "../../../../packages/skip" }
+skip             = { workspace = true }
 thiserror        = { workspace = true }
 
 [dev-dependencies]
