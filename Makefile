@@ -13,6 +13,10 @@ test:
 update:
 	cargo update
 
+# Need to have https://github.com/killercup/cargo-edit installed for this to work
+upgrade:
+	cargo upgrade
+
 # copied from DAO DAO:
 # https://github.com/DA0-DA0/polytone/blob/main/devtools/optimize.sh
 optimize:
