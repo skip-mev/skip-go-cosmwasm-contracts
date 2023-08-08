@@ -71,5 +71,5 @@ jobs:
           components: rustfmt
 
       - name: Run format
-        # use nightly toolchain so that we get all the latest linter features
+        # use nightly toolchain so that we get all the latest formatting features
         run: cargo +nightly fmt --check
