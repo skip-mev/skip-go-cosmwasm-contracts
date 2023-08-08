@@ -242,3 +242,273 @@ pub fn validate_swap_operations(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_swap_operation_to_astropot_swap_operation() {
+        let swap_operation = SwapOperation {
+            pool: "1".to_string(),
+            denom_in: "uatom".to_string(),
+            denom_out: "uosmo".to_string(),
+        };
+
+        let astroport_swap_operation: AstroportSwapOperation = swap_operation.into();
+
+        assert_eq!(
+            astroport_swap_operation,
+            AstroportSwapOperation::AstroSwap {
+                offer_asset_info: AssetInfo::NativeToken {
+                    denom: "uatom".to_string()
+                },
+                ask_asset_info: AssetInfo::NativeToken {
+                    denom: "uosmo".to_string()
+                }
+            }
+        );
+    }
+
+    #[test]
+    fn test_from_swap_operation_to_osmosis_swap_amount_in_route() {
+        // TEST CASE 1: Valid Swap Operation
+        let swap_operation = SwapOperation {
+            pool: "1".to_string(),
+            denom_in: "uatom".to_string(),
+            denom_out: "uosmo".to_string(),
+        };
+
+        let osmosis_swap_amount_in_route: OsmosisSwapAmountInRoute =
+            swap_operation.try_into().unwrap();
+
+        assert_eq!(
+            osmosis_swap_amount_in_route,
+            OsmosisSwapAmountInRoute {
+                pool_id: 1,
+                token_out_denom: "uosmo".to_string()
+            }
+        );
+
+        // TEST CASE 2: Invalid Pool ID
+        let swap_operation = SwapOperation {
+            pool: "invalid".to_string(),
+            denom_in: "uatom".to_string(),
+            denom_out: "uosmo".to_string(),
+        };
+
+        let result: Result<OsmosisSwapAmountInRoute, ParseIntError> = swap_operation.try_into();
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid digit found in string"
+        );
+    }
+
+    #[test]
+    fn test_from_swap_operation_to_osmosis_swap_amount_out_route() {
+        // TEST CASE 1: Valid Swap Operation
+        let swap_operation = SwapOperation {
+            pool: "1".to_string(),
+            denom_in: "uatom".to_string(),
+            denom_out: "uosmo".to_string(),
+        };
+
+        let osmosis_swap_amount_out_route: OsmosisSwapAmountOutRoute =
+            swap_operation.try_into().unwrap();
+
+        assert_eq!(
+            osmosis_swap_amount_out_route,
+            OsmosisSwapAmountOutRoute {
+                pool_id: 1,
+                token_in_denom: "uatom".to_string()
+            }
+        );
+
+        // TEST CASE 2: Invalid Pool ID
+        let swap_operation = SwapOperation {
+            pool: "invalid".to_string(),
+            denom_in: "uatom".to_string(),
+            denom_out: "uosmo".to_string(),
+        };
+
+        let result: Result<OsmosisSwapAmountOutRoute, ParseIntError> = swap_operation.try_into();
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid digit found in string"
+        );
+    }
+
+    #[test]
+    fn test_convert_swap_operations() {
+        // TEST CASE 1: Valid Swap Operations
+        let swap_operations = vec![
+            SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "uatom".to_string(),
+                denom_out: "uosmo".to_string(),
+            },
+            SwapOperation {
+                pool: "2".to_string(),
+                denom_in: "uosmo".to_string(),
+                denom_out: "untrn".to_string(),
+            },
+        ];
+
+        let result: Result<Vec<OsmosisSwapAmountInRoute>, ParseIntError> =
+            convert_swap_operations(swap_operations.clone());
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                OsmosisSwapAmountInRoute {
+                    pool_id: 1,
+                    token_out_denom: "uosmo".to_string()
+                },
+                OsmosisSwapAmountInRoute {
+                    pool_id: 2,
+                    token_out_denom: "untrn".to_string()
+                }
+            ]
+        );
+
+        let result: Result<Vec<OsmosisSwapAmountOutRoute>, ParseIntError> =
+            convert_swap_operations(swap_operations);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            vec![
+                OsmosisSwapAmountOutRoute {
+                    pool_id: 1,
+                    token_in_denom: "uatom".to_string()
+                },
+                OsmosisSwapAmountOutRoute {
+                    pool_id: 2,
+                    token_in_denom: "uosmo".to_string()
+                }
+            ]
+        );
+
+        // TEST CASE 2: Invalid Pool ID
+        let swap_operations = vec![
+            SwapOperation {
+                pool: "invalid".to_string(),
+                denom_in: "uatom".to_string(),
+                denom_out: "uosmo".to_string(),
+            },
+            SwapOperation {
+                pool: "2".to_string(),
+                denom_in: "uosmo".to_string(),
+                denom_out: "untrn".to_string(),
+            },
+        ];
+
+        let result: Result<Vec<OsmosisSwapAmountInRoute>, ParseIntError> =
+            convert_swap_operations(swap_operations.clone());
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid digit found in string"
+        );
+
+        let result: Result<Vec<OsmosisSwapAmountOutRoute>, ParseIntError> =
+            convert_swap_operations(swap_operations);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid digit found in string"
+        );
+    }
+
+    #[test]
+    fn test_validate_swap_operations() {
+        // TEST CASE 1: Valid Swap Operations
+        let swap_operations = vec![
+            SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "uatom".to_string(),
+                denom_out: "uosmo".to_string(),
+            },
+            SwapOperation {
+                pool: "2".to_string(),
+                denom_in: "uosmo".to_string(),
+                denom_out: "untrn".to_string(),
+            },
+        ];
+
+        let coin_in_denom = "uatom";
+        let coin_out_denom = "untrn";
+
+        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+
+        assert!(result.is_ok());
+
+        // TEST CASE 2: Empty Swap Operations
+        let swap_operations: Vec<SwapOperation> = vec![];
+
+        let coin_in_denom = "uatom";
+        let coin_out_denom = "untrn";
+
+        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), SkipError::SwapOperationsEmpty);
+
+        // TEST CASE 3: First Swap Operation Denom In Mismatch
+        let swap_operations = vec![
+            SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "uosmo".to_string(),
+                denom_out: "uatom".to_string(),
+            },
+            SwapOperation {
+                pool: "2".to_string(),
+                denom_in: "uatom".to_string(),
+                denom_out: "untrn".to_string(),
+            },
+        ];
+
+        let coin_in_denom = "uatom";
+        let coin_out_denom = "untrn";
+
+        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            SkipError::SwapOperationsCoinInDenomMismatch
+        );
+
+        // TEST CASE 4: Last Swap Operation Denom Out Mismatch
+        let swap_operations = vec![
+            SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "uatom".to_string(),
+                denom_out: "uosmo".to_string(),
+            },
+            SwapOperation {
+                pool: "2".to_string(),
+                denom_in: "uosmo".to_string(),
+                denom_out: "uatom".to_string(),
+            },
+        ];
+
+        let coin_in_denom = "uatom";
+        let coin_out_denom = "untrn";
+
+        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            SkipError::SwapOperationsCoinOutDenomMismatch
+        );
+    }
+}
