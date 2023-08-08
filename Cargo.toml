@@ -14,19 +14,19 @@ edition       = "2021"
 rust-version  = "1.71.0"
 license       = "TBD"
 homepage      = "https://skip.money/"
-repository    = "https://github.com/skip-mev/swap-contracts"
-documentation = "https://github.com/skip-mev/swap-contracts#readme"
+repository    = "https://github.com/skip-mev/skip-api-contracts"
+documentation = "https://github.com/skip-mev/skip-api-contracts#readme"
 keywords      = ["cosmwasm"]
 
 [workspace.dependencies]
 astroport        = "2.8"
-cosmwasm-schema  = "1.2"
+cosmwasm-schema  = "1.3"
 cosmwasm-std     = { version = "1.3", features = ["stargate"] }
 cosmos-sdk-proto = { version = "0.19", default-features = false }
-cw2              = "1.0"
+cw2              = "1.1"
 cw-storage-plus  = "1"
 cw-utils         = "1.0.1"
-ibc-proto        = { version = "0.32.0", default-features = false }
+ibc-proto        = { version = "0.32.1", default-features = false }
 neutron-proto    = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
 neutron-sdk      = "0.5"
 osmosis-std      = "0.15.3"
