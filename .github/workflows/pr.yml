@@ -68,6 +68,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: nightly
+          components: rustfmt
 
       - name: Run format
         # use nightly toolchain so that we get all the latest linter features
