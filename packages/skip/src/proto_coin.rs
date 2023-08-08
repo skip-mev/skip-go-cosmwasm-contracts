@@ -40,3 +40,49 @@ impl From<ProtoCoin> for OsmosisStdCoin {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use cosmwasm_std::Uint128;
+
+    #[test]
+    fn test_from_skip_proto_coin_to_cosmos_sdk_proto_coin() {
+        let skip_coin = ProtoCoin(cosmwasm_std::Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let cosmos_sdk_proto_coin: CosmosSdkCoin = skip_coin.into();
+
+        assert_eq!(cosmos_sdk_proto_coin.denom, "uatom");
+        assert_eq!(cosmos_sdk_proto_coin.amount, "100");
+    }
+
+    #[test]
+    fn test_from_skip_proto_coin_to_ibc_proto_coin() {
+        let skip_coin = ProtoCoin(cosmwasm_std::Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let ibc_proto_coin: IbcCoin = skip_coin.into();
+
+        assert_eq!(ibc_proto_coin.denom, "uatom");
+        assert_eq!(ibc_proto_coin.amount, "100");
+    }
+
+    #[test]
+    fn test_from_skip_proto_coin_to_osmosis_std_coin() {
+        let skip_coin = ProtoCoin(cosmwasm_std::Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let osmosis_std_coin: OsmosisStdCoin = skip_coin.into();
+
+        assert_eq!(osmosis_std_coin.denom, "uatom");
+        assert_eq!(osmosis_std_coin.amount, "100");
+    }
+}
