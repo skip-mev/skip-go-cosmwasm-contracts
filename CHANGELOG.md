@@ -45,6 +45,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Minor Testing Improvements
 - [#55](https://github.com/skip-mev/skip-api-contracts/pull/55) Add unit tests to methods and functions in Skip packages folder.
 
+### Minor Workspace Improvements
+- [#57](https://github.com/skip-mev/skip-api-contracts/pull/57) Adds cargo upgrade to Makefile, runs cargo upgrade and cargo update.
+
 ## [v0.2.0](https://github.com/skip-mev/skip-api-contracts/releases/tag/v0.2.0) - 2023-08-03
 
 [Tracking](https://github.com/skip-mev/skip-api-contracts/issues/28)
