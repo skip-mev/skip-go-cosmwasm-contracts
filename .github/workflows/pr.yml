@@ -72,4 +72,4 @@ jobs:
 
       - name: Run format
         # use nightly toolchain so that we get all the latest linter features
-        run: cargo +nightly fmt
+        run: cargo +nightly fmt --check
