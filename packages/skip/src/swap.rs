@@ -267,6 +267,48 @@ pub fn validate_swap_operations(
 mod tests {
     use super::*;
 
+    use cosmwasm_std::testing::mock_dependencies;
+
+    #[test]
+    fn test_swap_venue_validation() {
+        // TEST CASE 1: Valid Swap Venue
+        let swap_venue = SwapVenue {
+            name: "neutron-astroport".to_string(),
+            adapter_contract_address: "neutron123".to_string(),
+        };
+        let swap_venue_map = Map::new("swap_venue_map");
+        let mut deps = mock_dependencies();
+
+        let result = swap_venue.validate(&deps.as_mut(), swap_venue_map);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            deps.as_mut().api.addr_validate("neutron123").unwrap()
+        );
+
+        // TEST CASE 2: Duplicate Swap Venue
+        let swap_venue = SwapVenue {
+            name: "neutron-astroport".to_string(),
+            adapter_contract_address: "neutron123".to_string(),
+        };
+        let swap_venue_map = Map::new("swap_venue_map");
+        let mut deps = mock_dependencies();
+
+        swap_venue_map
+            .save(
+                deps.as_mut().storage,
+                "neutron-astroport",
+                &Addr::unchecked("neutron123"),
+            )
+            .unwrap();
+
+        let result = swap_venue.validate(&deps.as_mut(), swap_venue_map);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), SkipError::DuplicateSwapVenueName);
+    }
+
     #[test]
     fn test_from_swap_operation_to_astropot_swap_operation() {
         let swap_operation = SwapOperation {
