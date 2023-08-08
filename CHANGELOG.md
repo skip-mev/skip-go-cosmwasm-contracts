@@ -47,6 +47,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Minor Workspace Improvements
 - [#57](https://github.com/skip-mev/skip-api-contracts/pull/57) Adds cargo upgrade to Makefile, runs cargo upgrade and cargo update.
+- [#58](https://github.com/skip-mev/skip-api-contracts/pull/58) Updates make optimize to target /target instead of /code/target
 
 ## [v0.2.0](https://github.com/skip-mev/skip-api-contracts/releases/tag/v0.2.0) - 2023-08-03
 
