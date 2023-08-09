@@ -23,7 +23,7 @@ jobs:
       - name: Check for errors
         # use wasm32 target so that if we have included wasm-incompatible
         # dependencies, it will result in CI failure
-        run: cargo check --locked --target wasm32-unknown-unknown
+        run: cargo check --locked --target wasm32-unknown-unknown --lib
         env:
           RUST_BACKTRACE: 1
 
@@ -77,3 +77,24 @@ jobs:
       - name: Run format
         # use nightly toolchain so that we get all the latest formatting features
         run: cargo +nightly fmt --check
+
+  schema:
+    name: Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+
+      - name: Run schema diff check
+        # use nightly toolchain so that we get all the latest formatting features
+        run: |
+          cargo +nightly run --package skip-swap-entry-point --bin schema     
+          if [[ `git status --porcelain` ]]; then
+            echo "Schema is different, please run make entry-point schema"
+            exit 1
+          fi
