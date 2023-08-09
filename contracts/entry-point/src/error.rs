@@ -41,9 +41,6 @@ pub enum ContractError {
     #[error("Fee Swap Not Allowed: No IBC Fees Provided")]
     FeeSwapWithoutIbcFees,
 
-    #[error("Fee Swap Not Allowed: No Post Swap Action IBC Transfer")]
-    FeeSwapWithoutIbcTransfer,
-
     #[error("Fee Swap Coin In Denom Differs From Coin Sent To Contract")]
     FeeSwapCoinInDenomMismatch,
 

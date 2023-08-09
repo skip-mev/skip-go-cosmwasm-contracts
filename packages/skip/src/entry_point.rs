@@ -27,7 +27,6 @@ pub struct InstantiateMsg {
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     SwapAndAction {
-        fee_swap: Option<SwapExactCoinOut>,
         user_swap: Swap,
         min_coin: Coin,
         timeout_timestamp: u64,
@@ -79,6 +78,7 @@ pub enum Action {
     },
     IbcTransfer {
         ibc_info: IbcInfo,
+        fee_swap: Option<SwapExactCoinOut>,
     },
     ContractCall {
         contract_address: String,
