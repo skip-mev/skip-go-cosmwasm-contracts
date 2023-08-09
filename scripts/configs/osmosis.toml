@@ -15,9 +15,9 @@ DENOM = "uosmo"
 GAS_PRICE = 0.01
 
 # Contract Paths
-ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_swap_entry_point-aarch64.wasm"
-SWAP_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_poolmanager_swap-aarch64.wasm"
-IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_swap_osmosis_ibc_transfer-aarch64.wasm"
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_api_entry_point-aarch64.wasm"
+SWAP_ADAPTER_PATH = "../artifacts/skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_api_ibc_adapter_ibc_hooks-aarch64.wasm"
 
 # SALT USED TO GENERATE A DETERMINSTIC ADDRESS
 SALT = "1"

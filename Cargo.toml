@@ -2,13 +2,13 @@
 resolver = "2"
 members  = [
   "contracts/entry-point",
-  "contracts/networks/neutron/*",
-  "contracts/networks/osmosis/*",
+  "contracts/adapters/ibc/*",
+  "contracts/adapters/swap/*",
   "packages/*",
 ]
 
 [workspace.package]
-version       = "0.2.0"
+version       = "0.2.1"
 authors       = ["Skip"]
 edition       = "2021"
 rust-version  = "1.71.0"
