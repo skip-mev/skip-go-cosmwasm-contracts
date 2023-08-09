@@ -63,13 +63,13 @@ The repository is organized in the following way:
 │
 ├── contracts/              <- Contains all contracts
 │   ├── entry-point/        <- Contains source code and tests for entry point contract
-│   └── networks/           <- Contains source code and tests for all network adapter contracts
-│       ├── neutron/
-│       │   ├── ibc-transfer/
-│       │   └── swap/
-│       └── osmosis/
-│           ├── ibc-transfer/
-│           └── swap/
+│   └── adapters/           <- Contains source code and tests for all network adapter contracts
+│       ├── ibc/
+│       │   ├── ibc-hooks/
+│       │   └── neutron-transfer/
+│       └── swap/
+│           ├── astroport/
+│           └── osmosis-poolmanager/
 │
 ├── deployed-contracts/     <- Contains deployed contracts info for each network
 │   ├── neutron/
