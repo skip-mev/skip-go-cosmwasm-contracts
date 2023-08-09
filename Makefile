@@ -9,7 +9,7 @@ fmt:
 
 # Only generates the entry point schema since that is the only
 # contract that can be called externally.
-entry-point schema:
+schema:
 	cargo run --package skip-api-entry-point --bin schema         
 
 test:

@@ -37,7 +37,6 @@ Expect Error
     - Fee Swap Coin In Denom Is Not The Same As Remaining Coin Received Denom
     - Fee Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom
     - Fee Swap Last Swap Operation Denom Out Is Not The Same As IBC Fee Coin Denom
-    - Fee Swap Without IBC Transfer
     - Fee Swap With IBC Transfer But Without IBC Fees
 
     // User Swap
@@ -62,7 +61,6 @@ Expect Error
 // Define test parameters
 struct Params {
     info_funds: Vec<Coin>,
-    fee_swap: Option<SwapExactCoinOut>,
     user_swap: Swap,
     min_coin: Coin,
     timeout_timestamp: u64,
@@ -78,7 +76,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -152,7 +149,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinOut (
             SwapExactCoinOut{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -228,7 +224,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -256,6 +251,7 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: None,
         },
         affiliates: vec![],
         expected_messages: vec![
@@ -316,6 +312,7 @@ struct Params {
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
                             },
+                            fee_swap: None,
                         },
                         exact_out: false,
                     }).unwrap(),
@@ -334,7 +331,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -358,6 +354,7 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: None,
         },
         affiliates: vec![],
         expected_messages: vec![
@@ -404,6 +401,7 @@ struct Params {
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
                             },
+                            fee_swap: None,
                         },
                         exact_out: false,
                     }).unwrap(),
@@ -422,19 +420,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -462,6 +447,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![
@@ -541,6 +539,19 @@ struct Params {
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
                             },
+                            fee_swap: Some(
+                                SwapExactCoinOut {
+                                    swap_venue_name: "swap_venue_name".to_string(), 
+                                    operations: vec![
+                                        SwapOperation {
+                                            pool: "pool".to_string(),
+                                            denom_in: "osmo".to_string(),
+                                            denom_out: "untrn".to_string(),
+                                        }
+                                    ],
+                                    refund_address: None,
+                                }
+                            ),
                         },
                         exact_out: false,
                     }).unwrap(),
@@ -559,19 +570,6 @@ struct Params {
         info_funds: vec![
             Coin::new(100_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -599,6 +597,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -614,19 +625,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "uatom"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "uatom".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -654,6 +652,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "uatom".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -665,19 +676,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "uatom".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -705,6 +703,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "uatom".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -716,19 +727,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "osmo".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -756,6 +754,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "osmo".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -767,7 +778,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -795,6 +805,7 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: None,
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -806,59 +817,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool_2".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "atom".to_string(),
-                    }
-                ],
-            },
-        ),
-        min_coin: Coin::new(100_000, "atom"),
-        timeout_timestamp: 101,
-        post_swap_action: Action::BankSend {
-            to_address: "to_address".to_string(),
-        },
-        affiliates: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapWithoutIbcTransfer),
-    };
-    "Fee Swap Without IBC Transfer - Expect Error")]
-#[test_case(
-    Params {
-        info_funds: vec![
-            Coin::new(1_000_000, "osmo"),
-        ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -882,6 +840,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -893,19 +864,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -933,6 +891,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -944,19 +915,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -984,6 +942,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -995,19 +966,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "untrn".to_string(),
-                    }
-                ],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1035,6 +993,19 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -1044,7 +1015,6 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1073,7 +1043,6 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1101,13 +1070,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        fee_swap: Some(
-            SwapExactCoinOut {
-                swap_venue_name: "swap_venue_name".to_string(), 
-                operations: vec![],
-                refund_address: None,
-            }
-        ),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1135,6 +1097,13 @@ struct Params {
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
             },
+            fee_swap: Some(
+                SwapExactCoinOut {
+                    swap_venue_name: "swap_venue_name".to_string(), 
+                    operations: vec![],
+                    refund_address: None,
+                }
+            ),
         },
         affiliates: vec![],
         expected_messages: vec![],
@@ -1146,7 +1115,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        fee_swap: None,
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1217,7 +1185,6 @@ fn test_execute_swap_and_action(params: Params) {
         env,
         info,
         ExecuteMsg::SwapAndAction {
-            fee_swap: params.fee_swap,
             user_swap: params.user_swap,
             min_coin: params.min_coin,
             timeout_timestamp: params.timeout_timestamp,

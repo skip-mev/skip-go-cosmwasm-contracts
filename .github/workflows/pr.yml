@@ -95,6 +95,6 @@ jobs:
         run: |
           cargo +nightly run --package skip-api-entry-point --bin schema     
           if [[ `git status --porcelain` ]]; then
-            echo "Schema is different, please run make entry-point schema"
+            echo "Schema is different, please run make schema"
             exit 1
           fi

@@ -70,16 +70,6 @@
                   "$ref": "#/definitions/Affiliate"
                 }
               },
-              "fee_swap": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/SwapExactCoinOut"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
               "min_coin": {
                 "$ref": "#/definitions/Coin"
               },
@@ -209,6 +199,16 @@
                   "ibc_info"
                 ],
                 "properties": {
+                  "fee_swap": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/SwapExactCoinOut"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "ibc_info": {
                     "$ref": "#/definitions/IbcInfo"
                   }

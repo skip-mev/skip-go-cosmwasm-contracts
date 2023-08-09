@@ -86,7 +86,6 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::SwapAndAction {
-            fee_swap,
             user_swap,
             min_coin,
             timeout_timestamp,
@@ -96,7 +95,6 @@ pub fn execute(
             deps,
             env,
             info,
-            fee_swap,
             user_swap,
             min_coin,
             timeout_timestamp,
