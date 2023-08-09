@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Minor Code Improvements
 - [#53](https://github.com/skip-mev/skip-api-contracts/pull/53) Consolidate Neutron and Osmosis QueryMsg enum's into one enum.
+- [#63](https://github.com/skip-mev/skip-api-contracts/pull/63) Refactor Fee Swap Into Ibc Transfer Variant of Action Enum
 
 ### Minor Testing Improvements
 - [#55](https://github.com/skip-mev/skip-api-contracts/pull/55) Add unit tests to methods and functions in Skip packages folder.
@@ -51,7 +52,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - [#59](https://github.com/skip-mev/skip-api-contracts/pull/59) Add cargo fmt check in github workflow
 - [#60](https://github.com/skip-mev/skip-api-contracts/pull/60) Update github workflow to also run on push to main
 - [#61](https://github.com/skip-mev/skip-api-contracts/pull/61) Add Skip package path to workspace cargo.toml
-- [#64](https://github.com/skip-mev/skip-api-contracts/pull/61) Add Json Schema Generation
+- [#64](https://github.com/skip-mev/skip-api-contracts/pull/64) Add Json Schema Generation
+- [#65](https://github.com/skip-mev/skip-api-contracts/pull/65) Restructure Contracts Folder From networks/ to adapters/
 
 ## [v0.2.0](https://github.com/skip-mev/skip-api-contracts/releases/tag/v0.2.0) - 2023-08-03
 
