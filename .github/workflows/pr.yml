@@ -77,3 +77,21 @@ jobs:
       - name: Run format
         # use nightly toolchain so that we get all the latest formatting features
         run: cargo +nightly fmt --check
+
+  schema:
+    name: Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+
+      - name: Run schema diff check
+        # use nightly toolchain so that we get all the latest formatting features
+        run: |
+          cargo +nightly run --package skip-swap-entry-point --bin schema 
+          git diff --exit-code        
