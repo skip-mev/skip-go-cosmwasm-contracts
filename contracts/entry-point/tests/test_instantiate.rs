@@ -2,7 +2,9 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Addr,
 };
-use skip::{entry_point::InstantiateMsg, swap::SwapVenue};
+use skip::{
+    entry_point::InstantiateMsg, error::SkipError::DuplicateSwapVenueName, swap::SwapVenue,
+};
 use skip_api_entry_point::{
     error::ContractError,
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
@@ -56,7 +58,7 @@ struct Params {
             },
         ],
         ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
-        expected_error: Some(ContractError::DuplicateSwapVenueName),
+        expected_error: Some(ContractError::Skip(DuplicateSwapVenueName)),
     };
     "Duplicate Swap Venue Names")]
 fn test_instantiate(params: Params) {

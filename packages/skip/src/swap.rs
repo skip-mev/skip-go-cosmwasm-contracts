@@ -8,6 +8,7 @@ use std::{
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
+use cw_storage_plus::Map;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -100,6 +101,25 @@ pub enum QueryMsg {
 pub struct SwapVenue {
     pub name: String,
     pub adapter_contract_address: String,
+}
+
+impl SwapVenue {
+    pub fn validate(
+        &self,
+        deps: &DepsMut,
+        swap_venue_map: Map<&str, Addr>,
+    ) -> Result<Addr, SkipError> {
+        // Validate the swap contract address
+        let checked_swap_contract_address =
+            deps.api.addr_validate(&self.adapter_contract_address)?;
+
+        // Prevent duplicate swap venues by erroring if the venue name is already stored
+        if swap_venue_map.has(deps.storage, &self.name) {
+            return Err(SkipError::DuplicateSwapVenueName);
+        }
+
+        Ok(checked_swap_contract_address)
+    }
 }
 
 // Standard swap operation type that contains the pool, denom in, and denom out
@@ -246,6 +266,48 @@ pub fn validate_swap_operations(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use cosmwasm_std::testing::mock_dependencies;
+
+    #[test]
+    fn test_swap_venue_validation() {
+        // TEST CASE 1: Valid Swap Venue
+        let swap_venue = SwapVenue {
+            name: "neutron-astroport".to_string(),
+            adapter_contract_address: "neutron123".to_string(),
+        };
+        let swap_venue_map = Map::new("swap_venue_map");
+        let mut deps = mock_dependencies();
+
+        let result = swap_venue.validate(&deps.as_mut(), swap_venue_map);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            deps.as_mut().api.addr_validate("neutron123").unwrap()
+        );
+
+        // TEST CASE 2: Duplicate Swap Venue
+        let swap_venue = SwapVenue {
+            name: "neutron-astroport".to_string(),
+            adapter_contract_address: "neutron123".to_string(),
+        };
+        let swap_venue_map = Map::new("swap_venue_map");
+        let mut deps = mock_dependencies();
+
+        swap_venue_map
+            .save(
+                deps.as_mut().storage,
+                "neutron-astroport",
+                &Addr::unchecked("neutron123"),
+            )
+            .unwrap();
+
+        let result = swap_venue.validate(&deps.as_mut(), swap_venue_map);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), SkipError::DuplicateSwapVenueName);
+    }
 
     #[test]
     fn test_from_swap_operation_to_astropot_swap_operation() {

@@ -17,6 +17,9 @@ pub enum SkipError {
     /// SWAP ///
     ////////////
 
+    #[error("Duplicate Swap Venue Name Provided")]
+    DuplicateSwapVenueName,
+
     #[error("Swap Operations Empty")]
     SwapOperationsEmpty,
 

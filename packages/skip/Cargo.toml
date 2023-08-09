@@ -19,6 +19,7 @@ astroport           = { workspace = true }
 cosmos-sdk-proto    = { workspace = true }
 cosmwasm-schema     = { workspace = true }
 cosmwasm-std        = { workspace = true }
+cw-storage-plus     = { workspace = true }
 ibc-proto           = { workspace = true }
 neutron-proto       = { workspace = true }
 osmosis-std         = { workspace = true }

@@ -1,5 +1,5 @@
 use crate::{
-    error::{ContractError, ContractResult},
+    error::ContractResult,
     execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
@@ -28,15 +28,8 @@ pub fn instantiate(
 
     // Iterate through the swap venues provided and create a map of venue names to swap adapter contract addresses
     for swap_venue in msg.swap_venues.iter() {
-        // Validate the swap contract address
-        let checked_swap_contract_address = deps
-            .api
-            .addr_validate(&swap_venue.adapter_contract_address)?;
-
-        // Prevent duplicate swap venues by erroring if the venue name is already stored
-        if SWAP_VENUE_MAP.has(deps.storage, &swap_venue.name) {
-            return Err(ContractError::DuplicateSwapVenueName);
-        }
+        // Validate the swap venue (checks for valid address and non-duplicate name)
+        let checked_swap_contract_address = swap_venue.validate(&deps, SWAP_VENUE_MAP)?;
 
         // Store the swap venue name and contract address inside the swap venue map
         SWAP_VENUE_MAP.save(
@@ -52,7 +45,7 @@ pub fn instantiate(
         response = response
             .add_attribute("action", "add_swap_venue")
             .add_attribute("name", &swap_venue.name)
-            .add_attribute("contract_address", &checked_swap_contract_address);
+            .add_attribute("contract_address", checked_swap_contract_address);
     }
 
     // Validate ibc transfer adapter contract addresses
