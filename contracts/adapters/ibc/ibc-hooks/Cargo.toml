@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-entry-point"
+name          = "skip-api-ibc-adapter-ibc-hooks"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }
@@ -20,12 +20,15 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-schema   = { workspace = true }
-cosmwasm-std      = { workspace = true }
-cw-storage-plus   = { workspace = true }
-cw-utils          = { workspace = true }
-skip              = { workspace = true }
-thiserror         = { workspace = true }
+cosmwasm-schema  = { workspace = true }
+cosmwasm-std     = { workspace = true }
+cw-storage-plus  = { workspace = true }
+ibc-proto        = { workspace = true }
+prost            = { workspace = true }
+serde-json-wasm  = { workspace = true }
+serde-cw-value   = { workspace = true }
+skip             = { workspace = true }
+thiserror        = { workspace = true }
 
 [dev-dependencies]
-test-case         = { workspace = true }
+test-case        = { workspace = true }

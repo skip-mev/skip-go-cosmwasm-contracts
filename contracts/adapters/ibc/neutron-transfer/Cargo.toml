@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-entry-point"
+name          = "skip-api-ibc-adapter-neutron-transfer"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }
@@ -20,12 +20,15 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-schema   = { workspace = true }
-cosmwasm-std      = { workspace = true }
-cw-storage-plus   = { workspace = true }
-cw-utils          = { workspace = true }
-skip              = { workspace = true }
-thiserror         = { workspace = true }
+cosmwasm-schema  = { workspace = true }
+cosmwasm-std     = { workspace = true }
+cw-storage-plus  = { workspace = true }
+neutron-proto    = { workspace = true }
+neutron-sdk      = { workspace = true }
+prost            = { workspace = true }
+skip             = { workspace = true }
+thiserror        = { workspace = true }
 
 [dev-dependencies]
-test-case         = { workspace = true }
+cosmos-sdk-proto = { workspace = true }
+test-case        = { workspace = true }

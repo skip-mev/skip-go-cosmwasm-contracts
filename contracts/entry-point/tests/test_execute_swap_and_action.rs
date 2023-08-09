@@ -15,7 +15,7 @@ use skip::{
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
 };
-use skip_swap_entry_point::{
+use skip_api_entry_point::{
     error::ContractError,
     state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
@@ -1212,7 +1212,7 @@ fn test_execute_swap_and_action(params: Params) {
         .unwrap();
 
     // Call execute_swap_and_action with the given test case params
-    let res = skip_swap_entry_point::contract::execute(
+    let res = skip_api_entry_point::contract::execute(
         deps.as_mut(),
         env,
         info,
