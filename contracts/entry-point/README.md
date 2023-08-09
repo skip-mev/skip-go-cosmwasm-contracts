@@ -57,16 +57,6 @@ SwapExactCoinIn:
 ``` json
 {
     "swap_and_action": {
-        "fee_swap": {
-            "swap_venue_name": "neutron-astroport",
-            "operations": [
-                {
-                    "pool": "neutron...",
-                    "denom_in": "uatom",
-                    "denom_out": "untrn"
-                }
-            ]
-        },
         "user_swap": {
             "swap_exact_coin_in": {
                 "swap_venue_name": "neutron-astroport",
@@ -90,8 +80,38 @@ SwapExactCoinIn:
         },
         "timeout_timestamp": 1000000000000,
         "post_swap_action": {
-            "bank_send": {
-                "to_address": "neutron..."
+            "ibc_transfer": {
+                "ibc_info": {
+                    "source_channel": "channel-1",
+                    "receiver": "cosmos...",
+                    "fee": {
+                        "recv_fee": [],
+                        "ack_fee": [
+                            {
+                                "denom": "untrn",
+                                "amount": "100"
+                            }
+                        ],
+                        "timeout_fee": [
+                            {
+                                "denom": "untrn",
+                                "amount": "100"
+                            }
+                        ]
+                    },
+                    "memo": "",
+                    "recover_address": "neutron..."
+                }
+                "fee_swap": {
+                    "swap_venue_name": "neutron-astroport",
+                    "operations": [
+                        {
+                            "pool": "neutron...",
+                            "denom_in": "uatom",
+                            "denom_out": "untrn"
+                        }
+                    ]
+                },
             }
         },
         "affiliates": [
@@ -109,16 +129,6 @@ SwapExactCoinOut:
 ``` json
 {
     "swap_and_action": {
-        "fee_swap": {
-            "swap_venue_name": "neutron-astroport",
-            "operations": [
-                {
-                    "pool": "neutron...",
-                    "denom_in": "uatom",
-                    "denom_out": "untrn"
-                }
-            ]
-        },
         "user_swap": {
             "swap_exact_coin_out": {
                 "swap_venue_name": "neutron-astroport",
