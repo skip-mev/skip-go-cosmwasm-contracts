@@ -51,6 +51,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - [#59](https://github.com/skip-mev/skip-api-contracts/pull/59) Add cargo fmt check in github workflow
 - [#60](https://github.com/skip-mev/skip-api-contracts/pull/60) Update github workflow to also run on push to main
 - [#61](https://github.com/skip-mev/skip-api-contracts/pull/61) Add Skip package path to workspace cargo.toml
+- [#64](https://github.com/skip-mev/skip-api-contracts/pull/61) Add Json Schema Generation
 
 ## [v0.2.0](https://github.com/skip-mev/skip-api-contracts/releases/tag/v0.2.0) - 2023-08-03
 
