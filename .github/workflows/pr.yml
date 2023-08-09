@@ -23,7 +23,7 @@ jobs:
       - name: Check for errors
         # use wasm32 target so that if we have included wasm-incompatible
         # dependencies, it will result in CI failure
-        run: cargo check --locked --target wasm32-unknown-unknown
+        run: cargo check --locked --target wasm32-unknown-unknown --lib
         env:
           RUST_BACKTRACE: 1
 

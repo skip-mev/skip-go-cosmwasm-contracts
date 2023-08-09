@@ -1,5 +1,5 @@
-use skip::ibc::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_schema::write_api;
+use skip::ibc::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {
