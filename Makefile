@@ -1,11 +1,16 @@
 check:
-	cargo check --target wasm32-unknown-unknown
+	cargo check --target wasm32-unknown-unknown --lib
 
 clippy:
 	cargo +nightly clippy --tests
 
 fmt:
 	cargo +nightly fmt
+
+# Only generates the entry point schema since that is the only
+# contract that can be called externally.
+entry-point schema:
+	cargo run --package skip-swap-entry-point --bin schema         
 
 test:
 	cargo test --locked --workspace
