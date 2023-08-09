@@ -92,6 +92,7 @@ jobs:
 
       - name: Run schema diff check
         # use nightly toolchain so that we get all the latest formatting features
-        run: |
-          cargo +nightly run --package skip-swap-entry-point --bin schema 
-          git diff --exit-code        
+        run: cargo +nightly run --package skip-swap-entry-point --bin schema     
+ 
+      - name: Check for changes
+        run: git diff --exit-code || (echo "Schema changes detected. Please run the schema command before committing." && exit 1)  
