@@ -5,6 +5,7 @@ use crate::{
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, Coin, Uint128};
+use cw20::Cw20ReceiveMsg;
 
 ///////////////////
 /// INSTANTIATE ///
@@ -26,6 +27,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     SwapAndAction {
         user_swap: Swap,
         min_coin: Coin,
@@ -44,6 +46,18 @@ pub enum ExecuteMsg {
         timeout_timestamp: u64,
         post_swap_action: Action,
         exact_out: bool,
+    },
+}
+
+/// This structure describes a CW20 hook message.
+#[cw_serde]
+pub enum Cw20HookMsg {
+    SwapAndAction {
+        user_swap: Swap,
+        min_coin: Coin,
+        timeout_timestamp: u64,
+        post_swap_action: Action,
+        affiliates: Vec<Affiliate>,
     },
 }
 

@@ -3,17 +3,51 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128,
+    WasmMsg,
 };
+use cw20::Cw20ReceiveMsg;
 use cw_utils::one_coin;
 use skip::{
-    entry_point::{Action, Affiliate, ExecuteMsg},
+    entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
         SwapExactCoinOut,
     },
 };
+
+//////////////////////////
+/// RECEIVE ENTRYPOINT ///
+//////////////////////////
+
+// Receive is the main entry point for the contract to
+// receive cw20 tokens and execute the swap and action message
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> ContractResult<Response> {
+    match from_binary(&cw20_msg.msg)? {
+        Cw20HookMsg::SwapAndAction {
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        } => execute_swap_and_action(
+            deps,
+            env,
+            info,
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        ),
+    }
+}
 
 ///////////////////////////
 /// EXECUTE ENTRYPOINTS ///
