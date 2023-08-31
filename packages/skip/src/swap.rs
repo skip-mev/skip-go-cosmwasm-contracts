@@ -197,6 +197,7 @@ pub enum Swap {
 ////////////////////////
 
 // Query the contract's balance and transfer the funds back to the swapper
+// @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
 pub fn execute_transfer_funds_back(
     deps: DepsMut,
     env: Env,

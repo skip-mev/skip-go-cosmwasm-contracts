@@ -89,6 +89,7 @@ fn execute_swap(
     }
 
     // Get coin in from the message info, error if there is not exactly one coin sent
+    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
     let coin_in = one_coin(&info)?;
 
     // Create the astroport swap message
@@ -127,6 +128,7 @@ fn create_astroport_swap_msg(
     let astroport_swap_operations = swap_operations.into_iter().map(From::from).collect();
 
     // Create the astroport router execute message arguments
+    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
     let astroport_router_msg_args = RouterExecuteMsg::ExecuteSwapOperations {
         operations: astroport_swap_operations,
         minimum_receive: None,
@@ -175,6 +177,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 }
 
 // Queries the astroport router contract to simulate a swap exact amount in
+// @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
 fn query_simulate_swap_exact_coin_in(
     deps: Deps,
     coin_in: Coin,
@@ -216,6 +219,7 @@ fn query_simulate_swap_exact_coin_in(
 }
 
 // Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
+// @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
 fn query_simulate_swap_exact_coin_out(
     deps: Deps,
     coin_out: Coin,
