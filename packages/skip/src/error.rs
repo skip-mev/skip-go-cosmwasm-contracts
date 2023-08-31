@@ -13,6 +13,9 @@ pub enum SkipError {
     #[error("Unauthorized")]
     Unauthorized,
 
+    #[error(transparent)]
+    Payment(#[from] cw_utils::PaymentError),
+
     ////////////
     /// SWAP ///
     ////////////
@@ -32,4 +35,14 @@ pub enum SkipError {
 
     #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
     IbcFeesNotOneCoin,
+
+    /////////////
+    /// ASSET ///
+    /////////////
+
+    #[error("Native Coin Sent To Contract Does Not Match Asset")]
+    InvalidNativeCoin,
+
+    #[error("Cw20 Coin Sent To Contract Does Not Match Asset")]
+    InvalidCw20Coin,
 }

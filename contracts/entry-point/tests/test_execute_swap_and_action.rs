@@ -7,6 +7,7 @@ use cosmwasm_std::{
 };
 use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
 use skip::{
+    asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
         IbcFeesNotOneCoin, SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch,
@@ -1185,6 +1186,7 @@ fn test_execute_swap_and_action(params: Params) {
         env,
         info,
         ExecuteMsg::SwapAndAction {
+            sent_asset: Asset::Native(Coin::default()),
             user_swap: params.user_swap,
             min_coin: params.min_coin,
             timeout_timestamp: params.timeout_timestamp,

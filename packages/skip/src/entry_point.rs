@@ -1,4 +1,5 @@
 use crate::{
+    asset::Asset,
     ibc::IbcInfo,
     swap::{Swap, SwapExactCoinOut, SwapVenue},
 };
@@ -29,6 +30,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     SwapAndAction {
+        sent_asset: Asset,
         user_swap: Swap,
         min_coin: Coin,
         timeout_timestamp: u64,
@@ -53,6 +55,7 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub enum Cw20HookMsg {
     SwapAndAction {
+        sent_asset: Asset,
         user_swap: Swap,
         min_coin: Coin,
         timeout_timestamp: u64,

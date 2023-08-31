@@ -9,6 +9,7 @@ use cosmwasm_std::{
 use cw20::Cw20ReceiveMsg;
 use cw_utils::one_coin;
 use skip::{
+    asset::Asset,
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
@@ -31,6 +32,7 @@ pub fn receive_cw20(
 ) -> ContractResult<Response> {
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::SwapAndAction {
+            sent_asset,
             user_swap,
             min_coin,
             timeout_timestamp,
@@ -40,6 +42,7 @@ pub fn receive_cw20(
             deps,
             env,
             info,
+            sent_asset,
             user_swap,
             min_coin,
             timeout_timestamp,
@@ -60,6 +63,7 @@ pub fn execute_swap_and_action(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    _sent_asset: Asset,
     user_swap: Swap,
     min_coin: Coin,
     timeout_timestamp: u64,

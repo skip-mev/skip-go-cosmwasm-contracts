@@ -87,6 +87,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::SwapAndAction {
+            sent_asset,
             user_swap,
             min_coin,
             timeout_timestamp,
@@ -96,6 +97,7 @@ pub fn execute(
             deps,
             env,
             info,
+            sent_asset,
             user_swap,
             min_coin,
             timeout_timestamp,
