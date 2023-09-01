@@ -123,3 +123,192 @@ impl Asset {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::{
+        testing::{mock_dependencies_with_balances, mock_env, mock_info},
+        ContractResult, QuerierResult, SystemResult, WasmQuery,
+    };
+    use cw20::BalanceResponse;
+
+    #[test]
+    fn test_asset_native() {
+        let asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        assert_eq!(asset.denom(), "uatom");
+        assert_eq!(asset.amount(), Uint128::new(100));
+    }
+
+    #[test]
+    fn test_asset_cw20() {
+        let asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        assert_eq!(asset.denom(), "asset");
+        assert_eq!(asset.amount(), Uint128::new(100));
+    }
+
+    #[test]
+    fn test_asset_transfer_full_native() {
+        let asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let msg = asset.transfer_full("addr".to_string());
+
+        match msg {
+            CosmosMsg::Bank(BankMsg::Send { to_address, amount }) => {
+                assert_eq!(to_address, "addr");
+                assert_eq!(amount.len(), 1);
+                assert_eq!(amount[0].denom, "uatom");
+                assert_eq!(amount[0].amount, Uint128::new(100));
+            }
+            _ => panic!("Unexpected message type"),
+        }
+    }
+
+    #[test]
+    fn test_asset_transfer_full_cw20() {
+        let asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let msg = asset.transfer_full("addr".to_string());
+
+        match msg {
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr,
+                msg,
+                funds,
+            }) => {
+                assert_eq!(contract_addr, "asset");
+                assert_eq!(
+                    msg,
+                    to_binary(&Cw20ExecuteMsg::Transfer {
+                        recipient: "addr".to_string(),
+                        amount: Uint128::new(100),
+                    })
+                    .unwrap()
+                );
+                assert_eq!(funds.len(), 0);
+            }
+            _ => panic!("Unexpected message type"),
+        }
+    }
+
+    #[test]
+    fn test_asset_transfer_partial_native() {
+        let mut asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let msg = asset.transfer_partial("addr".to_string(), Uint128::new(20));
+
+        match msg {
+            CosmosMsg::Bank(BankMsg::Send { to_address, amount }) => {
+                assert_eq!(to_address, "addr");
+                assert_eq!(amount.len(), 1);
+                assert_eq!(amount[0].denom, "uatom");
+                assert_eq!(amount[0].amount, Uint128::new(20));
+            }
+            _ => panic!("Unexpected message type"),
+        }
+
+        assert_eq!(asset.amount(), Uint128::new(80));
+    }
+
+    #[test]
+    fn test_asset_transfer_partial_cw20() {
+        let mut asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let msg = asset.transfer_partial("addr".to_string(), Uint128::new(20));
+
+        match msg {
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr,
+                msg,
+                funds,
+            }) => {
+                assert_eq!(contract_addr, "asset");
+                assert_eq!(
+                    msg,
+                    to_binary(&Cw20ExecuteMsg::Transfer {
+                        recipient: "addr".to_string(),
+                        amount: Uint128::new(20),
+                    })
+                    .unwrap()
+                );
+                assert_eq!(funds.len(), 0);
+            }
+            _ => panic!("Unexpected message type"),
+        }
+
+        assert_eq!(asset.amount(), Uint128::new(80));
+    }
+
+    #[test]
+    fn test_validate_native() {
+        let asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let env = mock_env();
+
+        let info = mock_info(
+            "sender",
+            &[Coin {
+                denom: "uatom".to_string(),
+                amount: Uint128::new(100),
+            }],
+        );
+
+        assert!(asset.validate(&deps.as_mut(), &env, &info).is_ok());
+    }
+
+    #[test]
+    fn test_validate_cw20() {
+        let asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        // Create mock wasm handler to handle the cw20 balance query
+        let wasm_handler = |query: &WasmQuery| -> QuerierResult {
+            match query {
+                WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        balance: Uint128::from(100u128),
+                    })
+                    .unwrap(),
+                )),
+                _ => panic!("Unsupported query: {:?}", query),
+            }
+        };
+
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        deps.querier.update_wasm(wasm_handler);
+
+        let env = mock_env();
+
+        let info = mock_info("sender", &[]);
+
+        assert!(asset.validate(&deps.as_mut(), &env, &info).is_ok());
+    }
+}
