@@ -1,4 +1,4 @@
-use crate::error::SkipError;
+use crate::{error::SkipError, swap::ExecuteMsg as SwapExecuteMsg};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
@@ -48,15 +48,15 @@ impl Asset {
         }
     }
 
-    pub fn sub(&mut self, amount: Uint128) -> Result<(), SkipError> {
+    pub fn sub(&mut self, amount: Uint128) -> Result<Uint128, SkipError> {
         match self {
             Asset::Native(coin) => {
                 coin.amount = coin.amount.checked_sub(amount)?;
-                Ok(())
+                Ok(coin.amount)
             }
             Asset::Cw20(coin) => {
                 coin.amount = coin.amount.checked_sub(amount)?;
-                Ok(())
+                Ok(coin.amount)
             }
         }
     }
@@ -99,6 +99,31 @@ impl Asset {
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: to_address,
                     amount,
+                })
+                .unwrap(),
+                funds: vec![],
+            })),
+        }
+    }
+
+    // @NotJeremyLiu TODO: Add tests for this
+    pub fn swap(
+        self,
+        swap_adapter_contract_address: String,
+        swap_msg_args: SwapExecuteMsg,
+    ) -> Result<CosmosMsg, SkipError> {
+        match self {
+            Asset::Native(coin) => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: swap_adapter_contract_address,
+                msg: to_binary(&swap_msg_args)?,
+                funds: vec![coin],
+            })),
+            Asset::Cw20(coin) => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: coin.address,
+                msg: to_binary(&Cw20ExecuteMsg::Send {
+                    contract: swap_adapter_contract_address,
+                    amount: coin.amount,
+                    msg: to_binary(&swap_msg_args)?,
                 })
                 .unwrap(),
                 funds: vec![],
