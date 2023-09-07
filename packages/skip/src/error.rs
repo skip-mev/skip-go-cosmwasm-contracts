@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{OverflowError, StdError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -15,6 +15,9 @@ pub enum SkipError {
 
     #[error(transparent)]
     Payment(#[from] cw_utils::PaymentError),
+
+    #[error(transparent)]
+    Overflow(#[from] OverflowError),
 
     ////////////
     /// SWAP ///

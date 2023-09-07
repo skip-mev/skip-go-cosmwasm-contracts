@@ -48,7 +48,20 @@ impl Asset {
         }
     }
 
-    pub fn transfer_full(&self, to_address: String) -> CosmosMsg {
+    pub fn sub(&mut self, amount: Uint128) -> Result<(), SkipError> {
+        match self {
+            Asset::Native(coin) => {
+                coin.amount = coin.amount.checked_sub(amount)?;
+                Ok(())
+            }
+            Asset::Cw20(coin) => {
+                coin.amount = coin.amount.checked_sub(amount)?;
+                Ok(())
+            }
+        }
+    }
+
+    pub fn transfer_full(self, to_address: String) -> CosmosMsg {
         match self {
             Asset::Native(coin) => CosmosMsg::Bank(BankMsg::Send {
                 to_address,
@@ -66,32 +79,30 @@ impl Asset {
         }
     }
 
-    pub fn transfer_partial(&mut self, to_address: String, amount: Uint128) -> CosmosMsg {
+    pub fn transfer_partial(
+        &mut self,
+        to_address: String,
+        amount: Uint128,
+    ) -> Result<CosmosMsg, SkipError> {
+        self.sub(amount)?;
+
         match self {
-            Asset::Native(coin) => {
-                coin.amount = coin.amount.checked_sub(amount).unwrap();
-
-                CosmosMsg::Bank(BankMsg::Send {
-                    to_address,
-                    amount: vec![Coin {
-                        denom: coin.denom.clone(),
-                        amount,
-                    }],
+            Asset::Native(coin) => Ok(CosmosMsg::Bank(BankMsg::Send {
+                to_address,
+                amount: vec![Coin {
+                    denom: coin.denom.clone(),
+                    amount,
+                }],
+            })),
+            Asset::Cw20(coin) => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: coin.address.clone(),
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    recipient: to_address,
+                    amount,
                 })
-            }
-            Asset::Cw20(coin) => {
-                coin.amount = coin.amount.checked_sub(amount).unwrap();
-
-                CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: coin.address.clone(),
-                    msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                        recipient: to_address,
-                        amount,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                })
-            }
+                .unwrap(),
+                funds: vec![],
+            })),
         }
     }
 
@@ -169,6 +180,29 @@ mod tests {
     }
 
     #[test]
+    fn test_sub() {
+        // TEST 1: Native asset
+        let mut asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        asset.sub(Uint128::new(20)).unwrap();
+
+        assert_eq!(asset.amount(), Uint128::new(80));
+
+        // TEST 2: Cw20 asset
+        let mut asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        asset.sub(Uint128::new(20)).unwrap();
+
+        assert_eq!(asset.amount(), Uint128::new(80));
+    }
+
+    #[test]
     fn test_asset_transfer_full_native() {
         let asset = Asset::Native(Coin {
             denom: "uatom".to_string(),
@@ -225,7 +259,9 @@ mod tests {
             amount: Uint128::new(100),
         });
 
-        let msg = asset.transfer_partial("addr".to_string(), Uint128::new(20));
+        let msg = asset
+            .transfer_partial("addr".to_string(), Uint128::new(20))
+            .unwrap();
 
         match msg {
             CosmosMsg::Bank(BankMsg::Send { to_address, amount }) => {
@@ -247,7 +283,9 @@ mod tests {
             amount: Uint128::new(100),
         });
 
-        let msg = asset.transfer_partial("addr".to_string(), Uint128::new(20));
+        let msg = asset
+            .transfer_partial("addr".to_string(), Uint128::new(20))
+            .unwrap();
 
         match msg {
             CosmosMsg::Wasm(WasmMsg::Execute {
