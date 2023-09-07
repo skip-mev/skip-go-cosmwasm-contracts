@@ -4,7 +4,7 @@ use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
-use cw_utils::one_coin;
+use cw_utils::{one_coin, nonpayable};
 
 #[cw_serde]
 pub enum Asset {
@@ -21,6 +21,15 @@ impl From<Coin> for Asset {
 impl From<Cw20Coin> for Asset {
     fn from(cw20_coin: Cw20Coin) -> Self {
         Asset::Cw20(cw20_coin)
+    }
+}
+
+impl From<Cw20CoinVerified> for Asset {
+    fn from(cw20_coin_verified: Cw20CoinVerified) -> Self {
+        Asset::Cw20(Cw20Coin {
+            address: cw20_coin_verified.address.to_string(),
+            amount: cw20_coin_verified.amount,
+        })
     }
 }
 
@@ -98,6 +107,9 @@ impl Asset {
                 }
             }
             Asset::Cw20(coin) => {
+                // Validate that the message is nonpayable
+                nonpayable(info)?;
+
                 let verified_cw20_coin_addr = deps.api.addr_validate(&coin.address)?;
 
                 let verified_cw20_coin = Cw20CoinVerified {
