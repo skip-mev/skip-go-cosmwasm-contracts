@@ -3,20 +3,24 @@ use crate::{
     state::{ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS},
 };
 use astroport::{
-    asset::{Asset, AssetInfo},
+    asset::{Asset as AstroportAsset, AssetInfo},
     pair::{QueryMsg as PairQueryMsg, ReverseSimulationResponse},
     router::{
         ExecuteMsg as RouterExecuteMsg, QueryMsg as RouterQueryMsg, SimulateSwapOperationsResponse,
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg,
+    entry_point, to_binary, Addr, Api, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response,
+    Uint128, WasmMsg,
 };
+use cw20::Cw20Coin;
 use cw_utils::one_coin;
-use skip::swap::{
-    execute_transfer_funds_back, ExecuteMsg, NeutronInstantiateMsg as InstantiateMsg, QueryMsg,
-    SwapOperation,
+use skip::{
+    asset::Asset,
+    swap::{
+        execute_transfer_funds_back, ExecuteMsg, NeutronInstantiateMsg as InstantiateMsg, QueryMsg,
+        SwapOperation,
+    },
 };
 
 ///////////////////
@@ -94,6 +98,7 @@ fn execute_swap(
 
     // Create the astroport swap message
     let swap_msg = create_astroport_swap_msg(
+        deps.api,
         ROUTER_CONTRACT_ADDRESS.load(deps.storage)?,
         coin_in,
         operations,
@@ -120,12 +125,16 @@ fn execute_swap(
 
 // Converts the swap operations to astroport AstroSwap operations
 fn create_astroport_swap_msg(
+    api: &dyn Api,
     router_contract_address: Addr,
     coin_in: Coin,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<WasmMsg> {
     // Convert the swap operations to astroport swap operations
-    let astroport_swap_operations = swap_operations.into_iter().map(From::from).collect();
+    let astroport_swap_operations = swap_operations
+        .into_iter()
+        .map(|swap_operation| swap_operation.into_astroport_swap_operation(api))
+        .collect();
 
     // Create the astroport router execute message arguments
     // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
@@ -156,20 +165,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::RouterContractAddress {} => {
             to_binary(&ROUTER_CONTRACT_ADDRESS.load(deps.storage)?)
         }
-        QueryMsg::SimulateSwapExactCoinIn {
-            coin_in,
+        QueryMsg::SimulateSwapExactAssetIn {
+            asset_in,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_coin_in(
+        } => to_binary(&query_simulate_swap_exact_asset_in(
             deps,
-            coin_in,
+            asset_in,
             swap_operations,
         )?),
-        QueryMsg::SimulateSwapExactCoinOut {
-            coin_out,
+        QueryMsg::SimulateSwapExactAssetOut {
+            asset_out,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_coin_out(
+        } => to_binary(&query_simulate_swap_exact_asset_out(
             deps,
-            coin_out,
+            asset_out,
             swap_operations,
         )?),
     }
@@ -178,18 +187,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 
 // Queries the astroport router contract to simulate a swap exact amount in
 // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-fn query_simulate_swap_exact_coin_in(
+fn query_simulate_swap_exact_asset_in(
     deps: Deps,
-    coin_in: Coin,
+    asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Coin> {
+) -> ContractResult<Asset> {
     // Error if swap operations is empty
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(ContractError::SwapOperationsEmpty);
     };
 
-    // Ensure coin_in's denom is the same as the first swap operation's denom in
-    if coin_in.denom != first_op.denom_in {
+    // Ensure asset_in's denom is the same as the first swap operation's denom in
+    if asset_in.denom() != first_op.denom_in {
         return Err(ContractError::CoinInDenomMismatch);
     }
 
@@ -200,67 +209,104 @@ fn query_simulate_swap_exact_coin_in(
     let denom_out = last_op.denom_out.clone();
 
     // Convert the swap operations to astroport swap operations
-    let astroport_swap_operations = swap_operations.into_iter().map(From::from).collect();
+    let astroport_swap_operations = swap_operations
+        .into_iter()
+        .map(|swap_op| swap_op.into_astroport_swap_operation(deps.api))
+        .collect();
 
     // Query the astroport router contract to simulate the swap operations
     let res: SimulateSwapOperationsResponse = deps.querier.query_wasm_smart(
         router_contract_address,
         &RouterQueryMsg::SimulateSwapOperations {
-            offer_amount: coin_in.amount,
+            offer_amount: asset_in.amount(),
             operations: astroport_swap_operations,
         },
     )?;
 
-    // Return the coin out
-    Ok(Coin {
-        denom: denom_out,
-        amount: res.amount,
-    })
+    // Return the asset out depending on whether the last swap
+    // operation's denom out is a cw-20 token or a native token
+    match deps.api.addr_validate(&denom_out) {
+        Ok(addr) => {
+            return Ok(Asset::Cw20(Cw20Coin {
+                address: addr.to_string(),
+                amount: res.amount,
+            }))
+        }
+        Err(_) => {
+            return Ok(Asset::Native(Coin {
+                denom: denom_out,
+                amount: res.amount,
+            }))
+        }
+    }
 }
 
 // Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
 // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-fn query_simulate_swap_exact_coin_out(
+fn query_simulate_swap_exact_asset_out(
     deps: Deps,
-    coin_out: Coin,
+    asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Coin> {
+) -> ContractResult<Asset> {
     // Error if swap operations is empty
     let Some(last_op) = swap_operations.last() else {
         return Err(ContractError::SwapOperationsEmpty);
     };
 
     // Ensure coin_out's denom is the same as the last swap operation's denom out
-    if coin_out.denom != last_op.denom_out {
+    if asset_out.denom() != last_op.denom_out {
         return Err(ContractError::CoinOutDenomMismatch);
     }
 
     // Iterate through the swap operations in reverse order, querying the astroport pool contracts
     // contracts to get the coin in needed for each swap operation, and then updating the coin in
     // needed for the next swap operation until the coin in needed for the first swap operation is found.
-    let coin_in_needed = swap_operations.iter().rev().try_fold(
-        coin_out,
-        |coin_in_needed, operation| -> Result<_, ContractError> {
+    let asset_in_needed = swap_operations.iter().rev().try_fold(
+        asset_out,
+        |asset_in_needed, operation| -> Result<_, ContractError> {
+            // Get ask_asset depending on whether the asset in
+            // needed is a native token or a cw-20 token
+            let ask_asset = match asset_in_needed {
+                Asset::Native(coin) => AstroportAsset {
+                    info: AssetInfo::NativeToken {
+                        denom: coin.denom.clone(),
+                    },
+                    amount: coin.amount,
+                },
+                Asset::Cw20(cw20_coin) => AstroportAsset {
+                    info: AssetInfo::Token {
+                        contract_addr: deps.api.addr_validate(&cw20_coin.address)?,
+                    },
+                    amount: cw20_coin.amount,
+                },
+            };
+
+            // Query the astroport pool contract to get the coin in needed for the swap operation
             let res: ReverseSimulationResponse = deps.querier.query_wasm_smart(
                 &operation.pool,
                 &PairQueryMsg::ReverseSimulation {
                     offer_asset_info: None,
-                    ask_asset: Asset {
-                        info: AssetInfo::NativeToken {
-                            denom: coin_in_needed.denom,
-                        },
-                        amount: coin_in_needed.amount,
-                    },
+                    ask_asset,
                 },
             )?;
 
-            Ok(Coin {
-                denom: operation.denom_in.clone(),
-                amount: res.offer_amount.checked_add(Uint128::one())?,
-            })
+            match deps.api.addr_validate(&operation.denom_in) {
+                Ok(addr) => {
+                    return Ok(Asset::Cw20(Cw20Coin {
+                        address: addr.to_string(),
+                        amount: res.offer_amount.checked_add(Uint128::one())?,
+                    }))
+                }
+                Err(_) => {
+                    return Ok(Asset::Native(Coin {
+                        denom: operation.denom_in.clone(),
+                        amount: res.offer_amount.checked_add(Uint128::one())?,
+                    }))
+                }
+            }
         },
     )?;
 
     // Return the coin in needed
-    Ok(coin_in_needed)
+    Ok(asset_in_needed)
 }
