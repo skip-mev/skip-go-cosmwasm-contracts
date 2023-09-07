@@ -1,4 +1,4 @@
-use crate::error::SkipError;
+use crate::{asset::Asset, error::SkipError};
 
 use std::{
     convert::{From, TryFrom},
@@ -7,7 +7,7 @@ use std::{
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, Api, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -79,14 +79,14 @@ pub enum QueryMsg {
     RouterContractAddress {},
     // SimulateSwapExactAmountOut returns the coin in necessary to receive the specified coin out
     #[returns(Coin)]
-    SimulateSwapExactCoinOut {
-        coin_out: Coin,
+    SimulateSwapExactAssetOut {
+        asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
     },
     // SimulateSwapExactAmountIn returns the coin out received from the specified coin in
     #[returns(Coin)]
-    SimulateSwapExactCoinIn {
-        coin_in: Coin,
+    SimulateSwapExactAssetIn {
+        asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
     },
 }
@@ -112,19 +112,28 @@ pub struct SwapOperation {
     pub denom_out: String,
 }
 
-// ASTROPORT CONVERSIONS
+// ASTROPORT CONVERSION
 
-// Converts a skip swap operation to an astroport swap operation
-impl From<SwapOperation> for AstroportSwapOperation {
-    fn from(swap_operation: SwapOperation) -> Self {
-        // Convert the swap operation to an astroport swap operation and return it
+// Converts a swap operation to an astroport swap operation
+impl SwapOperation {
+    pub fn into_astroport_swap_operation(self, api: &dyn Api) -> AstroportSwapOperation {
+        let offer_asset_info = match api.addr_validate(&self.denom_in) {
+            Ok(contract_addr) => AssetInfo::Token { contract_addr },
+            Err(_) => AssetInfo::NativeToken {
+                denom: self.denom_in,
+            },
+        };
+
+        let ask_asset_info = match api.addr_validate(&self.denom_out) {
+            Ok(contract_addr) => AssetInfo::Token { contract_addr },
+            Err(_) => AssetInfo::NativeToken {
+                denom: self.denom_out,
+            },
+        };
+
         AstroportSwapOperation::AstroSwap {
-            offer_asset_info: AssetInfo::NativeToken {
-                denom: swap_operation.denom_in,
-            },
-            ask_asset_info: AssetInfo::NativeToken {
-                denom: swap_operation.denom_out,
-            },
+            offer_asset_info,
+            ask_asset_info,
         }
     }
 }
@@ -248,24 +257,54 @@ pub fn validate_swap_operations(
 mod tests {
     use super::*;
 
+    use cosmwasm_std::testing::mock_dependencies;
+
     #[test]
     fn test_from_swap_operation_to_astropot_swap_operation() {
+        // TEST CASE 1: Native Swap Operation
         let swap_operation = SwapOperation {
             pool: "1".to_string(),
-            denom_in: "uatom".to_string(),
-            denom_out: "uosmo".to_string(),
+            denom_in: "ua".to_string(),
+            denom_out: "uo".to_string(),
         };
 
-        let astroport_swap_operation: AstroportSwapOperation = swap_operation.into();
+        let deps = mock_dependencies();
+
+        let astroport_swap_operation: AstroportSwapOperation =
+            swap_operation.into_astroport_swap_operation(&deps.api);
 
         assert_eq!(
             astroport_swap_operation,
             AstroportSwapOperation::AstroSwap {
                 offer_asset_info: AssetInfo::NativeToken {
-                    denom: "uatom".to_string()
+                    denom: "ua".to_string()
                 },
                 ask_asset_info: AssetInfo::NativeToken {
-                    denom: "uosmo".to_string()
+                    denom: "uo".to_string()
+                }
+            }
+        );
+
+        // TEST CASE 2: CW20 Swap Operation
+        let swap_operation = SwapOperation {
+            pool: "1".to_string(),
+            denom_in: "cwabc".to_string(),
+            denom_out: "cw123".to_string(),
+        };
+
+        let deps = mock_dependencies();
+
+        let astroport_swap_operation: AstroportSwapOperation =
+            swap_operation.into_astroport_swap_operation(&deps.api);
+
+        assert_eq!(
+            astroport_swap_operation,
+            AstroportSwapOperation::AstroSwap {
+                offer_asset_info: AssetInfo::Token {
+                    contract_addr: Addr::unchecked("cwabc")
+                },
+                ask_asset_info: AssetInfo::Token {
+                    contract_addr: Addr::unchecked("cw123")
                 }
             }
         );
