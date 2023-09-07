@@ -40,7 +40,7 @@ pub enum ExecuteMsg {
     UserSwap {
         swap: Swap,
         min_coin: Coin,
-        remaining_coin: Coin,
+        remaining_asset: Asset,
         affiliates: Vec<Affiliate>,
     },
     PostSwapAction {

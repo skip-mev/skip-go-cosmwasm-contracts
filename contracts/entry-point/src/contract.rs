@@ -107,9 +107,9 @@ pub fn execute(
         ExecuteMsg::UserSwap {
             swap,
             min_coin,
-            remaining_coin,
+            remaining_asset,
             affiliates,
-        } => execute_user_swap(deps, env, info, swap, min_coin, remaining_coin, affiliates),
+        } => execute_user_swap(deps, env, info, swap, min_coin, remaining_asset, affiliates),
         ExecuteMsg::PostSwapAction {
             min_coin,
             timeout_timestamp,
