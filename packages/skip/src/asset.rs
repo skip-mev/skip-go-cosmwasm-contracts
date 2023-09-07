@@ -144,6 +144,7 @@ mod tests {
         ContractResult, QuerierResult, SystemResult, WasmQuery,
     };
     use cw20::BalanceResponse;
+    use cw_utils::PaymentError;
 
     #[test]
     fn test_asset_native() {
@@ -273,6 +274,7 @@ mod tests {
 
     #[test]
     fn test_validate_native() {
+        // TEST 1: Valid asset
         let asset = Asset::Native(Coin {
             denom: "uatom".to_string(),
             amount: Uint128::new(100),
@@ -291,10 +293,33 @@ mod tests {
         );
 
         assert!(asset.validate(&deps.as_mut(), &env, &info).is_ok());
+
+        // TEST 2: Invalid asset due to less amount of denom sent
+        let asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let env = mock_env();
+
+        let info = mock_info(
+            "sender",
+            &[Coin {
+                denom: "uatom".to_string(),
+                amount: Uint128::new(50),
+            }],
+        );
+
+        let res = asset.validate(&deps.as_mut(), &env, &info);
+
+        assert_eq!(res, Err(SkipError::InvalidNativeCoin));
     }
 
     #[test]
     fn test_validate_cw20() {
+        // TEST 1: Valid asset
         let asset = Asset::Cw20(Cw20Coin {
             address: "asset".to_string(),
             amount: Uint128::new(100),
@@ -322,5 +347,55 @@ mod tests {
         let info = mock_info("sender", &[]);
 
         assert!(asset.validate(&deps.as_mut(), &env, &info).is_ok());
+
+        // TEST 2: Invalid asset due to native coin sent in info
+        let asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let env = mock_env();
+
+        let info = mock_info("sender", &[Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        }]);
+
+        let res = asset.validate(&deps.as_mut(), &env, &info);
+
+        assert_eq!(res, Err(SkipError::Payment(PaymentError::NonPayable{})));
+
+        // TEST 3: Invalid asset due to invalid cw20 balance
+        let asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        // Create mock wasm handler to handle the cw20 balance query
+        let wasm_handler = |query: &WasmQuery| -> QuerierResult {
+            match query {
+                WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        balance: Uint128::from(50u128),
+                    })
+                    .unwrap(),
+                )),
+                _ => panic!("Unsupported query: {:?}", query),
+            }
+        };
+
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        deps.querier.update_wasm(wasm_handler);
+
+        let env = mock_env();
+
+        let info = mock_info("sender", &[]);
+
+        let res = asset.validate(&deps.as_mut(), &env, &info);
+
+        assert_eq!(res, Err(SkipError::InvalidCw20Coin));
     }
 }
