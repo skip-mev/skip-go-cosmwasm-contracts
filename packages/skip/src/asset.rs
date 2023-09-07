@@ -4,7 +4,7 @@ use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
-use cw_utils::{one_coin, nonpayable};
+use cw_utils::{nonpayable, one_coin};
 
 #[cw_serde]
 pub enum Asset {
@@ -315,6 +315,37 @@ mod tests {
         let res = asset.validate(&deps.as_mut(), &env, &info);
 
         assert_eq!(res, Err(SkipError::InvalidNativeCoin));
+
+        // TEST 3: Invalid asset due to more than one coin sent
+        let asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let env = mock_env();
+
+        let info = mock_info(
+            "sender",
+            &[
+                Coin {
+                    denom: "uatom".to_string(),
+                    amount: Uint128::new(100),
+                },
+                Coin {
+                    denom: "uosmo".to_string(),
+                    amount: Uint128::new(50),
+                },
+            ],
+        );
+
+        let res = asset.validate(&deps.as_mut(), &env, &info);
+
+        assert_eq!(
+            res,
+            Err(SkipError::Payment(PaymentError::MultipleDenoms {}))
+        );
     }
 
     #[test]
@@ -358,14 +389,17 @@ mod tests {
 
         let env = mock_env();
 
-        let info = mock_info("sender", &[Coin {
-            denom: "uatom".to_string(),
-            amount: Uint128::new(100),
-        }]);
+        let info = mock_info(
+            "sender",
+            &[Coin {
+                denom: "uatom".to_string(),
+                amount: Uint128::new(100),
+            }],
+        );
 
         let res = asset.validate(&deps.as_mut(), &env, &info);
 
-        assert_eq!(res, Err(SkipError::Payment(PaymentError::NonPayable{})));
+        assert_eq!(res, Err(SkipError::Payment(PaymentError::NonPayable {})));
 
         // TEST 3: Invalid asset due to invalid cw20 balance
         let asset = Asset::Cw20(Cw20Coin {
