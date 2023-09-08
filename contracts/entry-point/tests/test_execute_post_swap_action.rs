@@ -5,9 +5,9 @@ use cosmwasm_std::{
     SubMsg, Timestamp, WasmMsg,
 };
 use skip::{
+    asset::Asset,
     entry_point::{Action, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
-    asset::Asset,
 };
 use skip_api_entry_point::{
     error::ContractError,

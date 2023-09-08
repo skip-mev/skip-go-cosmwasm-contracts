@@ -10,8 +10,8 @@ use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        IbcFeesNotOneCoin, SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch,
-        SwapOperationsEmpty, Payment, Overflow,
+        IbcFeesNotOneCoin, Overflow, Payment, SwapOperationsCoinInDenomMismatch,
+        SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
     },
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
