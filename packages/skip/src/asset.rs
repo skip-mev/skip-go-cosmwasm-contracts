@@ -1,7 +1,8 @@
 use crate::{error::SkipError, swap::ExecuteMsg as SwapExecuteMsg};
+use astroport::router::ExecuteMsg as AstroportRouterExecuteMsg;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
+    to_binary, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
 use cw_utils::{nonpayable, one_coin};
@@ -48,6 +49,19 @@ impl Asset {
         }
     }
 
+    pub fn add(&mut self, amount: Uint128) -> Result<Uint128, SkipError> {
+        match self {
+            Asset::Native(coin) => {
+                coin.amount = coin.amount.checked_add(amount)?;
+                Ok(coin.amount)
+            }
+            Asset::Cw20(coin) => {
+                coin.amount = coin.amount.checked_add(amount)?;
+                Ok(coin.amount)
+            }
+        }
+    }
+
     pub fn sub(&mut self, amount: Uint128) -> Result<Uint128, SkipError> {
         match self {
             Asset::Native(coin) => {
@@ -61,16 +75,16 @@ impl Asset {
         }
     }
 
-    pub fn transfer_full(self, to_address: String) -> CosmosMsg {
+    pub fn transfer_full(self, to_address: &str) -> CosmosMsg {
         match self {
             Asset::Native(coin) => CosmosMsg::Bank(BankMsg::Send {
-                to_address,
-                amount: vec![coin.clone()],
+                to_address: to_address.to_string(),
+                amount: vec![coin],
             }),
             Asset::Cw20(coin) => CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: coin.address.clone(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: to_address,
+                    recipient: to_address.to_string(),
                     amount: coin.amount,
                 })
                 .unwrap(),
@@ -107,18 +121,18 @@ impl Asset {
     }
 
     // @NotJeremyLiu TODO: Add tests for this
-    pub fn swap(
+    pub fn into_swap_adapter_msg(
         self,
         swap_adapter_contract_address: String,
         swap_msg_args: SwapExecuteMsg,
-    ) -> Result<CosmosMsg, SkipError> {
+    ) -> Result<WasmMsg, SkipError> {
         match self {
-            Asset::Native(coin) => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+            Asset::Native(coin) => Ok(WasmMsg::Execute {
                 contract_addr: swap_adapter_contract_address,
                 msg: to_binary(&swap_msg_args)?,
                 funds: vec![coin],
-            })),
-            Asset::Cw20(coin) => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+            }),
+            Asset::Cw20(coin) => Ok(WasmMsg::Execute {
                 contract_addr: coin.address,
                 msg: to_binary(&Cw20ExecuteMsg::Send {
                     contract: swap_adapter_contract_address,
@@ -127,7 +141,53 @@ impl Asset {
                 })
                 .unwrap(),
                 funds: vec![],
-            })),
+            }),
+        }
+    }
+
+    pub fn into_contract_call_msg(
+        self,
+        contract_address: String,
+        contract_msg_args: Binary,
+    ) -> Result<WasmMsg, SkipError> {
+        match self {
+            Asset::Native(coin) => Ok(WasmMsg::Execute {
+                contract_addr: contract_address,
+                msg: contract_msg_args,
+                funds: vec![coin],
+            }),
+            Asset::Cw20(coin) => Ok(WasmMsg::Execute {
+                contract_addr: coin.address,
+                msg: to_binary(&Cw20ExecuteMsg::Send {
+                    contract: contract_address,
+                    amount: coin.amount,
+                    msg: contract_msg_args,
+                })?,
+                funds: vec![],
+            }),
+        }
+    }
+
+    pub fn into_astroport_router_msg(
+        self,
+        router_contract_address: String,
+        router_msg_args: AstroportRouterExecuteMsg,
+    ) -> Result<WasmMsg, SkipError> {
+        match self {
+            Asset::Native(coin) => Ok(WasmMsg::Execute {
+                contract_addr: router_contract_address,
+                msg: to_binary(&router_msg_args)?,
+                funds: vec![coin],
+            }),
+            Asset::Cw20(coin) => Ok(WasmMsg::Execute {
+                contract_addr: coin.address,
+                msg: to_binary(&Cw20ExecuteMsg::Send {
+                    contract: router_contract_address,
+                    amount: coin.amount,
+                    msg: to_binary(&router_msg_args)?,
+                })?,
+                funds: vec![],
+            }),
         }
     }
 
@@ -148,7 +208,7 @@ impl Asset {
 
                 let verified_cw20_coin_addr = deps.api.addr_validate(&coin.address)?;
 
-                let cw20_contract = Cw20Contract(verified_cw20_coin_addr.clone());
+                let cw20_contract = Cw20Contract(verified_cw20_coin_addr);
 
                 let balance = cw20_contract.balance(&deps.querier, env.contract.address.clone())?;
 
@@ -158,6 +218,30 @@ impl Asset {
                     Err(SkipError::InvalidCw20Coin)
                 }
             }
+        }
+    }
+}
+
+pub fn get_current_asset_available(
+    deps: &DepsMut,
+    env: &Env,
+    denom: &str,
+) -> Result<Asset, SkipError> {
+    match deps.api.addr_validate(denom) {
+        Ok(addr) => {
+            let cw20_contract = Cw20Contract(addr.clone());
+
+            let amount = cw20_contract.balance(&deps.querier, addr.to_string())?;
+
+            Ok(Asset::Cw20(Cw20Coin {
+                address: addr.to_string(),
+                amount,
+            }))
+        }
+        Err(_) => {
+            let coin = deps.querier.query_balance(&env.contract.address, denom)?;
+
+            Ok(Asset::Native(coin))
         }
     }
 }
@@ -224,7 +308,7 @@ mod tests {
             amount: Uint128::new(100),
         });
 
-        let msg = asset.transfer_full("addr".to_string());
+        let msg = asset.transfer_full("addr");
 
         match msg {
             CosmosMsg::Bank(BankMsg::Send { to_address, amount }) => {
@@ -244,7 +328,7 @@ mod tests {
             amount: Uint128::new(100),
         });
 
-        let msg = asset.transfer_full("addr".to_string());
+        let msg = asset.transfer_full("addr");
 
         match msg {
             CosmosMsg::Wasm(WasmMsg::Execute {
