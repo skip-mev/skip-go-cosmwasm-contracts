@@ -148,21 +148,11 @@ impl Asset {
 
                 let verified_cw20_coin_addr = deps.api.addr_validate(&coin.address)?;
 
-                let verified_cw20_coin = Cw20CoinVerified {
-                    address: verified_cw20_coin_addr,
-                    amount: coin.amount,
-                };
-
-                let cw20_contract = Cw20Contract(verified_cw20_coin.address.clone());
+                let cw20_contract = Cw20Contract(verified_cw20_coin_addr.clone());
 
                 let balance = cw20_contract.balance(&deps.querier, env.contract.address.clone())?;
 
-                let compare_coin = Cw20Coin {
-                    address: verified_cw20_coin.address.to_string(),
-                    amount: balance,
-                };
-
-                if compare_coin.eq(coin) {
+                if coin.amount <= balance {
                     Ok(())
                 } else {
                     Err(SkipError::InvalidCw20Coin)
