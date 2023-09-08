@@ -6,6 +6,7 @@ use cosmwasm_std::{
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use skip::{
+    asset::Asset,
     entry_point::{Affiliate, ExecuteMsg},
     error::SkipError::{
         SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
@@ -53,8 +54,8 @@ Expect Error
 struct Params {
     caller: String,
     user_swap: Swap,
-    remaining_coin: Coin,
-    min_coin: Coin,
+    remaining_asset: Asset,
+    min_asset: Asset,
     affiliates: Vec<Affiliate>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
@@ -76,8 +77,8 @@ struct Params {
                 ],
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
@@ -85,6 +86,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -118,8 +120,8 @@ struct Params {
                 ],
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         affiliates: vec![Affiliate {
             address: "affiliate".to_string(),
             basis_points_fee: Uint128::new(1000),
@@ -130,6 +132,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -173,8 +176,8 @@ struct Params {
                 ],
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         affiliates: vec![
             Affiliate {
                 address: "affiliate_1".to_string(),
@@ -191,6 +194,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -245,8 +249,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(500_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
@@ -264,6 +268,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -298,8 +303,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(500_000, "osmo")),
         affiliates: vec![
             Affiliate {
                 address: "affiliate".to_string(),
@@ -322,6 +327,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -366,8 +372,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(500_000, "osmo")),
         affiliates: vec![
             Affiliate {
                 address: "affiliate_1".to_string(),
@@ -394,6 +400,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -448,8 +455,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(500_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(500_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(500_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
@@ -457,6 +464,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(500_000, "untrn")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -490,8 +498,8 @@ struct Params {
                 ],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "uosmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "uosmo")),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
@@ -512,8 +520,8 @@ struct Params {
                 ],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "osmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "uosmo")),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
@@ -528,8 +536,8 @@ struct Params {
                 operations: vec![],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
@@ -551,8 +559,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "uosmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "uosmo")),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
@@ -574,8 +582,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "osmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
@@ -591,8 +599,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
@@ -614,8 +622,8 @@ struct Params {
                 refund_address: None,
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        min_asset: Asset::Native(Coin::new(500_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::NoRefundAddress),
@@ -637,8 +645,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "uatom"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "uatom")),
+        min_asset: Asset::Native(Coin::new(500_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::UserSwapCoinInDenomMismatch),
@@ -660,8 +668,8 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(499_999, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(499_999, "untrn")),
+        min_asset: Asset::Native(Coin::new(500_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Overflow(OverflowError {
@@ -680,8 +688,8 @@ struct Params {
                 operations: vec![],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "osmo"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Unauthorized),
@@ -733,8 +741,8 @@ fn test_execute_user_swap(params: Params) {
         info,
         ExecuteMsg::UserSwap {
             swap: params.user_swap,
-            remaining_coin: params.remaining_coin,
-            min_coin: params.min_coin,
+            remaining_asset: params.remaining_asset,
+            min_asset: params.min_asset,
             affiliates: params.affiliates,
         },
     );
