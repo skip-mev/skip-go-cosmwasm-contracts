@@ -7,6 +7,7 @@ use cosmwasm_std::{
 use skip::{
     entry_point::{Action, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
+    asset::Asset,
 };
 use skip_api_entry_point::{
     error::ContractError,
@@ -44,7 +45,7 @@ Expect Error
 // Define test parameters
 struct Params {
     caller: String,
-    min_coin: Coin,
+    min_asset: Asset,
     post_swap_action: Action,
     exact_out: bool,
     expected_messages: Vec<SubMsg>,
@@ -55,7 +56,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(100_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(100_000, "os")),
         post_swap_action: Action::BankSend {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
@@ -64,7 +65,7 @@ struct Params {
             id: 0,
             msg: BankMsg::Send {
                 to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
-                amount: vec![Coin::new(100_000, "osmo")],
+                amount: vec![Coin::new(100_000, "os")],
             }
             .into(),
             gas_limit: None,
@@ -76,7 +77,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         post_swap_action: Action::BankSend {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
@@ -85,7 +86,7 @@ struct Params {
             id: 0,
             msg: BankMsg::Send {
                 to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
-                amount: vec![Coin::new(1_000_000, "osmo")],
+                amount: vec![Coin::new(1_000_000, "os")],
             }
             .into(),
             gas_limit: None,
@@ -97,7 +98,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
@@ -123,11 +124,11 @@ struct Params {
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(1_000_000, "osmo"),
+                    coin: Coin::new(1_000_000, "os"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(1_000_000, "osmo")],
+                funds: vec![Coin::new(1_000_000, "os")],
             }
             .into(),
             gas_limit: None,
@@ -139,7 +140,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(100_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(100_000, "os")),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
@@ -165,11 +166,11 @@ struct Params {
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(100_000, "osmo"),
+                    coin: Coin::new(100_000, "os"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(100_000, "osmo")],
+                funds: vec![Coin::new(100_000, "os")],
             }
             .into(),
             gas_limit: None,
@@ -181,7 +182,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(100_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(100_000, "os")),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
@@ -189,8 +190,8 @@ struct Params {
                 memo: "".to_string(),
                 fee: Some(IbcFee {
                     recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                    ack_fee: vec![Coin::new(100_000, "un")],
+                    timeout_fee: vec![Coin::new(100_000, "un")],
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
@@ -209,18 +210,18 @@ struct Params {
                         memo: "".to_string(),
                         fee: Some(IbcFee {
                             recv_fee: vec![],
-                            ack_fee: vec![Coin::new(100_000, "untrn")],
-                            timeout_fee: vec![Coin::new(100_000, "untrn")],
+                            ack_fee: vec![Coin::new(100_000, "un")],
+                            timeout_fee: vec![Coin::new(100_000, "un")],
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(100_000, "osmo"),
+                    coin: Coin::new(100_000, "os"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
                 funds: vec![
-                    Coin::new(100_000, "osmo"),
+                    Coin::new(100_000, "os"),
                 ],
             }
             .into(),
@@ -233,7 +234,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(100_000, "untrn"),
+        min_asset: Asset::Native(Coin::new(100_000, "un")),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
@@ -241,8 +242,8 @@ struct Params {
                 memo: "".to_string(),
                 fee: Some(IbcFee {
                     recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                    ack_fee: vec![Coin::new(100_000, "un")],
+                    timeout_fee: vec![Coin::new(100_000, "un")],
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
@@ -261,17 +262,17 @@ struct Params {
                         memo: "".to_string(),
                         fee: Some(IbcFee {
                             recv_fee: vec![],
-                            ack_fee: vec![Coin::new(100_000, "untrn")],
-                            timeout_fee: vec![Coin::new(100_000, "untrn")],
+                            ack_fee: vec![Coin::new(100_000, "un")],
+                            timeout_fee: vec![Coin::new(100_000, "un")],
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(100_000, "untrn"),
+                    coin: Coin::new(100_000, "un"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(100_000, "untrn")],
+                funds: vec![Coin::new(100_000, "un")],
             }
             .into(),
             gas_limit: None,
@@ -283,7 +284,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
@@ -294,7 +295,7 @@ struct Params {
             msg: WasmMsg::Execute {
                 contract_addr: "contract_call".to_string(),
                 msg: to_binary(&"contract_call_msg").unwrap(),
-                funds: vec![Coin::new(1_000_000, "osmo")],
+                funds: vec![Coin::new(1_000_000, "os")],
             }
             .into(),
             gas_limit: None,
@@ -307,7 +308,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(100_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(100_000, "os")),
         post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
@@ -318,7 +319,7 @@ struct Params {
             msg: WasmMsg::Execute {
                 contract_addr: "contract_call".to_string(),
                 msg: to_binary(&"contract_call_msg").unwrap(),
-                funds: vec![Coin::new(100_000, "osmo")],
+                funds: vec![Coin::new(100_000, "os")],
             }
             .into(),
             gas_limit: None,
@@ -330,7 +331,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
@@ -338,8 +339,8 @@ struct Params {
                 memo: "".to_string(),
                 fee: Some(IbcFee {
                     recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                    ack_fee: vec![Coin::new(100_000, "un")],
+                    timeout_fee: vec![Coin::new(100_000, "un")],
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
@@ -358,18 +359,18 @@ struct Params {
                         memo: "".to_string(),
                         fee: Some(IbcFee {
                             recv_fee: vec![],
-                            ack_fee: vec![Coin::new(100_000, "untrn")],
-                            timeout_fee: vec![Coin::new(100_000, "untrn")],
+                            ack_fee: vec![Coin::new(100_000, "un")],
+                            timeout_fee: vec![Coin::new(100_000, "un")],
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(1_000_000, "osmo"),
+                    coin: Coin::new(1_000_000, "os"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
                 funds: vec![
-                    Coin::new(1_000_000, "osmo"),
+                    Coin::new(1_000_000, "os"),
                 ],
             }
             .into(),
@@ -382,7 +383,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(800_000, "untrn"),
+        min_asset: Asset::Native(Coin::new(800_000, "un")),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
                 source_channel: "channel-0".to_string(),
@@ -390,8 +391,8 @@ struct Params {
                 memo: "".to_string(),
                 fee: Some(IbcFee {
                     recv_fee: vec![],
-                    ack_fee: vec![Coin::new(100_000, "untrn")],
-                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                    ack_fee: vec![Coin::new(100_000, "un")],
+                    timeout_fee: vec![Coin::new(100_000, "un")],
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
@@ -410,17 +411,17 @@ struct Params {
                         memo: "".to_string(),
                         fee: Some(IbcFee {
                             recv_fee: vec![],
-                            ack_fee: vec![Coin::new(100_000, "untrn")],
-                            timeout_fee: vec![Coin::new(100_000, "untrn")],
+                            ack_fee: vec![Coin::new(100_000, "un")],
+                            timeout_fee: vec![Coin::new(100_000, "un")],
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
                     },
-                    coin: Coin::new(1_000_000, "untrn"),
+                    coin: Coin::new(1_000_000, "un"),
                     timeout_timestamp: 101,
                 })
                 .unwrap(),
-                funds: vec![Coin::new(1_000_000, "untrn")],
+                funds: vec![Coin::new(1_000_000, "un")],
             }
             .into(),
             gas_limit: None,
@@ -432,7 +433,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(1_100_000, "untrn"),
+        min_asset: Asset::Native(Coin::new(1_100_000, "un")),
         post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
@@ -444,7 +445,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "unauthorized".to_string(),
-        min_coin: Coin::new(1_100_000, "untrn"),
+        min_asset: Asset::Native(Coin::new(1_100_000, "un")),
         post_swap_action: Action::BankSend {
             to_address: "swapper".to_string(),
         },
@@ -456,7 +457,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        min_coin: Coin::new(900_000, "untrn"),
+        min_asset: Asset::Native(Coin::new(900_000, "un")),
         post_swap_action: Action::ContractCall {
             contract_address: "entry_point".to_string(),
             msg: to_binary(&"contract_call_msg").unwrap(),
@@ -470,7 +471,7 @@ fn test_execute_post_swap_action(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
         "entry_point",
-        &[Coin::new(1_000_000, "osmo"), Coin::new(1_000_000, "untrn")],
+        &[Coin::new(1_000_000, "os"), Coin::new(1_000_000, "un")],
     )]);
 
     // Create mock env with parameters that make testing easier
@@ -498,7 +499,7 @@ fn test_execute_post_swap_action(params: Params) {
         env,
         info,
         ExecuteMsg::PostSwapAction {
-            min_coin: params.min_coin,
+            min_asset: params.min_asset,
             timeout_timestamp: 101,
             post_swap_action: params.post_swap_action,
             exact_out: params.exact_out,
