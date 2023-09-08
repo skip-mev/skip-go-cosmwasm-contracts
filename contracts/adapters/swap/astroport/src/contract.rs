@@ -10,16 +10,15 @@ use astroport::{
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Api, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response,
-    Uint128, WasmMsg,
+    entry_point, from_binary, to_binary, Addr, Api, Binary, Coin, Deps, DepsMut, Env, MessageInfo,
+    Response, Uint128, WasmMsg,
 };
-use cw20::Cw20Coin;
-use cw_utils::one_coin;
+use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use skip::{
     asset::Asset,
     swap::{
-        execute_transfer_funds_back, ExecuteMsg, NeutronInstantiateMsg as InstantiateMsg, QueryMsg,
-        SwapOperation,
+        execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg,
+        NeutronInstantiateMsg as InstantiateMsg, QueryMsg, SwapOperation,
     },
 };
 
@@ -60,6 +59,26 @@ pub fn instantiate(
 }
 
 ///////////////
+/// RECEIVE ///
+///////////////
+
+// Receive is the main entry point for the contract to
+// receive cw20 tokens and execute the swap
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> ContractResult<Response> {
+    match from_binary(&cw20_msg.msg)? {
+        Cw20HookMsg::Swap {
+            sent_asset,
+            operations,
+        } => execute_swap(deps, env, info, sent_asset, operations),
+    }
+}
+
+///////////////
 /// EXECUTE ///
 ///////////////
 
@@ -71,10 +90,20 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
-        ExecuteMsg::TransferFundsBack { swapper } => {
-            Ok(execute_transfer_funds_back(deps, env, info, swapper)?)
-        }
+        ExecuteMsg::Swap {
+            sent_asset,
+            operations,
+        } => execute_swap(deps, env, info, sent_asset, operations),
+        ExecuteMsg::TransferFundsBack {
+            swapper,
+            return_denom,
+        } => Ok(execute_transfer_funds_back(
+            deps,
+            env,
+            info,
+            swapper,
+            return_denom,
+        )?),
     }
 }
 
@@ -82,6 +111,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    sent_asset: Asset,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
@@ -92,23 +122,28 @@ fn execute_swap(
         return Err(ContractError::Unauthorized);
     }
 
-    // Get coin in from the message info, error if there is not exactly one coin sent
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    let coin_in = one_coin(&info)?;
+    // Validate the sent asset
+    sent_asset.validate(&deps, &env, &info)?;
 
     // Create the astroport swap message
     let swap_msg = create_astroport_swap_msg(
         deps.api,
         ROUTER_CONTRACT_ADDRESS.load(deps.storage)?,
-        coin_in,
-        operations,
+        sent_asset,
+        &operations,
     )?;
+
+    let return_denom = match operations.last() {
+        Some(last_op) => last_op.denom_out.clone(),
+        None => return Err(ContractError::SwapOperationsEmpty),
+    };
 
     // Create the transfer funds back message
     let transfer_funds_back_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::TransferFundsBack {
             swapper: info.sender,
+            return_denom,
         })?,
         funds: vec![],
     };
@@ -127,17 +162,16 @@ fn execute_swap(
 fn create_astroport_swap_msg(
     api: &dyn Api,
     router_contract_address: Addr,
-    coin_in: Coin,
-    swap_operations: Vec<SwapOperation>,
+    asset_in: Asset,
+    swap_operations: &[SwapOperation],
 ) -> ContractResult<WasmMsg> {
     // Convert the swap operations to astroport swap operations
     let astroport_swap_operations = swap_operations
-        .into_iter()
+        .iter()
         .map(|swap_operation| swap_operation.into_astroport_swap_operation(api))
         .collect();
 
     // Create the astroport router execute message arguments
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
     let astroport_router_msg_args = RouterExecuteMsg::ExecuteSwapOperations {
         operations: astroport_swap_operations,
         minimum_receive: None,
@@ -146,11 +180,10 @@ fn create_astroport_swap_msg(
     };
 
     // Create the astroport router swap message
-    let swap_msg = WasmMsg::Execute {
-        contract_addr: router_contract_address.to_string(),
-        msg: to_binary(&astroport_router_msg_args)?,
-        funds: vec![coin_in],
-    };
+    let swap_msg = asset_in.into_astroport_router_msg(
+        router_contract_address.to_string(),
+        astroport_router_msg_args,
+    )?;
 
     Ok(swap_msg)
 }
@@ -226,18 +259,14 @@ fn query_simulate_swap_exact_asset_in(
     // Return the asset out depending on whether the last swap
     // operation's denom out is a cw-20 token or a native token
     match deps.api.addr_validate(&denom_out) {
-        Ok(addr) => {
-            return Ok(Asset::Cw20(Cw20Coin {
-                address: addr.to_string(),
-                amount: res.amount,
-            }))
-        }
-        Err(_) => {
-            return Ok(Asset::Native(Coin {
-                denom: denom_out,
-                amount: res.amount,
-            }))
-        }
+        Ok(addr) => Ok(Asset::Cw20(Cw20Coin {
+            address: addr.to_string(),
+            amount: res.amount,
+        })),
+        Err(_) => Ok(Asset::Native(Coin {
+            denom: denom_out,
+            amount: res.amount,
+        })),
     }
 }
 
@@ -291,18 +320,14 @@ fn query_simulate_swap_exact_asset_out(
             )?;
 
             match deps.api.addr_validate(&operation.denom_in) {
-                Ok(addr) => {
-                    return Ok(Asset::Cw20(Cw20Coin {
-                        address: addr.to_string(),
-                        amount: res.offer_amount.checked_add(Uint128::one())?,
-                    }))
-                }
-                Err(_) => {
-                    return Ok(Asset::Native(Coin {
-                        denom: operation.denom_in.clone(),
-                        amount: res.offer_amount.checked_add(Uint128::one())?,
-                    }))
-                }
+                Ok(addr) => Ok(Asset::Cw20(Cw20Coin {
+                    address: addr.to_string(),
+                    amount: res.offer_amount.checked_add(Uint128::one())?,
+                })),
+                Err(_) => Ok(Asset::Native(Coin {
+                    denom: operation.denom_in.clone(),
+                    amount: res.offer_amount.checked_add(Uint128::one())?,
+                })),
             }
         },
     )?;

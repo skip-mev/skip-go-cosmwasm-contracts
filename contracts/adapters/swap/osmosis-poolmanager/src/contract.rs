@@ -59,10 +59,20 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
-        ExecuteMsg::TransferFundsBack { swapper } => {
-            Ok(execute_transfer_funds_back(deps, env, info, swapper)?)
-        }
+        ExecuteMsg::Swap {
+            sent_asset: _,
+            operations,
+        } => execute_swap(deps, env, info, operations),
+        ExecuteMsg::TransferFundsBack {
+            swapper,
+            return_denom,
+        } => Ok(execute_transfer_funds_back(
+            deps,
+            env,
+            info,
+            swapper,
+            return_denom,
+        )?),
     }
 }
 
@@ -84,6 +94,11 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
+    let return_denom = match operations.last() {
+        Some(last_op) => last_op.denom_out.clone(),
+        None => return Err(ContractError::SwapOperationsEmpty),
+    };
+
     // Create the osmosis poolmanager swap exact amount in message
     let swap_msg = create_osmosis_swap_msg(&env, coin_in, operations)?;
 
@@ -92,6 +107,7 @@ fn execute_swap(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::TransferFundsBack {
             swapper: info.sender,
+            return_denom,
         })?,
         funds: vec![],
     };
