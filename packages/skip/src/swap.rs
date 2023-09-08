@@ -1,13 +1,13 @@
 use crate::{asset::Asset, error::SkipError};
 
-use std::{
-    convert::{From, TryFrom},
-    num::ParseIntError,
-};
+use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Api, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{
+    to_binary, Addr, Api, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg,
+};
+use cw20::{Cw20Contract, Cw20ExecuteMsg};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -41,28 +41,22 @@ pub struct NeutronInstantiateMsg {
 // Only the Swap message is callable by external users.
 #[cw_serde]
 pub enum ExecuteMsg {
-    Swap { operations: Vec<SwapOperation> },
-    TransferFundsBack { swapper: Addr },
+    Swap {
+        sent_asset: Asset,
+        operations: Vec<SwapOperation>,
+    },
+    TransferFundsBack {
+        swapper: Addr,
+        return_denom: String,
+    },
 }
 
-// Converts a SwapExactCoinIn used in the entry point contract
-// to a swap adapter Swap execute message
-impl From<SwapExactCoinIn> for ExecuteMsg {
-    fn from(swap: SwapExactCoinIn) -> Self {
-        ExecuteMsg::Swap {
-            operations: swap.operations,
-        }
-    }
-}
-
-// Converts a SwapExactCoinOut used in the entry point contract
-// to a swap adapter Swap execute message
-impl From<SwapExactCoinOut> for ExecuteMsg {
-    fn from(swap: SwapExactCoinOut) -> Self {
-        ExecuteMsg::Swap {
-            operations: swap.operations,
-        }
-    }
+#[cw_serde]
+pub enum Cw20HookMsg {
+    Swap {
+        sent_asset: Asset,
+        operations: Vec<SwapOperation>,
+    },
 }
 
 /////////////////////////
@@ -78,13 +72,13 @@ pub enum QueryMsg {
     #[returns(Addr)]
     RouterContractAddress {},
     // SimulateSwapExactAmountOut returns the coin in necessary to receive the specified coin out
-    #[returns(Coin)]
+    #[returns(Asset)]
     SimulateSwapExactAssetOut {
         asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
     },
     // SimulateSwapExactAmountIn returns the coin out received from the specified coin in
-    #[returns(Coin)]
+    #[returns(Asset)]
     SimulateSwapExactAssetIn {
         asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
@@ -116,18 +110,18 @@ pub struct SwapOperation {
 
 // Converts a swap operation to an astroport swap operation
 impl SwapOperation {
-    pub fn into_astroport_swap_operation(self, api: &dyn Api) -> AstroportSwapOperation {
+    pub fn into_astroport_swap_operation(&self, api: &dyn Api) -> AstroportSwapOperation {
         let offer_asset_info = match api.addr_validate(&self.denom_in) {
             Ok(contract_addr) => AssetInfo::Token { contract_addr },
             Err(_) => AssetInfo::NativeToken {
-                denom: self.denom_in,
+                denom: self.denom_in.clone(),
             },
         };
 
         let ask_asset_info = match api.addr_validate(&self.denom_out) {
             Ok(contract_addr) => AssetInfo::Token { contract_addr },
             Err(_) => AssetInfo::NativeToken {
-                denom: self.denom_out,
+                denom: self.denom_out.clone(),
             },
         };
 
@@ -195,6 +189,28 @@ pub struct SwapExactCoinIn {
     pub operations: Vec<SwapOperation>,
 }
 
+// Converts a SwapExactCoinOut used in the entry point contract
+// to a swap adapter Swap execute message
+impl SwapExactCoinOut {
+    pub fn into_execute_msg(self, sent_asset: &Asset) -> ExecuteMsg {
+        ExecuteMsg::Swap {
+            sent_asset: sent_asset.clone(),
+            operations: self.operations,
+        }
+    }
+}
+
+// Converts a SwapExactCoinIn used in the entry point contract
+// to a swap adapter Swap execute message
+impl SwapExactCoinIn {
+    pub fn into_execute_msg(self, sent_asset: &Asset) -> ExecuteMsg {
+        ExecuteMsg::Swap {
+            sent_asset: sent_asset.clone(),
+            operations: self.operations,
+        }
+    }
+}
+
 #[cw_serde]
 pub enum Swap {
     SwapExactCoinIn(SwapExactCoinIn),
@@ -212,16 +228,33 @@ pub fn execute_transfer_funds_back(
     env: Env,
     info: MessageInfo,
     swapper: Addr,
+    return_denom: String,
 ) -> Result<Response, SkipError> {
     // Ensure the caller is the contract itself
     if info.sender != env.contract.address {
         return Err(SkipError::Unauthorized);
     }
 
-    // Create the bank message send to transfer the contract funds back to the caller
-    let transfer_funds_back_msg = BankMsg::Send {
-        to_address: swapper.to_string(),
-        amount: deps.querier.query_all_balances(env.contract.address)?,
+    // Create the transfer funds back message
+    let transfer_funds_back_msg: CosmosMsg = match deps.api.addr_validate(&return_denom) {
+        Ok(contract_addr) => {
+            let cw20_contract = Cw20Contract(contract_addr.clone());
+
+            let balance = cw20_contract.balance(&deps.querier, env.contract.address)?;
+
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    recipient: swapper.to_string(),
+                    amount: balance,
+                })?,
+                funds: vec![],
+            })
+        }
+        Err(_) => CosmosMsg::Bank(BankMsg::Send {
+            to_address: swapper.to_string(),
+            amount: deps.querier.query_all_balances(env.contract.address)?,
+        }),
     };
 
     Ok(Response::new()
