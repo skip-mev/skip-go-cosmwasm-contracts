@@ -11,7 +11,7 @@ use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
         IbcFeesNotOneCoin, SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch,
-        SwapOperationsEmpty,
+        SwapOperationsEmpty, Payment, Overflow,
     },
     ibc::{IbcFee, IbcInfo},
     swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
@@ -62,8 +62,9 @@ Expect Error
 // Define test parameters
 struct Params {
     info_funds: Vec<Coin>,
+    sent_asset: Asset,
     user_swap: Swap,
-    min_coin: Coin,
+    min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
     affiliates: Vec<Affiliate>,
@@ -77,6 +78,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -89,7 +91,7 @@ struct Params {
                 ],
             }
         ),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
@@ -113,8 +115,8 @@ struct Params {
                                 ],
                             }
                         ),
-                        remaining_coin: Coin::new(1_000_000, "untrn"),
-                        min_coin: Coin::new(1_000_000, "osmo"),
+                        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                         affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
@@ -128,7 +130,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
-                        min_coin: Coin::new(1_000_000, "osmo"),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                         timeout_timestamp: 101,
                         post_swap_action: Action::BankSend {
                             to_address: "to_address".to_string(),
@@ -150,6 +152,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinOut (
             SwapExactCoinOut{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -163,7 +166,7 @@ struct Params {
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
@@ -188,8 +191,8 @@ struct Params {
                                 refund_address: Some("refund_address".to_string()),
                             }
                         ),
-                        remaining_coin: Coin::new(1_000_000, "untrn"),
-                        min_coin: Coin::new(1_000_000, "osmo"),
+                        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                         affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
@@ -203,7 +206,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
-                        min_coin: Coin::new(1_000_000, "osmo"),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                         timeout_timestamp: 101,
                         post_swap_action: Action::BankSend {
                             to_address: "to_address".to_string(),
@@ -225,6 +228,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -237,7 +241,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(800_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -283,8 +287,8 @@ struct Params {
                                 ],
                             }
                         ),
-                        remaining_coin: Coin::new(800_000, "untrn"),
-                        min_coin: Coin::new(800_000, "osmo"),
+                        remaining_asset: Asset::Native(Coin::new(800_000, "untrn")),
+                        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
                         affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
@@ -298,7 +302,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
-                        min_coin: Coin::new(800_000, "osmo"),
+                        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
                         timeout_timestamp: 101,
                         post_swap_action: Action::IbcTransfer {
                             ibc_info: IbcInfo {
@@ -332,6 +336,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -344,7 +349,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -376,8 +381,8 @@ struct Params {
                                 ],
                             }
                         ),
-                        remaining_coin: Coin::new(1_000_000, "untrn"),
-                        min_coin: Coin::new(1_000_000, "osmo"),
+                        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                         affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
@@ -391,7 +396,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
-                        min_coin: Coin::new(1_000_000, "osmo"),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                         timeout_timestamp: 101,
                         post_swap_action: Action::IbcTransfer {
                             ibc_info: IbcInfo {
@@ -421,6 +426,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -433,7 +439,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "uatom"),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -469,6 +475,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
+                        sent_asset: Asset::Native(Coin::new(200_000, "osmo")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -510,8 +517,8 @@ struct Params {
                                 ],
                             }
                         ),
-                        remaining_coin: Coin::new(800_000, "osmo"),
-                        min_coin: Coin::new(100_000, "uatom"),
+                        remaining_asset: Asset::Native(Coin::new(800_000, "osmo")),
+                        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
                         affiliates: vec![],
                     }).unwrap(),
                     funds: vec![],
@@ -525,7 +532,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
-                        min_coin: Coin::new(100_000, "uatom"),
+                        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
                         timeout_timestamp: 101,
                         post_swap_action: Action::IbcTransfer {
                             ibc_info: IbcInfo {
@@ -571,6 +578,7 @@ struct Params {
         info_funds: vec![
             Coin::new(100_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(100_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -583,7 +591,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "uatom"),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -614,11 +622,11 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Overflow(OverflowError {
+        expected_error: Some(ContractError::Skip(Overflow(OverflowError {
             operation: OverflowOperation::Sub,
             operand1: "100000".to_string(),
             operand2: "200000".to_string(),
-        })),
+        }))),
     };
     "Fee Swap Coin In Amount More Than Remaining Coin Received Amount- Expect Error")]
 #[test_case(
@@ -626,6 +634,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "uatom"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "uatom")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -638,7 +647,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "uatom"),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -677,6 +686,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -689,7 +699,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "uatom"),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -728,6 +738,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -740,7 +751,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "uatom"),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -779,6 +790,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -791,7 +803,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(800_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -818,6 +830,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -830,7 +843,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "atom"),
+        min_asset: Asset::Native(Coin::new(100_000, "atom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -865,6 +878,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -877,7 +891,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "atom"),
+        min_asset: Asset::Native(Coin::new(100_000, "atom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -916,6 +930,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -928,7 +943,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "atom"),
+        min_asset: Asset::Native(Coin::new(100_000, "atom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -967,6 +982,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -979,7 +995,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "atom"),
+        min_asset: Asset::Native(Coin::new(100_000, "atom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -1016,6 +1032,7 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1028,14 +1045,14 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Payment(NoFunds{})),
+        expected_error: Some(ContractError::Skip(Payment(NoFunds{}))),
     };
     "No Coins Sent to Contract - Expect Error")]
 #[test_case(
@@ -1044,6 +1061,7 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1056,14 +1074,14 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Payment(MultipleDenoms{})),
+        expected_error: Some(ContractError::Skip(Payment(MultipleDenoms{}))),
     };
     "More Than One Coin Sent to Contract - Expect Error")]
 #[test_case(
@@ -1071,6 +1089,7 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1083,7 +1102,7 @@ struct Params {
                 ],
             },
         ),
-        min_coin: Coin::new(100_000, "uatom"),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
         timeout_timestamp: 101,
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -1116,13 +1135,14 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![],
             },
         ),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 99,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
@@ -1144,7 +1164,7 @@ fn test_execute_swap_and_action(params: Params) {
     let wasm_handler = |query: &WasmQuery| -> QuerierResult {
         match query {
             WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&Coin::new(200_000, "osmo")).unwrap(),
+                to_binary(&Asset::Native(Coin::new(200_000, "osmo"))).unwrap(),
             )),
             _ => panic!("Unsupported query: {:?}", query),
         }
@@ -1186,9 +1206,9 @@ fn test_execute_swap_and_action(params: Params) {
         env,
         info,
         ExecuteMsg::SwapAndAction {
-            sent_asset: Asset::Native(Coin::default()),
+            sent_asset: params.sent_asset,
             user_swap: params.user_swap,
-            min_coin: params.min_coin,
+            min_asset: params.min_asset,
             timeout_timestamp: params.timeout_timestamp,
             post_swap_action: params.post_swap_action,
             affiliates: params.affiliates,
