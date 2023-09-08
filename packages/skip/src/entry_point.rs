@@ -5,7 +5,7 @@ use crate::{
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Coin, Uint128};
+use cosmwasm_std::{Binary, Uint128};
 use cw20::Cw20ReceiveMsg;
 
 ///////////////////
@@ -32,19 +32,19 @@ pub enum ExecuteMsg {
     SwapAndAction {
         sent_asset: Asset,
         user_swap: Swap,
-        min_coin: Coin,
+        min_asset: Asset,
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
     },
     UserSwap {
         swap: Swap,
-        min_coin: Coin,
+        min_asset: Asset,
         remaining_asset: Asset,
         affiliates: Vec<Affiliate>,
     },
     PostSwapAction {
-        min_coin: Coin,
+        min_asset: Asset,
         timeout_timestamp: u64,
         post_swap_action: Action,
         exact_out: bool,
@@ -57,7 +57,7 @@ pub enum Cw20HookMsg {
     SwapAndAction {
         sent_asset: Asset,
         user_swap: Swap,
-        min_coin: Coin,
+        min_asset: Asset,
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
