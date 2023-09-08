@@ -3,13 +3,12 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
+    Uint128, WasmMsg,
 };
-use cw20::Cw20ReceiveMsg;
-use cw_utils::one_coin;
+use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use skip::{
-    asset::Asset,
+    asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
@@ -34,7 +33,7 @@ pub fn receive_cw20(
         Cw20HookMsg::SwapAndAction {
             sent_asset,
             user_swap,
-            min_coin, // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
+            min_asset, // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
             timeout_timestamp,
             post_swap_action,
             affiliates,
@@ -44,7 +43,7 @@ pub fn receive_cw20(
             info,
             sent_asset,
             user_swap,
-            min_coin,
+            min_asset,
             timeout_timestamp,
             post_swap_action,
             affiliates,
@@ -63,9 +62,9 @@ pub fn execute_swap_and_action(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    _sent_asset: Asset,
+    sent_asset: Asset,
     user_swap: Swap,
-    min_coin: Coin,
+    min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
     affiliates: Vec<Affiliate>,
@@ -78,10 +77,12 @@ pub fn execute_swap_and_action(
         return Err(ContractError::Timeout);
     }
 
-    // Get coin sent to the contract from the MessageInfo
-    // Error if there is not exactly one coin sent to the contract
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    let mut remaining_coin = one_coin(&info)?;
+    // Validates the sent asset is what was sent either
+    // natively or via cw20 transfer, for cw20 transfer
+    // ensures no native coin sent with the contract call
+    sent_asset.validate(&deps, &env, &info)?;
+
+    let mut remaining_asset = sent_asset;
 
     // If the post swap action is an IBC transfer, then handle the ibc fees
     // by either creating a fee swap message or deducting the ibc fees from
@@ -102,7 +103,7 @@ pub fn execute_swap_and_action(
             let fee_swap_msg = verify_and_create_fee_swap_msg(
                 &deps,
                 fee_swap,
-                &mut remaining_coin,
+                &mut remaining_asset,
                 &ibc_fee_coin,
             )?;
 
@@ -111,16 +112,15 @@ pub fn execute_swap_and_action(
                 .add_message(fee_swap_msg)
                 .add_attribute("action", "dispatch_fee_swap");
         } else if let Some(ibc_fee_coin) = &ibc_fee_coin {
-            if remaining_coin.denom != ibc_fee_coin.denom {
+            if remaining_asset.denom() != ibc_fee_coin.denom {
                 return Err(ContractError::IBCFeeDenomDiffersFromCoinReceived);
             }
 
-            // Deduct the ibc_fee_coin amount from the remaining coin received amount
-            remaining_coin.amount = remaining_coin.amount.checked_sub(ibc_fee_coin.amount)?;
+            // Deduct the ibc_fee_coin amount from the remaining asset received amount
+            remaining_asset.sub(ibc_fee_coin.amount)?;
         }
 
         // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
-        // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
         if let Some(ibc_fee_coin) = ibc_fee_coin {
             // Get the ibc transfer adapter contract address
             let ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -149,8 +149,8 @@ pub fn execute_swap_and_action(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::UserSwap {
             swap: user_swap,
-            min_coin: min_coin.clone(),
-            remaining_coin,
+            min_asset: min_asset.clone(),
+            remaining_asset,
             affiliates,
         })?,
         funds: vec![],
@@ -165,7 +165,7 @@ pub fn execute_swap_and_action(
     let post_swap_action_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::PostSwapAction {
-            min_coin,
+            min_asset,
             timeout_timestamp,
             post_swap_action,
             exact_out,
@@ -185,8 +185,8 @@ pub fn execute_user_swap(
     env: Env,
     info: MessageInfo,
     swap: Swap,
-    min_coin: Coin,
-    remaining_coin: Coin,
+    mut min_asset: Asset,
+    mut remaining_asset: Asset,
     affiliates: Vec<Affiliate>,
 ) -> ContractResult<Response> {
     // Enforce the caller is the contract itself
@@ -205,23 +205,30 @@ pub fn execute_user_swap(
     // add them to the affiliate response, updating the total affiliate fee amount
     for affiliate in affiliates.iter() {
         // Verify, calculate, and get the affiliate fee amount
-        // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
         let affiliate_fee_amount =
-            verify_and_calculate_affiliate_fee_amount(&deps, &min_coin, affiliate)?;
+            verify_and_calculate_affiliate_fee_amount(&deps, &min_asset, affiliate)?;
 
         // Add the affiliate fee amount to the total affiliate fee amount
-        // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
         total_affiliate_fee_amount =
             total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
 
-        // Create the affiliate fee bank send message
-        // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-        let affiliate_fee_msg = BankMsg::Send {
-            to_address: affiliate.address.clone(),
-            amount: vec![Coin {
-                denom: min_coin.denom.clone(),
-                amount: affiliate_fee_amount,
-            }],
+        // Create the affiliate fee message
+        let affiliate_fee_msg: CosmosMsg = match &min_asset {
+            Asset::Native(_) => CosmosMsg::Bank(BankMsg::Send {
+                to_address: affiliate.address.clone(),
+                amount: vec![Coin {
+                    denom: min_asset.denom().to_string(),
+                    amount: affiliate_fee_amount,
+                }],
+            }),
+            Asset::Cw20(_) => CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: min_asset.denom().to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    recipient: affiliate.address.clone(),
+                    amount: affiliate_fee_amount,
+                })?,
+                funds: vec![],
+            }),
         };
 
         // Add the affiliate fee message and attributes to the response
@@ -236,21 +243,20 @@ pub fn execute_user_swap(
     match swap {
         Swap::SwapExactCoinIn(swap) => {
             // Validate swap operations
-            validate_swap_operations(&swap.operations, &remaining_coin.denom, &min_coin.denom)?;
+            validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
                 SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
 
             // Create the user swap message args
-            let user_swap_msg_args: SwapExecuteMsg = swap.into();
+            let user_swap_msg_args: SwapExecuteMsg = swap.into_execute_msg(&remaining_asset);
 
             // Create the user swap message
-            let user_swap_msg = WasmMsg::Execute {
-                contract_addr: user_swap_adapter_contract_address.to_string(),
-                msg: to_binary(&user_swap_msg_args)?,
-                funds: vec![remaining_coin],
-            };
+            let user_swap_msg = remaining_asset.into_swap_adapter_msg(
+                user_swap_adapter_contract_address.to_string(),
+                user_swap_msg_args,
+            )?;
 
             response = response
                 .add_message(user_swap_msg)
@@ -258,42 +264,33 @@ pub fn execute_user_swap(
         }
         Swap::SwapExactCoinOut(swap) => {
             // Validate swap operations
-            validate_swap_operations(&swap.operations, &remaining_coin.denom, &min_coin.denom)?;
+            validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
                 SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
 
-            // Calculate the swap coin out by adding the min coin amount to the total affiliate fee amount
-            // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-            let swap_coin_out = Coin {
-                denom: min_coin.denom,
-                amount: min_coin.amount.checked_add(total_affiliate_fee_amount)?,
-            };
+            // Calculate the swap coin out by adding the min asset amount to the total affiliate fee amount
+            min_asset.add(total_affiliate_fee_amount)?;
 
-            // Query the swap adapter to get the coin in needed to obtain the min coin plus affiliates
-            // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-            let user_swap_coin_in = query_swap_coin_in(
+            // Query the swap adapter to get the asset in needed to obtain the min asset plus affiliates
+            let user_swap_asset_in = query_swap_asset_in(
                 &deps,
                 &user_swap_adapter_contract_address,
                 &swap,
-                &swap_coin_out,
+                &min_asset,
             )?;
 
             // Verify the user swap in denom is the same as the denom received from the message to the contract
-            // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-            if user_swap_coin_in.denom != remaining_coin.denom {
+            if user_swap_asset_in.denom() != remaining_asset.denom() {
                 return Err(ContractError::UserSwapCoinInDenomMismatch);
             }
 
             // Calculate refund amount to send back to the user
-            // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-            let refund_amount = remaining_coin
-                .amount
-                .checked_sub(user_swap_coin_in.amount)?;
+            remaining_asset.sub(user_swap_asset_in.amount())?;
 
             // If refund amount gt zero, then create the refund message and add it to the response
-            if refund_amount > Uint128::zero() {
+            if remaining_asset.amount() > Uint128::zero() {
                 // Get the refund address from the swap
                 let to_address = swap
                     .refund_address
@@ -303,15 +300,11 @@ pub fn execute_user_swap(
                 // Validate the refund address
                 deps.api.addr_validate(&to_address)?;
 
+                // Get the refund amount
+                let refund_amount = remaining_asset.amount();
+
                 // Create the refund message
-                // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-                let refund_msg = BankMsg::Send {
-                    to_address: to_address.clone(),
-                    amount: vec![Coin {
-                        denom: remaining_coin.denom,
-                        amount: refund_amount,
-                    }],
-                };
+                let refund_msg = remaining_asset.transfer_full(&to_address);
 
                 // Add the refund message and attributes to the response
                 response = response
@@ -322,14 +315,13 @@ pub fn execute_user_swap(
             }
 
             // Create the user swap message args
-            let user_swap_msg_args: SwapExecuteMsg = swap.into();
+            let user_swap_msg_args: SwapExecuteMsg = swap.into_execute_msg(&user_swap_asset_in);
 
             // Create the user swap message
-            let user_swap_msg = WasmMsg::Execute {
-                contract_addr: user_swap_adapter_contract_address.to_string(),
-                msg: to_binary(&user_swap_msg_args)?,
-                funds: vec![user_swap_coin_in],
-            };
+            let user_swap_msg = user_swap_asset_in.into_swap_adapter_msg(
+                user_swap_adapter_contract_address.to_string(),
+                user_swap_msg_args,
+            )?;
 
             response = response
                 .add_message(user_swap_msg)
@@ -351,7 +343,7 @@ pub fn execute_post_swap_action(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    min_coin: Coin,
+    min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
     exact_out: bool,
@@ -368,22 +360,20 @@ pub fn execute_post_swap_action(
     // Get contract balance of min out coin immediately after swap
     // for fee deduction and transfer out amount enforcement
     // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    let transfer_out_coin = deps
-        .querier
-        .query_balance(&env.contract.address, &min_coin.denom)?;
+    let transfer_out_asset = get_current_asset_available(&deps, &env, min_asset.denom())?;
 
     // Error if the contract balance is less than the min out coin amount
     // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    if transfer_out_coin.amount < min_coin.amount {
+    if transfer_out_asset.amount() < min_asset.amount() {
         return Err(ContractError::ReceivedLessCoinFromSwapsThanMinCoin);
     }
 
     // Set the transfer out coin to the min coin if exact out is true
     // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    let transfer_out_coin = if exact_out {
-        min_coin
+    let transfer_out_asset = if exact_out {
+        min_asset
     } else {
-        transfer_out_coin
+        transfer_out_asset
     };
 
     match post_swap_action {
@@ -392,11 +382,7 @@ pub fn execute_post_swap_action(
             deps.api.addr_validate(&to_address)?;
 
             // Create the bank send message
-            // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-            let bank_send_msg = BankMsg::Send {
-                to_address,
-                amount: vec![transfer_out_coin],
-            };
+            let bank_send_msg = transfer_out_asset.transfer_full(&to_address);
 
             // Add the bank send message to the response
             response = response
@@ -406,6 +392,11 @@ pub fn execute_post_swap_action(
         Action::IbcTransfer { ibc_info, .. } => {
             // Validates recover address, errors if invalid
             deps.api.addr_validate(&ibc_info.recover_address)?;
+
+            let transfer_out_coin = match transfer_out_asset {
+                Asset::Native(coin) => coin,
+                _ => return Err(ContractError::NonNativeIbcTransfer),
+            };
 
             // Create the IBC transfer message
             let ibc_transfer_msg: IbcTransferExecuteMsg = IbcTransfer {
@@ -443,11 +434,8 @@ pub fn execute_post_swap_action(
             }
 
             // Create the contract call message
-            let contract_call_msg = WasmMsg::Execute {
-                contract_addr: contract_address,
-                msg,
-                funds: vec![transfer_out_coin],
-            };
+            let contract_call_msg =
+                transfer_out_asset.into_contract_call_msg(contract_address, msg)?;
 
             // Add the contract call message to the response
             response = response
@@ -470,13 +458,13 @@ pub fn execute_post_swap_action(
 fn verify_and_create_fee_swap_msg(
     deps: &DepsMut,
     fee_swap: &SwapExactCoinOut,
-    remaining_coin: &mut Coin,
+    remaining_asset: &mut Asset,
     ibc_fee_coin: &Coin,
 ) -> ContractResult<WasmMsg> {
     // Validate swap operations
     validate_swap_operations(
         &fee_swap.operations,
-        &remaining_coin.denom,
+        remaining_asset.denom(),
         &ibc_fee_coin.denom,
     )?;
 
@@ -485,34 +473,30 @@ fn verify_and_create_fee_swap_msg(
         SWAP_VENUE_MAP.load(deps.storage, &fee_swap.swap_venue_name)?;
 
     // Query the swap adapter to get the coin in needed for the fee swap
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    let fee_swap_coin_in = query_swap_coin_in(
+    let fee_swap_asset_in = query_swap_asset_in(
         deps,
         &fee_swap_adapter_contract_address,
         fee_swap,
-        ibc_fee_coin,
+        &ibc_fee_coin.clone().into(),
     )?;
 
     // Verify the fee swap in denom is the same as the denom received from the message to the contract
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    if fee_swap_coin_in.denom != remaining_coin.denom {
+    if fee_swap_asset_in.denom() != remaining_asset.denom() {
         return Err(ContractError::FeeSwapCoinInDenomMismatch);
     }
 
     // Deduct the fee swap in amount from the swappable coin
     // Error if swap requires more than the swappable coin amount
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-    remaining_coin.amount = remaining_coin.amount.checked_sub(fee_swap_coin_in.amount)?;
+    remaining_asset.sub(fee_swap_asset_in.amount())?;
 
     // Create the fee swap message args
-    let fee_swap_msg_args: SwapExecuteMsg = fee_swap.clone().into();
+    let fee_swap_msg_args: SwapExecuteMsg = fee_swap.clone().into_execute_msg(&fee_swap_asset_in);
 
     // Create the fee swap message
-    let fee_swap_msg = WasmMsg::Execute {
-        contract_addr: fee_swap_adapter_contract_address.to_string(),
-        msg: to_binary(&fee_swap_msg_args)?,
-        funds: vec![fee_swap_coin_in],
-    };
+    let fee_swap_msg = fee_swap_asset_in.into_swap_adapter_msg(
+        fee_swap_adapter_contract_address.to_string(),
+        fee_swap_msg_args,
+    )?;
 
     Ok(fee_swap_msg)
 }
@@ -523,7 +507,7 @@ fn verify_and_create_fee_swap_msg(
 // returns the calculated affiliate fee amount.
 fn verify_and_calculate_affiliate_fee_amount(
     deps: &DepsMut,
-    min_coin: &Coin,
+    min_asset: &Asset,
     affiliate: &Affiliate,
 ) -> ContractResult<Uint128> {
     // Verify the affiliate address is valid
@@ -531,8 +515,8 @@ fn verify_and_calculate_affiliate_fee_amount(
 
     // Get the affiliate fee amount by multiplying the min_coin
     // amount by the affiliate basis points fee divided by 10000
-    let affiliate_fee_amount = min_coin
-        .amount
+    let affiliate_fee_amount = min_asset
+        .amount()
         .multiply_ratio(affiliate.basis_points_fee, Uint128::new(10000));
 
     Ok(affiliate_fee_amount)
@@ -544,20 +528,20 @@ fn verify_and_calculate_affiliate_fee_amount(
 // coin in needed for the fee swap. Verifies the fee swap in denom is the same as the
 // swap coin denom from the message. Returns the fee swap coin in.
 // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
-fn query_swap_coin_in(
+fn query_swap_asset_in(
     deps: &DepsMut,
     swap_adapter_contract_address: &Addr,
     swap: &SwapExactCoinOut,
-    swap_coin_out: &Coin,
-) -> ContractResult<Coin> {
+    swap_asset_out: &Asset,
+) -> ContractResult<Asset> {
     // Query the swap adapter to get the coin in needed for the fee swap
-    let fee_swap_coin_in: Coin = deps.querier.query_wasm_smart(
+    let fee_swap_asset_in: Asset = deps.querier.query_wasm_smart(
         swap_adapter_contract_address,
-        &SwapQueryMsg::SimulateSwapExactCoinOut {
-            coin_out: swap_coin_out.clone(),
+        &SwapQueryMsg::SimulateSwapExactAssetOut {
+            asset_out: swap_asset_out.clone(),
             swap_operations: swap.operations.clone(),
         },
     )?;
 
-    Ok(fee_swap_coin_in)
+    Ok(fee_swap_asset_in)
 }

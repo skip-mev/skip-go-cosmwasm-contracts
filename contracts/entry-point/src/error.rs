@@ -63,4 +63,9 @@ pub enum ContractError {
 
     #[error("Contract Call Address Cannot Be The Entry Point Or Adapter Contracts")]
     ContractCallAddressBlocked,
+
+    #[error(
+        "IBC Transfer Adapter Only Supports Native Coins, Cw20 IBC Transfers Are Contract Calls"
+    )]
+    NonNativeIbcTransfer,
 }
