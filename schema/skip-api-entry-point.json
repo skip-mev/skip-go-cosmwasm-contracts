@@ -51,6 +51,18 @@
       {
         "type": "object",
         "required": [
+          "receive"
+        ],
+        "properties": {
+          "receive": {
+            "$ref": "#/definitions/Cw20ReceiveMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
           "swap_and_action"
         ],
         "properties": {
@@ -58,8 +70,9 @@
             "type": "object",
             "required": [
               "affiliates",
-              "min_coin",
+              "min_asset",
               "post_swap_action",
+              "sent_asset",
               "timeout_timestamp",
               "user_swap"
             ],
@@ -70,11 +83,14 @@
                   "$ref": "#/definitions/Affiliate"
                 }
               },
-              "min_coin": {
-                "$ref": "#/definitions/Coin"
+              "min_asset": {
+                "$ref": "#/definitions/Asset"
               },
               "post_swap_action": {
                 "$ref": "#/definitions/Action"
+              },
+              "sent_asset": {
+                "$ref": "#/definitions/Asset"
               },
               "timeout_timestamp": {
                 "type": "integer",
@@ -100,8 +116,8 @@
             "type": "object",
             "required": [
               "affiliates",
-              "min_coin",
-              "remaining_coin",
+              "min_asset",
+              "remaining_asset",
               "swap"
             ],
             "properties": {
@@ -111,11 +127,11 @@
                   "$ref": "#/definitions/Affiliate"
                 }
               },
-              "min_coin": {
-                "$ref": "#/definitions/Coin"
+              "min_asset": {
+                "$ref": "#/definitions/Asset"
               },
-              "remaining_coin": {
-                "$ref": "#/definitions/Coin"
+              "remaining_asset": {
+                "$ref": "#/definitions/Asset"
               },
               "swap": {
                 "$ref": "#/definitions/Swap"
@@ -136,7 +152,7 @@
             "type": "object",
             "required": [
               "exact_out",
-              "min_coin",
+              "min_asset",
               "post_swap_action",
               "timeout_timestamp"
             ],
@@ -144,8 +160,8 @@
               "exact_out": {
                 "type": "boolean"
               },
-              "min_coin": {
-                "$ref": "#/definitions/Coin"
+              "min_asset": {
+                "$ref": "#/definitions/Asset"
               },
               "post_swap_action": {
                 "$ref": "#/definitions/Action"
@@ -261,6 +277,34 @@
         },
         "additionalProperties": false
       },
+      "Asset": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "native"
+            ],
+            "properties": {
+              "native": {
+                "$ref": "#/definitions/Coin"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "cw20"
+            ],
+            "properties": {
+              "cw20": {
+                "$ref": "#/definitions/Cw20Coin"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
       "Binary": {
         "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
         "type": "string"
@@ -279,6 +323,43 @@
             "type": "string"
           }
         }
+      },
+      "Cw20Coin": {
+        "type": "object",
+        "required": [
+          "address",
+          "amount"
+        ],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "amount": {
+            "$ref": "#/definitions/Uint128"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Cw20ReceiveMsg": {
+        "description": "Cw20ReceiveMsg should be de/serialized under `Receive()` variant in a ExecuteMsg",
+        "type": "object",
+        "required": [
+          "amount",
+          "msg",
+          "sender"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/definitions/Uint128"
+          },
+          "msg": {
+            "$ref": "#/definitions/Binary"
+          },
+          "sender": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       },
       "IbcFee": {
         "description": "COMMON TYPES ///",
