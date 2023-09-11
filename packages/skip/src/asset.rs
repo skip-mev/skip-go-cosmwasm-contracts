@@ -210,7 +210,7 @@ impl Asset {
 
                 let cw20_contract = Cw20Contract(verified_cw20_coin_addr);
 
-                let balance = cw20_contract.balance(&deps.querier, env.contract.address.clone())?;
+                let balance = cw20_contract.balance(&deps.querier, &env.contract.address)?;
 
                 if coin.amount <= balance {
                     Ok(())
@@ -231,7 +231,7 @@ pub fn get_current_asset_available(
         Ok(addr) => {
             let cw20_contract = Cw20Contract(addr.clone());
 
-            let amount = cw20_contract.balance(&deps.querier, addr.to_string())?;
+            let amount = cw20_contract.balance(&deps.querier, &env.contract.address)?;
 
             Ok(Asset::Cw20(Cw20Coin {
                 address: addr.to_string(),

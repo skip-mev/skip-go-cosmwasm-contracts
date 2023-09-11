@@ -240,7 +240,7 @@ pub fn execute_transfer_funds_back(
         Ok(contract_addr) => {
             let cw20_contract = Cw20Contract(contract_addr.clone());
 
-            let balance = cw20_contract.balance(&deps.querier, env.contract.address)?;
+            let balance = cw20_contract.balance(&deps.querier, &env.contract.address)?;
 
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
