@@ -7,6 +7,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{
     to_binary, Addr, Api, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
+use cw20::Cw20ReceiveMsg;
 use cw20::{Cw20Contract, Cw20ExecuteMsg};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
@@ -41,6 +42,7 @@ pub struct NeutronInstantiateMsg {
 // Only the Swap message is callable by external users.
 #[cw_serde]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     Swap {
         sent_asset: Asset,
         operations: Vec<SwapOperation>,

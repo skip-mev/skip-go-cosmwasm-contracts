@@ -67,9 +67,13 @@ pub fn instantiate(
 pub fn receive_cw20(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    mut info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> ContractResult<Response> {
+    // Set the sender to the contract address to pass verfication.
+    // This does allow anyone to call this contract.
+    info.sender = env.contract.address.clone();
+
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::Swap {
             sent_asset,
@@ -90,6 +94,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
+        ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Swap {
             sent_asset,
             operations,
@@ -118,7 +123,7 @@ fn execute_swap(
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
 
     // Enforce the caller is the entry point contract
-    if info.sender != entry_point_contract_address {
+    if info.sender != entry_point_contract_address && info.sender != env.contract.address {
         return Err(ContractError::Unauthorized);
     }
 
@@ -142,7 +147,7 @@ fn execute_swap(
     let transfer_funds_back_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::TransferFundsBack {
-            swapper: info.sender,
+            swapper: entry_point_contract_address,
             return_denom,
         })?,
         funds: vec![],

@@ -73,6 +73,9 @@ pub fn execute(
             swapper,
             return_denom,
         )?),
+        _ => {
+            unimplemented!()
+        }
     }
 }
 
