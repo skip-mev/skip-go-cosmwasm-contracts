@@ -10,10 +10,10 @@ use astroport::{
     },
 };
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Addr, Api, Binary, Coin, Deps, DepsMut, Env, MessageInfo,
+    entry_point, from_binary, to_binary, Addr, Api, Binary, Deps, DepsMut, Env, MessageInfo,
     Response, Uint128, WasmMsg,
 };
-use cw20::{Cw20Coin, Cw20ReceiveMsg};
+use cw20::Cw20ReceiveMsg;
 use skip::{
     asset::Asset,
     swap::{
@@ -224,7 +224,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 }
 
 // Queries the astroport router contract to simulate a swap exact amount in
-// @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
 fn query_simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
@@ -261,22 +260,10 @@ fn query_simulate_swap_exact_asset_in(
         },
     )?;
 
-    // Return the asset out depending on whether the last swap
-    // operation's denom out is a cw-20 token or a native token
-    match deps.api.addr_validate(&denom_out) {
-        Ok(addr) => Ok(Asset::Cw20(Cw20Coin {
-            address: addr.to_string(),
-            amount: res.amount,
-        })),
-        Err(_) => Ok(Asset::Native(Coin {
-            denom: denom_out,
-            amount: res.amount,
-        })),
-    }
+    Ok(Asset::new(deps.api, &denom_out, res.amount))
 }
 
 // Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
-// @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
 fn query_simulate_swap_exact_asset_out(
     deps: Deps,
     asset_out: Asset,
@@ -297,7 +284,7 @@ fn query_simulate_swap_exact_asset_out(
     // needed for the next swap operation until the coin in needed for the first swap operation is found.
     let asset_in_needed = swap_operations.iter().rev().try_fold(
         asset_out,
-        |asset_in_needed, operation| -> Result<_, ContractError> {
+        |asset_in_needed, operation| -> Result<Asset, ContractError> {
             // Get ask_asset depending on whether the asset in
             // needed is a native token or a cw-20 token
             let ask_asset = match asset_in_needed {
@@ -324,16 +311,11 @@ fn query_simulate_swap_exact_asset_out(
                 },
             )?;
 
-            match deps.api.addr_validate(&operation.denom_in) {
-                Ok(addr) => Ok(Asset::Cw20(Cw20Coin {
-                    address: addr.to_string(),
-                    amount: res.offer_amount.checked_add(Uint128::one())?,
-                })),
-                Err(_) => Ok(Asset::Native(Coin {
-                    denom: operation.denom_in.clone(),
-                    amount: res.offer_amount.checked_add(Uint128::one())?,
-                })),
-            }
+            Ok(Asset::new(
+                deps.api,
+                &operation.denom_in,
+                res.offer_amount.checked_add(Uint128::one())?,
+            ))
         },
     )?;
 
