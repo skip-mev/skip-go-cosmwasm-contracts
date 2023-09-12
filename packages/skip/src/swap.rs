@@ -4,11 +4,9 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{
-    to_binary, Addr, Api, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg,
-};
+use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Response};
+use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
-use cw20::{Cw20Contract, Cw20ExecuteMsg};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -24,12 +22,10 @@ pub struct OsmosisInstantiateMsg {
     pub entry_point_contract_address: String,
 }
 
-// TODO: Change to AstroportInstantiateMsg as part of restructuring
-
 // The NeutronInstantiateMsg struct defines the initialization parameters for the
 // Neutron Astroport swap adapter contract.
 #[cw_serde]
-pub struct NeutronInstantiateMsg {
+pub struct AstroportInstantiateMsg {
     pub entry_point_contract_address: String,
     pub router_contract_address: String,
 }
@@ -224,7 +220,6 @@ pub enum Swap {
 ////////////////////////
 
 // Query the contract's balance and transfer the funds back to the swapper
-// @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
 pub fn execute_transfer_funds_back(
     deps: DepsMut,
     env: Env,
@@ -239,20 +234,12 @@ pub fn execute_transfer_funds_back(
 
     // Create the transfer funds back message
     let transfer_funds_back_msg: CosmosMsg = match deps.api.addr_validate(&return_denom) {
-        Ok(contract_addr) => {
-            let cw20_contract = Cw20Contract(contract_addr.clone());
-
-            let balance = cw20_contract.balance(&deps.querier, &env.contract.address)?;
-
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: swapper.to_string(),
-                    amount: balance,
-                })?,
-                funds: vec![],
-            })
-        }
+        Ok(contract_addr) => Asset::new(
+            deps.api,
+            contract_addr.as_str(),
+            Cw20Contract(contract_addr.clone()).balance(&deps.querier, &env.contract.address)?,
+        )
+        .transfer(swapper.as_str()),
         Err(_) => CosmosMsg::Bank(BankMsg::Send {
             to_address: swapper.to_string(),
             amount: deps.querier.query_all_balances(env.contract.address)?,
