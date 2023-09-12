@@ -10,7 +10,7 @@ use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        IbcFeesNotOneCoin, Overflow, Payment, SwapOperationsCoinInDenomMismatch,
+        IbcFeesNotOneCoin, Overflow, SwapOperationsCoinInDenomMismatch,
         SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
     },
     ibc::{IbcFee, IbcInfo},
@@ -62,7 +62,6 @@ Expect Error
 // Define test parameters
 struct Params {
     info_funds: Vec<Coin>,
-    sent_asset: Asset,
     user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
@@ -78,7 +77,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -152,7 +150,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinOut (
             SwapExactCoinOut{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -228,7 +225,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -336,7 +332,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -426,7 +421,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -578,7 +572,6 @@ struct Params {
         info_funds: vec![
             Coin::new(100_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(100_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -634,7 +627,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "uatom"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "uatom")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -686,7 +678,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -738,7 +729,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -790,7 +780,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -830,7 +819,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -878,7 +866,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -930,7 +917,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -982,7 +968,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1032,7 +1017,6 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1052,7 +1036,7 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(Payment(NoFunds{}))),
+        expected_error: Some(ContractError::Payment(NoFunds{})),
     };
     "No Coins Sent to Contract - Expect Error")]
 #[test_case(
@@ -1061,7 +1045,6 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1081,7 +1064,7 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(Payment(MultipleDenoms{}))),
+        expected_error: Some(ContractError::Payment(MultipleDenoms{})),
     };
     "More Than One Coin Sent to Contract - Expect Error")]
 #[test_case(
@@ -1089,7 +1072,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1135,7 +1117,6 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
         user_swap: Swap::SwapExactCoinIn (
             SwapExactCoinIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -1206,7 +1187,6 @@ fn test_execute_swap_and_action(params: Params) {
         env,
         info,
         ExecuteMsg::SwapAndAction {
-            sent_asset: params.sent_asset,
             user_swap: params.user_swap,
             min_asset: params.min_asset,
             timeout_timestamp: params.timeout_timestamp,

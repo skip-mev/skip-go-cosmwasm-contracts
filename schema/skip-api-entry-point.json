@@ -72,7 +72,6 @@
               "affiliates",
               "min_asset",
               "post_swap_action",
-              "sent_asset",
               "timeout_timestamp",
               "user_swap"
             ],
@@ -88,9 +87,6 @@
               },
               "post_swap_action": {
                 "$ref": "#/definitions/Action"
-              },
-              "sent_asset": {
-                "$ref": "#/definitions/Asset"
               },
               "timeout_timestamp": {
                 "type": "integer",

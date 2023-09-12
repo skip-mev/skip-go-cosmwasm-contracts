@@ -7,7 +7,11 @@ use crate::{
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cw_utils::one_coin;
+use skip::{
+    asset::Asset,
+    entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg},
+};
 
 ///////////////////
 /// INSTANTIATE ///
@@ -87,23 +91,24 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::SwapAndAction {
-            sent_asset,
             user_swap,
             min_asset,
             timeout_timestamp,
             post_swap_action,
             affiliates,
-        } => execute_swap_and_action(
-            deps,
-            env,
-            info,
-            sent_asset,
-            user_swap,
-            min_asset,
-            timeout_timestamp,
-            post_swap_action,
-            affiliates,
-        ),
+        } => {
+            let sent_asset: Asset = one_coin(&info)?.into();
+            execute_swap_and_action(
+                deps,
+                env,
+                sent_asset,
+                user_swap,
+                min_asset,
+                timeout_timestamp,
+                post_swap_action,
+                affiliates,
+            )
+        }
         ExecuteMsg::UserSwap {
             swap,
             min_asset,

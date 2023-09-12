@@ -6,7 +6,7 @@ use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128,
     WasmMsg,
 };
-use cw20::Cw20ReceiveMsg;
+use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
@@ -29,9 +29,14 @@ pub fn receive_cw20(
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> ContractResult<Response> {
+    let sent_asset = Asset::Cw20(Cw20Coin {
+        address: info.sender.to_string(),
+        amount: cw20_msg.amount,
+    });
+    sent_asset.validate(&deps, &env, &info)?;
+
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::SwapAndAction {
-            sent_asset,
             user_swap,
             min_asset,
             timeout_timestamp,
@@ -40,7 +45,6 @@ pub fn receive_cw20(
         } => execute_swap_and_action(
             deps,
             env,
-            info,
             sent_asset,
             user_swap,
             min_asset,
@@ -61,7 +65,6 @@ pub fn receive_cw20(
 pub fn execute_swap_and_action(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
     sent_asset: Asset,
     user_swap: Swap,
     min_asset: Asset,
@@ -76,11 +79,6 @@ pub fn execute_swap_and_action(
     if env.block.time.nanos() > timeout_timestamp {
         return Err(ContractError::Timeout);
     }
-
-    // Validates the sent asset is what was sent either
-    // natively or via cw20 transfer, for cw20 transfer
-    // ensures no native coin sent with the contract call
-    sent_asset.validate(&deps, &env, &info)?;
 
     let mut remaining_asset = sent_asset;
 
