@@ -213,7 +213,7 @@ pub fn execute_user_swap(
             total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
 
         // Create the affiliate_fee_asset
-        let affiliate_fee_asset = Asset::new(&deps, min_asset.denom(), affiliate_fee_amount)?;
+        let affiliate_fee_asset = Asset::new(deps.api, min_asset.denom(), affiliate_fee_amount);
 
         // Create the affiliate fee message
         let affiliate_fee_msg = affiliate_fee_asset.transfer(&affiliate.address);

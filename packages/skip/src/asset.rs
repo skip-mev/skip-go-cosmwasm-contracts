@@ -1,7 +1,7 @@
 use crate::error::SkipError;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_binary, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
+    to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
 use cw_utils::{nonpayable, one_coin};
@@ -34,16 +34,16 @@ impl From<Cw20CoinVerified> for Asset {
 }
 
 impl Asset {
-    pub fn new(deps: &DepsMut, denom: &str, amount: Uint128) -> Result<Self, SkipError> {
-        match deps.api.addr_validate(denom) {
-            Ok(addr) => Ok(Asset::Cw20(Cw20Coin {
+    pub fn new(api: &dyn Api, denom: &str, amount: Uint128) -> Self {
+        match api.addr_validate(denom) {
+            Ok(addr) => Asset::Cw20(Cw20Coin {
                 address: addr.to_string(),
                 amount,
-            })),
-            Err(_) => Ok(Asset::Native(Coin {
+            }),
+            Err(_) => Asset::Native(Coin {
                 denom: denom.to_string(),
                 amount,
-            })),
+            }),
         }
     }
 
@@ -194,7 +194,7 @@ mod tests {
         // TEST 1: Native asset
         let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
 
-        let asset = Asset::new(&deps.as_mut(), "ua", Uint128::new(100)).unwrap();
+        let asset = Asset::new(deps.as_mut().api, "ua", Uint128::new(100));
 
         assert_eq!(
             asset,
@@ -207,7 +207,7 @@ mod tests {
         // TEST 2: Cw20 asset
         let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
 
-        let asset = Asset::new(&deps.as_mut(), "asset", Uint128::new(100)).unwrap();
+        let asset = Asset::new(deps.as_mut().api, "asset", Uint128::new(100));
 
         assert_eq!(
             asset,
