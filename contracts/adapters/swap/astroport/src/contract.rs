@@ -3,7 +3,6 @@ use crate::{
     state::{ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS},
 };
 use astroport::{
-    asset::{Asset as AstroportAsset, AssetInfo},
     pair::{QueryMsg as PairQueryMsg, ReverseSimulationResponse},
     router::{
         ExecuteMsg as RouterExecuteMsg, QueryMsg as RouterQueryMsg, SimulateSwapOperationsResponse,
@@ -285,29 +284,15 @@ fn query_simulate_swap_exact_asset_out(
     let asset_in_needed = swap_operations.iter().rev().try_fold(
         asset_out,
         |asset_in_needed, operation| -> Result<Asset, ContractError> {
-            // Get ask_asset depending on whether the asset in
-            // needed is a native token or a cw-20 token
-            let ask_asset = match asset_in_needed {
-                Asset::Native(coin) => AstroportAsset {
-                    info: AssetInfo::NativeToken {
-                        denom: coin.denom.clone(),
-                    },
-                    amount: coin.amount,
-                },
-                Asset::Cw20(cw20_coin) => AstroportAsset {
-                    info: AssetInfo::Token {
-                        contract_addr: deps.api.addr_validate(&cw20_coin.address)?,
-                    },
-                    amount: cw20_coin.amount,
-                },
-            };
+            // Get the astroport ask asset type
+            let astroport_ask_asset = asset_in_needed.into_astroport_asset(deps.api)?;
 
             // Query the astroport pool contract to get the coin in needed for the swap operation
             let res: ReverseSimulationResponse = deps.querier.query_wasm_smart(
                 &operation.pool,
                 &PairQueryMsg::ReverseSimulation {
                     offer_asset_info: None,
-                    ask_asset,
+                    ask_asset: astroport_ask_asset,
                 },
             )?;
 

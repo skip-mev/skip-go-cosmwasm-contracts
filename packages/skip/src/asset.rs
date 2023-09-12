@@ -1,4 +1,5 @@
 use crate::error::SkipError;
+use astroport::asset::{Asset as AstroportAsset, AssetInfo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
@@ -120,6 +121,23 @@ impl Asset {
                     msg,
                 })?,
                 funds: vec![],
+            }),
+        }
+    }
+
+    pub fn into_astroport_asset(&self, api: &dyn Api) -> Result<AstroportAsset, SkipError> {
+        match self {
+            Asset::Native(coin) => Ok(AstroportAsset {
+                info: AssetInfo::NativeToken {
+                    denom: coin.denom.clone(),
+                },
+                amount: coin.amount,
+            }),
+            Asset::Cw20(cw20_coin) => Ok(AstroportAsset {
+                info: AssetInfo::Token {
+                    contract_addr: api.addr_validate(&cw20_coin.address)?,
+                },
+                amount: cw20_coin.amount,
             }),
         }
     }
@@ -334,6 +352,49 @@ mod tests {
             }
             _ => panic!("Unexpected message type"),
         }
+    }
+
+    #[test]
+    fn test_into_astroport_asset() {
+        // TEST 1: Native asset
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let astroport_asset = asset.into_astroport_asset(deps.as_mut().api).unwrap();
+
+        assert_eq!(
+            astroport_asset,
+            AstroportAsset {
+                info: AssetInfo::NativeToken {
+                    denom: "uatom".to_string()
+                },
+                amount: Uint128::new(100),
+            }
+        );
+
+        // TEST 2: Cw20 asset
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let astroport_asset = asset.into_astroport_asset(deps.as_mut().api).unwrap();
+
+        assert_eq!(
+            astroport_asset,
+            AstroportAsset {
+                info: AssetInfo::Token {
+                    contract_addr: Addr::unchecked("asset")
+                },
+                amount: Uint128::new(100),
+            }
+        );
     }
 
     #[test]
