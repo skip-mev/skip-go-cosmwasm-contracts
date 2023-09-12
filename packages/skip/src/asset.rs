@@ -35,6 +35,19 @@ impl From<Cw20CoinVerified> for Asset {
 }
 
 impl Asset {
+    pub fn new(deps: &DepsMut, denom: &str, amount: Uint128) -> Result<Self, SkipError> {
+        match deps.api.addr_validate(denom) {
+            Ok(addr) => Ok(Asset::Cw20(Cw20Coin {
+                address: addr.to_string(),
+                amount,
+            })),
+            Err(_) => Ok(Asset::Native(Coin {
+                denom: denom.to_string(),
+                amount,
+            })),
+        }
+    }
+
     pub fn denom(&self) -> &str {
         match self {
             Asset::Native(coin) => &coin.denom,
@@ -255,6 +268,29 @@ mod tests {
     };
     use cw20::BalanceResponse;
     use cw_utils::PaymentError;
+
+    #[test]
+    fn test_new() {
+        // TEST 1: Native asset
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let asset = Asset::new(&deps.as_mut(), "ua", Uint128::new(100)).unwrap();
+
+        assert_eq!(asset, Asset::Native(Coin {
+            denom: "ua".to_string(),
+            amount: Uint128::new(100),
+        }));
+
+        // TEST 2: Cw20 asset
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let asset = Asset::new(&deps.as_mut(), "asset", Uint128::new(100)).unwrap();
+
+        assert_eq!(asset, Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        }));
+    }
 
     #[test]
     fn test_asset_native() {

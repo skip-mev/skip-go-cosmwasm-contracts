@@ -33,7 +33,7 @@ pub fn receive_cw20(
         Cw20HookMsg::SwapAndAction {
             sent_asset,
             user_swap,
-            min_asset, // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
+            min_asset,
             timeout_timestamp,
             post_swap_action,
             affiliates,
