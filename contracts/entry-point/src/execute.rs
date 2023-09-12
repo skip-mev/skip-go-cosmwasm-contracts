@@ -510,7 +510,6 @@ fn verify_and_calculate_affiliate_fee_amount(
 // Unexposed query helper function that queries the swap adapter contract to get the
 // coin in needed for the fee swap. Verifies the fee swap in denom is the same as the
 // swap coin denom from the message. Returns the fee swap coin in.
-// @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
 fn query_swap_asset_in(
     deps: &DepsMut,
     swap_adapter_contract_address: &Addr,
