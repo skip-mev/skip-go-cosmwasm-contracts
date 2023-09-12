@@ -253,9 +253,9 @@ pub fn execute_user_swap(
             let user_swap_msg_args: SwapExecuteMsg = swap.into_execute_msg(&remaining_asset);
 
             // Create the user swap message
-            let user_swap_msg = remaining_asset.into_swap_adapter_msg(
+            let user_swap_msg = remaining_asset.into_wasm_msg(
                 user_swap_adapter_contract_address.to_string(),
-                user_swap_msg_args,
+                to_binary(&user_swap_msg_args)?,
             )?;
 
             response = response
@@ -318,9 +318,9 @@ pub fn execute_user_swap(
             let user_swap_msg_args: SwapExecuteMsg = swap.into_execute_msg(&user_swap_asset_in);
 
             // Create the user swap message
-            let user_swap_msg = user_swap_asset_in.into_swap_adapter_msg(
+            let user_swap_msg = user_swap_asset_in.into_wasm_msg(
                 user_swap_adapter_contract_address.to_string(),
-                user_swap_msg_args,
+                to_binary(&user_swap_msg_args)?,
             )?;
 
             response = response
@@ -434,8 +434,7 @@ pub fn execute_post_swap_action(
             }
 
             // Create the contract call message
-            let contract_call_msg =
-                transfer_out_asset.into_contract_call_msg(contract_address, msg)?;
+            let contract_call_msg = transfer_out_asset.into_wasm_msg(contract_address, msg)?;
 
             // Add the contract call message to the response
             response = response
@@ -493,9 +492,9 @@ fn verify_and_create_fee_swap_msg(
     let fee_swap_msg_args: SwapExecuteMsg = fee_swap.clone().into_execute_msg(&fee_swap_asset_in);
 
     // Create the fee swap message
-    let fee_swap_msg = fee_swap_asset_in.into_swap_adapter_msg(
+    let fee_swap_msg = fee_swap_asset_in.into_wasm_msg(
         fee_swap_adapter_contract_address.to_string(),
-        fee_swap_msg_args,
+        to_binary(&fee_swap_msg_args)?,
     )?;
 
     Ok(fee_swap_msg)

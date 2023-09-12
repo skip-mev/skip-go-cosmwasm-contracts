@@ -1,5 +1,4 @@
-use crate::{error::SkipError, swap::ExecuteMsg as SwapExecuteMsg};
-use astroport::router::ExecuteMsg as AstroportRouterExecuteMsg;
+use crate::error::SkipError;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     to_binary, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
@@ -133,71 +132,19 @@ impl Asset {
         }
     }
 
-    // @NotJeremyLiu TODO: Add tests for this
-    pub fn into_swap_adapter_msg(
-        self,
-        swap_adapter_contract_address: String,
-        swap_msg_args: SwapExecuteMsg,
-    ) -> Result<WasmMsg, SkipError> {
+    pub fn into_wasm_msg(self, contract_addr: String, msg: Binary) -> Result<WasmMsg, SkipError> {
         match self {
             Asset::Native(coin) => Ok(WasmMsg::Execute {
-                contract_addr: swap_adapter_contract_address,
-                msg: to_binary(&swap_msg_args)?,
+                contract_addr,
+                msg,
                 funds: vec![coin],
             }),
             Asset::Cw20(coin) => Ok(WasmMsg::Execute {
                 contract_addr: coin.address,
                 msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: swap_adapter_contract_address,
+                    contract: contract_addr,
                     amount: coin.amount,
-                    msg: to_binary(&swap_msg_args)?,
-                })
-                .unwrap(),
-                funds: vec![],
-            }),
-        }
-    }
-
-    pub fn into_contract_call_msg(
-        self,
-        contract_address: String,
-        contract_msg_args: Binary,
-    ) -> Result<WasmMsg, SkipError> {
-        match self {
-            Asset::Native(coin) => Ok(WasmMsg::Execute {
-                contract_addr: contract_address,
-                msg: contract_msg_args,
-                funds: vec![coin],
-            }),
-            Asset::Cw20(coin) => Ok(WasmMsg::Execute {
-                contract_addr: coin.address,
-                msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: contract_address,
-                    amount: coin.amount,
-                    msg: contract_msg_args,
-                })?,
-                funds: vec![],
-            }),
-        }
-    }
-
-    pub fn into_astroport_router_msg(
-        self,
-        router_contract_address: String,
-        router_msg_args: AstroportRouterExecuteMsg,
-    ) -> Result<WasmMsg, SkipError> {
-        match self {
-            Asset::Native(coin) => Ok(WasmMsg::Execute {
-                contract_addr: router_contract_address,
-                msg: to_binary(&router_msg_args)?,
-                funds: vec![coin],
-            }),
-            Asset::Cw20(coin) => Ok(WasmMsg::Execute {
-                contract_addr: coin.address,
-                msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: router_contract_address,
-                    amount: coin.amount,
-                    msg: to_binary(&router_msg_args)?,
+                    msg,
                 })?,
                 funds: vec![],
             }),
@@ -264,7 +211,7 @@ mod tests {
     use super::*;
     use cosmwasm_std::{
         testing::{mock_dependencies_with_balances, mock_env, mock_info},
-        ContractResult, QuerierResult, SystemResult, WasmQuery, Addr,
+        Addr, ContractResult, QuerierResult, SystemResult, WasmQuery,
     };
     use cw20::BalanceResponse;
     use cw_utils::PaymentError;
@@ -276,20 +223,26 @@ mod tests {
 
         let asset = Asset::new(&deps.as_mut(), "ua", Uint128::new(100)).unwrap();
 
-        assert_eq!(asset, Asset::Native(Coin {
-            denom: "ua".to_string(),
-            amount: Uint128::new(100),
-        }));
+        assert_eq!(
+            asset,
+            Asset::Native(Coin {
+                denom: "ua".to_string(),
+                amount: Uint128::new(100),
+            })
+        );
 
         // TEST 2: Cw20 asset
         let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
 
         let asset = Asset::new(&deps.as_mut(), "asset", Uint128::new(100)).unwrap();
 
-        assert_eq!(asset, Asset::Cw20(Cw20Coin {
-            address: "asset".to_string(),
-            amount: Uint128::new(100),
-        }));
+        assert_eq!(
+            asset,
+            Asset::Cw20(Cw20Coin {
+                address: "asset".to_string(),
+                amount: Uint128::new(100),
+            })
+        );
     }
 
     #[test]
@@ -312,6 +265,29 @@ mod tests {
 
         assert_eq!(asset.denom(), "asset");
         assert_eq!(asset.amount(), Uint128::new(100));
+    }
+
+    #[test]
+    fn test_add() {
+        // TEST 1: Native asset
+        let mut asset = Asset::Native(Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        asset.add(Uint128::new(20)).unwrap();
+
+        assert_eq!(asset.amount(), Uint128::new(120));
+
+        // TEST 2: Cw20 asset
+        let mut asset = Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        asset.add(Uint128::new(20)).unwrap();
+
+        assert_eq!(asset.amount(), Uint128::new(120));
     }
 
     #[test]
@@ -616,10 +592,13 @@ mod tests {
 
         let asset = get_current_asset_available(&deps.as_mut(), &env, "ua").unwrap();
 
-        assert_eq!(asset, Asset::Native(Coin {
-            denom: "ua".to_string(),
-            amount: Uint128::new(100),
-        }));
+        assert_eq!(
+            asset,
+            Asset::Native(Coin {
+                denom: "ua".to_string(),
+                amount: Uint128::new(100),
+            })
+        );
 
         // TEST 2: Cw20 asset
         let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
@@ -642,11 +621,12 @@ mod tests {
 
         let asset = get_current_asset_available(&deps.as_mut(), &env, "asset").unwrap();
 
-        assert_eq!(asset, Asset::Cw20(Cw20Coin {
-            address: "asset".to_string(),
-            amount: Uint128::new(100),
-        }));
-
-
+        assert_eq!(
+            asset,
+            Asset::Cw20(Cw20Coin {
+                address: "asset".to_string(),
+                amount: Uint128::new(100),
+            })
+        );
     }
 }

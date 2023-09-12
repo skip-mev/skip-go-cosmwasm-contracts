@@ -185,9 +185,9 @@ fn create_astroport_swap_msg(
     };
 
     // Create the astroport router swap message
-    let swap_msg = asset_in.into_astroport_router_msg(
+    let swap_msg = asset_in.into_wasm_msg(
         router_contract_address.to_string(),
-        astroport_router_msg_args,
+        to_binary(&astroport_router_msg_args)?,
     )?;
 
     Ok(swap_msg)
