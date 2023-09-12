@@ -162,7 +162,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::SimulateSwapExactAssetIn {
             asset_in,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_coin_in(
+        } => to_binary(&query_simulate_swap_exact_asset_in(
             deps,
             asset_in,
             swap_operations,
@@ -170,7 +170,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::SimulateSwapExactAssetOut {
             asset_out,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_coin_out(
+        } => to_binary(&query_simulate_swap_exact_asset_out(
             deps,
             asset_out,
             swap_operations,
@@ -183,11 +183,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 }
 
 // Queries the osmosis poolmanager module to simulate a swap exact amount in
-fn query_simulate_swap_exact_coin_in(
+fn query_simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Coin> {
+) -> ContractResult<Asset> {
     // Error if swap operations is empty
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(ContractError::SwapOperationsEmpty);
@@ -226,15 +226,16 @@ fn query_simulate_swap_exact_coin_in(
     Ok(Coin {
         denom: denom_out,
         amount: Uint128::from_str(&res.token_out_amount)?,
-    })
+    }
+    .into())
 }
 
 // Queries the osmosis poolmanager module to simulate a swap exact amount out
-fn query_simulate_swap_exact_coin_out(
+fn query_simulate_swap_exact_asset_out(
     deps: Deps,
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Coin> {
+) -> ContractResult<Asset> {
     // Error if swap operations is empty
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(ContractError::SwapOperationsEmpty);
@@ -273,5 +274,6 @@ fn query_simulate_swap_exact_coin_out(
     Ok(Coin {
         denom: denom_in,
         amount: Uint128::from_str(&res.token_in_amount)?,
-    })
+    }
+    .into())
 }
