@@ -69,9 +69,9 @@ pub fn receive_cw20(
     mut info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> ContractResult<Response> {
-    // Set the sender to the contract address to pass verfication.
-    // This does allow anyone to call this contract.
-    info.sender = env.contract.address.clone();
+    // Set the sender to the originating address that triggered the cw20 send call
+    // This is later validated / enforced to be the entry point contract address
+    info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::Swap {
@@ -122,7 +122,7 @@ fn execute_swap(
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
 
     // Enforce the caller is the entry point contract
-    if info.sender != entry_point_contract_address && info.sender != env.contract.address {
+    if info.sender != entry_point_contract_address {
         return Err(ContractError::Unauthorized);
     }
 
