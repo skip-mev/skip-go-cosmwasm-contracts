@@ -59,10 +59,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap {
-            sent_asset: _,
-            operations,
-        } => execute_swap(deps, env, info, operations),
+        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,

@@ -235,7 +235,7 @@ pub fn execute_user_swap(
                 SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
 
             // Create the user swap message args
-            let user_swap_msg_args: SwapExecuteMsg = swap.into_execute_msg(&remaining_asset);
+            let user_swap_msg_args: SwapExecuteMsg = swap.into();
 
             // Create the user swap message
             let user_swap_msg = remaining_asset.into_wasm_msg(
@@ -300,7 +300,7 @@ pub fn execute_user_swap(
             }
 
             // Create the user swap message args
-            let user_swap_msg_args: SwapExecuteMsg = swap.into_execute_msg(&user_swap_asset_in);
+            let user_swap_msg_args: SwapExecuteMsg = swap.into();
 
             // Create the user swap message
             let user_swap_msg = user_swap_asset_in.into_wasm_msg(
@@ -471,7 +471,7 @@ fn verify_and_create_fee_swap_msg(
     remaining_asset.sub(fee_swap_asset_in.amount())?;
 
     // Create the fee swap message args
-    let fee_swap_msg_args: SwapExecuteMsg = fee_swap.clone().into_execute_msg(&fee_swap_asset_in);
+    let fee_swap_msg_args: SwapExecuteMsg = fee_swap.clone().into();
 
     // Create the fee swap message
     let fee_swap_msg = fee_swap_asset_in.into_wasm_msg(

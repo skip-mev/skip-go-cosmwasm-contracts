@@ -12,7 +12,8 @@ use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Api, Binary, Deps, DepsMut, Env, MessageInfo,
     Response, Uint128, WasmMsg,
 };
-use cw20::Cw20ReceiveMsg;
+use cw20::{Cw20Coin, Cw20ReceiveMsg};
+use cw_utils::one_coin;
 use skip::{
     asset::Asset,
     swap::{
@@ -73,11 +74,14 @@ pub fn receive_cw20(
     // This is later validated / enforced to be the entry point contract address
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
+    let sent_asset = Asset::Cw20(Cw20Coin {
+        address: info.sender.to_string(),
+        amount: cw20_msg.amount,
+    });
+    sent_asset.validate(&deps, &env, &info)?;
+
     match from_binary(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap {
-            sent_asset,
-            operations,
-        } => execute_swap(deps, env, info, sent_asset, operations),
+        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, sent_asset, operations),
     }
 }
 
@@ -94,10 +98,10 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
-        ExecuteMsg::Swap {
-            sent_asset,
-            operations,
-        } => execute_swap(deps, env, info, sent_asset, operations),
+        ExecuteMsg::Swap { operations } => {
+            let sent_asset: Asset = one_coin(&info)?.into();
+            execute_swap(deps, env, info, sent_asset, operations)
+        }
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,
@@ -125,9 +129,6 @@ fn execute_swap(
     if info.sender != entry_point_contract_address {
         return Err(ContractError::Unauthorized);
     }
-
-    // Validate the sent asset
-    sent_asset.validate(&deps, &env, &info)?;
 
     // Create the astroport swap message
     let swap_msg = create_astroport_swap_msg(

@@ -39,22 +39,13 @@ pub struct AstroportInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    Swap {
-        sent_asset: Asset,
-        operations: Vec<SwapOperation>,
-    },
-    TransferFundsBack {
-        swapper: Addr,
-        return_denom: String,
-    },
+    Swap { operations: Vec<SwapOperation> },
+    TransferFundsBack { swapper: Addr, return_denom: String },
 }
 
 #[cw_serde]
 pub enum Cw20HookMsg {
-    Swap {
-        sent_asset: Asset,
-        operations: Vec<SwapOperation>,
-    },
+    Swap { operations: Vec<SwapOperation> },
 }
 
 /////////////////////////
@@ -189,22 +180,20 @@ pub struct SwapExactCoinIn {
 
 // Converts a SwapExactCoinOut used in the entry point contract
 // to a swap adapter Swap execute message
-impl SwapExactCoinOut {
-    pub fn into_execute_msg(self, sent_asset: &Asset) -> ExecuteMsg {
+impl From<SwapExactCoinOut> for ExecuteMsg {
+    fn from(swap_exact_coin_out: SwapExactCoinOut) -> Self {
         ExecuteMsg::Swap {
-            sent_asset: sent_asset.clone(),
-            operations: self.operations,
+            operations: swap_exact_coin_out.operations,
         }
     }
 }
 
 // Converts a SwapExactCoinIn used in the entry point contract
 // to a swap adapter Swap execute message
-impl SwapExactCoinIn {
-    pub fn into_execute_msg(self, sent_asset: &Asset) -> ExecuteMsg {
+impl From<SwapExactCoinIn> for ExecuteMsg {
+    fn from(swap_exact_coin_in: SwapExactCoinIn) -> Self {
         ExecuteMsg::Swap {
-            sent_asset: sent_asset.clone(),
-            operations: self.operations,
+            operations: swap_exact_coin_in.operations,
         }
     }
 }

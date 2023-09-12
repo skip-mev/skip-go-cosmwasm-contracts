@@ -469,7 +469,6 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_binary(&SwapExecuteMsg::Swap {
-                        sent_asset: Asset::Native(Coin::new(200_000, "osmo")),
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
