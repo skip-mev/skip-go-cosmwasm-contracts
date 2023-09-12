@@ -16,8 +16,8 @@ use cw20::Cw20ReceiveMsg;
 use skip::{
     asset::Asset,
     swap::{
-        execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg,
-        NeutronInstantiateMsg as InstantiateMsg, QueryMsg, SwapOperation,
+        execute_transfer_funds_back, AstroportInstantiateMsg as InstantiateMsg, Cw20HookMsg,
+        ExecuteMsg, QueryMsg, SwapOperation,
     },
 };
 
