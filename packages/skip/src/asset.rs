@@ -264,7 +264,7 @@ mod tests {
     use super::*;
     use cosmwasm_std::{
         testing::{mock_dependencies_with_balances, mock_env, mock_info},
-        ContractResult, QuerierResult, SystemResult, WasmQuery,
+        ContractResult, QuerierResult, SystemResult, WasmQuery, Addr,
     };
     use cw20::BalanceResponse;
     use cw_utils::PaymentError;
@@ -604,5 +604,49 @@ mod tests {
         let res = asset.validate(&deps.as_mut(), &env, &info);
 
         assert_eq!(res, Err(SkipError::InvalidCw20Coin));
+    }
+
+    #[test]
+    fn test_get_current_asset_available() {
+        // TEST 1: Native asset
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[Coin::new(100, "ua")])]);
+
+        let mut env = mock_env();
+        env.contract.address = Addr::unchecked("entry_point");
+
+        let asset = get_current_asset_available(&deps.as_mut(), &env, "ua").unwrap();
+
+        assert_eq!(asset, Asset::Native(Coin {
+            denom: "ua".to_string(),
+            amount: Uint128::new(100),
+        }));
+
+        // TEST 2: Cw20 asset
+        let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
+
+        let wasm_handler = |query: &WasmQuery| -> QuerierResult {
+            match query {
+                WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        balance: Uint128::from(100u128),
+                    })
+                    .unwrap(),
+                )),
+                _ => panic!("Unsupported query: {:?}", query),
+            }
+        };
+
+        deps.querier.update_wasm(wasm_handler);
+
+        let env = mock_env();
+
+        let asset = get_current_asset_available(&deps.as_mut(), &env, "asset").unwrap();
+
+        assert_eq!(asset, Asset::Cw20(Cw20Coin {
+            address: "asset".to_string(),
+            amount: Uint128::new(100),
+        }));
+
+
     }
 }
