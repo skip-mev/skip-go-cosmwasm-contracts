@@ -216,7 +216,7 @@ pub fn execute_user_swap(
         let affiliate_fee_asset = Asset::new(&deps, min_asset.denom(), affiliate_fee_amount)?;
 
         // Create the affiliate fee message
-        let affiliate_fee_msg = affiliate_fee_asset.transfer_full(&affiliate.address);
+        let affiliate_fee_msg = affiliate_fee_asset.transfer(&affiliate.address);
 
         // Add the affiliate fee message and attributes to the response
         affiliate_response = affiliate_response
@@ -291,7 +291,7 @@ pub fn execute_user_swap(
                 let refund_amount = remaining_asset.amount();
 
                 // Create the refund message
-                let refund_msg = remaining_asset.transfer_full(&to_address);
+                let refund_msg = remaining_asset.transfer(&to_address);
 
                 // Add the refund message and attributes to the response
                 response = response
@@ -366,7 +366,7 @@ pub fn execute_post_swap_action(
             deps.api.addr_validate(&to_address)?;
 
             // Create the bank send message
-            let bank_send_msg = transfer_out_asset.transfer_full(&to_address);
+            let bank_send_msg = transfer_out_asset.transfer(&to_address);
 
             // Add the bank send message to the response
             response = response

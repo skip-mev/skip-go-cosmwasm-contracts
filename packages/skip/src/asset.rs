@@ -87,7 +87,7 @@ impl Asset {
         }
     }
 
-    pub fn transfer_full(self, to_address: &str) -> CosmosMsg {
+    pub fn transfer(self, to_address: &str) -> CosmosMsg {
         match self {
             Asset::Native(coin) => CosmosMsg::Bank(BankMsg::Send {
                 to_address: to_address.to_string(),
@@ -102,33 +102,6 @@ impl Asset {
                 .unwrap(),
                 funds: vec![],
             }),
-        }
-    }
-
-    pub fn transfer_partial(
-        &mut self,
-        to_address: String,
-        amount: Uint128,
-    ) -> Result<CosmosMsg, SkipError> {
-        self.sub(amount)?;
-
-        match self {
-            Asset::Native(coin) => Ok(CosmosMsg::Bank(BankMsg::Send {
-                to_address,
-                amount: vec![Coin {
-                    denom: coin.denom.clone(),
-                    amount,
-                }],
-            })),
-            Asset::Cw20(coin) => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: coin.address.clone(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: to_address,
-                    amount,
-                })
-                .unwrap(),
-                funds: vec![],
-            })),
         }
     }
 
@@ -314,13 +287,13 @@ mod tests {
     }
 
     #[test]
-    fn test_asset_transfer_full_native() {
+    fn test_asset_transfer_native() {
         let asset = Asset::Native(Coin {
             denom: "uatom".to_string(),
             amount: Uint128::new(100),
         });
 
-        let msg = asset.transfer_full("addr");
+        let msg = asset.transfer("addr");
 
         match msg {
             CosmosMsg::Bank(BankMsg::Send { to_address, amount }) => {
@@ -334,13 +307,13 @@ mod tests {
     }
 
     #[test]
-    fn test_asset_transfer_full_cw20() {
+    fn test_asset_transfer_cw20() {
         let asset = Asset::Cw20(Cw20Coin {
             address: "asset".to_string(),
             amount: Uint128::new(100),
         });
 
-        let msg = asset.transfer_full("addr");
+        let msg = asset.transfer("addr");
 
         match msg {
             CosmosMsg::Wasm(WasmMsg::Execute {
@@ -361,64 +334,6 @@ mod tests {
             }
             _ => panic!("Unexpected message type"),
         }
-    }
-
-    #[test]
-    fn test_asset_transfer_partial_native() {
-        let mut asset = Asset::Native(Coin {
-            denom: "uatom".to_string(),
-            amount: Uint128::new(100),
-        });
-
-        let msg = asset
-            .transfer_partial("addr".to_string(), Uint128::new(20))
-            .unwrap();
-
-        match msg {
-            CosmosMsg::Bank(BankMsg::Send { to_address, amount }) => {
-                assert_eq!(to_address, "addr");
-                assert_eq!(amount.len(), 1);
-                assert_eq!(amount[0].denom, "uatom");
-                assert_eq!(amount[0].amount, Uint128::new(20));
-            }
-            _ => panic!("Unexpected message type"),
-        }
-
-        assert_eq!(asset.amount(), Uint128::new(80));
-    }
-
-    #[test]
-    fn test_asset_transfer_partial_cw20() {
-        let mut asset = Asset::Cw20(Cw20Coin {
-            address: "asset".to_string(),
-            amount: Uint128::new(100),
-        });
-
-        let msg = asset
-            .transfer_partial("addr".to_string(), Uint128::new(20))
-            .unwrap();
-
-        match msg {
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr,
-                msg,
-                funds,
-            }) => {
-                assert_eq!(contract_addr, "asset");
-                assert_eq!(
-                    msg,
-                    to_binary(&Cw20ExecuteMsg::Transfer {
-                        recipient: "addr".to_string(),
-                        amount: Uint128::new(20),
-                    })
-                    .unwrap()
-                );
-                assert_eq!(funds.len(), 0);
-            }
-            _ => panic!("Unexpected message type"),
-        }
-
-        assert_eq!(asset.amount(), Uint128::new(80));
     }
 
     #[test]
