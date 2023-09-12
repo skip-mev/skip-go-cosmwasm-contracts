@@ -181,9 +181,9 @@ pub struct SwapExactCoinIn {
 // Converts a SwapExactCoinOut used in the entry point contract
 // to a swap adapter Swap execute message
 impl From<SwapExactCoinOut> for ExecuteMsg {
-    fn from(swap_exact_coin_out: SwapExactCoinOut) -> Self {
+    fn from(swap: SwapExactCoinOut) -> Self {
         ExecuteMsg::Swap {
-            operations: swap_exact_coin_out.operations,
+            operations: swap.operations,
         }
     }
 }
@@ -191,9 +191,9 @@ impl From<SwapExactCoinOut> for ExecuteMsg {
 // Converts a SwapExactCoinIn used in the entry point contract
 // to a swap adapter Swap execute message
 impl From<SwapExactCoinIn> for ExecuteMsg {
-    fn from(swap_exact_coin_in: SwapExactCoinIn) -> Self {
+    fn from(swap: SwapExactCoinIn) -> Self {
         ExecuteMsg::Swap {
-            operations: swap_exact_coin_in.operations,
+            operations: swap.operations,
         }
     }
 }
