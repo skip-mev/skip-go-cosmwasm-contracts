@@ -3,10 +3,10 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    Uint128, WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128,
+    WasmMsg,
 };
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::Cw20ReceiveMsg;
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
@@ -212,24 +212,11 @@ pub fn execute_user_swap(
         total_affiliate_fee_amount =
             total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
 
+        // Create the affiliate_fee_asset
+        let affiliate_fee_asset = Asset::new(&deps, min_asset.denom(), affiliate_fee_amount)?;
+
         // Create the affiliate fee message
-        let affiliate_fee_msg: CosmosMsg = match &min_asset {
-            Asset::Native(_) => CosmosMsg::Bank(BankMsg::Send {
-                to_address: affiliate.address.clone(),
-                amount: vec![Coin {
-                    denom: min_asset.denom().to_string(),
-                    amount: affiliate_fee_amount,
-                }],
-            }),
-            Asset::Cw20(_) => CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: min_asset.denom().to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: affiliate.address.clone(),
-                    amount: affiliate_fee_amount,
-                })?,
-                funds: vec![],
-            }),
-        };
+        let affiliate_fee_msg = affiliate_fee_asset.transfer_full(&affiliate.address);
 
         // Add the affiliate fee message and attributes to the response
         affiliate_response = affiliate_response
@@ -359,17 +346,14 @@ pub fn execute_post_swap_action(
 
     // Get contract balance of min out coin immediately after swap
     // for fee deduction and transfer out amount enforcement
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
     let transfer_out_asset = get_current_asset_available(&deps, &env, min_asset.denom())?;
 
     // Error if the contract balance is less than the min out coin amount
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
     if transfer_out_asset.amount() < min_asset.amount() {
         return Err(ContractError::ReceivedLessCoinFromSwapsThanMinCoin);
     }
 
     // Set the transfer out coin to the min coin if exact out is true
-    // @NotJeremyLiu TODO: Use Asset instead of Coin For cw-20 support
     let transfer_out_asset = if exact_out {
         min_asset
     } else {
