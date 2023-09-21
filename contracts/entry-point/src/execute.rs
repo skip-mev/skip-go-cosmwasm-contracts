@@ -178,25 +178,27 @@ pub fn execute_user_swap(
         let affiliate_fee_amount =
             verify_and_calculate_affiliate_fee_amount(&deps, &min_coin, affiliate)?;
 
-        // Add the affiliate fee amount to the total affiliate fee amount
-        total_affiliate_fee_amount =
-            total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
+        if affiliate_fee_amount > Uint128::zero() {
+            // Add the affiliate fee amount to the total affiliate fee amount
+            total_affiliate_fee_amount =
+                total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
 
-        // Create the affiliate fee bank send message
-        let affiliate_fee_msg = BankMsg::Send {
-            to_address: affiliate.address.clone(),
-            amount: vec![Coin {
-                denom: min_coin.denom.clone(),
-                amount: affiliate_fee_amount,
-            }],
-        };
+            // Create the affiliate fee bank send message
+            let affiliate_fee_msg = BankMsg::Send {
+                to_address: affiliate.address.clone(),
+                amount: vec![Coin {
+                    denom: min_coin.denom.clone(),
+                    amount: affiliate_fee_amount,
+                }],
+            };
 
-        // Add the affiliate fee message and attributes to the response
-        affiliate_response = affiliate_response
-            .add_message(affiliate_fee_msg)
-            .add_attribute("action", "dispatch_affiliate_fee_bank_send")
-            .add_attribute("address", &affiliate.address)
-            .add_attribute("amount", affiliate_fee_amount);
+            // Add the affiliate fee message and attributes to the response
+            affiliate_response = affiliate_response
+                .add_message(affiliate_fee_msg)
+                .add_attribute("action", "dispatch_affiliate_fee_bank_send")
+                .add_attribute("address", &affiliate.address)
+                .add_attribute("amount", affiliate_fee_amount);
+        }
     }
 
     // Create the user swap message
