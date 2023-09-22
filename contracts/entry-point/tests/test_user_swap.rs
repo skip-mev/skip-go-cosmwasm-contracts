@@ -25,11 +25,13 @@ Expect Response
     - User Swap Exact Coin In With No Affiliates
     - User Swap Exact Coin In With Single Affiliate
     - User Swap Exact Coin In With Multiple Affiliates
+    - User Swap Exact Coin In With Zero Fee Affiliate
 
     // Swap Exact Coin Out
     - User Swap Exact Coin Out With No Affiliates
     - User Swap Exact Coin Out With Single Affiliate
     - User Swap Exact Coin Out With Multiple Affiliates
+    - User Swap Exact Coin Out With Zero Fee Affiliate
     - User Swap Exact Coin Out With Refund Amount Zero (Ensure No Refund Message Included)
 
 Expect Error
@@ -234,6 +236,51 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinIn (
+            SwapExactCoinIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
+                    }
+                ],
+            }
+        ),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
+        affiliates: vec![Affiliate {
+            address: "affiliate".to_string(),
+            basis_points_fee: Uint128::new(0),
+        }],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(1_000_000, "un")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap Exact Coin In With Zero Fee Affiliate")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
         user_swap: Swap::SwapExactCoinOut (
             SwapExactCoinOut{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -434,6 +481,64 @@ struct Params {
         expected_error: None,
     };
     "User Swap Exact Coin Out With Multiple Affiliates")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactCoinOut (
+            SwapExactCoinOut{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
+                    }
+                ],
+                refund_address: Some("refund_address".to_string()),
+            }
+        ),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
+        affiliates: vec![
+            Affiliate {
+                address: "affiliate".to_string(),
+                basis_points_fee: Uint128::new(0),
+            },
+        ],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "refund_address".to_string(),
+                    amount: vec![Coin::new(500_000, "un")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_venue_adapter".to_string(), 
+                    msg: to_binary(&SwapExecuteMsg::Swap {
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
+                            }
+                        ],
+                    }).unwrap(),
+                    funds: vec![Coin::new(500_000, "un")], 
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap Exact Coin Out With Zero Fee Affiliate")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),

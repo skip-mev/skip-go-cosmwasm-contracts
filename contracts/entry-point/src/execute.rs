@@ -206,22 +206,24 @@ pub fn execute_user_swap(
         let affiliate_fee_amount =
             verify_and_calculate_affiliate_fee_amount(&deps, &min_asset, affiliate)?;
 
-        // Add the affiliate fee amount to the total affiliate fee amount
-        total_affiliate_fee_amount =
-            total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
+        if affiliate_fee_amount > Uint128::zero() {
+            // Add the affiliate fee amount to the total affiliate fee amount
+            total_affiliate_fee_amount =
+                total_affiliate_fee_amount.checked_add(affiliate_fee_amount)?;
 
-        // Create the affiliate_fee_asset
-        let affiliate_fee_asset = Asset::new(deps.api, min_asset.denom(), affiliate_fee_amount);
+            // Create the affiliate_fee_asset
+            let affiliate_fee_asset = Asset::new(deps.api, min_asset.denom(), affiliate_fee_amount);
 
-        // Create the affiliate fee message
-        let affiliate_fee_msg = affiliate_fee_asset.transfer(&affiliate.address);
+            // Create the affiliate fee message
+            let affiliate_fee_msg = affiliate_fee_asset.transfer(&affiliate.address);
 
-        // Add the affiliate fee message and attributes to the response
-        affiliate_response = affiliate_response
-            .add_message(affiliate_fee_msg)
-            .add_attribute("action", "dispatch_affiliate_fee_bank_send")
-            .add_attribute("address", &affiliate.address)
-            .add_attribute("amount", affiliate_fee_amount);
+            // Add the affiliate fee message and attributes to the response
+            affiliate_response = affiliate_response
+                .add_message(affiliate_fee_msg)
+                .add_attribute("action", "dispatch_affiliate_fee_bank_send")
+                .add_attribute("address", &affiliate.address)
+                .add_attribute("amount", affiliate_fee_amount);
+        }
     }
 
     // Create the user swap message
