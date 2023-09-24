@@ -1,0 +1,30 @@
+[info]
+chain_id = "pisco-1"
+network = "testnet"
+deploy_date = "24/09/2023 13:07:39"
+commit_hash = "b76dd1cc6a540544debd46fbcea8bb6ec41c6f68"
+
+[checksums]
+"skip_api_entry_point-aarch64.wasm" = "18521108fc28b7529556153b11a9930a9a77c789ec72063168dc97e88f0232e2"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "50a8503dc625592079f2f9ad9bee92ea2a6dd1e86802a56083c578237a0806bd"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "2d35fbab62f8632dc8e71aa748f14db06fea70af62f2795562d5e62057af843d"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "f1a8a2b65d19ce6ff7a88de6bfe43eba48fa82a40f7955926de0e7c2d628d5a1"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "53782a93899eec8cd2a6fd446ae00268b1793c094dce7a6285c3426267f103a5"
+
+[code-ids]
+swap_adapter_contract_code_id = 10343
+ibc_transfer_adapter_contract_code_id = 10344
+entry_point_contract_code_id = 10345
+
+[contract-addresses]
+swap_adapter_contract_address = "terra1tykjlaf0lg48tjzp5tqfzptuvp2v5366sw8qgjvzuexktdeay8tsw4ytqh"
+ibc_transfer_adapter_contract_address = "terra14mpqfm64sv3453gpcck4pts83jq9cns65fdjcmh0dqj84jjy4c2qrq3lx3"
+entry_point_contract_address = "terra17u9mqgz9g5rqe7lkpv6eg2hvnp7za0jweth9gdtmmr00ajtwd0rs86t6wu"
+
+[tx-hashes]
+store_swap_adapter_tx_hash = "FC32D54962F313B4DA717DB438FAD54D29B882D85168595DDDE72D5B290644C3"
+store_ibc_transfer_adapter_tx_hash = "96A72996C827F4B13995CE99144532A3D692CDD62271D234720AD89B35F034BB"
+store_entry_point_tx_hash = "8E85F4DAF2AB778CAB8FD79FED0C3CD6BD7D90CA7E063B6B652922FB44004284"
+instantiate_swap_adapter_tx_hash = "C9EFF7E2A128ED93194169EC67055A7CC4F6A0F1669B8ECF03D4F91426934EE1"
+instantiate_ibc_transfer_adapter_tx_hash = "1E76686F551F51F53A818A61F1DDF85052CC214CA3D5E1D5FE340D20BC08EBAF"
+instantiate_entry_point_tx_hash = "62611F7DBDCB866BA8629BB7D3440B2951A43554ABD1FE197357CA6CA5391573"
