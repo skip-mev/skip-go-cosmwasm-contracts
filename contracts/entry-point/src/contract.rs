@@ -1,3 +1,5 @@
+use crate::error::ContractError::ReplyIdError;
+use crate::reply::{handle_action_request, handle_swap_request, ACTION_REQUEST_REPLY_ID, SWAP_REQUEST_REPLY_ID, USER_SWAP_REQUEST_REPLY_ID, handle_user_swap_request};
 use crate::{
     error::{ContractError, ContractResult},
     execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
@@ -5,7 +7,7 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -121,6 +123,16 @@ pub fn execute(
             post_swap_action,
             exact_out,
         ),
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        SWAP_REQUEST_REPLY_ID => handle_swap_request(deps, _env, msg),
+        ACTION_REQUEST_REPLY_ID => handle_action_request(deps, _env, msg),
+        USER_SWAP_REQUEST_REPLY_ID => handle_user_swap_request(deps, _env, msg),
+        _ => Err(ReplyIdError(msg.id)),
     }
 }
 

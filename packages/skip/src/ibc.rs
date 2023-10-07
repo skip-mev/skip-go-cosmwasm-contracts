@@ -168,7 +168,7 @@ pub enum IbcLifecycleComplete {
     IbcTimeout {
         /// The source channel of the IBC packet
         channel: String,
-        /// The sequence number that the packet was sent with
+        /// The sequence number that the packet was sent withp
         sequence: u64,
     },
 }

@@ -1,3 +1,4 @@
+use crate::error::ContractError::InvalidReplyID;
 use crate::{
     error::{ContractError, ContractResult},
     state::{
@@ -121,6 +122,7 @@ fn execute_ibc_transfer(
         value: msg.encode_to_vec().into(),
     };
 
+    // FIXME: update to reply on always and handle for success and error cases:
     // Create sub message from osmosis ibc transfer message to receive a reply
     let sub_msg = SubMsg::reply_on_success(msg, REPLY_ID);
 
@@ -144,7 +146,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
     // This should never happen since we are using a constant reply id, but added in case
     // the wasm module doesn't behave as expected.
     if reply.id != REPLY_ID {
-        unreachable!()
+        return Err(InvalidReplyID);
     }
 
     // Get the sub message response from the reply and error if it does not exist

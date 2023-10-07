@@ -63,4 +63,7 @@ pub enum ContractError {
 
     #[error("Contract Call Address Cannot Be The Entry Point Or Adapter Contracts")]
     ContractCallAddressBlocked,
+
+    #[error("Reply id: {0} not valid")]
+    ReplyIdError(u64),
 }
