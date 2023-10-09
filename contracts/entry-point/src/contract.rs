@@ -1,5 +1,7 @@
 use crate::error::ContractError::ReplyIdError;
-use crate::reply::{handle_action_request, handle_swap_request, ACTION_REQUEST_REPLY_ID, SWAP_REQUEST_REPLY_ID, USER_SWAP_REQUEST_REPLY_ID, handle_user_swap_request};
+use crate::reply::{
+    handle_action_request, handle_swap_request, ACTION_REQUEST_REPLY_ID, SWAP_REQUEST_REPLY_ID,
+};
 use crate::{
     error::{ContractError, ContractResult},
     execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
@@ -131,7 +133,6 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
     match msg.id {
         SWAP_REQUEST_REPLY_ID => handle_swap_request(deps, _env, msg),
         ACTION_REQUEST_REPLY_ID => handle_action_request(deps, _env, msg),
-        USER_SWAP_REQUEST_REPLY_ID => handle_user_swap_request(deps, _env, msg),
         _ => Err(ReplyIdError(msg.id)),
     }
 }

@@ -20,8 +20,10 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
+anyhow            = { workspace = true }
 cosmwasm-schema   = { workspace = true }
 cosmwasm-std      = { workspace = true }
+cw-multi-test     = { workspace = true }
 cw-storage-plus   = { workspace = true }
 cw-utils          = { workspace = true }
 skip              = { workspace = true }

@@ -122,7 +122,6 @@ fn execute_ibc_transfer(
         value: msg.encode_to_vec().into(),
     };
 
-    // FIXME: update to reply on always and handle for success and error cases:
     // Create sub message from osmosis ibc transfer message to receive a reply
     let sub_msg = SubMsg::reply_on_success(msg, REPLY_ID);
 

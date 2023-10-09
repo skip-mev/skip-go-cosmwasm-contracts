@@ -176,7 +176,6 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
 // Handles the sudo acknowledgement from the neutron transfer module upon receiving
 // a packet acknowledge form the receiving chain of the ibc transfer
 
-// FIXME: Add in timeout handling: https://github.com/CosmWasm/cosmwasm/blob/main/IBC.md#handling-timeouts
 #[entry_point]
 pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Response> {
     // Get request and sudo type from sudo message

@@ -86,26 +86,8 @@ pub fn handle_action_request(
                 .add_message(return_funds_msg)
                 .add_attribute("status", "action_failed")
                 .add_attribute("error", e.to_string());
-            // .add_attribute("funds_returned", funds.clone());
 
             Ok(res)
-        }
-    };
-}
-
-pub fn handle_user_swap_request(
-    deps: DepsMut,
-    _env: Env,
-    msg: Reply,
-) -> Result<Response, ContractError> {
-    return match msg.result {
-        SubMsgResult::Ok(_response) => {
-            let res = Response::new().add_attribute("status", "swap_successful");
-
-            Ok(res)
-        }
-        SubMsgResult::Err(e) => {
-            // handle err with initial user saved to temp storage
         }
     };
 }
