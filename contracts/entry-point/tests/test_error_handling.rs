@@ -1,5 +1,3 @@
-mod helpers;
-
 use cosmwasm_std::testing::{mock_dependencies_with_balances, mock_env, mock_info};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BalanceResponse, BankQuery, Coin, ContractResult, QuerierResult,
@@ -117,30 +115,6 @@ pub fn test_execute_swap_and_action(params: Params) {
             assert_eq!(err, params.expected_error.unwrap());
         }
     }
-
-    // // Construct the QueryRequest
-    // let balance_query = QueryRequest::Bank(BankQuery::Balance {
-    //     address: info.sender.to_string(),
-    //     denom: "uosmo".to_string(),
-    // });
-    //
-    // // Perform the query
-    // let balance_result = deps.querier.handle_query(&balance_query);
-    //
-    // // Unwrap the SystemResult
-    // let contract_result = match balance_result {
-    //     SystemResult::Ok(contract_result) => contract_result,
-    //     SystemResult::Err(system_error) => panic!("System error: {:?}", system_error),
-    // };
-    //
-    // // Unwrap the ContractResult
-    // let balance_binary = match contract_result {
-    //     ContractResult::Ok(binary) => binary,
-    //     ContractResult::Err(contract_error) => panic!("Contract error: {:?}", contract_error),
-    // };
-
-    // // The balance is a Binary, so you need to deserialize it
-    // let balance: BalanceResponse = from_binary(&balance_binary).unwrap();
 }
 
 #[test]

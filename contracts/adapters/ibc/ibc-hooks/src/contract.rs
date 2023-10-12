@@ -145,7 +145,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
     // This should never happen since we are using a constant reply id, but added in case
     // the wasm module doesn't behave as expected.
     if reply.id != REPLY_ID {
-        return Err(InvalidReplyID);
+        unreachable!()
     }
 
     // Get the sub message response from the reply and error if it does not exist

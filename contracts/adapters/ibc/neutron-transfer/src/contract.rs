@@ -175,7 +175,6 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
 
 // Handles the sudo acknowledgement from the neutron transfer module upon receiving
 // a packet acknowledge form the receiving chain of the ibc transfer
-
 #[entry_point]
 pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Response> {
     // Get request and sudo type from sudo message

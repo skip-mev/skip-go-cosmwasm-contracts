@@ -37,7 +37,4 @@ pub enum ContractError {
         channel_id: String,
         sequence_id: u64,
     },
-
-    #[error("Invalid Reply ID")]
-    InvalidReplyID,
 }
