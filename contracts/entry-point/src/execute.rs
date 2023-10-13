@@ -1,8 +1,13 @@
+use crate::reply::{SwapActionTempStorage, SWAP_AND_ACTION_REQUEST_REPLY_ID};
+use crate::state::SWAP_AND_ACTION_REQUEST_TEMP_STORAGE;
 use crate::{
     error::{ContractError, ContractResult},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
-use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg, SubMsg, CosmosMsg};
+use cosmwasm_std::{
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg,
+    Uint128, WasmMsg,
+};
 use cw_utils::one_coin;
 use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
@@ -12,8 +17,6 @@ use skip::{
         SwapExactCoinOut,
     },
 };
-use crate::reply::{SWAP_AND_ACTION_REQUEST_REPLY_ID, SwapActionTempStorage};
-use crate::state::SWAP_AND_ACTION_REQUEST_TEMP_STORAGE;
 
 ///////////////////////////
 /// EXECUTE ENTRYPOINTS ///

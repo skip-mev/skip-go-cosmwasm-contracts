@@ -1,7 +1,6 @@
 use crate::error::ContractError::ReplyIdError;
-use crate::reply::{
-    handle_swap_and_action_request, SWAP_AND_ACTION_REQUEST_REPLY_ID,
-};
+use crate::execute::execute_axelar_swap_and_action;
+use crate::reply::{handle_swap_and_action_request, SWAP_AND_ACTION_REQUEST_REPLY_ID};
 use crate::{
     error::{ContractError, ContractResult},
     execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
@@ -9,11 +8,9 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::execute::execute_axelar_swap_and_action;
 
 ///////////////////
 /// INSTANTIATE ///
