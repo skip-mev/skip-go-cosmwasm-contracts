@@ -105,7 +105,7 @@ pub fn execute(
                 &SwapActionTempStorage {
                     user_swap: user_swap.clone(),
                     min_coin: min_coin.clone(),
-                    timeout_timestamp: timeout_timestamp.clone(),
+                    timeout_timestamp,
                     post_swap_action: post_swap_action.clone(),
                     affiliates: affiliates.clone(),
                     funds: info.funds.clone(),
@@ -120,7 +120,7 @@ pub fn execute(
                     msg: to_binary(&ExecuteMsg::SwapAndAction {
                         user_swap: user_swap.clone(),
                         min_coin: min_coin.clone(),
-                        timeout_timestamp: timeout_timestamp.clone(),
+                        timeout_timestamp,
                         post_swap_action: post_swap_action.clone(),
                         affiliates: affiliates.clone(),
                     })?,
