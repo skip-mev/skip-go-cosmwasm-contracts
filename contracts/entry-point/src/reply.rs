@@ -37,7 +37,7 @@ pub fn handle_swap_and_action_request(
     _env: Env,
     msg: Reply,
 ) -> Result<Response, ContractError> {
-     match msg.result {
+    match msg.result {
         SubMsgResult::Ok(_response) => {
             SWAP_AND_ACTION_REQUEST_TEMP_STORAGE.remove(deps.storage);
 

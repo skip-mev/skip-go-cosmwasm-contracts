@@ -6,7 +6,7 @@ use cosmwasm_std::{
 use skip::entry_point::Action::BankSend;
 use skip::swap::{Swap, SwapExactCoinIn, SwapOperation};
 use skip_api_entry_point::error::ContractError::Timeout;
-use skip_api_entry_point::error::{ContractError, ContractResult};
+use skip_api_entry_point::error::ContractResult;
 use skip_api_entry_point::reply::SwapActionTempStorage;
 use skip_api_entry_point::state::SWAP_AND_ACTION_REQUEST_TEMP_STORAGE;
 

@@ -6,7 +6,6 @@ use cosmwasm_std::{
 use skip::entry_point::{Action, Affiliate, ExecuteMsg};
 use skip::swap::{Swap, SwapExactCoinIn, SwapOperation};
 use skip_api_entry_point::error::ContractError;
-use skip_api_entry_point::error::ContractError::Timeout;
 use skip_api_entry_point::state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP};
 
 pub struct Params {

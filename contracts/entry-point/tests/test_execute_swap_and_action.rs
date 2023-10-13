@@ -2,7 +2,6 @@ use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
     to_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
     QuerierResult,
-    ReplyOn::Always,
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, WasmMsg, WasmQuery,
 };
