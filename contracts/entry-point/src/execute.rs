@@ -2,9 +2,7 @@ use crate::{
     error::{ContractError, ContractResult},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
-use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg,
-};
+use cosmwasm_std::{to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg, SubMsg, CosmosMsg};
 use cw_utils::one_coin;
 use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
@@ -14,6 +12,8 @@ use skip::{
         SwapExactCoinOut,
     },
 };
+use crate::reply::{SWAP_AND_ACTION_REQUEST_REPLY_ID, SwapActionTempStorage};
+use crate::state::SWAP_AND_ACTION_REQUEST_TEMP_STORAGE;
 
 ///////////////////////////
 /// EXECUTE ENTRYPOINTS ///
@@ -138,6 +138,48 @@ pub fn execute_swap_and_action(
         .add_attribute("action", "dispatch_post_swap_action"))
 }
 
+// Adds error handling to the swap and post swap action function.
+// Created to be used when working specifcally with Axelar GMP to avoid funds from getting stuck
+pub fn execute_axelar_swap_and_action(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    user_swap: Swap,
+    min_coin: Coin,
+    timeout_timestamp: u64,
+    post_swap_action: Action,
+    affiliates: Vec<Affiliate>,
+    recovery_addr: Addr,
+) -> ContractResult<Response> {
+    // Store all parameters into a temporary storage.
+    SWAP_AND_ACTION_REQUEST_TEMP_STORAGE.save(
+        deps.storage,
+        &SwapActionTempStorage {
+            funds: info.funds.clone(),
+            recovery_addr,
+        },
+    )?;
+
+    // Then call ExecuteMsg::SwapAndAction using a SubMsg.
+    let sub_msg = SubMsg::reply_always(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::SwapAndAction {
+                user_swap,
+                min_coin,
+                timeout_timestamp,
+                post_swap_action,
+                affiliates,
+            })?,
+            funds: info.funds.clone(),
+        }),
+        SWAP_AND_ACTION_REQUEST_REPLY_ID,
+    );
+
+    let mut response = Response::new();
+    response = response.add_submessage(sub_msg);
+    Ok(response)
+}
 // Dispatches the user swap and refund/affiliate fee bank sends if needed
 pub fn execute_user_swap(
     deps: DepsMut,
@@ -261,7 +303,7 @@ pub fn execute_user_swap(
                 let refund_msg = BankMsg::Send {
                     to_address: to_address.clone(),
                     amount: vec![Coin {
-                        denom: remaining_coin.denom.clone(),
+                        denom: remaining_coin.denom,
                         amount: refund_amount,
                     }],
                 };

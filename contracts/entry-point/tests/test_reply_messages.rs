@@ -4,7 +4,6 @@ use cosmwasm_std::{
     SubMsgResult,
 };
 use skip::entry_point::Action::BankSend;
-use skip::swap::{Swap, SwapExactCoinIn, SwapOperation};
 use skip_api_entry_point::error::ContractError::Timeout;
 use skip_api_entry_point::error::ContractResult;
 use skip_api_entry_point::reply::SwapActionTempStorage;
@@ -82,7 +81,7 @@ pub fn test_reply(params: Params) -> ContractResult<()> {
 }
 
 #[test]
-pub fn verify_funds_sent_on_out_of_gas_error() {
+pub fn verify_funds_sent_on_slippage_error() {
     let recovery_addr = Addr::unchecked("recovery_addr").to_string();
     let bank_msg = BankMsg::Send {
         to_address: recovery_addr,
@@ -95,24 +94,10 @@ pub fn verify_funds_sent_on_out_of_gas_error() {
         funds: vec![],
         reply: Reply {
             id: 1,
-            result: SubMsgResult::Err("Out of gas".to_string()),
+            result: SubMsgResult::Err("Slippage tolerance exceeded".to_string()),
         },
         expected_error_string: "".to_string(),
         storage: Some(SwapActionTempStorage {
-            user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![SwapOperation {
-                    pool: "pool".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "osmo".to_string(),
-                }],
-            }),
-            min_coin: Coin::new(1_000_000, "osmo"),
-            timeout_timestamp: 0,
-            post_swap_action: BankSend {
-                to_address: "to_address".to_string(),
-            },
-            affiliates: vec![],
             funds: vec![Coin::new(1_000_000, "osmo")],
             recovery_addr: Addr::unchecked("recovery_addr"),
         }),
@@ -140,20 +125,6 @@ pub fn verify_funds_sent_on_timeout_error() {
         },
         expected_error_string: "".to_string(),
         storage: Some(SwapActionTempStorage {
-            user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![SwapOperation {
-                    pool: "pool".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "osmo".to_string(),
-                }],
-            }),
-            min_coin: Coin::new(1_000_000, "osmo"),
-            timeout_timestamp: 0,
-            post_swap_action: BankSend {
-                to_address: "to_address".to_string(),
-            },
-            affiliates: vec![],
             funds: vec![Coin::new(1_000_000, "osmo")],
             recovery_addr: Addr::unchecked("recovery_addr"),
         }),
@@ -203,20 +174,6 @@ pub fn success_case_no_funds_sent() {
         },
         expected_error_string: "".to_string(),
         storage: Some(SwapActionTempStorage {
-            user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![SwapOperation {
-                    pool: "pool".to_string(),
-                    denom_in: "untrn".to_string(),
-                    denom_out: "osmo".to_string(),
-                }],
-            }),
-            min_coin: Coin::new(1_000_000, "osmo"),
-            timeout_timestamp: 101,
-            post_swap_action: BankSend {
-                to_address: "to_address".to_string(),
-            },
-            affiliates: vec![],
             funds: vec![Coin::new(1_000_000, "osmo")],
             recovery_addr,
         }),

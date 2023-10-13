@@ -2,34 +2,13 @@ use crate::error::ContractError;
 use crate::state::SWAP_AND_ACTION_REQUEST_TEMP_STORAGE;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, Reply, Response, SubMsgResult};
-use skip::entry_point::{Action, Affiliate};
-use skip::swap::Swap;
 
 pub const SWAP_AND_ACTION_REQUEST_REPLY_ID: u64 = 1;
 
 #[cw_serde]
 pub struct SwapActionTempStorage {
-    pub user_swap: Swap,
-    pub min_coin: Coin,
-    pub timeout_timestamp: u64,
-    pub post_swap_action: Action,
-    pub affiliates: Vec<Affiliate>,
     pub funds: Vec<Coin>,
     pub recovery_addr: Addr,
-}
-
-#[cw_serde]
-pub struct SwapTempStorage {
-    pub recovery_addr: Addr,
-    pub funds: Vec<Coin>,
-    pub swap: Swap,
-}
-
-#[cw_serde]
-pub struct ActionTempStorage {
-    pub recovery_addr: Addr,
-    pub funds: Vec<Coin>,
-    pub action: Action,
 }
 
 pub fn handle_swap_and_action_request(

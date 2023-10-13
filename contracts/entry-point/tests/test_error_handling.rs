@@ -159,7 +159,7 @@ pub fn successful_swap_and_action() {
                     affiliates: vec![],
                 })
                 .unwrap(),
-                funds: vec![],
+                funds: vec![Coin::new(1000000, "untrn")],
             }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
@@ -210,7 +210,7 @@ pub fn timeout_error_passes() {
                     affiliates: vec![],
                 })
                 .unwrap(),
-                funds: vec![],
+                funds: vec![Coin::new(1000000, "untrn")],
             }),
             gas_limit: None,
             reply_on: ReplyOn::Always,

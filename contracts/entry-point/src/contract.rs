@@ -14,6 +14,7 @@ use cosmwasm_std::{
     StdResult, SubMsg, WasmMsg,
 };
 use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::execute::execute_axelar_swap_and_action;
 
 ///////////////////
 /// INSTANTIATE ///
@@ -98,41 +99,17 @@ pub fn execute(
             post_swap_action,
             affiliates,
             recovery_addr,
-        } => {
-            // Store all parameters into a temporary storage.
-            SWAP_AND_ACTION_REQUEST_TEMP_STORAGE.save(
-                deps.storage,
-                &SwapActionTempStorage {
-                    user_swap: user_swap.clone(),
-                    min_coin: min_coin.clone(),
-                    timeout_timestamp,
-                    post_swap_action: post_swap_action.clone(),
-                    affiliates: affiliates.clone(),
-                    funds: info.funds.clone(),
-                    recovery_addr,
-                },
-            )?;
-
-            // Then call ExecuteMsg::SwapAndAction using a SubMsg.
-            let sub_msg = SubMsg::reply_always(
-                CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: env.contract.address.to_string(),
-                    msg: to_binary(&ExecuteMsg::SwapAndAction {
-                        user_swap: user_swap.clone(),
-                        min_coin: min_coin.clone(),
-                        timeout_timestamp,
-                        post_swap_action: post_swap_action.clone(),
-                        affiliates: affiliates.clone(),
-                    })?,
-                    funds: vec![],
-                }),
-                SWAP_AND_ACTION_REQUEST_REPLY_ID,
-            );
-
-            let mut response = Response::new();
-            response = response.add_submessage(sub_msg);
-            Ok(response)
-        }
+        } => execute_axelar_swap_and_action(
+            deps,
+            env,
+            info,
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+            recovery_addr,
+        ),
         ExecuteMsg::SwapAndAction {
             user_swap,
             min_coin,
