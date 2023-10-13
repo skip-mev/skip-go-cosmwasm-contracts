@@ -1,7 +1,8 @@
 use crate::error::ContractError::ReplyIdError;
 use crate::reply::{
-    handle_action_request, handle_swap_request, ACTION_REQUEST_REPLY_ID, SWAP_REQUEST_REPLY_ID,
+    handle_swap_and_action_request, SwapActionTempStorage, SWAP_AND_ACTION_REQUEST_REPLY_ID,
 };
+use crate::state::SWAP_AND_ACTION_REQUEST_TEMP_STORAGE;
 use crate::{
     error::{ContractError, ContractResult},
     execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
@@ -9,7 +10,8 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdResult, SubMsg, WasmMsg,
 };
 use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -89,6 +91,48 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
+        ExecuteMsg::AxelarSwapAndAction {
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+            recovery_addr,
+        } => {
+            // Store all parameters into a temporary storage.
+            SWAP_AND_ACTION_REQUEST_TEMP_STORAGE.save(
+                deps.storage,
+                &SwapActionTempStorage {
+                    user_swap: user_swap.clone(),
+                    min_coin: min_coin.clone(),
+                    timeout_timestamp: timeout_timestamp.clone(),
+                    post_swap_action: post_swap_action.clone(),
+                    affiliates: affiliates.clone(),
+                    funds: info.funds.clone(),
+                    recovery_addr,
+                },
+            )?;
+
+            // Then call ExecuteMsg::SwapAndAction using a SubMsg.
+            let sub_msg = SubMsg::reply_always(
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: env.contract.address.to_string(),
+                    msg: to_binary(&ExecuteMsg::SwapAndAction {
+                        user_swap: user_swap.clone(),
+                        min_coin: min_coin.clone(),
+                        timeout_timestamp: timeout_timestamp.clone(),
+                        post_swap_action: post_swap_action.clone(),
+                        affiliates: affiliates.clone(),
+                    })?,
+                    funds: vec![],
+                }),
+                SWAP_AND_ACTION_REQUEST_REPLY_ID,
+            );
+
+            let mut response = Response::new();
+            response = response.add_submessage(sub_msg);
+            Ok(response)
+        }
         ExecuteMsg::SwapAndAction {
             user_swap,
             min_coin,
@@ -131,8 +175,7 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        SWAP_REQUEST_REPLY_ID => handle_swap_request(deps, _env, msg),
-        ACTION_REQUEST_REPLY_ID => handle_action_request(deps, _env, msg),
+        SWAP_AND_ACTION_REQUEST_REPLY_ID => handle_swap_and_action_request(deps, _env, msg),
         _ => Err(ReplyIdError(msg.id)),
     }
 }

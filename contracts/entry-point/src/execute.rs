@@ -1,15 +1,9 @@
-use crate::reply::{
-    ActionTempStorage, SwapTempStorage, ACTION_REQUEST_REPLY_ID, SWAP_REQUEST_REPLY_ID,
-    USER_SWAP_REQUEST_REPLY_ID,
-};
-use crate::state::{ACTION_REQUEST_TEMP_STORAGE, SWAP_REQUEST_TEMP_STORAGE};
 use crate::{
     error::{ContractError, ContractResult},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg,
-    Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg,
 };
 use cw_utils::one_coin;
 use skip::{
@@ -110,61 +104,37 @@ pub fn execute_swap_and_action(
         Swap::SwapExactCoinOut(_) => true,
     };
 
-    SWAP_REQUEST_TEMP_STORAGE.save(
-        deps.storage,
-        &SwapTempStorage {
-            recovery_addr: info.sender.clone(),
-            funds: (info.funds.clone()),
-            swap: (user_swap.clone()),
-        },
-    )?;
-
-    let swap_request_msg = SubMsg::reply_always(
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_binary(&ExecuteMsg::UserSwap {
-                swap: user_swap,
-                min_coin: min_coin.clone(),
-                remaining_coin,
-                affiliates,
-            })?,
-            funds: vec![],
-        }),
-        SWAP_REQUEST_REPLY_ID,
-    );
+    let user_swap_msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::UserSwap {
+            swap: user_swap,
+            min_coin: min_coin.clone(),
+            remaining_coin,
+            affiliates,
+        })?,
+        funds: vec![],
+    };
 
     // Add the user swap message to the response
     response = response
-        .add_submessage(swap_request_msg)
+        .add_message(user_swap_msg)
         .add_attribute("action", "dispatch_user_swap");
 
-    ACTION_REQUEST_TEMP_STORAGE.save(
-        deps.storage,
-        &ActionTempStorage {
-            recovery_addr: info.sender.clone(),
-            funds: info.funds.clone(),
-            action: (post_swap_action.clone()),
-        },
-    )?;
-
     // Create the post swap action message
-    let post_swap_action_request_msg = SubMsg::reply_always(
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_binary(&ExecuteMsg::PostSwapAction {
-                min_coin,
-                timeout_timestamp,
-                post_swap_action,
-                exact_out,
-            })?,
-            funds: vec![],
-        }),
-        ACTION_REQUEST_REPLY_ID,
-    );
+    let post_swap_action_msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::PostSwapAction {
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            exact_out,
+        })?,
+        funds: vec![],
+    };
 
     // Add the post swap action message to the response and return the response
     Ok(response
-        .add_submessage(post_swap_action_request_msg)
+        .add_message(post_swap_action_msg)
         .add_attribute("action", "dispatch_post_swap_action"))
 }
 
@@ -234,17 +204,14 @@ pub fn execute_user_swap(
             let user_swap_msg_args: SwapExecuteMsg = swap.into();
 
             // Create the user swap message
-            let user_swap_request_msg = SubMsg::reply_on_error(
-                CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: user_swap_adapter_contract_address.to_string(),
-                    msg: to_binary(&user_swap_msg_args)?,
-                    funds: vec![remaining_coin],
-                }),
-                USER_SWAP_REQUEST_REPLY_ID,
-            );
+            let user_swap_msg = WasmMsg::Execute {
+                contract_addr: user_swap_adapter_contract_address.to_string(),
+                msg: to_binary(&user_swap_msg_args)?,
+                funds: vec![remaining_coin],
+            };
 
             response = response
-                .add_submessage(user_swap_request_msg)
+                .add_message(user_swap_msg)
                 .add_attribute("action", "dispatch_user_swap_exact_coin_in");
         }
         Swap::SwapExactCoinOut(swap) => {
@@ -311,17 +278,14 @@ pub fn execute_user_swap(
             let user_swap_msg_args: SwapExecuteMsg = swap.into();
 
             // Create the user swap message
-            let user_swap_request_msg = SubMsg::reply_on_error(
-                CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: user_swap_adapter_contract_address.to_string(),
-                    msg: to_binary(&user_swap_msg_args)?,
-                    funds: vec![remaining_coin.clone()],
-                }),
-                USER_SWAP_REQUEST_REPLY_ID,
-            );
+            let user_swap_msg = WasmMsg::Execute {
+                contract_addr: user_swap_adapter_contract_address.to_string(),
+                msg: to_binary(&user_swap_msg_args)?,
+                funds: vec![user_swap_coin_in],
+            };
 
             response = response
-                .add_submessage(user_swap_request_msg)
+                .add_message(user_swap_msg)
                 .add_attribute("action", "dispatch_user_swap_exact_coin_out");
         }
     }

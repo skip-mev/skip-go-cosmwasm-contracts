@@ -4,7 +4,7 @@ use crate::{
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Coin, Uint128};
+use cosmwasm_std::{Addr, Binary, Coin, Uint128};
 
 ///////////////////
 /// INSTANTIATE ///
@@ -26,27 +26,32 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
+    AxelarSwapAndAction {
+        user_swap: Swap,
+        min_coin: Coin,
+        timeout_timestamp: u64,
+        post_swap_action: Action,
+        affiliates: Vec<Affiliate>,
+        recovery_addr: Addr,
+    },
     SwapAndAction {
         user_swap: Swap,
         min_coin: Coin,
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
-        // recovery_address: Option<Addr>,
     },
     UserSwap {
         swap: Swap,
         min_coin: Coin,
         remaining_coin: Coin,
         affiliates: Vec<Affiliate>,
-        // recovery_address: Option<Addr>,
     },
     PostSwapAction {
         min_coin: Coin,
         timeout_timestamp: u64,
         post_swap_action: Action,
         exact_out: bool,
-        // recovery_address: Option<Addr>,
     },
 }
 

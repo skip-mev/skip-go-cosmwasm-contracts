@@ -1,11 +1,12 @@
 use cosmwasm_std::testing::{mock_dependencies_with_balances, mock_env, mock_info};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BalanceResponse, BankQuery, Coin, ContractResult, QuerierResult,
-    QueryRequest, ReplyOn, SubMsg, SystemResult, Timestamp, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, ContractResult, CosmosMsg, QuerierResult, ReplyOn, SubMsg, SystemResult,
+    Timestamp, WasmMsg, WasmQuery,
 };
 use skip::entry_point::{Action, Affiliate, ExecuteMsg};
 use skip::swap::{Swap, SwapExactCoinIn, SwapOperation};
 use skip_api_entry_point::error::ContractError;
+use skip_api_entry_point::error::ContractError::Timeout;
 use skip_api_entry_point::state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP};
 
 pub struct Params {
@@ -68,17 +69,19 @@ pub fn test_execute_swap_and_action(params: Params) {
         .save(deps.as_mut().storage, &ibc_transfer_adapter)
         .unwrap();
 
+    let recovery_addr = Addr::unchecked("recovery_address");
     // Call execute_swap_and_action with the given test case params
     let res = skip_api_entry_point::contract::execute(
         deps.as_mut(),
         env,
         info.clone(),
-        ExecuteMsg::SwapAndAction {
+        ExecuteMsg::AxelarSwapAndAction {
             user_swap: params.user_swap,
             min_coin: params.min_coin,
             timeout_timestamp: params.timeout_timestamp,
             post_swap_action: params.post_swap_action,
             affiliates: params.affiliates,
+            recovery_addr,
         },
     );
 
@@ -117,8 +120,9 @@ pub fn test_execute_swap_and_action(params: Params) {
     }
 }
 
+// Test new ExecuteMsg::AxelarSwapAndAction msg and verify it correctly sends the ExecuteMsg::SwapAndAction
 #[test]
-pub fn successful_swap() {
+pub fn successful_swap_and_action() {
     let params = Params {
         info_funds: vec![Coin::new(1_000_000, "untrn")],
         user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
@@ -135,51 +139,83 @@ pub fn successful_swap() {
             to_address: "to_address".to_string(),
         },
         affiliates: vec![],
-        expected_messages: vec![
-            SubMsg {
-                id: 1,
-                msg: WasmMsg::Execute {
-                    contract_addr: "entry_point".to_string(),
-                    msg: to_binary(&ExecuteMsg::UserSwap {
-                        swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
-                            swap_venue_name: "swap_venue_name".to_string(),
-                            operations: vec![SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                            }],
-                        }),
-                        remaining_coin: Coin::new(1_000_000, "untrn"),
-                        min_coin: Coin::new(1_000_000, "osmo"),
-                        affiliates: vec![],
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: ReplyOn::Always,
-            },
-            SubMsg {
-                id: 2,
-                msg: WasmMsg::Execute {
-                    contract_addr: "entry_point".to_string(),
-                    msg: to_binary(&ExecuteMsg::PostSwapAction {
-                        min_coin: Coin::new(1_000_000, "osmo"),
-                        timeout_timestamp: 101,
-                        post_swap_action: Action::BankSend {
-                            to_address: "to_address".to_string(),
-                        },
-                        exact_out: false,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: ReplyOn::Always,
-            },
-        ],
+        expected_messages: vec![SubMsg {
+            id: 1,
+            msg: CosmosMsg::from(WasmMsg::Execute {
+                contract_addr: "entry_point".to_string(),
+                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                    user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
+                        swap_venue_name: "swap_venue_name".to_string(),
+                        operations: vec![SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "untrn".to_string(),
+                            denom_out: "osmo".to_string(),
+                        }],
+                    }),
+                    min_coin: Coin::new(1_000_000, "osmo"),
+                    timeout_timestamp: 101,
+                    post_swap_action: Action::BankSend {
+                        to_address: "to_address".to_string(),
+                    },
+                    affiliates: vec![],
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }],
+        expected_error: None,
+    };
+
+    test_execute_swap_and_action(params);
+}
+
+// Error should be handled with reply message so it should not return an Timeout contract error as it would if you called ExecuteMsg::SwapAndAction
+#[test]
+pub fn timeout_error_passes() {
+    let params = Params {
+        info_funds: vec![Coin::new(1_000_000, "untrn")],
+        user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![SwapOperation {
+                pool: "pool".to_string(),
+                denom_in: "untrn".to_string(),
+                denom_out: "osmo".to_string(),
+            }],
+        }),
+        min_coin: Coin::new(1_000_000, "osmo"),
+        timeout_timestamp: 0,
+        post_swap_action: Action::BankSend {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![SubMsg {
+            id: 1,
+            msg: CosmosMsg::from(WasmMsg::Execute {
+                contract_addr: "entry_point".to_string(),
+                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                    user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
+                        swap_venue_name: "swap_venue_name".to_string(),
+                        operations: vec![SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "untrn".to_string(),
+                            denom_out: "osmo".to_string(),
+                        }],
+                    }),
+                    min_coin: Coin::new(1_000_000, "osmo"),
+                    timeout_timestamp: 0,
+                    post_swap_action: Action::BankSend {
+                        to_address: "to_address".to_string(),
+                    },
+                    affiliates: vec![],
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }],
         expected_error: None,
     };
 

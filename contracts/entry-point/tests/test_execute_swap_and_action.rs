@@ -97,7 +97,7 @@ struct Params {
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
-                id: 1,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
@@ -121,10 +121,10 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
             SubMsg {
-                id: 2,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
@@ -139,7 +139,7 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
         ],
         expected_error: None,
@@ -171,7 +171,7 @@ struct Params {
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
-                id: 1,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
@@ -196,10 +196,10 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
             SubMsg {
-                id: 2,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
@@ -214,7 +214,7 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
         ],
         expected_error: None,
@@ -267,7 +267,7 @@ struct Params {
                 reply_on: Never,
             },
             SubMsg {
-                id: 1,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
@@ -291,10 +291,10 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
             SubMsg {
-                id: 2,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
@@ -321,7 +321,7 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
         ],
         expected_error: None,
@@ -360,7 +360,7 @@ struct Params {
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
-                id: 1,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
@@ -384,10 +384,10 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
             SubMsg {
-                id: 2,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
@@ -410,7 +410,7 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
         ],
         expected_error: None,
@@ -494,7 +494,7 @@ struct Params {
                 reply_on: Never,
             },
             SubMsg {
-                id: 1,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
@@ -518,10 +518,10 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
             SubMsg {
-                id: 2,
+                id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::PostSwapAction {
@@ -560,7 +560,7 @@ struct Params {
                 }
                 .into(),
                 gas_limit: None,
-                reply_on: Always,
+                reply_on: Never,
             },
         ],
         expected_error: None,

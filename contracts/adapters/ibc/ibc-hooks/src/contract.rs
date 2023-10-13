@@ -1,4 +1,3 @@
-use crate::error::ContractError::InvalidReplyID;
 use crate::{
     error::{ContractError, ContractResult},
     state::{
