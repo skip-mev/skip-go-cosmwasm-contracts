@@ -73,7 +73,7 @@ pub fn test_execute_swap_and_action(params: Params) {
     let res = skip_api_entry_point::contract::execute(
         deps.as_mut(),
         env,
-        info.clone(),
+        info,
         ExecuteMsg::AxelarSwapAndAction {
             user_swap: params.user_swap,
             min_coin: params.min_coin,

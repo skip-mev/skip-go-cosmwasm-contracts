@@ -1,10 +1,11 @@
-use crate::error::ContractError::ReplyIdError;
-use crate::execute::execute_axelar_swap_and_action;
-use crate::reply::{handle_swap_and_action_request, SWAP_AND_ACTION_REQUEST_REPLY_ID};
 use crate::{
     error::{ContractError, ContractResult},
-    execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
+    execute::{
+        execute_axelar_swap_and_action, execute_post_swap_action, execute_swap_and_action,
+        execute_user_swap,
+    },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
+    reply::{handle_swap_and_action_request, SWAP_AND_ACTION_REQUEST_REPLY_ID},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
@@ -149,7 +150,7 @@ pub fn execute(
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         SWAP_AND_ACTION_REQUEST_REPLY_ID => handle_swap_and_action_request(deps, _env, msg),
-        _ => Err(ReplyIdError(msg.id)),
+        _ => Err(ContractError::ReplyIdError(msg.id)),
     }
 }
 
