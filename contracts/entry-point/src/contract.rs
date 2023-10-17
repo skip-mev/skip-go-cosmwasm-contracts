@@ -1,11 +1,15 @@
 use crate::{
     error::{ContractError, ContractResult},
-    execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap},
+    execute::{
+        execute_post_swap_action, execute_swap_and_action, execute_swap_and_action_with_recover,
+        execute_user_swap,
+    },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
+    reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -85,6 +89,24 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
+        ExecuteMsg::SwapAndActionWithRecover {
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+            recovery_addr,
+        } => execute_swap_and_action_with_recover(
+            deps,
+            env,
+            info,
+            user_swap,
+            min_coin,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+            recovery_addr,
+        ),
         ExecuteMsg::SwapAndAction {
             user_swap,
             min_coin,
@@ -121,6 +143,14 @@ pub fn execute(
             post_swap_action,
             exact_out,
         ),
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        RECOVER_REPLY_ID => reply_swap_and_action_with_recover(deps, msg),
+        _ => Err(ContractError::ReplyIdError(msg.id)),
     }
 }
 
