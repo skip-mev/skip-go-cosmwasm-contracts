@@ -19,9 +19,7 @@ pub fn reply_swap_and_action_with_recover(
         SubMsgResult::Ok(_response) => {
             RECOVER_TEMP_STORAGE.remove(deps.storage);
 
-            let res = Response::new().add_attribute("status", "swap_and_action_successful");
-
-            Ok(res)
+            Ok(Response::new().add_attribute("status", "swap_and_action_successful"))
         }
         SubMsgResult::Err(e) => {
             let storage = RECOVER_TEMP_STORAGE.load(deps.storage)?;
@@ -35,12 +33,10 @@ pub fn reply_swap_and_action_with_recover(
 
             RECOVER_TEMP_STORAGE.remove(deps.storage);
 
-            let res = Response::new()
+            Ok(Response::new()
                 .add_message(return_funds_msg)
                 .add_attribute("status", "swap_and_action_failed")
-                .add_attribute("error", e);
-
-            Ok(res)
+                .add_attribute("error", e))
         }
     }
 }

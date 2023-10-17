@@ -182,10 +182,9 @@ pub fn execute_swap_and_action_with_recover(
         RECOVER_REPLY_ID,
     );
 
-    let mut response = Response::new();
-    response = response.add_submessage(sub_msg);
-    Ok(response)
+    Ok(Response::new().add_submessage(sub_msg))
 }
+
 // Dispatches the user swap and refund/affiliate fee bank sends if needed
 pub fn execute_user_swap(
     deps: DepsMut,
