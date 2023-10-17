@@ -19,8 +19,8 @@ pub struct Params {
     expected_error: Option<ContractError>,
 }
 
-// Helper function for all SWAP_AND_ACTION msgs
-pub fn test_execute_swap_and_action(params: Params) {
+// Helper function for all SwapAndActionWithRecover tests
+pub fn test_execute_swap_and_action_with_recover(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
         "entry_point",
@@ -119,9 +119,9 @@ pub fn test_execute_swap_and_action(params: Params) {
     }
 }
 
-// Test new ExecuteMsg::AxelarSwapAndAction msg and verify it correctly sends the ExecuteMsg::SwapAndAction
+// Test new ExecuteMsg::SwapAndActionWithRecover msg and verify it correctly sends the ExecuteMsg::SwapAndAction
 #[test]
-pub fn successful_swap_and_action() {
+pub fn successful_swap_and_action_with_recover() {
     let params = Params {
         info_funds: vec![Coin::new(1_000_000, "untrn")],
         user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
@@ -167,7 +167,7 @@ pub fn successful_swap_and_action() {
         expected_error: None,
     };
 
-    test_execute_swap_and_action(params);
+    test_execute_swap_and_action_with_recover(params);
 }
 
 // Error should be handled with reply message so it should not return an Timeout contract error as it would if you called ExecuteMsg::SwapAndAction
@@ -218,5 +218,5 @@ pub fn timeout_error_passes() {
         expected_error: None,
     };
 
-    test_execute_swap_and_action(params);
+    test_execute_swap_and_action_with_recover(params);
 }
