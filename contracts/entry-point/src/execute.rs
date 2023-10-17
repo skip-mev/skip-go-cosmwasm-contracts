@@ -1,6 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    reply::{RecoverTempStorage, SWAP_AND_ACTION_REQUEST_REPLY_ID},
+    reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
         BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, RECOVER_TEMP_STORAGE,
         SWAP_VENUE_MAP,
@@ -179,7 +179,7 @@ pub fn execute_swap_and_action_with_recover(
             })?,
             funds: info.funds,
         }),
-        SWAP_AND_ACTION_REQUEST_REPLY_ID,
+        RECOVER_REPLY_ID,
     );
 
     let mut response = Response::new();

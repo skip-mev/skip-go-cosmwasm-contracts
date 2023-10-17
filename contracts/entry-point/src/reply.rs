@@ -1,9 +1,9 @@
 use crate::error::ContractError;
 use crate::state::RECOVER_TEMP_STORAGE;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, Reply, Response, SubMsgResult};
+use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Reply, Response, SubMsgResult};
 
-pub const SWAP_AND_ACTION_REQUEST_REPLY_ID: u64 = 1;
+pub const RECOVER_REPLY_ID: u64 = 1;
 
 #[cw_serde]
 pub struct RecoverTempStorage {
@@ -11,9 +11,8 @@ pub struct RecoverTempStorage {
     pub recovery_addr: Addr,
 }
 
-pub fn handle_swap_and_action_request(
+pub fn reply_swap_and_action_with_recover(
     deps: DepsMut,
-    _env: Env,
     msg: Reply,
 ) -> Result<Response, ContractError> {
     match msg.result {

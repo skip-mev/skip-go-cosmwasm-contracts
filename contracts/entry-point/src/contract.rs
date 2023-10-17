@@ -5,7 +5,7 @@ use crate::{
         execute_user_swap,
     },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
-    reply::{handle_swap_and_action_request, SWAP_AND_ACTION_REQUEST_REPLY_ID},
+    reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
@@ -149,7 +149,7 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        SWAP_AND_ACTION_REQUEST_REPLY_ID => handle_swap_and_action_request(deps, _env, msg),
+        RECOVER_REPLY_ID => reply_swap_and_action_with_recover(deps, msg),
         _ => Err(ContractError::ReplyIdError(msg.id)),
     }
 }
