@@ -1,9 +1,9 @@
 use crate::{
     error::{ContractError, ContractResult},
-    reply::{SwapActionTempStorage, SWAP_AND_ACTION_REQUEST_REPLY_ID},
+    reply::{RecoverTempStorage, SWAP_AND_ACTION_REQUEST_REPLY_ID},
     state::{
-        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS,
-        SWAP_AND_ACTION_REQUEST_TEMP_STORAGE, SWAP_VENUE_MAP,
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, RECOVER_TEMP_STORAGE,
+        SWAP_VENUE_MAP,
     },
 };
 use cosmwasm_std::{
@@ -158,9 +158,9 @@ pub fn execute_swap_and_action_with_recover(
     recovery_addr: Addr,
 ) -> ContractResult<Response> {
     // Store all parameters into a temporary storage.
-    SWAP_AND_ACTION_REQUEST_TEMP_STORAGE.save(
+    RECOVER_TEMP_STORAGE.save(
         deps.storage,
-        &SwapActionTempStorage {
+        &RecoverTempStorage {
             funds: info.funds.clone(),
             recovery_addr,
         },

@@ -6,14 +6,14 @@ use cosmwasm_std::{
 use skip::entry_point::Action::BankSend;
 use skip_api_entry_point::error::ContractError::Timeout;
 use skip_api_entry_point::error::ContractResult;
-use skip_api_entry_point::reply::SwapActionTempStorage;
-use skip_api_entry_point::state::SWAP_AND_ACTION_REQUEST_TEMP_STORAGE;
+use skip_api_entry_point::reply::RecoverTempStorage;
+use skip_api_entry_point::state::RECOVER_TEMP_STORAGE;
 
 pub struct Params {
     pub funds: Vec<Coin>,
     pub reply: Reply,
     pub expected_error_string: String,
-    pub storage: Option<SwapActionTempStorage>,
+    pub storage: Option<RecoverTempStorage>,
     pub expected_messages: Vec<SubMsg>,
 }
 
@@ -30,7 +30,7 @@ pub fn test_reply(params: Params) -> ContractResult<()> {
 
     // Update storage
     if let Some(swap_action) = params.storage.clone() {
-        SWAP_AND_ACTION_REQUEST_TEMP_STORAGE.save(deps.as_mut().storage, &swap_action)?;
+        RECOVER_TEMP_STORAGE.save(deps.as_mut().storage, &swap_action)?;
     }
 
     // Call reply with the given test parameters
@@ -49,7 +49,7 @@ pub fn test_reply(params: Params) -> ContractResult<()> {
             assert_eq!(res.messages, params.expected_messages);
 
             // Verify the in progress swap and action message was removed from storage
-            match SWAP_AND_ACTION_REQUEST_TEMP_STORAGE.load(&deps.storage) {
+            match RECOVER_TEMP_STORAGE.load(&deps.storage) {
                 Ok(swap_and_action_request) => {
                     panic!(
                         "expected in progress ibc transfer to be removed: {:?}",
@@ -59,7 +59,7 @@ pub fn test_reply(params: Params) -> ContractResult<()> {
                 Err(err) => assert_eq!(
                     err,
                     StdError::NotFound {
-                        kind: "skip_api_entry_point::reply::SwapActionTempStorage".to_string(),
+                        kind: "skip_api_entry_point::reply::RecoverTempStorage".to_string(),
                     }
                 ),
             };
@@ -97,7 +97,7 @@ pub fn verify_funds_sent_on_slippage_error() {
             result: SubMsgResult::Err("Slippage tolerance exceeded".to_string()),
         },
         expected_error_string: "".to_string(),
-        storage: Some(SwapActionTempStorage {
+        storage: Some(RecoverTempStorage {
             funds: vec![Coin::new(1_000_000, "osmo")],
             recovery_addr: Addr::unchecked("recovery_addr"),
         }),
@@ -124,7 +124,7 @@ pub fn verify_funds_sent_on_timeout_error() {
             result: SubMsgResult::Err((Timeout).to_string()),
         },
         expected_error_string: "".to_string(),
-        storage: Some(SwapActionTempStorage {
+        storage: Some(RecoverTempStorage {
             funds: vec![Coin::new(1_000_000, "osmo")],
             recovery_addr: Addr::unchecked("recovery_addr"),
         }),
@@ -173,7 +173,7 @@ pub fn success_case_no_funds_sent() {
             }),
         },
         expected_error_string: "".to_string(),
-        storage: Some(SwapActionTempStorage {
+        storage: Some(RecoverTempStorage {
             funds: vec![Coin::new(1_000_000, "osmo")],
             recovery_addr,
         }),
