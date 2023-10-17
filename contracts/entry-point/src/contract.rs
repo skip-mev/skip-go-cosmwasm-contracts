@@ -1,7 +1,7 @@
 use crate::{
     error::{ContractError, ContractResult},
     execute::{
-        execute_axelar_swap_and_action, execute_post_swap_action, execute_swap_and_action,
+        execute_post_swap_action, execute_swap_and_action, execute_swap_and_action_with_recover,
         execute_user_swap,
     },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
@@ -89,14 +89,14 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::AxelarSwapAndAction {
+        ExecuteMsg::SwapAndActionWithRecover {
             user_swap,
             min_coin,
             timeout_timestamp,
             post_swap_action,
             affiliates,
             recovery_addr,
-        } => execute_axelar_swap_and_action(
+        } => execute_swap_and_action_with_recover(
             deps,
             env,
             info,

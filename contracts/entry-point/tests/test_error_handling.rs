@@ -74,7 +74,7 @@ pub fn test_execute_swap_and_action(params: Params) {
         deps.as_mut(),
         env,
         info,
-        ExecuteMsg::AxelarSwapAndAction {
+        ExecuteMsg::SwapAndActionWithRecover {
             user_swap: params.user_swap,
             min_coin: params.min_coin,
             timeout_timestamp: params.timeout_timestamp,

@@ -143,10 +143,10 @@ pub fn execute_swap_and_action(
         .add_attribute("action", "dispatch_post_swap_action"))
 }
 
-// Adds error handling to the swap and post swap action function.
-// Created to be used when working specifcally with Axelar GMP to avoid funds from getting stuck
+// Entrypoint that catches all errors in SwapAndAction and recovers
+// the original funds sent to the contract to a recover address.
 #[allow(clippy::too_many_arguments)]
-pub fn execute_axelar_swap_and_action(
+pub fn execute_swap_and_action_with_recover(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,

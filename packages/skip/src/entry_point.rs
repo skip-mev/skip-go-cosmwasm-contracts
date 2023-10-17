@@ -26,7 +26,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
-    AxelarSwapAndAction {
+    SwapAndActionWithRecover {
         user_swap: Swap,
         min_coin: Coin,
         timeout_timestamp: u64,
