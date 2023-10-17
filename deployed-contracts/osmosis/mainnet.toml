@@ -1,30 +1,30 @@
 [info]
 chain_id = "osmosis-1"
 network = "mainnet"
-deploy_date = "02/08/2023 18:08:22"
-commit_hash = "54e7511d997858d7482456ab49471512e400e067"
+deploy_date = "17/10/2023 12:17:38"
+commit_hash = "e3ece7f86b707183d67521cda2587a20dc59c1e1"
 
 [checksums]
-"skip_swap_entry_point-aarch64.wasm" = "327a6ebeef799da6fc3af34078fdc4faa6273b21f5145a87aed5e22400d683cb"
-"skip_swap_neutron_astroport_swap-aarch64.wasm" = "b81651f27ecfd0c599b86476bbe0a4fb9f6013adf718ec324aabb1356d18a72f"
-"skip_swap_neutron_ibc_transfer-aarch64.wasm" = "ce836fef02f2d56b4d273441f6935fb8777ada03dd4795024bfa0a68b8e55da8"
-"skip_swap_osmosis_ibc_transfer-aarch64.wasm" = "187fd70c6cdefe586d5944e92a82ab3d657571b534651bce17a401dd558eda72"
-"skip_swap_osmosis_poolmanager_swap-aarch64.wasm" = "8a8aff4f0b76c2c5e9fd4046e784d6cad79b318e8e62cd8a3ebe3454e83cb6d9"
+"skip_api_entry_point-aarch64.wasm" = "2d4963276cf9504f4d1bcba0e52f9b8f4a774f0e5a84259fffc8db8b8db6fbe9"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "ae92e2dcd960e589e97dca8b111a8a90fe3cd79869b22a88a7ab6c9f10a75ad5"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "19951b963dc8fb77eeaca90557d75e918fc9f4096033ea81626b30bc7734c12e"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "cc552b9cba1f6e67601450687c735115799026ac0c786c9b3a5593b448fb2436"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "24ab8a5fb42b6c1bfe31833b951a6d287580876f7b5f225d196aa29b5f514cb6"
 
 [code-ids]
-swap_adapter_contract_code_id = 138
-ibc_transfer_adapter_contract_code_id = 139
-entry_point_contract_code_id = 140
+swap_adapter_contract_code_id = 233
+ibc_transfer_adapter_contract_code_id = 234
+entry_point_contract_code_id = 235
 
 [contract-addresses]
-swap_adapter_contract_address = "osmo1qwwk77fzzwlyznrhpk864wz04hev3k694808fgz4j306xaqcwhzqu0sg4k"
-ibc_transfer_adapter_contract_address = "osmo1q6p28lyadwdzprah5dd0kzafxs64khuwwrpnsycy6grxsv3jj62s43w6t7"
-entry_point_contract_address = "osmo1rc6h59ev8m7mdpg584v7m5t24k2ut3dy5nekjw4mdsfjysyjvv3q65m8pj"
+swap_adapter_contract_address = "osmo1dh85rmz0mnp8ne74eahaj6f09e4g0hnsd2yr4pghj6vx25a6h97sx2pqkw"
+ibc_transfer_adapter_contract_address = "osmo1p6hvd0xpnz4v0ksmk84lgafvc6afau7hmcdurlw03g9y9x4tv6nqhzxqwu"
+entry_point_contract_address = "osmo1dms7h5g0zlqd824an4u40dxn0jjrws2n00xhasr7kccgtmtxepaqd8tzu2"
 
 [tx-hashes]
-store_swap_adapter_tx_hash = "DC71B4FB5608077D684DB8AB338B959EE8D44E2B1426570C9F64EE34AF29ABEB"
-store_ibc_transfer_adapter_tx_hash = "69197B31C1D3CA5E556AFD25BB3F0F81F3FF4BC272BCF7F6D63E8399C7EDE07F"
-store_entry_point_tx_hash = "3FD44C87A6605E742F31B8CEC9F6477DEB07654E58F9F070A4BF4BFDCFF75430"
-instantiate_swap_adapter_tx_hash = "D56B1E2D8C47268F0664927D60AB561B99D6F838265269A551717BB1FF8FDDB8"
-instantiate_ibc_transfer_adapter_tx_hash = "6903008F810C80F9A5E5E1706F6EAC7596B15436A577482E2C547E428300E196"
-instantiate_entry_point_tx_hash = "299C99F76F82075794B3578D244CC6BBAC9AFE5AD70BA4B8643A52D00B8EBE56"
+store_swap_adapter_tx_hash = "B2E0B5C5A5EDF183B5B02B60E82DCEE82083A39736A648EAEB5239937A6C3E48"
+store_ibc_transfer_adapter_tx_hash = "233F0085FB0FB78623B09C14725B311A286CFE09FF80616BBBAB5269AAB546AC"
+store_entry_point_tx_hash = "F130A9EAC76C5AF8FC581342D53F7DF44ADDA2C056AFF16AAC233E7033B096C7"
+instantiate_swap_adapter_tx_hash = "D17F2781F2370115F6732E6184407DE65F4C5FDAE421364780BABE218C1649CC"
+instantiate_ibc_transfer_adapter_tx_hash = "F57FF4A73E419F88D7A2A457D3E4B5407F70C9BBF726E9508FC2B811494C37FB"
+instantiate_entry_point_tx_hash = "24F713C7F2193B674F02A7923A356264612C7740FB76769953435167188BD9B6"

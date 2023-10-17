@@ -2,7 +2,7 @@
 MNEMONIC = "<YOUR MNEMONIC HERE>"
 
 # Commut Hash
-COMMIT_HASH = "80f8044b4400f727c9c765dc72c74ff88508eb68"
+COMMIT_HASH = "<COMMIT HASH HERE>"
 
 MAINNET_REST_URL = "rest+https://rest-kralum.neutron-1.neutron.org" 
 MAINNET_CHAIN_ID = "neutron-1"
@@ -27,4 +27,9 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[swap_venues]]
 name = "neutron-astroport"
+# Testnet name
+#name = "testnet-neutron-astroport"
+
 router_contract_address = "neutron1eeyntmsq448c68ez06jsy6h2mtjke5tpuplnwtjfwcdznqmw72kswnlmm0"
+# Testnet address
+#router_contract_address = "neutron12jm24l9lr9cupufqjuxpdjnnweana4h66tsx5cl800mke26td26sq7m05p"
