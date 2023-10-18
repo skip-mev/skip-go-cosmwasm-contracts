@@ -20,13 +20,16 @@ keywords      = ["cosmwasm"]
 
 [workspace.dependencies]
 astroport        = "2.8"
-cosmwasm-schema  = "1.3"
+# I had to upgrade this because Lido Satellite uses the newest version
+# and creates a conflict on import
+cosmwasm-schema  = "1.4.1"
 cosmwasm-std     = { version = "1.3", features = ["stargate"] }
 cosmos-sdk-proto = { version = "0.19", default-features = false }
 cw2              = "1.1"
 cw-storage-plus  = "1"
 cw-utils         = "1.0.1"
 ibc-proto        = { version = "0.32.1", default-features = false }
+lido-satellite   = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = ["library"] }
 neutron-proto    = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
 neutron-sdk      = "0.5"
 osmosis-std      = "0.15.3"

@@ -33,6 +33,12 @@ pub struct NeutronInstantiateMsg {
     pub router_contract_address: String,
 }
 
+#[cw_serde]
+pub struct LidoSatelliteInstantiateMsg {
+    pub entry_point_contract_address: String,
+    pub lido_satellite_contract_address: String,
+}
+
 /////////////////////////
 ///      EXECUTE      ///
 /////////////////////////
