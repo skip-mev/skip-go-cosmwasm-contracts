@@ -1,6 +1,9 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{ENTRY_POINT_CONTRACT_ADDRESS, LIDO_SATELLITE_CONTRACT_ADDRESS},
+    state::{
+        BRIDGED_DENOM, CANONICAL_DENOM, ENTRY_POINT_CONTRACT_ADDRESS,
+        LIDO_SATELLITE_CONTRACT_ADDRESS,
+    },
 };
 use cosmwasm_std::{entry_point, to_binary, DepsMut, Env, MessageInfo, Response, WasmMsg};
 use cw_utils::one_coin;
@@ -34,6 +37,15 @@ pub fn instantiate(
 
     // Store the satellite contract address
     LIDO_SATELLITE_CONTRACT_ADDRESS.save(deps.storage, &checked_lido_satellite_contract_address)?;
+
+    // Cache Lido Satellite denoms to avoid quering them at each swap
+    let lido_satellite_config: lido_satellite::msg::ConfigResponse =
+        deps.querier.query_wasm_smart(
+            &checked_lido_satellite_contract_address,
+            &lido_satellite::msg::QueryMsg::Config {},
+        )?;
+    CANONICAL_DENOM.save(deps.storage, &lido_satellite_config.canonical_denom)?;
+    BRIDGED_DENOM.save(deps.storage, &lido_satellite_config.bridged_denom)?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
@@ -84,20 +96,19 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
-    let lido_satellite_contract_address = LIDO_SATELLITE_CONTRACT_ADDRESS.load(deps.storage)?;
-    let lido_satellite_config: lido_satellite::msg::ConfigResponse =
-        deps.querier.query_wasm_smart(
-            &lido_satellite_contract_address,
-            &lido_satellite::msg::QueryMsg::Config {},
-        )?;
+    let bridged_denom = BRIDGED_DENOM.load(deps.storage)?;
+    let canonical_denom = CANONICAL_DENOM.load(deps.storage)?;
 
-    let lido_satellite_msg = if coin_in.denom == lido_satellite_config.bridged_denom {
+    // Decide which message to Lido Satellite should be emitted
+    let lido_satellite_msg = if coin_in.denom == bridged_denom {
         lido_satellite::msg::ExecuteMsg::Mint { receiver: None }
-    } else if coin_in.denom == lido_satellite_config.canonical_denom {
+    } else if coin_in.denom == canonical_denom {
         lido_satellite::msg::ExecuteMsg::Burn { receiver: None }
     } else {
         return Err(ContractError::UnsupportedDenom);
     };
+
+    let lido_satellite_contract_address = LIDO_SATELLITE_CONTRACT_ADDRESS.load(deps.storage)?;
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: lido_satellite_contract_address.to_string(),
