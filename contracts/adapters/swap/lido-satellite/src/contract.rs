@@ -5,11 +5,13 @@ use crate::{
         LIDO_SATELLITE_CONTRACT_ADDRESS,
     },
 };
-use cosmwasm_std::{entry_point, to_binary, DepsMut, Env, MessageInfo, Response, WasmMsg};
+use cosmwasm_std::{
+    coin, entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, WasmMsg,
+};
 use cw_utils::one_coin;
 use skip::swap::{
     execute_transfer_funds_back, ExecuteMsg, LidoSatelliteInstantiateMsg as InstantiateMsg,
-    SwapOperation,
+    QueryMsg, SwapOperation,
 };
 
 ///////////////////
@@ -129,4 +131,35 @@ fn execute_swap(
         .add_message(swap_msg)
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swap_and_transfer_back"))
+}
+
+/////////////
+/// QUERY ///
+/////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
+    let bridged_denom = BRIDGED_DENOM.load(deps.storage)?;
+    let canonical_denom = CANONICAL_DENOM.load(deps.storage)?;
+
+    match msg {
+        QueryMsg::SimulateSwapExactCoinIn { coin_in, .. } => {
+            if coin_in.denom == bridged_denom {
+                to_binary(&coin(coin_in.amount.u128(), canonical_denom))
+            } else {
+                unimplemented!()
+            }
+        }
+        QueryMsg::SimulateSwapExactCoinOut { coin_out, .. } => {
+            if coin_out.denom == canonical_denom {
+                to_binary(&coin(coin_out.amount.u128(), bridged_denom))
+            } else {
+                unimplemented!()
+            }
+        }
+        _ => {
+            unimplemented!()
+        }
+    }
+    .map_err(From::from)
 }
