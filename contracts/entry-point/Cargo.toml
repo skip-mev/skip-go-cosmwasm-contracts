@@ -28,4 +28,6 @@ skip              = { workspace = true }
 thiserror         = { workspace = true }
 
 [dev-dependencies]
+osmosis-std       = { workspace = true }
+osmosis-test-tube = { workspace = true }
 test-case         = { workspace = true }
