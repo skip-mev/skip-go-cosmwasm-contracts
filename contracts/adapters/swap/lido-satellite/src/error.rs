@@ -1,4 +1,4 @@
-use cosmwasm_std::{OverflowError, StdError};
+use cosmwasm_std::StdError;
 use skip::error::SkipError;
 use thiserror::Error;
 
@@ -10,9 +10,6 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error(transparent)]
-    Overflow(#[from] OverflowError),
-
-    #[error(transparent)]
     Skip(#[from] SkipError),
 
     #[error(transparent)]
@@ -21,6 +18,6 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized,
 
-    #[error("swap_operations cannot be empty")]
-    SwapOperationsEmpty,
+    #[error("this denom is not supported by Lido Satellite")]
+    UnsupportedDenom,
 }

@@ -84,16 +84,24 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
-    // TODO: we should probably check that provided coin equals to bridged_denom from
-    //       Lido Satellite config. But it is not a big problem since Lido Satellite
-    //       performs such a check anyway.
-
     let lido_satellite_contract_address = LIDO_SATELLITE_CONTRACT_ADDRESS.load(deps.storage)?;
-    let mint_msg = lido_satellite::msg::ExecuteMsg::Mint { receiver: None };
+    let lido_satellite_config: lido_satellite::msg::ConfigResponse =
+        deps.querier.query_wasm_smart(
+            &lido_satellite_contract_address,
+            &lido_satellite::msg::QueryMsg::Config {},
+        )?;
+
+    let lido_satellite_msg = if coin_in.denom == lido_satellite_config.bridged_denom {
+        lido_satellite::msg::ExecuteMsg::Mint { receiver: None }
+    } else if coin_in.denom == lido_satellite_config.canonical_denom {
+        lido_satellite::msg::ExecuteMsg::Burn { receiver: None }
+    } else {
+        return Err(ContractError::UnsupportedDenom);
+    };
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: lido_satellite_contract_address.to_string(),
-        msg: to_binary(&mint_msg)?,
+        msg: to_binary(&lido_satellite_msg)?,
         funds: vec![coin_in],
     };
 
