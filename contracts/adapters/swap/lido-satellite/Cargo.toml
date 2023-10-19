@@ -28,4 +28,5 @@ lido-satellite   = { workspace = true }
 skip             = { workspace = true }
 thiserror        = { workspace = true }
 
-# TODO: add tests
+[dev-dependencies]
+test-case        = { workspace = true }

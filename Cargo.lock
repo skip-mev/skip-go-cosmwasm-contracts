@@ -1129,6 +1129,7 @@ dependencies = [
  "cw-utils 1.0.1",
  "lido-satellite",
  "skip",
+ "test-case",
  "thiserror",
 ]
 
