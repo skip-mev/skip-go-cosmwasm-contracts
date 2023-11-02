@@ -5,9 +5,11 @@ MNEMONIC = "<YOUR MNEMONIC HERE>"
 COMMIT_HASH = "<COMMIT HASH HERE>"
 
 MAINNET_REST_URL = "rest+https://phoenix-lcd.terra.dev"
+MAINNET_RPC_URL = "https://terra-rpc.polkachu.com/"
 MAINNET_CHAIN_ID = "phoenix-1"
 
 TESTNET_REST_URL = "rest+https://pisco-lcd.terra.dev"
+TESTNET_RPC_URL = "https://pisco-rpc.terra.dev/"
 TESTNET_CHAIN_ID = "pisco-1"
 
 ADDRESS_PREFIX = "terra"
