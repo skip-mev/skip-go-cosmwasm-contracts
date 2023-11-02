@@ -1,0 +1,30 @@
+[info]
+chain_id = "phoenix-1"
+network = "mainnet"
+deploy_date = "01/11/2023 10:49:24"
+commit_hash = "e3ece7f86b707183d67521cda2587a20dc59c1e1"
+
+[checksums]
+"skip_api_entry_point-aarch64.wasm" = "2d4963276cf9504f4d1bcba0e52f9b8f4a774f0e5a84259fffc8db8b8db6fbe9"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "ae92e2dcd960e589e97dca8b111a8a90fe3cd79869b22a88a7ab6c9f10a75ad5"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "19951b963dc8fb77eeaca90557d75e918fc9f4096033ea81626b30bc7734c12e"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "cc552b9cba1f6e67601450687c735115799026ac0c786c9b3a5593b448fb2436"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "24ab8a5fb42b6c1bfe31833b951a6d287580876f7b5f225d196aa29b5f514cb6"
+
+[code-ids]
+swap_adapter_contract_code_id = 2017
+ibc_transfer_adapter_contract_code_id = 2018
+entry_point_contract_code_id = 2019
+
+[contract-addresses]
+swap_adapter_contract_address = "terra1kmw2c99nnzmr7klt3c0z5ajtkml90gu4luczdmxzc3apkpqttdsql8tdxc"
+ibc_transfer_adapter_contract_address = "terra18n9c4auh3h5vwvpqxzy6d0sa4yalczss9fek67jkyshl4kd0t2xsfdcj45"
+entry_point_contract_address = "terra1k64frfgx3k5vxzkawm5lhtxfktm0s53lufnv2yk7tf3wj06557asraak09"
+
+[tx-hashes]
+store_swap_adapter_tx_hash = "37BFE33A5BB832EB0B37F781F85BC1349CDE60A0DD16FF782F1DBB0A0C9784FC"
+store_ibc_transfer_adapter_tx_hash = "53AE0FC525D60682F2D4B2A868F562D88A79D252795A9AE246867A747A1E50B6"
+store_entry_point_tx_hash = "7209903C1136BAF0C4FF13C9C8E466072488A0752F490029A426FB7D3DDCDE5C"
+instantiate_swap_adapter_tx_hash = "0BA1D4F596D96DFCC18583F8F3F0509837A09281F2C115C84B48C2F5127A1AB2"
+instantiate_ibc_transfer_adapter_tx_hash = "DA2A3A987114A0DB37841C42D21B2475C126D07AABCB001FA22DE2BCDABFEE7D"
+instantiate_entry_point_tx_hash = "21DE3E37DCE55B767CFC326EDED39B1E59C7A75D4819FBFEF8D3E4BFE2FDAB43"
