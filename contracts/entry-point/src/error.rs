@@ -68,4 +68,7 @@ pub enum ContractError {
         "IBC Transfer Adapter Only Supports Native Coins, Cw20 IBC Transfers Are Contract Calls"
     )]
     NonNativeIbcTransfer,
+    
+    #[error("Reply id: {0} not valid")]
+    ReplyIdError(u64),
 }

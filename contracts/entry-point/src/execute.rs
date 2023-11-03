@@ -1,10 +1,14 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    reply::{RecoverTempStorage, RECOVER_REPLY_ID},
+    state::{
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, RECOVER_TEMP_STORAGE,
+        SWAP_VENUE_MAP,
+    },
 };
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg,
+    WasmMsg, CosmosMsg, SubMsg,
 };
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use skip::{
@@ -142,7 +146,6 @@ pub fn execute_swap_and_action(
         Swap::SwapExactCoinOut(_) => true,
     };
 
-    // Create the user swap message
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::UserSwap {
@@ -175,6 +178,48 @@ pub fn execute_swap_and_action(
     Ok(response
         .add_message(post_swap_action_msg)
         .add_attribute("action", "dispatch_post_swap_action"))
+}
+
+// Entrypoint that catches all errors in SwapAndAction and recovers
+// the original funds sent to the contract to a recover address.
+#[allow(clippy::too_many_arguments)]
+pub fn execute_swap_and_action_with_recover(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    user_swap: Swap,
+    min_coin: Coin,
+    timeout_timestamp: u64,
+    post_swap_action: Action,
+    affiliates: Vec<Affiliate>,
+    recovery_addr: Addr,
+) -> ContractResult<Response> {
+    // Store all parameters into a temporary storage.
+    RECOVER_TEMP_STORAGE.save(
+        deps.storage,
+        &RecoverTempStorage {
+            funds: info.funds.clone(),
+            recovery_addr,
+        },
+    )?;
+
+    // Then call ExecuteMsg::SwapAndAction using a SubMsg.
+    let sub_msg = SubMsg::reply_always(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::SwapAndAction {
+                user_swap,
+                min_coin,
+                timeout_timestamp,
+                post_swap_action,
+                affiliates,
+            })?,
+            funds: info.funds,
+        }),
+        RECOVER_REPLY_ID,
+    );
+
+    Ok(Response::new().add_submessage(sub_msg))
 }
 
 // Dispatches the user swap and refund/affiliate fee bank sends if needed

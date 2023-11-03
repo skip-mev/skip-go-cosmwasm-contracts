@@ -2,12 +2,14 @@
 MNEMONIC = "<YOUR MNEMONIC HERE>"
 
 # Commut Hash
-COMMIT_HASH = "80f8044b4400f727c9c765dc72c74ff88508eb68"
+COMMIT_HASH = "<COMMIT HASH HERE>"
 
 MAINNET_REST_URL = "rest+https://lcd.osmosis.zone/"
+MAINNET_RPC_URL = "https://osmosis-rpc.polkachu.com/"
 MAINNET_CHAIN_ID = "osmosis-1"
 
 TESTNET_REST_URL = "rest+https://lcd.osmotest5.osmosis.zone/"
+TESTNET_RPC_URL = "https://rpc.testnet.osmosis.zone/"
 TESTNET_CHAIN_ID = "osmo-test-5" 
 
 ADDRESS_PREFIX = "osmo"
@@ -30,3 +32,5 @@ PERMISSIONED_UPLOADER_ADDRESS = "osmo1raa4kyx5ypz75qqk3566c6slx2mw3qzsu6rymw"
 
 [[swap_venues]]
 name = "osmosis-poolmanager"
+# Testnet name
+#name = "testnet-osmosis-poolmanager"
