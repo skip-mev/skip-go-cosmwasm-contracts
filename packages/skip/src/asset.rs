@@ -35,6 +35,13 @@ impl From<Cw20CoinVerified> for Asset {
 }
 
 impl Asset {
+    pub fn default_native() -> Self {
+        Asset::Native(Coin {
+            denom: "".to_string(),
+            amount: Uint128::zero(),
+        })
+    }
+
     pub fn new(api: &dyn Api, denom: &str, amount: Uint128) -> Self {
         match api.addr_validate(denom) {
             Ok(addr) => Asset::Cw20(Cw20Coin {
@@ -206,6 +213,19 @@ mod tests {
     };
     use cw20::BalanceResponse;
     use cw_utils::PaymentError;
+
+    #[test]
+    fn test_default_native() {
+        let asset = Asset::default_native();
+
+        assert_eq!(
+            asset,
+            Asset::Native(Coin {
+                denom: "".to_string(),
+                amount: Uint128::zero(),
+            })
+        );
+    }
 
     #[test]
     fn test_new() {

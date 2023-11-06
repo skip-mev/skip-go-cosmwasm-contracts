@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::{
     error::{ContractError, ContractResult},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
@@ -40,6 +42,25 @@ pub fn receive_cw20(
     sent_asset.validate(&deps, &env, &info)?;
 
     match from_binary(&cw20_msg.msg)? {
+        Cw20HookMsg::SwapAndActionWithRecover {
+            user_swap,
+            min_asset,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+            recovery_addr,
+        } => execute_swap_and_action_with_recover(
+            deps,
+            env,
+            info,
+            sent_asset,
+            user_swap,
+            min_asset,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+            recovery_addr,
+        ),
         Cw20HookMsg::SwapAndAction {
             user_swap,
             min_asset,
@@ -187,6 +208,7 @@ pub fn execute_swap_and_action_with_recover(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    sent_asset: Asset,
     user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
@@ -194,11 +216,18 @@ pub fn execute_swap_and_action_with_recover(
     affiliates: Vec<Affiliate>,
     recovery_addr: Addr,
 ) -> ContractResult<Response> {
+    let assets: Vec<Asset> = match sent_asset {
+        Asset::Native(_) => info.funds.clone().into_iter().map(Asset::Native).collect(),
+        Asset::Cw20(_) => {
+            vec![sent_asset]
+        }
+    };
+
     // Store all parameters into a temporary storage.
     RECOVER_TEMP_STORAGE.save(
         deps.storage,
         &RecoverTempStorage {
-            funds: info.funds.clone(),
+            assets,
             recovery_addr,
         },
     )?;

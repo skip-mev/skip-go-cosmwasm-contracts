@@ -3,6 +3,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Reply, StdError, SubMsg, SubMsgResponse,
     SubMsgResult,
 };
+use skip::asset::Asset;
 use skip::entry_point::Action::BankSend;
 use skip_api_entry_point::error::ContractError::Timeout;
 use skip_api_entry_point::error::ContractResult;
@@ -98,7 +99,7 @@ pub fn verify_funds_sent_on_slippage_error() {
         },
         expected_error_string: "".to_string(),
         storage: Some(RecoverTempStorage {
-            funds: vec![Coin::new(1_000_000, "osmo")],
+            assets: vec![Asset::Native(Coin::new(1_000_000, "osmo"))],
             recovery_addr: Addr::unchecked("recovery_addr"),
         }),
         expected_messages: vec![sub_msg],
@@ -125,7 +126,7 @@ pub fn verify_funds_sent_on_timeout_error() {
         },
         expected_error_string: "".to_string(),
         storage: Some(RecoverTempStorage {
-            funds: vec![Coin::new(1_000_000, "osmo")],
+            assets: vec![Asset::Native(Coin::new(1_000_000, "osmo"))],
             recovery_addr: Addr::unchecked("recovery_addr"),
         }),
         expected_messages: vec![sub_msg],
@@ -174,7 +175,7 @@ pub fn success_case_no_funds_sent() {
         },
         expected_error_string: "".to_string(),
         storage: Some(RecoverTempStorage {
-            funds: vec![Coin::new(1_000_000, "osmo")],
+            assets: vec![Asset::Native(Coin::new(1_000_000, "osmo"))],
             recovery_addr,
         }),
         expected_messages: vec![],

@@ -61,6 +61,14 @@ pub enum ExecuteMsg {
 /// This structure describes a CW20 hook message.
 #[cw_serde]
 pub enum Cw20HookMsg {
+    SwapAndActionWithRecover {
+        user_swap: Swap,
+        min_asset: Asset,
+        timeout_timestamp: u64,
+        post_swap_action: Action,
+        affiliates: Vec<Affiliate>,
+        recovery_addr: Addr,
+    },
     SwapAndAction {
         user_swap: Swap,
         min_asset: Asset,

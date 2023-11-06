@@ -101,17 +101,23 @@ pub fn execute(
             post_swap_action,
             affiliates,
             recovery_addr,
-        } => execute_swap_and_action_with_recover(
-            deps,
-            env,
-            info,
-            user_swap,
-            min_asset,
-            timeout_timestamp,
-            post_swap_action,
-            affiliates,
-            recovery_addr,
-        ),
+        } => {
+            // Set the sent asset to a default native asset, bypassing validation
+            // allowing to recover if multiple coins are sent.
+            let sent_asset: Asset = Asset::default_native();
+            execute_swap_and_action_with_recover(
+                deps,
+                env,
+                info,
+                sent_asset,
+                user_swap,
+                min_asset,
+                timeout_timestamp,
+                post_swap_action,
+                affiliates,
+                recovery_addr,
+            )
+        }
         ExecuteMsg::SwapAndAction {
             user_swap,
             min_asset,
