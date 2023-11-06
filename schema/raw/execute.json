@@ -18,6 +18,52 @@
     {
       "type": "object",
       "required": [
+        "swap_and_action_with_recover"
+      ],
+      "properties": {
+        "swap_and_action_with_recover": {
+          "type": "object",
+          "required": [
+            "affiliates",
+            "min_asset",
+            "post_swap_action",
+            "recovery_addr",
+            "timeout_timestamp",
+            "user_swap"
+          ],
+          "properties": {
+            "affiliates": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Affiliate"
+              }
+            },
+            "min_asset": {
+              "$ref": "#/definitions/Asset"
+            },
+            "post_swap_action": {
+              "$ref": "#/definitions/Action"
+            },
+            "recovery_addr": {
+              "$ref": "#/definitions/Addr"
+            },
+            "timeout_timestamp": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "user_swap": {
+              "$ref": "#/definitions/Swap"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "swap_and_action"
       ],
       "properties": {

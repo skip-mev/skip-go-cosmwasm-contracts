@@ -3,15 +3,18 @@ use cosmwasm_std::{
     to_binary, Addr, Coin, ContractResult, CosmosMsg, QuerierResult, ReplyOn, SubMsg, SystemResult,
     Timestamp, WasmMsg, WasmQuery,
 };
-use skip::entry_point::{Action, Affiliate, ExecuteMsg};
-use skip::swap::{Swap, SwapExactCoinIn, SwapOperation};
+use skip::{
+    asset::Asset,
+    entry_point::{Action, Affiliate, ExecuteMsg},
+    swap::{Swap, SwapExactCoinIn, SwapOperation},
+};
 use skip_api_entry_point::error::ContractError;
 use skip_api_entry_point::state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP};
 
 pub struct Params {
     info_funds: Vec<Coin>,
     user_swap: Swap,
-    min_coin: Coin,
+    min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
     affiliates: Vec<Affiliate>,
@@ -76,7 +79,7 @@ pub fn test_execute_swap_and_action_with_recover(params: Params) {
         info,
         ExecuteMsg::SwapAndActionWithRecover {
             user_swap: params.user_swap,
-            min_coin: params.min_coin,
+            min_asset: params.min_asset,
             timeout_timestamp: params.timeout_timestamp,
             post_swap_action: params.post_swap_action,
             affiliates: params.affiliates,
@@ -132,7 +135,7 @@ pub fn successful_swap_and_action_with_recover() {
                 denom_out: "osmo".to_string(),
             }],
         }),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
@@ -151,7 +154,7 @@ pub fn successful_swap_and_action_with_recover() {
                             denom_out: "osmo".to_string(),
                         }],
                     }),
-                    min_coin: Coin::new(1_000_000, "osmo"),
+                    min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
                     post_swap_action: Action::BankSend {
                         to_address: "to_address".to_string(),
@@ -183,7 +186,7 @@ pub fn timeout_error_passes() {
                 denom_out: "osmo".to_string(),
             }],
         }),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 0,
         post_swap_action: Action::BankSend {
             to_address: "to_address".to_string(),
@@ -202,7 +205,7 @@ pub fn timeout_error_passes() {
                             denom_out: "osmo".to_string(),
                         }],
                     }),
-                    min_coin: Coin::new(1_000_000, "osmo"),
+                    min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 0,
                     post_swap_action: Action::BankSend {
                         to_address: "to_address".to_string(),

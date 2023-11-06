@@ -1,6 +1,9 @@
 use crate::{
     error::{ContractError, ContractResult},
-    execute::{execute_post_swap_action, execute_swap_and_action, execute_user_swap, receive_cw20, execute_swap_and_action_with_recover},
+    execute::{
+        execute_post_swap_action, execute_swap_and_action, execute_swap_and_action_with_recover,
+        execute_user_swap, receive_cw20,
+    },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
@@ -93,7 +96,7 @@ pub fn execute(
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::SwapAndActionWithRecover {
             user_swap,
-            min_coin,
+            min_asset,
             timeout_timestamp,
             post_swap_action,
             affiliates,
@@ -103,7 +106,7 @@ pub fn execute(
             env,
             info,
             user_swap,
-            min_coin,
+            min_asset,
             timeout_timestamp,
             post_swap_action,
             affiliates,

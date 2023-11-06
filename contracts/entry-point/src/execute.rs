@@ -7,8 +7,8 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg, CosmosMsg, SubMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
+    SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use skip::{
@@ -188,7 +188,7 @@ pub fn execute_swap_and_action_with_recover(
     env: Env,
     info: MessageInfo,
     user_swap: Swap,
-    min_coin: Coin,
+    min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
     affiliates: Vec<Affiliate>,
@@ -209,7 +209,7 @@ pub fn execute_swap_and_action_with_recover(
             contract_addr: env.contract.address.to_string(),
             msg: to_binary(&ExecuteMsg::SwapAndAction {
                 user_swap,
-                min_coin,
+                min_asset,
                 timeout_timestamp,
                 post_swap_action,
                 affiliates,
