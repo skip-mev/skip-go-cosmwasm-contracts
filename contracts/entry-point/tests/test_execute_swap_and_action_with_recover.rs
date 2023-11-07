@@ -1,16 +1,13 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, Coin, CosmosMsg, ReplyOn, SubMsg,
-    Timestamp, WasmMsg,
+    to_binary, Addr, Coin, CosmosMsg, ReplyOn, SubMsg, Timestamp, WasmMsg,
 };
 use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     swap::{Swap, SwapExactCoinIn, SwapOperation},
 };
-use skip_api_entry_point::{
-    error::ContractError,
-    state::RECOVER_TEMP_STORAGE};
+use skip_api_entry_point::{error::ContractError, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
 
 /*
@@ -19,7 +16,7 @@ Test Cases:
 Expect Response
     - Happy Path Single Coin
     - Happy Path Multiple Coins
-    
+
 */
 
 // Define test parameters
