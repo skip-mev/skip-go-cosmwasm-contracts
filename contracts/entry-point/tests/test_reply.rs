@@ -6,6 +6,18 @@ use skip::asset::Asset;
 use skip_api_entry_point::{reply::RecoverTempStorage, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
 
+/* 
+Test Cases:
+
+Expect Response
+    - Verify funds sent on error
+    - Verify funds not sent on success
+
+Expect Error
+    - Verify error on invalid reply id
+
+*/
+
 // Define test parameters
 struct Params {
     reply: Reply,
