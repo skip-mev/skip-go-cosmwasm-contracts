@@ -36,10 +36,7 @@ impl From<Cw20CoinVerified> for Asset {
 
 impl Asset {
     pub fn default_native() -> Self {
-        Asset::Native(Coin {
-            denom: "".to_string(),
-            amount: Uint128::zero(),
-        })
+        Asset::Native(Coin::default())
     }
 
     pub fn new(api: &dyn Api, denom: &str, amount: Uint128) -> Self {
