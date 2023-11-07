@@ -260,7 +260,7 @@
                   "fee_swap": {
                     "anyOf": [
                       {
-                        "$ref": "#/definitions/SwapExactCoinOut"
+                        "$ref": "#/definitions/SwapExactAssetOut"
                       },
                       {
                         "type": "null"
@@ -476,11 +476,11 @@
           {
             "type": "object",
             "required": [
-              "swap_exact_coin_in"
+              "swap_exact_asset_in"
             ],
             "properties": {
-              "swap_exact_coin_in": {
-                "$ref": "#/definitions/SwapExactCoinIn"
+              "swap_exact_asset_in": {
+                "$ref": "#/definitions/SwapExactAssetIn"
               }
             },
             "additionalProperties": false
@@ -488,18 +488,18 @@
           {
             "type": "object",
             "required": [
-              "swap_exact_coin_out"
+              "swap_exact_asset_out"
             ],
             "properties": {
-              "swap_exact_coin_out": {
-                "$ref": "#/definitions/SwapExactCoinOut"
+              "swap_exact_asset_out": {
+                "$ref": "#/definitions/SwapExactAssetOut"
               }
             },
             "additionalProperties": false
           }
         ]
       },
-      "SwapExactCoinIn": {
+      "SwapExactAssetIn": {
         "type": "object",
         "required": [
           "operations",
@@ -518,7 +518,7 @@
         },
         "additionalProperties": false
       },
-      "SwapExactCoinOut": {
+      "SwapExactAssetOut": {
         "type": "object",
         "required": [
           "operations",

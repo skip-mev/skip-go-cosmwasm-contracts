@@ -1,7 +1,7 @@
 use crate::{
     asset::Asset,
     ibc::IbcInfo,
-    swap::{Swap, SwapExactCoinOut, SwapVenue},
+    swap::{Swap, SwapExactAssetOut, SwapVenue},
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
@@ -109,7 +109,7 @@ pub enum Action {
     },
     IbcTransfer {
         ibc_info: IbcInfo,
-        fee_swap: Option<SwapExactCoinOut>,
+        fee_swap: Option<SwapExactAssetOut>,
     },
     ContractCall {
         contract_address: String,
@@ -118,7 +118,7 @@ pub enum Action {
 }
 
 // The Affiliate struct is used to specify an affiliate address and BPS fee taken
-// from the min_coin to send to that address.
+// from the min_asset to send to that address.
 #[cw_serde]
 pub struct Affiliate {
     pub basis_points_fee: Uint128,

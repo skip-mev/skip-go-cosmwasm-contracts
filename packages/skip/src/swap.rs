@@ -60,13 +60,13 @@ pub enum QueryMsg {
     // RouterContractAddress returns the address of the router contract
     #[returns(Addr)]
     RouterContractAddress {},
-    // SimulateSwapExactAmountOut returns the coin in necessary to receive the specified coin out
+    // SimulateSwapExactAssetOut returns the asset in necessary to receive the specified asset out
     #[returns(Asset)]
     SimulateSwapExactAssetOut {
         asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
     },
-    // SimulateSwapExactAmountIn returns the coin out received from the specified coin in
+    // SimulateSwapExactAssetIn returns the asset out received from the specified asset in
     #[returns(Asset)]
     SimulateSwapExactAssetIn {
         asset_in: Asset,
@@ -162,36 +162,36 @@ where
     swap_operations.into_iter().map(T::try_from).collect()
 }
 
-// Swap object to get the exact amount of a given coin with the given vector of swap operations
+// Swap object to get the exact amount of a given asset with the given vector of swap operations
 #[cw_serde]
-pub struct SwapExactCoinOut {
+pub struct SwapExactAssetOut {
     pub swap_venue_name: String,
     pub operations: Vec<SwapOperation>,
     pub refund_address: Option<String>,
 }
 
-// Swap object that swaps the remaining coin recevied
+// Swap object that swaps the remaining asset recevied
 // from the contract call minus fee swap (if present)
 #[cw_serde]
-pub struct SwapExactCoinIn {
+pub struct SwapExactAssetIn {
     pub swap_venue_name: String,
     pub operations: Vec<SwapOperation>,
 }
 
-// Converts a SwapExactCoinOut used in the entry point contract
+// Converts a SwapExactAssetOut used in the entry point contract
 // to a swap adapter Swap execute message
-impl From<SwapExactCoinOut> for ExecuteMsg {
-    fn from(swap: SwapExactCoinOut) -> Self {
+impl From<SwapExactAssetOut> for ExecuteMsg {
+    fn from(swap: SwapExactAssetOut) -> Self {
         ExecuteMsg::Swap {
             operations: swap.operations,
         }
     }
 }
 
-// Converts a SwapExactCoinIn used in the entry point contract
+// Converts a SwapExactAssetIn used in the entry point contract
 // to a swap adapter Swap execute message
-impl From<SwapExactCoinIn> for ExecuteMsg {
-    fn from(swap: SwapExactCoinIn) -> Self {
+impl From<SwapExactAssetIn> for ExecuteMsg {
+    fn from(swap: SwapExactAssetIn) -> Self {
         ExecuteMsg::Swap {
             operations: swap.operations,
         }
@@ -200,8 +200,8 @@ impl From<SwapExactCoinIn> for ExecuteMsg {
 
 #[cw_serde]
 pub enum Swap {
-    SwapExactCoinIn(SwapExactCoinIn),
-    SwapExactCoinOut(SwapExactCoinOut),
+    SwapExactAssetIn(SwapExactAssetIn),
+    SwapExactAssetOut(SwapExactAssetOut),
 }
 
 ////////////////////////
@@ -243,22 +243,22 @@ pub fn execute_transfer_funds_back(
 // Validates the swap operations
 pub fn validate_swap_operations(
     swap_operations: &[SwapOperation],
-    coin_in_denom: &str,
-    coin_out_denom: &str,
+    asset_in_denom: &str,
+    asset_out_denom: &str,
 ) -> Result<(), SkipError> {
     // Verify the swap operations are not empty
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(SkipError::SwapOperationsEmpty);
     };
 
-    // Verify the first swap operation denom in is the same as the coin in denom
-    if first_op.denom_in != coin_in_denom {
-        return Err(SkipError::SwapOperationsCoinInDenomMismatch);
+    // Verify the first swap operation denom in is the same as the asset in denom
+    if first_op.denom_in != asset_in_denom {
+        return Err(SkipError::SwapOperationsAssetInDenomMismatch);
     }
 
-    // Verify the last swap operation denom out is the same as the coin out denom
-    if last_op.denom_out != coin_out_denom {
-        return Err(SkipError::SwapOperationsCoinOutDenomMismatch);
+    // Verify the last swap operation denom out is the same as the asset out denom
+    if last_op.denom_out != asset_out_denom {
+        return Err(SkipError::SwapOperationsAssetOutDenomMismatch);
     }
 
     Ok(())
@@ -494,20 +494,20 @@ mod tests {
             },
         ];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_ok());
 
         // TEST CASE 2: Empty Swap Operations
         let swap_operations: Vec<SwapOperation> = vec![];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), SkipError::SwapOperationsEmpty);
@@ -526,15 +526,15 @@ mod tests {
             },
         ];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            SkipError::SwapOperationsCoinInDenomMismatch
+            SkipError::SwapOperationsAssetInDenomMismatch
         );
 
         // TEST CASE 4: Last Swap Operation Denom Out Mismatch
@@ -551,15 +551,15 @@ mod tests {
             },
         ];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            SkipError::SwapOperationsCoinOutDenomMismatch
+            SkipError::SwapOperationsAssetOutDenomMismatch
         );
     }
 }

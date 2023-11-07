@@ -26,11 +26,11 @@ pub enum SkipError {
     #[error("Swap Operations Empty")]
     SwapOperationsEmpty,
 
-    #[error("First Swap Operations' Denom In Differs From Swap Coin In Denom")]
-    SwapOperationsCoinInDenomMismatch,
+    #[error("First Swap Operations' Denom In Differs From Swap Asset In Denom")]
+    SwapOperationsAssetInDenomMismatch,
 
-    #[error("Last Swap Operations' Denom Out Differs From Swap Coin Out Denom")]
-    SwapOperationsCoinOutDenomMismatch,
+    #[error("Last Swap Operations' Denom Out Differs From Swap Asset Out Denom")]
+    SwapOperationsAssetOutDenomMismatch,
 
     ///////////
     /// IBC ///

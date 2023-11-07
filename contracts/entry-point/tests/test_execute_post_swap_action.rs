@@ -439,7 +439,7 @@ struct Params {
         },
         exact_out: false,
         expected_messages: vec![],
-        expected_error: Some(ContractError::ReceivedLessCoinFromSwapsThanMinCoin),
+        expected_error: Some(ContractError::ReceivedLessAssetFromSwapsThanMinAsset),
     };
     "Received Less From Swap Than Min Coin - Expect Error")]
 #[test_case(

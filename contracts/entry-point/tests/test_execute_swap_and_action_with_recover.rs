@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
-    swap::{Swap, SwapExactCoinIn, SwapOperation},
+    swap::{Swap, SwapExactAssetIn, SwapOperation},
 };
 use skip_api_entry_point::{error::ContractError, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
@@ -36,7 +36,7 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![Coin::new(1_000_000, "untrn")],
-        user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
+        user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
             operations: vec![SwapOperation {
                 pool: "pool".to_string(),
@@ -56,7 +56,7 @@ struct Params {
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
                 msg: to_binary(&ExecuteMsg::SwapAndAction {
-                    user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
+                    user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
                         operations: vec![SwapOperation {
                             pool: "pool".to_string(),
@@ -83,7 +83,7 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![Coin::new(1_000_000, "untrn"), Coin::new(1_000_000, "osmo")],
-        user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
+        user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
             operations: vec![SwapOperation {
                 pool: "pool".to_string(),
@@ -103,7 +103,7 @@ struct Params {
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
                 msg: to_binary(&ExecuteMsg::SwapAndAction {
-                    user_swap: Swap::SwapExactCoinIn(SwapExactCoinIn {
+                    user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
                         operations: vec![SwapOperation {
                             pool: "pool".to_string(),

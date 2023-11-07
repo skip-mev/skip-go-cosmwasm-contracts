@@ -31,8 +31,8 @@ pub enum ContractError {
     #[error("Duplicate Swap Venue Name Provided")]
     DuplicateSwapVenueName,
 
-    #[error("IBC fee denom differs from coin received without a fee swap to convert")]
-    IBCFeeDenomDiffersFromCoinReceived,
+    #[error("IBC fee denom differs from asset received without a fee swap to convert")]
+    IBCFeeDenomDiffersFromAssetReceived,
 
     ////////////////
     /// FEE SWAP ///
@@ -41,25 +41,25 @@ pub enum ContractError {
     #[error("Fee Swap Not Allowed: No IBC Fees Provided")]
     FeeSwapWithoutIbcFees,
 
-    #[error("Fee Swap Coin In Denom Differs From Coin Sent To Contract")]
-    FeeSwapCoinInDenomMismatch,
+    #[error("Fee Swap Asset In Denom Differs From Asset Sent To Contract")]
+    FeeSwapAssetInDenomMismatch,
 
     /////////////////
     /// USER SWAP ///
     /////////////////
 
-    #[error("User Swap Coin In Denom Differs From Coin Sent To Contract")]
-    UserSwapCoinInDenomMismatch,
+    #[error("User Swap Asset In Denom Differs From Asset Sent To Contract")]
+    UserSwapAssetInDenomMismatch,
 
-    #[error("No Refund Address Provided For Swap Exact Coin Out User Swap")]
+    #[error("No Refund Address Provided For Swap Exact Asset Out User Swap")]
     NoRefundAddress,
 
     ////////////////////////
     /// POST SWAP ACTION ///
     ////////////////////////
 
-    #[error("Received Less Coin From Swaps Than Minimum Coin Required")]
-    ReceivedLessCoinFromSwapsThanMinCoin,
+    #[error("Received Less Asset From Swaps Than Minimum Asset Required")]
+    ReceivedLessAssetFromSwapsThanMinAsset,
 
     #[error("Contract Call Address Cannot Be The Entry Point Or Adapter Contracts")]
     ContractCallAddressBlocked,

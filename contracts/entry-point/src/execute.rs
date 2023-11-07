@@ -19,7 +19,7 @@ use skip::{
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactCoinOut,
+        SwapExactAssetOut,
     },
 };
 
@@ -110,7 +110,7 @@ pub fn execute_swap_and_action(
 
     // If the post swap action is an IBC transfer, then handle the ibc fees
     // by either creating a fee swap message or deducting the ibc fees from
-    // the remaining coin received amount.
+    // the remaining asset received amount.
     if let Action::IbcTransfer { ibc_info, fee_swap } = &post_swap_action {
         let ibc_fee_coin = ibc_info
             .fee
@@ -123,7 +123,7 @@ pub fn execute_swap_and_action(
                 .clone()
                 .ok_or(ContractError::FeeSwapWithoutIbcFees)?;
 
-            // NOTE: this call mutates remaining_coin_received by deducting ibc_fee_coin's amount from it
+            // NOTE: this call mutates remaining_asset by deducting ibc_fee_coin's amount from it
             let fee_swap_msg = verify_and_create_fee_swap_msg(
                 &deps,
                 fee_swap,
@@ -137,10 +137,10 @@ pub fn execute_swap_and_action(
                 .add_attribute("action", "dispatch_fee_swap");
         } else if let Some(ibc_fee_coin) = &ibc_fee_coin {
             if remaining_asset.denom() != ibc_fee_coin.denom {
-                return Err(ContractError::IBCFeeDenomDiffersFromCoinReceived);
+                return Err(ContractError::IBCFeeDenomDiffersFromAssetReceived);
             }
 
-            // Deduct the ibc_fee_coin amount from the remaining asset received amount
+            // Deduct the ibc_fee_coin amount from the remaining asset amount
             remaining_asset.sub(ibc_fee_coin.amount)?;
         }
 
@@ -164,8 +164,8 @@ pub fn execute_swap_and_action(
 
     // Set a boolean to determine if the user swap is exact out or not
     let exact_out = match &user_swap {
-        Swap::SwapExactCoinIn(_) => false,
-        Swap::SwapExactCoinOut(_) => true,
+        Swap::SwapExactAssetIn(_) => false,
+        Swap::SwapExactAssetOut(_) => true,
     };
 
     let user_swap_msg = WasmMsg::Execute {
@@ -303,7 +303,7 @@ pub fn execute_user_swap(
 
     // Create the user swap message
     match swap {
-        Swap::SwapExactCoinIn(swap) => {
+        Swap::SwapExactAssetIn(swap) => {
             // Validate swap operations
             validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
@@ -322,9 +322,9 @@ pub fn execute_user_swap(
 
             response = response
                 .add_message(user_swap_msg)
-                .add_attribute("action", "dispatch_user_swap_exact_coin_in");
+                .add_attribute("action", "dispatch_user_swap_exact_asset_in");
         }
-        Swap::SwapExactCoinOut(swap) => {
+        Swap::SwapExactAssetOut(swap) => {
             // Validate swap operations
             validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
@@ -332,7 +332,7 @@ pub fn execute_user_swap(
             let user_swap_adapter_contract_address =
                 SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
 
-            // Calculate the swap coin out by adding the min asset amount to the total affiliate fee amount
+            // Calculate the swap asset out by adding the min asset amount to the total affiliate fee amount
             min_asset.add(total_affiliate_fee_amount)?;
 
             // Query the swap adapter to get the asset in needed to obtain the min asset plus affiliates
@@ -345,7 +345,7 @@ pub fn execute_user_swap(
 
             // Verify the user swap in denom is the same as the denom received from the message to the contract
             if user_swap_asset_in.denom() != remaining_asset.denom() {
-                return Err(ContractError::UserSwapCoinInDenomMismatch);
+                return Err(ContractError::UserSwapAssetInDenomMismatch);
             }
 
             // Calculate refund amount to send back to the user
@@ -387,7 +387,7 @@ pub fn execute_user_swap(
 
             response = response
                 .add_message(user_swap_msg)
-                .add_attribute("action", "dispatch_user_swap_exact_coin_out");
+                .add_attribute("action", "dispatch_user_swap_exact_asset_out");
         }
     }
 
@@ -419,16 +419,16 @@ pub fn execute_post_swap_action(
     let mut response: Response =
         Response::new().add_attribute("action", "execute_post_swap_action");
 
-    // Get contract balance of min out coin immediately after swap
+    // Get contract balance of min out asset immediately after swap
     // for fee deduction and transfer out amount enforcement
     let transfer_out_asset = get_current_asset_available(&deps, &env, min_asset.denom())?;
 
-    // Error if the contract balance is less than the min out coin amount
+    // Error if the contract balance is less than the min asset out amount
     if transfer_out_asset.amount() < min_asset.amount() {
-        return Err(ContractError::ReceivedLessCoinFromSwapsThanMinCoin);
+        return Err(ContractError::ReceivedLessAssetFromSwapsThanMinAsset);
     }
 
-    // Set the transfer out coin to the min coin if exact out is true
+    // Set the transfer out asset to the min asset if exact out is true
     let transfer_out_asset = if exact_out {
         min_asset
     } else {
@@ -512,10 +512,10 @@ pub fn execute_post_swap_action(
 // SWAP MESSAGE HELPER FUNCTIONS
 
 // Creates the fee swap message and returns it
-// Also deducts the fee swap in amount from the mutable user swap coin
+// Also deducts the fee swap in amount from the mutable remaining asset
 fn verify_and_create_fee_swap_msg(
     deps: &DepsMut,
-    fee_swap: &SwapExactCoinOut,
+    fee_swap: &SwapExactAssetOut,
     remaining_asset: &mut Asset,
     ibc_fee_coin: &Coin,
 ) -> ContractResult<WasmMsg> {
@@ -530,7 +530,7 @@ fn verify_and_create_fee_swap_msg(
     let fee_swap_adapter_contract_address =
         SWAP_VENUE_MAP.load(deps.storage, &fee_swap.swap_venue_name)?;
 
-    // Query the swap adapter to get the coin in needed for the fee swap
+    // Query the swap adapter to get the asset in needed for the fee swap
     let fee_swap_asset_in = query_swap_asset_in(
         deps,
         &fee_swap_adapter_contract_address,
@@ -540,11 +540,11 @@ fn verify_and_create_fee_swap_msg(
 
     // Verify the fee swap in denom is the same as the denom received from the message to the contract
     if fee_swap_asset_in.denom() != remaining_asset.denom() {
-        return Err(ContractError::FeeSwapCoinInDenomMismatch);
+        return Err(ContractError::FeeSwapAssetInDenomMismatch);
     }
 
-    // Deduct the fee swap in amount from the swappable coin
-    // Error if swap requires more than the swappable coin amount
+    // Deduct the fee swap in amount from the remaining asset amount
+    // Error if swap requires more than the remaining asset amount
     remaining_asset.sub(fee_swap_asset_in.amount())?;
 
     // Create the fee swap message args
@@ -571,7 +571,7 @@ fn verify_and_calculate_affiliate_fee_amount(
     // Verify the affiliate address is valid
     deps.api.addr_validate(&affiliate.address)?;
 
-    // Get the affiliate fee amount by multiplying the min_coin
+    // Get the affiliate fee amount by multiplying the min_asset
     // amount by the affiliate basis points fee divided by 10000
     let affiliate_fee_amount = min_asset
         .amount()
@@ -583,15 +583,15 @@ fn verify_and_calculate_affiliate_fee_amount(
 // QUERY HELPER FUNCTIONS
 
 // Unexposed query helper function that queries the swap adapter contract to get the
-// coin in needed for the fee swap. Verifies the fee swap in denom is the same as the
-// swap coin denom from the message. Returns the fee swap coin in.
+// asset in needed for a given swap. Verifies the swap's in denom is the same as the
+// swap asset denom from the message. Returns the swap asset in.
 fn query_swap_asset_in(
     deps: &DepsMut,
     swap_adapter_contract_address: &Addr,
-    swap: &SwapExactCoinOut,
+    swap: &SwapExactAssetOut,
     swap_asset_out: &Asset,
 ) -> ContractResult<Asset> {
-    // Query the swap adapter to get the coin in needed for the fee swap
+    // Query the swap adapter to get the asset in needed for the fee swap
     let fee_swap_asset_in: Asset = deps.querier.query_wasm_smart(
         swap_adapter_contract_address,
         &SwapQueryMsg::SimulateSwapExactAssetOut {

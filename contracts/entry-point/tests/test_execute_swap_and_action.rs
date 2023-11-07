@@ -10,11 +10,13 @@ use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        IbcFeesNotOneCoin, Overflow, SwapOperationsCoinInDenomMismatch,
-        SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
+        IbcFeesNotOneCoin, Overflow, SwapOperationsAssetInDenomMismatch,
+        SwapOperationsAssetOutDenomMismatch, SwapOperationsEmpty,
     },
     ibc::{IbcFee, IbcInfo},
-    swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
+    swap::{
+        ExecuteMsg as SwapExecuteMsg, Swap, SwapExactAssetIn, SwapExactAssetOut, SwapOperation,
+    },
 };
 use skip_api_entry_point::{
     error::ContractError,
@@ -77,8 +79,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -101,8 +103,8 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
-                        swap: Swap::SwapExactCoinIn (
-                            SwapExactCoinIn{
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
                                 operations: vec![
                                     SwapOperation {
@@ -150,8 +152,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -175,8 +177,8 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
-                        swap: Swap::SwapExactCoinOut (
-                            SwapExactCoinOut{
+                        swap: Swap::SwapExactAssetOut (
+                            SwapExactAssetOut{
                                 swap_venue_name: "swap_venue_name".to_string(),
                                 operations: vec![
                                     SwapOperation {
@@ -225,8 +227,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -271,8 +273,8 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
-                        swap: Swap::SwapExactCoinIn (
-                            SwapExactCoinIn{
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
                                 operations: vec![
                                     SwapOperation {
@@ -332,8 +334,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -364,8 +366,8 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
-                        swap: Swap::SwapExactCoinIn (
-                            SwapExactCoinIn{
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
                                 operations: vec![
                                     SwapOperation {
@@ -421,8 +423,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -449,7 +451,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -498,8 +500,8 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::UserSwap {
-                        swap: Swap::SwapExactCoinIn (
-                            SwapExactCoinIn{
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
                                 operations: vec![
                                     SwapOperation {
@@ -541,7 +543,7 @@ struct Params {
                                     .to_string(),
                             },
                             fee_swap: Some(
-                                SwapExactCoinOut {
+                                SwapExactAssetOut {
                                     swap_venue_name: "swap_venue_name".to_string(), 
                                     operations: vec![
                                         SwapOperation {
@@ -571,8 +573,8 @@ struct Params {
         info_funds: vec![
             Coin::new(100_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -599,7 +601,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -626,8 +628,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "uatom"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -654,7 +656,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -669,7 +671,7 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::FeeSwapCoinInDenomMismatch),
+        expected_error: Some(ContractError::FeeSwapAssetInDenomMismatch),
     };
     "Fee Swap Coin In Denom In Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
@@ -677,8 +679,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -705,7 +707,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -720,7 +722,7 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
+        expected_error: Some(ContractError::Skip(SwapOperationsAssetInDenomMismatch)),
     };
     "Fee Swap First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
@@ -728,8 +730,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -756,7 +758,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -771,7 +773,7 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
+        expected_error: Some(ContractError::Skip(SwapOperationsAssetOutDenomMismatch)),
     };
     "Fee Swap Last Swap Operation Denom Out Is Not The Same As IBC Fee Coin Denom- Expect Error")]
 #[test_case(
@@ -779,8 +781,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -810,7 +812,7 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::IBCFeeDenomDiffersFromCoinReceived),
+        expected_error: Some(ContractError::IBCFeeDenomDiffersFromAssetReceived),
     };
     "User Swap With IBC Transfer With IBC Fees But IBC Fee Coin Denom Is Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
@@ -818,8 +820,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -842,7 +844,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -865,8 +867,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -893,7 +895,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -916,8 +918,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -944,7 +946,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -967,8 +969,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -995,7 +997,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![
                         SwapOperation {
@@ -1016,8 +1018,8 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -1044,8 +1046,8 @@ struct Params {
             Coin::new(1_000_000, "untrn"),
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -1071,8 +1073,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
@@ -1099,7 +1101,7 @@ struct Params {
                     .to_string(),
             },
             fee_swap: Some(
-                SwapExactCoinOut {
+                SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
                     operations: vec![],
                     refund_address: None,
@@ -1116,8 +1118,8 @@ struct Params {
         info_funds: vec![
             Coin::new(1_000_000, "untrn"),
         ],
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![],
             },
