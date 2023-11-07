@@ -104,7 +104,7 @@ pub enum QueryMsg {
 // The Action enum is used to specify what action to take after a swap.
 #[cw_serde]
 pub enum Action {
-    BankSend {
+    Transfer {
         to_address: String,
     },
     IbcTransfer {

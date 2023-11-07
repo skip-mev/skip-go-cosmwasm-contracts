@@ -57,7 +57,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_asset: Asset::Native(Coin::new(100_000, "os")),
-        post_swap_action: Action::BankSend {
+        post_swap_action: Action::Transfer {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
         exact_out: true,
@@ -78,7 +78,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_asset: Asset::Native(Coin::new(1_000_000, "os")),
-        post_swap_action: Action::BankSend {
+        post_swap_action: Action::Transfer {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
         exact_out: false,
@@ -434,7 +434,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         min_asset: Asset::Native(Coin::new(1_100_000, "un")),
-        post_swap_action: Action::BankSend {
+        post_swap_action: Action::Transfer {
             to_address: "swapper".to_string(),
         },
         exact_out: false,
@@ -446,7 +446,7 @@ struct Params {
     Params {
         caller: "unauthorized".to_string(),
         min_asset: Asset::Native(Coin::new(1_100_000, "un")),
-        post_swap_action: Action::BankSend {
+        post_swap_action: Action::Transfer {
             to_address: "swapper".to_string(),
         },
         exact_out: false,

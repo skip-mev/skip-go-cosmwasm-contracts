@@ -46,7 +46,7 @@ struct Params {
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
-        post_swap_action: Action::BankSend {
+        post_swap_action: Action::Transfer {
             to_address: "to_address".to_string(),
         },
         affiliates: vec![],
@@ -66,7 +66,7 @@ struct Params {
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
-                    post_swap_action: Action::BankSend {
+                    post_swap_action: Action::Transfer {
                         to_address: "to_address".to_string(),
                     },
                     affiliates: vec![],
@@ -93,7 +93,7 @@ struct Params {
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
-        post_swap_action: Action::BankSend {
+        post_swap_action: Action::Transfer {
             to_address: "to_address".to_string(),
         },
         affiliates: vec![],
@@ -113,7 +113,7 @@ struct Params {
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
-                    post_swap_action: Action::BankSend {
+                    post_swap_action: Action::Transfer {
                         to_address: "to_address".to_string(),
                     },
                     affiliates: vec![],

@@ -436,17 +436,17 @@ pub fn execute_post_swap_action(
     };
 
     match post_swap_action {
-        Action::BankSend { to_address } => {
+        Action::Transfer { to_address } => {
             // Error if the destination address is not a valid address on the current chain
             deps.api.addr_validate(&to_address)?;
 
-            // Create the bank send message
-            let bank_send_msg = transfer_out_asset.transfer(&to_address);
+            // Create the transfer message
+            let transfer_msg = transfer_out_asset.transfer(&to_address);
 
-            // Add the bank send message to the response
+            // Add the transfer message to the response
             response = response
-                .add_message(bank_send_msg)
-                .add_attribute("action", "dispatch_post_swap_bank_send");
+                .add_message(transfer_msg)
+                .add_attribute("action", "dispatch_post_swap_transfer");
         }
         Action::IbcTransfer { ibc_info, .. } => {
             // Validates recover address, errors if invalid
