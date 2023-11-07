@@ -39,7 +39,6 @@ pub fn receive_cw20(
         address: info.sender.to_string(),
         amount: cw20_msg.amount,
     });
-    sent_asset.validate(&deps, &env, &info)?;
 
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::SwapAndActionWithRecover {
@@ -70,6 +69,7 @@ pub fn receive_cw20(
         } => execute_swap_and_action(
             deps,
             env,
+            info,
             sent_asset,
             user_swap,
             min_asset,
@@ -90,6 +90,7 @@ pub fn receive_cw20(
 pub fn execute_swap_and_action(
     deps: DepsMut,
     env: Env,
+    info: MessageInfo,
     sent_asset: Asset,
     user_swap: Swap,
     min_asset: Asset,
@@ -99,6 +100,9 @@ pub fn execute_swap_and_action(
 ) -> ContractResult<Response> {
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap_and_action");
+
+    // Validate the sent asset
+    sent_asset.validate(&deps, &env, &info)?;
 
     // Error if the current block time is greater than the timeout timestamp
     if env.block.time.nanos() > timeout_timestamp {
@@ -219,9 +223,7 @@ pub fn execute_swap_and_action_with_recover(
 ) -> ContractResult<Response> {
     let assets: Vec<Asset> = match sent_asset {
         Asset::Native(_) => info.funds.clone().into_iter().map(Asset::Native).collect(),
-        Asset::Cw20(_) => {
-            vec![sent_asset]
-        }
+        Asset::Cw20(_) => vec![sent_asset.clone()],
     };
 
     // Store all parameters into a temporary storage.
@@ -238,6 +240,7 @@ pub fn execute_swap_and_action_with_recover(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
             msg: to_binary(&ExecuteMsg::SwapAndAction {
+                sent_asset,
                 user_swap,
                 min_asset,
                 timeout_timestamp,

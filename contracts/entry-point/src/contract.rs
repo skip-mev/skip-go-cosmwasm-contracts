@@ -11,11 +11,7 @@ use crate::{
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
-use cw_utils::one_coin;
-use skip::{
-    asset::Asset,
-    entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg},
-};
+use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 ///////////////////
 /// INSTANTIATE ///
@@ -95,48 +91,43 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::SwapAndActionWithRecover {
+            sent_asset,
             user_swap,
             min_asset,
             timeout_timestamp,
             post_swap_action,
             affiliates,
             recovery_addr,
-        } => {
-            // Set the sent asset to a default native asset, bypassing validation
-            // allowing to recover if multiple coins are sent.
-            let sent_asset: Asset = Asset::default_native();
-            execute_swap_and_action_with_recover(
-                deps,
-                env,
-                info,
-                sent_asset,
-                user_swap,
-                min_asset,
-                timeout_timestamp,
-                post_swap_action,
-                affiliates,
-                recovery_addr,
-            )
-        }
-        ExecuteMsg::SwapAndAction {
+        } => execute_swap_and_action_with_recover(
+            deps,
+            env,
+            info,
+            sent_asset,
             user_swap,
             min_asset,
             timeout_timestamp,
             post_swap_action,
             affiliates,
-        } => {
-            let sent_asset: Asset = one_coin(&info)?.into();
-            execute_swap_and_action(
-                deps,
-                env,
-                sent_asset,
-                user_swap,
-                min_asset,
-                timeout_timestamp,
-                post_swap_action,
-                affiliates,
-            )
-        }
+            recovery_addr,
+        ),
+        ExecuteMsg::SwapAndAction {
+            sent_asset,
+            user_swap,
+            min_asset,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        } => execute_swap_and_action(
+            deps,
+            env,
+            info,
+            sent_asset,
+            user_swap,
+            min_asset,
+            timeout_timestamp,
+            post_swap_action,
+            affiliates,
+        ),
         ExecuteMsg::UserSwap {
             swap,
             min_asset,
