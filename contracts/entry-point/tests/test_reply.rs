@@ -6,7 +6,7 @@ use skip::asset::Asset;
 use skip_api_entry_point::{reply::RecoverTempStorage, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
 
-/* 
+/*
 Test Cases:
 
 Expect Response
