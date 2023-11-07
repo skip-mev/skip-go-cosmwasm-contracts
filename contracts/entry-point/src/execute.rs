@@ -105,6 +105,7 @@ pub fn execute_swap_and_action(
         return Err(ContractError::Timeout);
     }
 
+    // Already validated at entrypoints (both direct and cw20_receive)
     let mut remaining_asset = sent_asset;
 
     // If the post swap action is an IBC transfer, then handle the ibc fees
