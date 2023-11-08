@@ -70,15 +70,15 @@ pub fn receive_cw20(
     mut info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> ContractResult<Response> {
-    // Set the sender to the originating address that triggered the cw20 send call
-    // This is later validated / enforced to be the entry point contract address
-    info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
-
     let sent_asset = Asset::Cw20(Cw20Coin {
         address: info.sender.to_string(),
         amount: cw20_msg.amount,
     });
     sent_asset.validate(&deps, &env, &info)?;
+
+    // Set the sender to the originating address that triggered the cw20 send call
+    // This is later validated / enforced to be the entry point contract address
+    info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, sent_asset, operations),
