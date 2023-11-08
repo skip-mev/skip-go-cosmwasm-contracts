@@ -413,12 +413,12 @@ def broadcast_tx(tx) -> httpx.Response:
     httpx.post(RPC_URL, json=data, timeout=60)
     print("Sleeping for 20 seconds...")
     time.sleep(20)
-    resp = httpx.get(REST_URL + f"/txs/{sha256(tx_bytes).hexdigest()}", timeout=60)
+    resp = httpx.get(REST_URL + f"/cosmos/tx/v1beta1/txs/{sha256(tx_bytes).hexdigest()}", timeout=60)
     return resp
 
 
 def get_attribute_value(resp, event_type, attr_key):
-    for event in resp.json()['logs'][0]['events']:
+    for event in resp.json()['tx_response']['logs'][0]['events']:
         if event['type'] == event_type:
             for attr in event['attributes']:
                 if attr['key'] == attr_key:
