@@ -4,12 +4,12 @@ MNEMONIC = "<YOUR MNEMONIC HERE>"
 # Commut Hash
 COMMIT_HASH = "<COMMIT HASH HERE>"
 
-MAINNET_REST_URL = "rest+https://phoenix-lcd.terra.dev"
+MAINNET_REST_URL = "https://phoenix-lcd.terra.dev"
 MAINNET_RPC_URL = "https://terra-rpc.polkachu.com/"
 MAINNET_CHAIN_ID = "phoenix-1"
 
-TESTNET_REST_URL = "rest+https://pisco-lcd.terra.dev"
-TESTNET_RPC_URL = "https://pisco-rpc.terra.dev/"
+TESTNET_REST_URL = "https://terra-testnet-api.polkachu.com"
+TESTNET_RPC_URL = "https://terra-testnet-rpc.polkachu.com/"
 TESTNET_CHAIN_ID = "pisco-1"
 
 ADDRESS_PREFIX = "terra"
@@ -29,6 +29,9 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[swap_venues]]
 name = "terra-astroport"
+# Testnet name
+#name = "testnet-terra-astroport"
+
 # @DEV MUST CHANGE ROUTER CONTRACT ADDRESS ACCORDING TO NETWORK
 # MAINNET ROUTER CONTRACT ADDRESS
 router_contract_address = "terra1j8hayvehh3yy02c2vtw5fdhz9f4drhtee8p5n5rguvg3nyd6m83qd2y90a"

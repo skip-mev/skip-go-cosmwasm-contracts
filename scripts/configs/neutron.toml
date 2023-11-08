@@ -4,12 +4,12 @@ MNEMONIC = "<YOUR MNEMONIC HERE>"
 # Commut Hash
 COMMIT_HASH = "<COMMIT HASH HERE>"
 
-MAINNET_REST_URL = "rest+https://rest-kralum.neutron-1.neutron.org" 
+MAINNET_REST_URL = "https://rest-kralum.neutron-1.neutron.org" 
 MAINNET_RPC_URL = "https://rpc-kralum.neutron-1.neutron.org"
 MAINNET_CHAIN_ID = "neutron-1"
 
-TESTNET_REST_URL = "rest+https://rest-palvus.pion-1.ntrn.tech"
-TESTNET_RPC_URL = "https://rpc-falcron.pion-1.ntrn.tech"
+TESTNET_REST_URL = "https://rest-palvus.pion-1.ntrn.tech"
+TESTNET_RPC_URL = "https://neutron-testnet-rpc.polkachu.com/"
 TESTNET_CHAIN_ID = "pion-1"
 
 ADDRESS_PREFIX = "neutron"
