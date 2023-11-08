@@ -1,7 +1,9 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env},
-    Addr, BankMsg, Coin, CosmosMsg, Reply, StdError, SubMsg, SubMsgResponse, SubMsgResult,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Reply, StdError, SubMsg, SubMsgResponse,
+    SubMsgResult, Uint128, WasmMsg,
 };
+use cw20::{Cw20Coin, Cw20ExecuteMsg};
 use skip::asset::Asset;
 use skip_api_entry_point::{reply::RecoverTempStorage, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
@@ -10,8 +12,11 @@ use test_case::test_case;
 Test Cases:
 
 Expect Response
-    - Verify funds sent on error
-    - Verify funds not sent on success
+    - Native Asset Sent On Error
+    - Native Asset Not Sent On Success
+    - Cw20 Asset Sent On Error
+    - Cw20 Asset Not Sent On Success
+    - Native And Cw20 Asset Sent On Error
 
 Expect Error
     - Verify error on invalid reply id
@@ -43,7 +48,7 @@ struct Params {
             amount: vec![Coin::new(1_000_000, "osmo")],
         }))],
     };
-    "Verify funds sent on error"
+    "Native Asset Funds Sent On Error"
 )]
 #[test_case(
     Params {
@@ -61,7 +66,85 @@ struct Params {
         }),
         expected_messages: vec![],
     };
-    "Verify funds not sent on success"
+    "Native Asset Funds Not Sent On Success"
+)]
+#[test_case(
+    Params {
+        reply: Reply {
+            id: 1,
+            result: SubMsgResult::Err("Anything".to_string()),
+        },
+        expected_error_string: "".to_string(),
+        storage: Some(RecoverTempStorage {
+            assets: vec![Asset::Cw20(Cw20Coin{
+                address: "neutron123".to_string(),
+                amount: Uint128::new(1_000_000),
+            })],
+            recovery_addr: Addr::unchecked("recovery_addr"),
+        }),
+        expected_messages: vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: "neutron123".to_string(),
+            msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                recipient: "recovery_addr".to_string(),
+                amount: Uint128::new(1_000_000),
+            }).unwrap(),
+            funds: vec![],
+        }))],
+    };
+    "Cw20 Asset Sent On Error"
+)]
+#[test_case(
+    Params {
+        reply: Reply {
+            id: 1,
+            result: SubMsgResult::Ok(SubMsgResponse {
+                events: vec![],
+                data: None,
+            }),
+        },
+        expected_error_string: "".to_string(),
+        storage: Some(RecoverTempStorage {
+            assets: vec![Asset::Cw20(Cw20Coin{
+                address: "neutron123".to_string(),
+                amount: Uint128::new(1_000_000),
+            })],
+            recovery_addr: Addr::unchecked("recovery_addr"),
+        }),
+        expected_messages: vec![],
+    };
+    "Cw20 Asset Not Sent On Success"
+)]
+#[test_case(
+    Params {
+        reply: Reply {
+            id: 1,
+            result: SubMsgResult::Err("Anything".to_string()),
+        },
+        expected_error_string: "".to_string(),
+        storage: Some(RecoverTempStorage {
+            assets: vec![
+                Asset::Native(Coin::new(1_000_000, "osmo")),
+            Asset::Cw20(Cw20Coin{
+                address: "neutron123".to_string(),
+                amount: Uint128::new(1_000_000),
+            })],
+            recovery_addr: Addr::unchecked("recovery_addr"),
+        }),
+        expected_messages: vec![
+            SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                to_address: Addr::unchecked("recovery_addr").to_string(),
+                amount: vec![Coin::new(1_000_000, "osmo")],
+            })),
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: "neutron123".to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    recipient: "recovery_addr".to_string(),
+                    amount: Uint128::new(1_000_000),
+                }).unwrap(),
+                funds: vec![],
+        }))],
+    };
+    "Native And Cw20 Asset Sent On Error"
 )]
 #[test_case(
     Params {
