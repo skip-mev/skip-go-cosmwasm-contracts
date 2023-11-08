@@ -221,10 +221,11 @@ pub fn execute_swap_and_action_with_recover(
     affiliates: Vec<Affiliate>,
     recovery_addr: Addr,
 ) -> ContractResult<Response> {
-    let assets: Vec<Asset> = match sent_asset {
-        Asset::Native(_) => info.funds.clone().into_iter().map(Asset::Native).collect(),
-        Asset::Cw20(_) => vec![sent_asset.clone()],
-    };
+    let mut assets: Vec<Asset> = info.funds.iter().cloned().map(Asset::Native).collect();
+
+    if let Asset::Cw20(_) = sent_asset {
+        assets.push(sent_asset.clone());
+    }
 
     // Store all parameters into a temporary storage.
     RECOVER_TEMP_STORAGE.save(

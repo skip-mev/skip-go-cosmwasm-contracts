@@ -1,7 +1,8 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, Coin, CosmosMsg, ReplyOn, SubMsg, Timestamp, WasmMsg,
+    to_binary, Addr, Coin, CosmosMsg, ReplyOn, SubMsg, Timestamp, Uint128, WasmMsg,
 };
+use cw20::Cw20Coin;
 use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
@@ -16,6 +17,12 @@ Test Cases:
 Expect Response
     - Happy Path Single Coin
     - Happy Path Multiple Coins
+    - Happy Path Cw20 Asset
+
+    // Note: The following test case is an invalid call to the contract
+    // showing that under the circumstance both coins and a Cw20 token
+    // is sent to the contract, the contract will recover all assets.
+    - Happy Path Multiple Coins And Cw20 Asset
 
 */
 
@@ -132,6 +139,122 @@ struct Params {
         expected_error: None,
     };
     "Happy Path Multiple Coins")]
+#[test_case(
+    Params {
+        info_funds: vec![],
+        sent_asset: Asset::Cw20(Cw20Coin{
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        }),
+        user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![SwapOperation {
+                pool: "pool".to_string(),
+                denom_in: "neutron123".to_string(),
+                denom_out: "osmo".to_string(),
+            }],
+        }),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_assets: vec![Asset::Cw20(Cw20Coin{
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        })],
+        expected_messages: vec![SubMsg {
+            id: 1,
+            msg: CosmosMsg::from(WasmMsg::Execute {
+                contract_addr: "entry_point".to_string(),
+                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                    sent_asset: Asset::Cw20(Cw20Coin{
+                        address: "neutron123".to_string(),
+                        amount: Uint128::from(1_000_000u128),
+                    }),
+                    user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+                        swap_venue_name: "swap_venue_name".to_string(),
+                        operations: vec![SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "neutron123".to_string(),
+                            denom_out: "osmo".to_string(),
+                        }],
+                    }),
+                    min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                    timeout_timestamp: 101,
+                    post_swap_action: Action::Transfer {
+                        to_address: "to_address".to_string(),
+                    },
+                    affiliates: vec![],
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }],
+        expected_error: None,
+    };
+    "Happy Path Cw20 Asset")]
+#[test_case(
+    Params {
+        info_funds: vec![Coin::new(1_000_000, "untrn"), Coin::new(1_000_000, "osmo")],
+        sent_asset: Asset::Cw20(Cw20Coin{
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        }),
+        user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![SwapOperation {
+                pool: "pool".to_string(),
+                denom_in: "untrn".to_string(),
+                denom_out: "osmo".to_string(),
+            }],
+        }),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_assets: vec![Asset::Native(Coin::new(1_000_000, "untrn")), Asset::Native(Coin::new(1_000_000, "osmo")), Asset::Cw20(Cw20Coin{
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        })],
+        expected_messages: vec![SubMsg {
+            id: 1,
+            msg: CosmosMsg::from(WasmMsg::Execute {
+                contract_addr: "entry_point".to_string(),
+                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                    sent_asset: Asset::Cw20(Cw20Coin{
+                        address: "neutron123".to_string(),
+                        amount: Uint128::from(1_000_000u128),
+                    }),
+                    user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+                        swap_venue_name: "swap_venue_name".to_string(),
+                        operations: vec![SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "untrn".to_string(),
+                            denom_out: "osmo".to_string(),
+                        }],
+                    }),
+                    min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                    timeout_timestamp: 101,
+                    post_swap_action: Action::Transfer {
+                        to_address: "to_address".to_string(),
+                    },
+                    affiliates: vec![],
+                })
+                .unwrap(),
+                funds: vec![Coin::new(1000000, "untrn"), Coin::new(1000000, "osmo")],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }],
+        expected_error: None,
+    };
+    "Happy Path Multiple Coins And Cw20 Asset")]
 fn test_execute_swap_and_action_with_recover(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
