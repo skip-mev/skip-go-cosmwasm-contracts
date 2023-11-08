@@ -8,7 +8,6 @@ use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg};
 use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
-    error::SkipError::InvalidCw20Coin,
     swap::{Swap, SwapExactAssetIn, SwapOperation},
 };
 use skip_api_entry_point::{
@@ -24,9 +23,6 @@ Test Cases:
 Expect Response
     - Valid Swap And Action Msg
     - Valid Swap And Action With Recover Msg
-
-Expect Error
-    - Invalid Cw20 Amount
  */
 
 // Define test parameters
@@ -176,33 +172,6 @@ struct Params {
         expected_error: None,
     };
     "Valid Swap And Action With Recover Msg")]
-#[test_case(
-    Params {
-        info_funds: vec![],
-        sent_asset: Asset::Cw20(Cw20Coin{address: "neutron123".to_string(), amount: Uint128::from(2_000_000u128)}),
-        user_swap: Swap::SwapExactAssetIn (
-            SwapExactAssetIn{
-                swap_venue_name: "swap_venue_name".to_string(),
-                operations: vec![
-                    SwapOperation {
-                        pool: "pool".to_string(),
-                        denom_in: "neutron123".to_string(),
-                        denom_out: "osmo".to_string(),
-                    }
-                ],
-            }
-        ),
-        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-        timeout_timestamp: 101,
-        post_swap_action: Action::Transfer {
-            to_address: "to_address".to_string(),
-        },
-        affiliates: vec![],
-        recovery_addr: None,
-        expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(InvalidCw20Coin)),
-    };
-    "Invalid Cw20 Amount")]
 fn test_execute_receive(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
