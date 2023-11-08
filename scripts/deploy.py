@@ -342,7 +342,7 @@ def store_contract(client, wallet, file_path, name, permissioned_uploader_addres
 
 
 def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
-    gas_limit = 200000
+    gas_limit = 300000
     instantiate_tx = create_wasm_instantiate_tx(
         client=client,
         wallet=wallet,
@@ -366,7 +366,7 @@ def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
 
 
 def instantiate2_contract(client, wallet, code_id, args, label, name, pre_gen_address) -> str:
-    gas_limit = 200000
+    gas_limit = 300000
     instantiate_2_tx = create_wasm_instantiate2_tx(
         client=client,
         wallet=wallet,
