@@ -1,13 +1,12 @@
-use crate::error::SkipError;
+use crate::{asset::Asset, error::SkipError};
 
-use std::{
-    convert::{From, TryFrom},
-    num::ParseIntError,
-};
+use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, BankMsg, Coin, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Response};
+use cw20::Cw20Contract;
+use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -23,12 +22,10 @@ pub struct OsmosisInstantiateMsg {
     pub entry_point_contract_address: String,
 }
 
-// TODO: Change to AstroportInstantiateMsg as part of restructuring
-
 // The NeutronInstantiateMsg struct defines the initialization parameters for the
 // Neutron Astroport swap adapter contract.
 #[cw_serde]
-pub struct NeutronInstantiateMsg {
+pub struct AstroportInstantiateMsg {
     pub entry_point_contract_address: String,
     pub router_contract_address: String,
 }
@@ -47,28 +44,14 @@ pub struct LidoSatelliteInstantiateMsg {
 // Only the Swap message is callable by external users.
 #[cw_serde]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     Swap { operations: Vec<SwapOperation> },
-    TransferFundsBack { swapper: Addr },
+    TransferFundsBack { swapper: Addr, return_denom: String },
 }
 
-// Converts a SwapExactCoinIn used in the entry point contract
-// to a swap adapter Swap execute message
-impl From<SwapExactCoinIn> for ExecuteMsg {
-    fn from(swap: SwapExactCoinIn) -> Self {
-        ExecuteMsg::Swap {
-            operations: swap.operations,
-        }
-    }
-}
-
-// Converts a SwapExactCoinOut used in the entry point contract
-// to a swap adapter Swap execute message
-impl From<SwapExactCoinOut> for ExecuteMsg {
-    fn from(swap: SwapExactCoinOut) -> Self {
-        ExecuteMsg::Swap {
-            operations: swap.operations,
-        }
-    }
+#[cw_serde]
+pub enum Cw20HookMsg {
+    Swap { operations: Vec<SwapOperation> },
 }
 
 /////////////////////////
@@ -83,16 +66,16 @@ pub enum QueryMsg {
     // RouterContractAddress returns the address of the router contract
     #[returns(Addr)]
     RouterContractAddress {},
-    // SimulateSwapExactAmountOut returns the coin in necessary to receive the specified coin out
-    #[returns(Coin)]
-    SimulateSwapExactCoinOut {
-        coin_out: Coin,
+    // SimulateSwapExactAssetOut returns the asset in necessary to receive the specified asset out
+    #[returns(Asset)]
+    SimulateSwapExactAssetOut {
+        asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
     },
-    // SimulateSwapExactAmountIn returns the coin out received from the specified coin in
-    #[returns(Coin)]
-    SimulateSwapExactCoinIn {
-        coin_in: Coin,
+    // SimulateSwapExactAssetIn returns the asset out received from the specified asset in
+    #[returns(Asset)]
+    SimulateSwapExactAssetIn {
+        asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
     },
 }
@@ -118,19 +101,28 @@ pub struct SwapOperation {
     pub denom_out: String,
 }
 
-// ASTROPORT CONVERSIONS
+// ASTROPORT CONVERSION
 
-// Converts a skip swap operation to an astroport swap operation
-impl From<SwapOperation> for AstroportSwapOperation {
-    fn from(swap_operation: SwapOperation) -> Self {
-        // Convert the swap operation to an astroport swap operation and return it
+// Converts a swap operation to an astroport swap operation
+impl SwapOperation {
+    pub fn into_astroport_swap_operation(&self, api: &dyn Api) -> AstroportSwapOperation {
+        let offer_asset_info = match api.addr_validate(&self.denom_in) {
+            Ok(contract_addr) => AssetInfo::Token { contract_addr },
+            Err(_) => AssetInfo::NativeToken {
+                denom: self.denom_in.clone(),
+            },
+        };
+
+        let ask_asset_info = match api.addr_validate(&self.denom_out) {
+            Ok(contract_addr) => AssetInfo::Token { contract_addr },
+            Err(_) => AssetInfo::NativeToken {
+                denom: self.denom_out.clone(),
+            },
+        };
+
         AstroportSwapOperation::AstroSwap {
-            offer_asset_info: AssetInfo::NativeToken {
-                denom: swap_operation.denom_in,
-            },
-            ask_asset_info: AssetInfo::NativeToken {
-                denom: swap_operation.denom_out,
-            },
+            offer_asset_info,
+            ask_asset_info,
         }
     }
 }
@@ -176,26 +168,46 @@ where
     swap_operations.into_iter().map(T::try_from).collect()
 }
 
-// Swap object to get the exact amount of a given coin with the given vector of swap operations
+// Swap object to get the exact amount of a given asset with the given vector of swap operations
 #[cw_serde]
-pub struct SwapExactCoinOut {
+pub struct SwapExactAssetOut {
     pub swap_venue_name: String,
     pub operations: Vec<SwapOperation>,
     pub refund_address: Option<String>,
 }
 
-// Swap object that swaps the remaining coin recevied
+// Swap object that swaps the remaining asset recevied
 // from the contract call minus fee swap (if present)
 #[cw_serde]
-pub struct SwapExactCoinIn {
+pub struct SwapExactAssetIn {
     pub swap_venue_name: String,
     pub operations: Vec<SwapOperation>,
 }
 
+// Converts a SwapExactAssetOut used in the entry point contract
+// to a swap adapter Swap execute message
+impl From<SwapExactAssetOut> for ExecuteMsg {
+    fn from(swap: SwapExactAssetOut) -> Self {
+        ExecuteMsg::Swap {
+            operations: swap.operations,
+        }
+    }
+}
+
+// Converts a SwapExactAssetIn used in the entry point contract
+// to a swap adapter Swap execute message
+impl From<SwapExactAssetIn> for ExecuteMsg {
+    fn from(swap: SwapExactAssetIn) -> Self {
+        ExecuteMsg::Swap {
+            operations: swap.operations,
+        }
+    }
+}
+
 #[cw_serde]
 pub enum Swap {
-    SwapExactCoinIn(SwapExactCoinIn),
-    SwapExactCoinOut(SwapExactCoinOut),
+    SwapExactAssetIn(SwapExactAssetIn),
+    SwapExactAssetOut(SwapExactAssetOut),
 }
 
 ////////////////////////
@@ -208,16 +220,25 @@ pub fn execute_transfer_funds_back(
     env: Env,
     info: MessageInfo,
     swapper: Addr,
+    return_denom: String,
 ) -> Result<Response, SkipError> {
     // Ensure the caller is the contract itself
     if info.sender != env.contract.address {
         return Err(SkipError::Unauthorized);
     }
 
-    // Create the bank message send to transfer the contract funds back to the caller
-    let transfer_funds_back_msg = BankMsg::Send {
-        to_address: swapper.to_string(),
-        amount: deps.querier.query_all_balances(env.contract.address)?,
+    // Create the transfer funds back message
+    let transfer_funds_back_msg: CosmosMsg = match deps.api.addr_validate(&return_denom) {
+        Ok(contract_addr) => Asset::new(
+            deps.api,
+            contract_addr.as_str(),
+            Cw20Contract(contract_addr.clone()).balance(&deps.querier, &env.contract.address)?,
+        )
+        .transfer(swapper.as_str()),
+        Err(_) => CosmosMsg::Bank(BankMsg::Send {
+            to_address: swapper.to_string(),
+            amount: deps.querier.query_all_balances(env.contract.address)?,
+        }),
     };
 
     Ok(Response::new()
@@ -228,22 +249,22 @@ pub fn execute_transfer_funds_back(
 // Validates the swap operations
 pub fn validate_swap_operations(
     swap_operations: &[SwapOperation],
-    coin_in_denom: &str,
-    coin_out_denom: &str,
+    asset_in_denom: &str,
+    asset_out_denom: &str,
 ) -> Result<(), SkipError> {
     // Verify the swap operations are not empty
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(SkipError::SwapOperationsEmpty);
     };
 
-    // Verify the first swap operation denom in is the same as the coin in denom
-    if first_op.denom_in != coin_in_denom {
-        return Err(SkipError::SwapOperationsCoinInDenomMismatch);
+    // Verify the first swap operation denom in is the same as the asset in denom
+    if first_op.denom_in != asset_in_denom {
+        return Err(SkipError::SwapOperationsAssetInDenomMismatch);
     }
 
-    // Verify the last swap operation denom out is the same as the coin out denom
-    if last_op.denom_out != coin_out_denom {
-        return Err(SkipError::SwapOperationsCoinOutDenomMismatch);
+    // Verify the last swap operation denom out is the same as the asset out denom
+    if last_op.denom_out != asset_out_denom {
+        return Err(SkipError::SwapOperationsAssetOutDenomMismatch);
     }
 
     Ok(())
@@ -253,24 +274,54 @@ pub fn validate_swap_operations(
 mod tests {
     use super::*;
 
+    use cosmwasm_std::testing::mock_dependencies;
+
     #[test]
     fn test_from_swap_operation_to_astropot_swap_operation() {
+        // TEST CASE 1: Native Swap Operation
         let swap_operation = SwapOperation {
             pool: "1".to_string(),
-            denom_in: "uatom".to_string(),
-            denom_out: "uosmo".to_string(),
+            denom_in: "ua".to_string(),
+            denom_out: "uo".to_string(),
         };
 
-        let astroport_swap_operation: AstroportSwapOperation = swap_operation.into();
+        let deps = mock_dependencies();
+
+        let astroport_swap_operation: AstroportSwapOperation =
+            swap_operation.into_astroport_swap_operation(&deps.api);
 
         assert_eq!(
             astroport_swap_operation,
             AstroportSwapOperation::AstroSwap {
                 offer_asset_info: AssetInfo::NativeToken {
-                    denom: "uatom".to_string()
+                    denom: "ua".to_string()
                 },
                 ask_asset_info: AssetInfo::NativeToken {
-                    denom: "uosmo".to_string()
+                    denom: "uo".to_string()
+                }
+            }
+        );
+
+        // TEST CASE 2: CW20 Swap Operation
+        let swap_operation = SwapOperation {
+            pool: "1".to_string(),
+            denom_in: "cwabc".to_string(),
+            denom_out: "cw123".to_string(),
+        };
+
+        let deps = mock_dependencies();
+
+        let astroport_swap_operation: AstroportSwapOperation =
+            swap_operation.into_astroport_swap_operation(&deps.api);
+
+        assert_eq!(
+            astroport_swap_operation,
+            AstroportSwapOperation::AstroSwap {
+                offer_asset_info: AssetInfo::Token {
+                    contract_addr: Addr::unchecked("cwabc")
+                },
+                ask_asset_info: AssetInfo::Token {
+                    contract_addr: Addr::unchecked("cw123")
                 }
             }
         );
@@ -449,20 +500,20 @@ mod tests {
             },
         ];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_ok());
 
         // TEST CASE 2: Empty Swap Operations
         let swap_operations: Vec<SwapOperation> = vec![];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), SkipError::SwapOperationsEmpty);
@@ -481,15 +532,15 @@ mod tests {
             },
         ];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            SkipError::SwapOperationsCoinInDenomMismatch
+            SkipError::SwapOperationsAssetInDenomMismatch
         );
 
         // TEST CASE 4: Last Swap Operation Denom Out Mismatch
@@ -506,15 +557,15 @@ mod tests {
             },
         ];
 
-        let coin_in_denom = "uatom";
-        let coin_out_denom = "untrn";
+        let asset_in_denom = "uatom";
+        let asset_out_denom = "untrn";
 
-        let result = validate_swap_operations(&swap_operations, coin_in_denom, coin_out_denom);
+        let result = validate_swap_operations(&swap_operations, asset_in_denom, asset_out_denom);
 
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            SkipError::SwapOperationsCoinOutDenomMismatch
+            SkipError::SwapOperationsAssetOutDenomMismatch
         );
     }
 }

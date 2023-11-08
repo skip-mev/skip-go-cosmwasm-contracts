@@ -24,6 +24,7 @@ Expect Error
 struct Params {
     caller: String,
     contract_balance: Vec<Coin>,
+    return_denom: String,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -32,13 +33,14 @@ struct Params {
 #[test_case(
     Params {
         caller: "swap_contract_address".to_string(),
-        contract_balance: vec![Coin::new(100, "uosmo")],
+        contract_balance: vec![Coin::new(100, "os")],
+        return_denom: "os".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "swapper".to_string(),
-                    amount: vec![Coin::new(100, "uosmo")],
+                    amount: vec![Coin::new(100, "os")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -51,16 +53,17 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![
-            Coin::new(100, "uosmo"),
+            Coin::new(100, "os"),
             Coin::new(100, "uatom"),
         ],
+        return_denom: "os".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "swapper".to_string(),
                     amount: vec![
-                        Coin::new(100, "uosmo"),
+                        Coin::new(100, "os"),
                         Coin::new(100, "uatom")
                     ],
                 }.into(),
@@ -75,6 +78,7 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
+        return_denom: "os".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -93,6 +97,7 @@ struct Params {
     Params {
         caller: "random".to_string(),
         contract_balance: vec![],
+        return_denom: "os".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -127,6 +132,7 @@ fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::TransferFundsBack {
+            return_denom: params.return_denom,
             swapper: Addr::unchecked("swapper"),
         },
     );

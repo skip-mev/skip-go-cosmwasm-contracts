@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{OverflowError, StdError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -13,6 +13,12 @@ pub enum SkipError {
     #[error("Unauthorized")]
     Unauthorized,
 
+    #[error(transparent)]
+    Payment(#[from] cw_utils::PaymentError),
+
+    #[error(transparent)]
+    Overflow(#[from] OverflowError),
+
     ////////////
     /// SWAP ///
     ////////////
@@ -20,11 +26,11 @@ pub enum SkipError {
     #[error("Swap Operations Empty")]
     SwapOperationsEmpty,
 
-    #[error("First Swap Operations' Denom In Differs From Swap Coin In Denom")]
-    SwapOperationsCoinInDenomMismatch,
+    #[error("First Swap Operations' Denom In Differs From Swap Asset In Denom")]
+    SwapOperationsAssetInDenomMismatch,
 
-    #[error("Last Swap Operations' Denom Out Differs From Swap Coin Out Denom")]
-    SwapOperationsCoinOutDenomMismatch,
+    #[error("Last Swap Operations' Denom Out Differs From Swap Asset Out Denom")]
+    SwapOperationsAssetOutDenomMismatch,
 
     ///////////
     /// IBC ///
@@ -32,4 +38,14 @@ pub enum SkipError {
 
     #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
     IbcFeesNotOneCoin,
+
+    /////////////
+    /// ASSET ///
+    /////////////
+
+    #[error("Native Coin Sent To Contract Does Not Match Asset")]
+    InvalidNativeCoin,
+
+    #[error("Cw20 Coin Sent To Contract Does Not Match Asset")]
+    InvalidCw20Coin,
 }

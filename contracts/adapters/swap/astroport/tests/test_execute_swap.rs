@@ -43,12 +43,12 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "uosmo")],
+        info_funds: vec![Coin::new(100, "os")],
         swap_operations: vec![
             SwapOperation {
                 pool: "pool_1".to_string(),
-                denom_in: "uosmo".to_string(),
-                denom_out: "uatom".to_string(),
+                denom_in: "os".to_string(),
+                denom_out: "ua".to_string(),
             }
         ],
         expected_messages: vec![
@@ -60,10 +60,10 @@ struct Params {
                         operations: vec![
                             AstroportSwapOperation::AstroSwap {
                                 offer_asset_info: AssetInfo::NativeToken {
-                                    denom: "uosmo".to_string(),
+                                    denom: "os".to_string(),
                                 },
                                 ask_asset_info: AssetInfo::NativeToken {
-                                    denom: "uatom".to_string(),
+                                    denom: "ua".to_string(),
                                 },
                             }
                         ],
@@ -71,7 +71,7 @@ struct Params {
                         to: None,
                         max_spread: None,
                     })?,
-                    funds: vec![Coin::new(100, "uosmo")],
+                    funds: vec![Coin::new(100, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -82,6 +82,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                        return_denom: "ua".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
                     funds: vec![],
@@ -97,17 +98,17 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "uosmo")],
+        info_funds: vec![Coin::new(100, "os")],
         swap_operations: vec![
             SwapOperation {
                 pool: "pool_1".to_string(),
-                denom_in: "uosmo".to_string(),
-                denom_out: "uatom".to_string(),
+                denom_in: "os".to_string(),
+                denom_out: "ua".to_string(),
             },
             SwapOperation {
                 pool: "pool_2".to_string(),
-                denom_in: "uatom".to_string(),
-                denom_out: "untrn".to_string(),
+                denom_in: "ua".to_string(),
+                denom_out: "un".to_string(),
             }
         ],
         expected_messages: vec![
@@ -119,18 +120,18 @@ struct Params {
                         operations: vec![
                             AstroportSwapOperation::AstroSwap {
                                 offer_asset_info: AssetInfo::NativeToken {
-                                    denom: "uosmo".to_string(),
+                                    denom: "os".to_string(),
                                 },
                                 ask_asset_info: AssetInfo::NativeToken {
-                                    denom: "uatom".to_string(),
+                                    denom: "ua".to_string(),
                                 },
                             },
                             AstroportSwapOperation::AstroSwap {
                                 offer_asset_info: AssetInfo::NativeToken {
-                                    denom: "uatom".to_string(),
+                                    denom: "ua".to_string(),
                                 },
                                 ask_asset_info: AssetInfo::NativeToken {
-                                    denom: "untrn".to_string(),
+                                    denom: "un".to_string(),
                                 },
                             }
                         ],
@@ -138,7 +139,7 @@ struct Params {
                         to: None,
                         max_spread: None,
                     })?,
-                    funds: vec![Coin::new(100, "uosmo")],
+                    funds: vec![Coin::new(100, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -149,6 +150,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                        return_denom: "un".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
                     funds: vec![],
@@ -164,7 +166,7 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "uosmo")],
+        info_funds: vec![Coin::new(100, "os")],
         swap_operations: vec![],
         expected_messages: vec![
             SubMsg {
@@ -177,7 +179,7 @@ struct Params {
                         to: None,
                         max_spread: None,
                     })?,
-                    funds: vec![Coin::new(100, "uosmo")],
+                    funds: vec![Coin::new(100, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -188,6 +190,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                        return_denom: "ua".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
                     funds: vec![],
@@ -197,7 +200,7 @@ struct Params {
                 reply_on: Never,
             },
         ],
-        expected_error: None,
+        expected_error: Some(ContractError::SwapOperationsEmpty),
     };
     "No Swap Operations")]
 #[test_case(
@@ -213,8 +216,8 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![
-            Coin::new(100, "untrn"),
-            Coin::new(100, "uosmo"),
+            Coin::new(100, "un"),
+            Coin::new(100, "os"),
         ],
         swap_operations: vec![],
         expected_messages: vec![],
@@ -225,8 +228,7 @@ struct Params {
     Params {
         caller: "random".to_string(),
         info_funds: vec![
-            Coin::new(100, "untrn"),
-            Coin::new(100, "uosmo"),
+            Coin::new(100, "un"),
         ],
         swap_operations: vec![],
         expected_messages: vec![],

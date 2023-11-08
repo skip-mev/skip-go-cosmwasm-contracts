@@ -1,6 +1,10 @@
 import os
 import sys
 import toml
+import httpx
+import time
+from hashlib import sha256
+from base64 import b64encode, b64decode
 from datetime import datetime
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 from google.protobuf import any_pb2
@@ -18,6 +22,8 @@ from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import (
     )
 from cosmpy.common.utils import json_encode
 from cosmpy.protos.cosmos.authz.v1beta1.tx_pb2 import MsgExec
+from terra_sdk.client.lcd import LCDClient
+from terra_sdk.key.mnemonic import MnemonicKey
 
 CHAIN = sys.argv[1]
 NETWORK = sys.argv[2]
@@ -48,11 +54,13 @@ PERMISSIONED_UPLOADER_ADDRESS = None
 # Choose network to deploy to based on cli args
 if NETWORK == "mainnet":
     REST_URL = config["MAINNET_REST_URL"]
+    RPC_URL = config["MAINNET_RPC_URL"]
     CHAIN_ID = config["MAINNET_CHAIN_ID"]
     if "PERMISSIONED_UPLOADER_ADDRESS" in config:
         PERMISSIONED_UPLOADER_ADDRESS = config["PERMISSIONED_UPLOADER_ADDRESS"]
 elif NETWORK == "testnet":
     REST_URL = config["TESTNET_REST_URL"]
+    RPC_URL = config["TESTNET_RPC_URL"]
     CHAIN_ID = config["TESTNET_CHAIN_ID"]
 else:
     raise Exception("Must specify either 'mainnet' or 'testnet' for 2nd command line argument.")
@@ -81,7 +89,7 @@ def main():
     # Create network config and client
     cfg = NetworkConfig(
         chain_id=CHAIN_ID,
-        url=REST_URL,
+        url=f"rest+{REST_URL}",
         fee_minimum_gas_price=.01,
         fee_denomination=DENOM,
         staking_denomination=DENOM,
@@ -160,6 +168,7 @@ def create_tx(msg,
               gas_limit: int, 
               fee: str,
               ) -> tuple[bytes, str]:
+    time.sleep(5)
     tx = Transaction()
     tx.add_message(msg)
     
@@ -279,11 +288,19 @@ def create_wasm_execute_tx(
     
 def create_wallet(client) -> LocalWallet:
     """ Create a wallet from a mnemonic and return it"""
-    seed_bytes = Bip39SeedGenerator(MNEMONIC).Generate()
-    bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.COSMOS).DeriveDefaultPath()
-    wallet = LocalWallet(PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes()), prefix=ADDRESS_PREFIX)  
-    balance = client.query_bank_balance(str(wallet.address()), DENOM)
-    print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
+    if CHAIN == "terra":
+        mk = MnemonicKey(mnemonic=MNEMONIC)
+        terra = LCDClient(REST_URL, CHAIN_ID)
+        terra_wallet = terra.wallet(mk)
+        wallet = LocalWallet(PrivateKey(terra_wallet.key.private_key), prefix="terra")
+        balance = client.query_bank_balance(str(wallet.address()), DENOM)
+        print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
+    else:
+        seed_bytes = Bip39SeedGenerator(MNEMONIC).Generate()
+        bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.COSMOS).DeriveDefaultPath()
+        wallet = LocalWallet(PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes()), prefix=ADDRESS_PREFIX)  
+        balance = client.query_bank_balance(str(wallet.address()), DENOM)
+        print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
     return wallet
 
 
@@ -302,7 +319,7 @@ def init_deployed_contracts_info():
 
 
 def store_contract(client, wallet, file_path, name, permissioned_uploader_address) -> int:
-    gas_limit = 4000000
+    gas_limit = 5000000
     store_tx = create_wasm_store_tx(
         client=client,
         wallet=wallet,
@@ -312,21 +329,21 @@ def store_contract(client, wallet, file_path, name, permissioned_uploader_addres
         file=file_path,
         permissioned_uploader_address=permissioned_uploader_address
     )
-    submitted_tx = client.broadcast_tx(store_tx)
-    print("Tx hash: ", submitted_tx.tx_hash)
-    submitted_tx.wait_to_complete(timeout=60)
-    contract_code_id = submitted_tx.contract_code_id
-    print(f"Skip Swap {name} Contract Code ID:", submitted_tx.contract_code_id)
+    tx_hash = sha256(store_tx.tx.SerializeToString()).hexdigest()
+    print("Tx hash: ", tx_hash)
+    resp: httpx.Response = broadcast_tx(store_tx)
+    contract_code_id: str = get_attribute_value(resp, "store_code", "code_id")
+    print(f"Skip Swap {name} Contract Code ID:", contract_code_id)
     DEPLOYED_CONTRACTS_INFO["code-ids"][f"{name}_contract_code_id"] = contract_code_id
-    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"store_{name}_tx_hash"] = submitted_tx.tx_hash
+    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"store_{name}_tx_hash"] = tx_hash
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     return int(contract_code_id)
 
 
 def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
-    gas_limit = 200000
-    instantiate_swap_adapter_tx = create_wasm_instantiate_tx(
+    gas_limit = 300000
+    instantiate_tx = create_wasm_instantiate_tx(
         client=client,
         wallet=wallet,
         address=str(wallet.address()),
@@ -336,21 +353,21 @@ def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
         args=args,
         label=label
     )
-    submitted_tx = client.broadcast_tx(instantiate_swap_adapter_tx)
-    print("Tx hash: ", submitted_tx.tx_hash)
-    submitted_tx.wait_to_complete(timeout=60)
-    contract_address = submitted_tx.contract_address.__str__()
+    tx_hash = sha256(instantiate_tx.tx.SerializeToString()).hexdigest()
+    print("Tx hash: ", tx_hash)
+    resp: httpx.Response = broadcast_tx(instantiate_tx)
+    contract_address: str = get_attribute_value(resp, "instantiate", "_contract_address")
     print(f"Skip Swap {name} Contract Address:", contract_address)
     DEPLOYED_CONTRACTS_INFO["contract-addresses"][f"{name}_contract_address"] = contract_address
-    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"instantiate_{name}_tx_hash"] = submitted_tx.tx_hash
+    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"instantiate_{name}_tx_hash"] = tx_hash
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     return contract_address
 
 
 def instantiate2_contract(client, wallet, code_id, args, label, name, pre_gen_address) -> str:
-    gas_limit = 200000
-    instantiate_swap_adapter_tx = create_wasm_instantiate2_tx(
+    gas_limit = 300000
+    instantiate_2_tx = create_wasm_instantiate2_tx(
         client=client,
         wallet=wallet,
         address=str(wallet.address()),
@@ -360,16 +377,16 @@ def instantiate2_contract(client, wallet, code_id, args, label, name, pre_gen_ad
         args=args,
         label=label
     )
-    submitted_tx = client.broadcast_tx(instantiate_swap_adapter_tx)
-    print("Tx hash: ", submitted_tx.tx_hash)
-    #submitted_tx.wait_to_complete(timeout=60)
-    #contract_address = submitted_tx.contract_address.__str__()
-    print(f"Skip Swap {name} Contract Address:", pre_gen_address)
-    DEPLOYED_CONTRACTS_INFO["contract-addresses"][f"{name}_contract_address"] = pre_gen_address
-    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"instantiate_{name}_tx_hash"] = submitted_tx.tx_hash
+    tx_hash = sha256(instantiate_2_tx.tx.SerializeToString()).hexdigest()
+    print("Tx hash: ", tx_hash)
+    resp: httpx.Response = broadcast_tx(instantiate_2_tx)
+    contract_address: str = get_attribute_value(resp, "instantiate", "_contract_address")
+    print(f"Skip Swap {name} Contract Address:", contract_address)
+    DEPLOYED_CONTRACTS_INFO["contract-addresses"][f"{name}_contract_address"] = contract_address
+    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"instantiate_{name}_tx_hash"] = tx_hash
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
-    return pre_gen_address
+    return contract_address
 
 
 def create_any_msg(msg):
@@ -382,6 +399,31 @@ def create_exec_msg(msg, grantee_address: str) -> MsgExec:
     authz_exec_any = create_any_msg(msg)
     msg_exec = MsgExec(grantee=grantee_address, msgs = [authz_exec_any])
     return msg_exec
+
+
+def broadcast_tx(tx) -> httpx.Response:
+    tx_bytes = tx.tx.SerializeToString()
+    encoded_tx = b64encode(tx_bytes).decode("utf-8")
+    data = {
+        'jsonrpc': '2.0',
+        'method': "broadcast_tx_sync",
+        'params': [encoded_tx],
+        'id': 1
+    }
+    httpx.post(RPC_URL, json=data, timeout=60)
+    print("Sleeping for 20 seconds...")
+    time.sleep(20)
+    resp = httpx.get(REST_URL + f"/cosmos/tx/v1beta1/txs/{sha256(tx_bytes).hexdigest()}", timeout=60)
+    return resp
+
+
+def get_attribute_value(resp, event_type, attr_key):
+    for event in resp.json()['tx_response']['logs'][0]['events']:
+        if event['type'] == event_type:
+            for attr in event['attributes']:
+                if attr['key'] == attr_key:
+                    return attr['value']
+    return None
     
     
 if __name__ == "__main__":

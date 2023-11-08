@@ -12,6 +12,7 @@ use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     PoolmanagerQuerier, SwapAmountInRoute, SwapAmountOutRoute,
 };
 use skip::{
+    asset::Asset,
     proto_coin::ProtoCoin,
     swap::{
         convert_swap_operations, execute_transfer_funds_back, ExecuteMsg,
@@ -59,8 +60,18 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
-        ExecuteMsg::TransferFundsBack { swapper } => {
-            Ok(execute_transfer_funds_back(deps, env, info, swapper)?)
+        ExecuteMsg::TransferFundsBack {
+            swapper,
+            return_denom,
+        } => Ok(execute_transfer_funds_back(
+            deps,
+            env,
+            info,
+            swapper,
+            return_denom,
+        )?),
+        _ => {
+            unimplemented!()
         }
     }
 }
@@ -83,6 +94,11 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
+    let return_denom = match operations.last() {
+        Some(last_op) => last_op.denom_out.clone(),
+        None => return Err(ContractError::SwapOperationsEmpty),
+    };
+
     // Create the osmosis poolmanager swap exact amount in message
     let swap_msg = create_osmosis_swap_msg(&env, coin_in, operations)?;
 
@@ -91,6 +107,7 @@ fn execute_swap(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::TransferFundsBack {
             swapper: info.sender,
+            return_denom,
         })?,
         funds: vec![],
     };
@@ -139,20 +156,20 @@ fn create_osmosis_swap_msg(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
-        QueryMsg::SimulateSwapExactCoinIn {
-            coin_in,
+        QueryMsg::SimulateSwapExactAssetIn {
+            asset_in,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_coin_in(
+        } => to_binary(&query_simulate_swap_exact_asset_in(
             deps,
-            coin_in,
+            asset_in,
             swap_operations,
         )?),
-        QueryMsg::SimulateSwapExactCoinOut {
-            coin_out,
+        QueryMsg::SimulateSwapExactAssetOut {
+            asset_out,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_coin_out(
+        } => to_binary(&query_simulate_swap_exact_asset_out(
             deps,
-            coin_out,
+            asset_out,
             swap_operations,
         )?),
         _ => {
@@ -163,14 +180,21 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 }
 
 // Queries the osmosis poolmanager module to simulate a swap exact amount in
-fn query_simulate_swap_exact_coin_in(
+fn query_simulate_swap_exact_asset_in(
     deps: Deps,
-    coin_in: Coin,
+    asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Coin> {
+) -> ContractResult<Asset> {
     // Error if swap operations is empty
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(ContractError::SwapOperationsEmpty);
+    };
+
+    // Get coin in from asset in, error if asset in is not a
+    // native coin because Osmosis does not support CW20 tokens.
+    let coin_in = match asset_in {
+        Asset::Native(coin) => coin,
+        _ => return Err(ContractError::AssetNotNative),
     };
 
     // Ensure coin_in's denom is the same as the first swap operation's denom in
@@ -199,18 +223,26 @@ fn query_simulate_swap_exact_coin_in(
     Ok(Coin {
         denom: denom_out,
         amount: Uint128::from_str(&res.token_out_amount)?,
-    })
+    }
+    .into())
 }
 
 // Queries the osmosis poolmanager module to simulate a swap exact amount out
-fn query_simulate_swap_exact_coin_out(
+fn query_simulate_swap_exact_asset_out(
     deps: Deps,
-    coin_out: Coin,
+    asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Coin> {
+) -> ContractResult<Asset> {
     // Error if swap operations is empty
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(ContractError::SwapOperationsEmpty);
+    };
+
+    // Get coin out from asset out, error if asset out is not a
+    // native coin because Osmosis does not support CW20 tokens.
+    let coin_out = match asset_out {
+        Asset::Native(coin) => coin,
+        _ => return Err(ContractError::AssetNotNative),
     };
 
     // Ensure coin_out's denom is the same as the last swap operation's denom out
@@ -239,5 +271,6 @@ fn query_simulate_swap_exact_coin_out(
     Ok(Coin {
         denom: denom_in,
         amount: Uint128::from_str(&res.token_in_amount)?,
-    })
+    }
+    .into())
 }

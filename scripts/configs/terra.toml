@@ -1,0 +1,39 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commut Hash
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+MAINNET_REST_URL = "https://phoenix-lcd.terra.dev"
+MAINNET_RPC_URL = "https://terra-rpc.polkachu.com/"
+MAINNET_CHAIN_ID = "phoenix-1"
+
+TESTNET_REST_URL = "https://terra-testnet-api.polkachu.com"
+TESTNET_RPC_URL = "https://terra-testnet-rpc.polkachu.com/"
+TESTNET_CHAIN_ID = "pisco-1"
+
+ADDRESS_PREFIX = "terra"
+DENOM = "uluna"
+GAS_PRICE = 0.015
+
+# Contract Paths
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_api_entry_point-aarch64.wasm"
+SWAP_ADAPTER_PATH = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_api_ibc_adapter_ibc_hooks-aarch64.wasm"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+[[swap_venues]]
+name = "terra-astroport"
+# Testnet name
+#name = "testnet-terra-astroport"
+
+# @DEV MUST CHANGE ROUTER CONTRACT ADDRESS ACCORDING TO NETWORK
+# MAINNET ROUTER CONTRACT ADDRESS
+router_contract_address = "terra1j8hayvehh3yy02c2vtw5fdhz9f4drhtee8p5n5rguvg3nyd6m83qd2y90a"
+# TESTNET ROUTER CONTRACT ADDRESS
+#router_contract_address = "terra1na348k6rvwxje9jj6ftpsapfeyaejxjeq6tuzdmzysps20l6z23smnlv64"
