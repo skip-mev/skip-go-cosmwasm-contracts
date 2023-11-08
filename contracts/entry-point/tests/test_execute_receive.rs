@@ -211,7 +211,6 @@ fn test_execute_receive(params: Params) {
     )]);
 
     // Create mock wasm handler to handle the swap adapter contract query
-    // Will always return 200_000 osmo
     let wasm_handler = |query: &WasmQuery| -> QuerierResult {
         match query {
             WasmQuery::Smart { contract_addr, .. } => {

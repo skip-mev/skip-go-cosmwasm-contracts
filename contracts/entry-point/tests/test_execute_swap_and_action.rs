@@ -3,14 +3,15 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
     QuerierResult,
     ReplyOn::Never,
-    SubMsg, SystemResult, Timestamp, WasmMsg, WasmQuery,
+    SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw_utils::PaymentError::{MultipleDenoms, NoFunds};
+use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg};
+use cw_utils::PaymentError::{MultipleDenoms, NoFunds, NonPayable};
 use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        IbcFeesNotOneCoin, Overflow, Payment, SwapOperationsAssetInDenomMismatch,
+        IbcFeesNotOneCoin, InvalidCw20Coin, Overflow, Payment, SwapOperationsAssetInDenomMismatch,
         SwapOperationsAssetOutDenomMismatch, SwapOperationsEmpty,
     },
     ibc::{IbcFee, IbcInfo},
@@ -28,11 +29,17 @@ use test_case::test_case;
 Test Cases:
 
 Expect Response
-    - User Swap Exact Coin In With Bank Send
-    - User Swap Exact Coin Out With Bank Send
-    - User Swap Exact Coin In With IBC Transfer With IBC Fees
-    - User Swap Exact Coin In With IBC Transfer Without IBC Fees
-    - Fee Swap And User Swap Exact Coin In With IBC Fees
+    Native Asset
+        - User Swap Exact Coin In With Transfer
+        - User Swap Exact Coin Out With Transfer
+        - User Swap Exact Coin In With IBC Transfer With IBC Fees
+        - User Swap Exact Coin In With IBC Transfer Without IBC Fees
+        - Fee Swap And User Swap Exact Coin In With IBC Fees
+
+    CW20 Asset
+        - User Swap Exact Cw20 Asset In With Transfer
+        - Fee Swap And User Swap Exact Cw20 Asset In With IBC Fees
+        - Cw20 Min Asset
 
 Expect Error
     // Fee Swap
@@ -45,9 +52,11 @@ Expect Error
     // User Swap
     - User Swap With IBC Transfer With IBC Fees But IBC Fee Coin Denom Is Not The Same As Remaining Coin Received Denom
 
-    // Invalid Coins Sent To Contract
+    // Invalid Assets Sent To Contract
     - No Coins Sent To Contract
     - More Than One Coin Sent To Contract
+    - Not Enough Cw20 Tokens Sent To Contract
+    - Cw20 Token Specified As Sent Asset With Native Coin Sent To Contract
 
     // Empty Swap Operations
     - Empty Fee Swap Operations
@@ -148,7 +157,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap Exact Coin In With Bank Send")]
+    "User Swap Exact Coin In With Transfer")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -224,7 +233,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "User Swap Exact Coin Out With Bank Send")]
+    "User Swap Exact Coin Out With Transfer")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -574,6 +583,326 @@ struct Params {
         expected_error: None,
     };
     "Fee Swap And User Swap Exact Coin In With IBC Fees")]
+#[test_case(
+    Params {
+        info_funds: vec![],
+        sent_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        }),
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "neutron123".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }
+                                ],
+                            }
+                        ),
+                        remaining_asset: Asset::Cw20(Cw20Coin {
+                            address: "neutron123".to_string(),
+                            amount: Uint128::from(1_000_000u128),
+                        }),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::Transfer {
+                            to_address: "to_address".to_string(),
+                        },
+                        exact_out: false,
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap Exact Cw20 Asset In With Transfer")]
+#[test_case(
+    Params {
+        info_funds: vec![],
+        sent_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        }),
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "uatom".to_string(),
+                    }
+                ],
+            },
+        ),
+        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+            },
+            fee_swap: Some(
+                SwapExactAssetOut {
+                    swap_venue_name: "swap_venue_name_2".to_string(), 
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "neutron123".to_string(),
+                            denom_out: "untrn".to_string(),
+                        }
+                    ],
+                    refund_address: None,
+                }
+            ),
+        },
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "neutron123".to_string(), 
+                    msg: to_binary(&Cw20ExecuteMsg::Send {
+                        contract: "swap_venue_adapter_2".to_string(), 
+                        amount: Uint128::from(200_000u128),
+                        msg: to_binary(&SwapExecuteMsg::Swap {
+                            operations: vec![
+                                SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "neutron123".to_string(),
+                                    denom_out: "untrn".to_string(),
+                                }
+                            ],
+                        }).unwrap(),
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "ibc_transfer_adapter".to_string(),
+                    amount: vec![Coin::new(200_000, "untrn")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool_2".to_string(),
+                                        denom_in: "neutron123".to_string(),
+                                        denom_out: "uatom".to_string(),
+                                    }
+                                ],
+                            }
+                        ),
+                        remaining_asset: Asset::Cw20(Cw20Coin {
+                            address: "neutron123".to_string(),
+                            amount: Uint128::from(800_000u128),
+                        }),
+                        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_asset: Asset::Native(Coin::new(100_000, "uatom")),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::IbcTransfer {
+                            ibc_info: IbcInfo {
+                                source_channel: "channel-0".to_string(),
+                                receiver: "receiver".to_string(),
+                                memo: "".to_string(),
+                                fee: Some(IbcFee {
+                                    recv_fee: vec![],
+                                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                                }),
+                                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                                    .to_string(),
+                            },
+                            fee_swap: Some(
+                                SwapExactAssetOut {
+                                    swap_venue_name: "swap_venue_name_2".to_string(), 
+                                    operations: vec![
+                                        SwapOperation {
+                                            pool: "pool".to_string(),
+                                            denom_in: "neutron123".to_string(),
+                                            denom_out: "untrn".to_string(),
+                                        }
+                                    ],
+                                    refund_address: None,
+                                }
+                            ),
+                        },
+                        exact_out: false,
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "Fee Swap And User Swap Exact Cw20 Asset In With IBC Fees")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "untrn"),
+        ],
+        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        min_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        }),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }
+                                ],
+                            }
+                        ),
+                        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                        min_asset: Asset::Cw20(Cw20Coin {
+                            address: "neutron123".to_string(),
+                            amount: Uint128::from(1_000_000u128),
+                        }),
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_asset: Asset::Cw20(Cw20Coin {
+                            address: "neutron123".to_string(),
+                            amount: Uint128::from(1_000_000u128),
+                        }),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::Transfer {
+                            to_address: "to_address".to_string(),
+                        },
+                        exact_out: false,
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "Cw20 Min Asset")]
 #[test_case(
     Params {
         info_funds: vec![
@@ -1087,6 +1416,64 @@ struct Params {
     "More Than One Coin Sent to Contract - Expect Error")]
 #[test_case(
     Params {
+        info_funds: vec![],
+        sent_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(2_000_000u128),
+        }),
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            },
+        ),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(InvalidCw20Coin)),
+    };
+    "Not Enough Cw20 Tokens Sent To Contract - Expect Error")]
+#[test_case(
+    Params {
+        info_funds: vec![Coin::new(1_000_000, "osmo")],
+        sent_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(1_000_000u128),
+        }),
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            },
+        ),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(Payment(NonPayable{}))),
+    };
+    "Cw20 Token Specified As Sent Asset With Native Coin Sent To Contract - Expect Error")]
+#[test_case(
+    Params {
         info_funds: vec![
             Coin::new(1_000_000, "osmo"),
         ],
@@ -1161,12 +1548,30 @@ fn test_execute_swap_and_action(params: Params) {
     )]);
 
     // Create mock wasm handler to handle the swap adapter contract query
-    // Will always return 200_000 osmo
     let wasm_handler = |query: &WasmQuery| -> QuerierResult {
         match query {
-            WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&Asset::Native(Coin::new(200_000, "osmo"))).unwrap(),
-            )),
+            WasmQuery::Smart { contract_addr, .. } => {
+                if contract_addr == "swap_venue_adapter" {
+                    SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&Asset::Native(Coin::new(200_000, "osmo"))).unwrap(),
+                    ))
+                } else if contract_addr == "swap_venue_adapter_2" {
+                    SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&Asset::Cw20(Cw20Coin {
+                            address: "neutron123".to_string(),
+                            amount: Uint128::from(200_000u128),
+                        }))
+                        .unwrap(),
+                    ))
+                } else {
+                    SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&BalanceResponse {
+                            balance: Uint128::from(1_000_000u128),
+                        })
+                        .unwrap(),
+                    ))
+                }
+            }
             _ => panic!("Unsupported query: {:?}", query),
         }
     };
@@ -1187,11 +1592,19 @@ fn test_execute_swap_and_action(params: Params) {
 
     // Store the swap venue adapter contract address
     let swap_venue_adapter = Addr::unchecked("swap_venue_adapter");
+    let swap_venue_adapter_2 = Addr::unchecked("swap_venue_adapter_2");
     SWAP_VENUE_MAP
         .save(
             deps.as_mut().storage,
             "swap_venue_name",
             &swap_venue_adapter,
+        )
+        .unwrap();
+    SWAP_VENUE_MAP
+        .save(
+            deps.as_mut().storage,
+            "swap_venue_name_2",
+            &swap_venue_adapter_2,
         )
         .unwrap();
 
