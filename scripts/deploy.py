@@ -71,7 +71,6 @@ GAS_PRICE = config["GAS_PRICE"]
 
 # Contract Paths
 ENTRY_POINT_CONTRACT_PATH = config["ENTRY_POINT_CONTRACT_PATH"]
-SWAP_ADAPTER_PATH = config["SWAP_ADAPTER_PATH"]
 IBC_TRANSFER_ADAPTER_PATH = config["IBC_TRANSFER_ADAPTER_PATH"]
 
 # SALT
@@ -111,31 +110,9 @@ def main():
         DEPLOYED_CONTRACTS_INFO["checksums"][checksums[i+1]] = checksums[i]
         with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
             toml.dump(DEPLOYED_CONTRACTS_INFO, f)
-    
-    # Store contracts
-    swap_adapter_contract_code_id = store_contract(client, wallet, SWAP_ADAPTER_PATH, "swap_adapter", PERMISSIONED_UPLOADER_ADDRESS)
+            
+    # IBC Contracts
     ibc_transfer_adapter_contract_code_id = store_contract(client, wallet, IBC_TRANSFER_ADAPTER_PATH, "ibc_transfer_adapter", PERMISSIONED_UPLOADER_ADDRESS)
-    entry_point_contract_code_id = store_contract(client, wallet, ENTRY_POINT_CONTRACT_PATH, "entry_point", PERMISSIONED_UPLOADER_ADDRESS)
-        
-    # Intantiate contracts
-    if "router_contract_address" in config["swap_venues"][0]:
-        router_contract_address = config["swap_venues"][0]["router_contract_address"]
-        swap_adapter_args = {
-            "router_contract_address": router_contract_address,
-            "entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS,
-            }
-    else:
-        swap_adapter_args = {
-            "entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS
-            }
-    swap_adapter_contract_address = instantiate_contract(
-        client, 
-        wallet, 
-        swap_adapter_contract_code_id, 
-        swap_adapter_args, 
-        "Skip Swap Swap Adapter", 
-        "swap_adapter"
-    )
     ibc_transfer_adapter_contract_address = instantiate_contract(
         client, 
         wallet, 
@@ -144,19 +121,47 @@ def main():
         "Skip Swap IBC Transfer Adapter", 
         "ibc_transfer_adapter"
     )
+    
+    entry_point_instantiate_args = {
+        "swap_venues": [],
+        "ibc_transfer_contract_address": ibc_transfer_adapter_contract_address,
+    }
+    
+    # Swap Contracts
+    for venue in config["swap_venues"]:
+        swap_adapter_contract_code_id = store_contract(client, wallet, venue["swap_adapter_path"], f"swap_adapter_{venue['name']}", PERMISSIONED_UPLOADER_ADDRESS)
+
+        swap_adapter_instantiate_args = {
+            "entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS
+        }
+        if "router_contract_address" in venue:
+            swap_adapter_instantiate_args["router_contract_address"] = venue["router_contract_address"]
+        if "lido_satellite_contract_address" in venue:
+            swap_adapter_instantiate_args["lido_satellite_contract_address"] = venue["lido_satellite_contract_address"]
+        
+        swap_adapter_contract_address = instantiate_contract(
+            client, 
+            wallet, 
+            swap_adapter_contract_code_id, 
+            swap_adapter_instantiate_args, 
+            f"Skip Swap Swap Adapter {venue['name']}", 
+            f"swap_adapter_{venue['name']}"
+        )
+        
+        entry_point_instantiate_args["swap_venues"].append(
+            {
+                "name": venue["name"],
+                "adapter_contract_address": swap_adapter_contract_address,
+            }
+        )
+    
+    # Entry Point Contract
+    entry_point_contract_code_id = store_contract(client, wallet, ENTRY_POINT_CONTRACT_PATH, "entry_point", PERMISSIONED_UPLOADER_ADDRESS)
     instantiate2_contract(
         client=client, 
         wallet=wallet, 
         code_id=entry_point_contract_code_id, 
-        args={
-            "swap_venues": [
-                {
-                    "name": config["swap_venues"][0]["name"],
-                    "adapter_contract_address": swap_adapter_contract_address,
-                }
-            ],
-            "ibc_transfer_contract_address": ibc_transfer_adapter_contract_address,
-        },
+        args=entry_point_instantiate_args,
         label="Skip Swap Entry Point",
         name="entry_point",
         pre_gen_address=ENTRY_POINT_PRE_GENERATED_ADDRESS
