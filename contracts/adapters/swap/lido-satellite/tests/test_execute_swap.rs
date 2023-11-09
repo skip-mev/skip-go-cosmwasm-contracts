@@ -63,6 +63,7 @@ struct Params {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
                         swapper: Addr::unchecked("entry_point"),
+                        return_denom: String::from("factory/wstETH"),
                     })?,
                     funds: vec![],
                 }
@@ -97,6 +98,7 @@ struct Params {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_binary(&ExecuteMsg::TransferFundsBack {
                         swapper: Addr::unchecked("entry_point"),
+                        return_denom: String::from("ibc/wstETH"),
                     })?,
                     funds: vec![],
                 }

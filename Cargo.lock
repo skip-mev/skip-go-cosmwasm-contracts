@@ -204,7 +204,7 @@ version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d89d680fb60439b7c5947b15f9c84b961b88d1f8a3b20c4bd178a3f87db8bae"
 dependencies = [
- "base64 0.21.2",
+ "base64 0.21.3",
  "bnum",
  "cosmwasm-crypto",
  "cosmwasm-derive",
@@ -679,7 +679,7 @@ version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adfc6f92cae61b5af9014c09b7bac25ac95b7442be38441a7103377a8edfd37c"
 dependencies = [
- "base64 0.21.2",
+ "base64 0.21.3",
  "bech32",
  "cosmos-sdk-proto 0.16.0",
  "cosmwasm-schema",

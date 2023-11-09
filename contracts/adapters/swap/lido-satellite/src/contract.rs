@@ -6,12 +6,15 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    coin, entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, WasmMsg,
+    entry_point, to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
 use cw_utils::one_coin;
-use skip::swap::{
-    execute_transfer_funds_back, ExecuteMsg, LidoSatelliteInstantiateMsg as InstantiateMsg,
-    QueryMsg, SwapOperation,
+use skip::{
+    asset::Asset,
+    swap::{
+        execute_transfer_funds_back, ExecuteMsg, LidoSatelliteInstantiateMsg as InstantiateMsg,
+        QueryMsg, SwapOperation,
+    },
 };
 
 ///////////////////
@@ -74,8 +77,18 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
-        ExecuteMsg::TransferFundsBack { swapper } => {
-            Ok(execute_transfer_funds_back(deps, env, info, swapper)?)
+        ExecuteMsg::TransferFundsBack {
+            swapper,
+            return_denom,
+        } => Ok(execute_transfer_funds_back(
+            deps,
+            env,
+            info,
+            swapper,
+            return_denom,
+        )?),
+        _ => {
+            unimplemented!()
         }
     }
 }
@@ -102,10 +115,16 @@ fn execute_swap(
     let canonical_denom = CANONICAL_DENOM.load(deps.storage)?;
 
     // Decide which message to Lido Satellite should be emitted
-    let lido_satellite_msg = if coin_in.denom == bridged_denom {
-        lido_satellite::msg::ExecuteMsg::Mint { receiver: None }
+    let (lido_satellite_msg, return_denom) = if coin_in.denom == bridged_denom {
+        (
+            lido_satellite::msg::ExecuteMsg::Mint { receiver: None },
+            canonical_denom,
+        )
     } else if coin_in.denom == canonical_denom {
-        lido_satellite::msg::ExecuteMsg::Burn { receiver: None }
+        (
+            lido_satellite::msg::ExecuteMsg::Burn { receiver: None },
+            bridged_denom,
+        )
     } else {
         return Err(ContractError::UnsupportedDenom);
     };
@@ -123,6 +142,7 @@ fn execute_swap(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::TransferFundsBack {
             swapper: info.sender,
+            return_denom,
         })?,
         funds: vec![],
     };
@@ -143,16 +163,32 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     let canonical_denom = CANONICAL_DENOM.load(deps.storage)?;
 
     match msg {
-        QueryMsg::SimulateSwapExactCoinIn { coin_in, .. } => {
-            if coin_in.denom == bridged_denom {
-                to_binary(&coin(coin_in.amount.u128(), canonical_denom))
+        QueryMsg::SimulateSwapExactAssetIn { asset_in, .. } => {
+            if asset_in.denom() == bridged_denom {
+                to_binary(&Asset::Native(Coin::new(
+                    asset_in.amount().u128(),
+                    canonical_denom,
+                )))
+            } else if asset_in.denom() == canonical_denom {
+                to_binary(&Asset::Native(Coin::new(
+                    asset_in.amount().u128(),
+                    bridged_denom,
+                )))
             } else {
                 unimplemented!()
             }
         }
-        QueryMsg::SimulateSwapExactCoinOut { coin_out, .. } => {
-            if coin_out.denom == canonical_denom {
-                to_binary(&coin(coin_out.amount.u128(), bridged_denom))
+        QueryMsg::SimulateSwapExactAssetOut { asset_out, .. } => {
+            if asset_out.denom() == bridged_denom {
+                to_binary(&Asset::Native(Coin::new(
+                    asset_out.amount().u128(),
+                    canonical_denom,
+                )))
+            } else if asset_out.denom() == canonical_denom {
+                to_binary(&Asset::Native(Coin::new(
+                    asset_out.amount().u128(),
+                    bridged_denom,
+                )))
             } else {
                 unimplemented!()
             }
