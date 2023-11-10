@@ -4,14 +4,14 @@ use crate::{
 };
 use astroport::{
     asset::{Asset, AssetInfo},
-    pair::{QueryMsg as PairQueryMsg, ReverseSimulationResponse},
+    pair::{QueryMsg as PairQueryMsg, ReverseSimulationResponse, MAX_ALLOWED_SLIPPAGE},
     router::{
         ExecuteMsg as RouterExecuteMsg, QueryMsg as RouterQueryMsg, SimulateSwapOperationsResponse,
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg,
+    entry_point, to_binary, Addr, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
+    Uint128, WasmMsg,
 };
 use cw_utils::one_coin;
 use skip::swap::{
@@ -131,7 +131,7 @@ fn create_astroport_swap_msg(
         operations: astroport_swap_operations,
         minimum_receive: None,
         to: None,
-        max_spread: None,
+        max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
     };
 
     // Create the astroport router swap message
@@ -250,6 +250,9 @@ fn query_simulate_swap_exact_coin_out(
                 },
             )?;
 
+            // Assert the operation does not exceed the max spread limit
+            assert_max_spread(res.offer_amount, res.spread_amount)?;
+
             Ok(Coin {
                 denom: operation.denom_in.clone(),
                 amount: res.offer_amount.checked_add(Uint128::one())?,
@@ -259,4 +262,12 @@ fn query_simulate_swap_exact_coin_out(
 
     // Return the coin in needed
     Ok(coin_in_needed)
+}
+
+fn assert_max_spread(return_amount: Uint128, spread_amount: Uint128) -> ContractResult<()> {
+    let max_spread = MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?;
+    if Decimal::from_ratio(spread_amount, return_amount + spread_amount) > max_spread {
+        return Err(ContractError::MaxSpreadAssertion {});
+    }
+    Ok(())
 }
