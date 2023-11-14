@@ -5,9 +5,9 @@ use astroport::{
 use core::panic;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, Addr, Coin, ContractResult as SystemContractResult, QuerierResult,
+    to_binary, Addr, Coin, ContractResult as SystemContractResult, Decimal, QuerierResult,
     ReplyOn::Never,
-    SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery, Decimal,
+    SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::PaymentError::NonPayable;
