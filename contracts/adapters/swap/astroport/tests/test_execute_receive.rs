@@ -7,7 +7,7 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     to_binary, Addr, Coin, ContractResult as SystemContractResult, QuerierResult,
     ReplyOn::Never,
-    SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
+    SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery, Decimal,
 };
 use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::PaymentError::NonPayable;
@@ -81,7 +81,7 @@ struct Params {
                             ],
                             minimum_receive: None,
                             to: None,
-                            max_spread: None,
+                            max_spread: Some(Decimal::percent(50)),
                         })?,
                     })?,
                     funds: vec![],
@@ -143,7 +143,7 @@ struct Params {
                             ],
                             minimum_receive: None,
                             to: None,
-                            max_spread: None,
+                            max_spread: Some(Decimal::percent(50)),
                         })?,
                     })?,
                     funds: vec![],
