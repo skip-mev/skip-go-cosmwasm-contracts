@@ -4,14 +4,15 @@ use crate::{
 };
 use astroport::{
     asset::{Asset, AssetInfo},
-    pair::{QueryMsg as PairQueryMsg, ReverseSimulationResponse},
-    router::{
-        ExecuteMsg as RouterExecuteMsg, QueryMsg as RouterQueryMsg, SimulateSwapOperationsResponse,
+    pair::{
+        QueryMsg as PairQueryMsg, ReverseSimulationResponse, SimulationResponse,
+        MAX_ALLOWED_SLIPPAGE,
     },
+    router::ExecuteMsg as RouterExecuteMsg,
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, Uint128,
-    WasmMsg,
+    entry_point, to_binary, Addr, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
+    Uint128, WasmMsg,
 };
 use cw_utils::one_coin;
 use skip::swap::{
@@ -131,7 +132,7 @@ fn create_astroport_swap_msg(
         operations: astroport_swap_operations,
         minimum_receive: None,
         to: None,
-        max_spread: None,
+        max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
     };
 
     // Create the astroport router swap message
@@ -181,7 +182,7 @@ fn query_simulate_swap_exact_coin_in(
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Coin> {
     // Error if swap operations is empty
-    let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
+    let Some(first_op) = swap_operations.first() else {
         return Err(ContractError::SwapOperationsEmpty);
     };
 
@@ -190,29 +191,37 @@ fn query_simulate_swap_exact_coin_in(
         return Err(ContractError::CoinInDenomMismatch);
     }
 
-    // Get the router contract address
-    let router_contract_address = ROUTER_CONTRACT_ADDRESS.load(deps.storage)?;
+    // Iterate through the swap operations, querying the astroport pool contracts to get the coin out
+    // for each swap operation, and then updating the coin out for the next swap operation until the
+    // coin out for the last swap operation is found.
+    let coin_out = swap_operations.iter().try_fold(
+        coin_in,
+        |coin_out, operation| -> Result<_, ContractError> {
+            let res: SimulationResponse = deps.querier.query_wasm_smart(
+                &operation.pool,
+                &PairQueryMsg::Simulation {
+                    offer_asset: Asset {
+                        info: AssetInfo::NativeToken {
+                            denom: coin_out.denom,
+                        },
+                        amount: coin_out.amount,
+                    },
+                    ask_asset_info: None,
+                },
+            )?;
 
-    // Get denom out from last swap operation
-    let denom_out = last_op.denom_out.clone();
+            // Assert the operation does not exceed the max spread limit
+            assert_max_spread(res.return_amount, res.spread_amount)?;
 
-    // Convert the swap operations to astroport swap operations
-    let astroport_swap_operations = swap_operations.into_iter().map(From::from).collect();
-
-    // Query the astroport router contract to simulate the swap operations
-    let res: SimulateSwapOperationsResponse = deps.querier.query_wasm_smart(
-        router_contract_address,
-        &RouterQueryMsg::SimulateSwapOperations {
-            offer_amount: coin_in.amount,
-            operations: astroport_swap_operations,
+            Ok(Coin {
+                denom: operation.denom_out.clone(),
+                amount: res.return_amount,
+            })
         },
     )?;
 
     // Return the coin out
-    Ok(Coin {
-        denom: denom_out,
-        amount: res.amount,
-    })
+    Ok(coin_out)
 }
 
 // Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
@@ -250,6 +259,9 @@ fn query_simulate_swap_exact_coin_out(
                 },
             )?;
 
+            // Assert the operation does not exceed the max spread limit
+            assert_max_spread(res.offer_amount, res.spread_amount)?;
+
             Ok(Coin {
                 denom: operation.denom_in.clone(),
                 amount: res.offer_amount.checked_add(Uint128::one())?,
@@ -259,4 +271,12 @@ fn query_simulate_swap_exact_coin_out(
 
     // Return the coin in needed
     Ok(coin_in_needed)
+}
+
+fn assert_max_spread(return_amount: Uint128, spread_amount: Uint128) -> ContractResult<()> {
+    let max_spread = MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?;
+    if Decimal::from_ratio(spread_amount, return_amount + spread_amount) > max_spread {
+        return Err(ContractError::MaxSpreadAssertion {});
+    }
+    Ok(())
 }
