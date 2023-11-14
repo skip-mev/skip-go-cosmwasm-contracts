@@ -4,7 +4,7 @@ use astroport::{
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, Addr, Coin,
+    to_binary, Addr, Coin, Decimal,
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
@@ -69,7 +69,7 @@ struct Params {
                         ],
                         minimum_receive: None,
                         to: None,
-                        max_spread: None,
+                        max_spread: Some(Decimal::percent(50)),
                     })?,
                     funds: vec![Coin::new(100, "os")],
                 }
@@ -137,7 +137,7 @@ struct Params {
                         ],
                         minimum_receive: None,
                         to: None,
-                        max_spread: None,
+                        max_spread: Some(Decimal::percent(50)),
                     })?,
                     funds: vec![Coin::new(100, "os")],
                 }
@@ -177,7 +177,7 @@ struct Params {
                         operations: vec![],
                         minimum_receive: None,
                         to: None,
-                        max_spread: None,
+                        max_spread: Some(Decimal::percent(50)),
                     })?,
                     funds: vec![Coin::new(100, "os")],
                 }
