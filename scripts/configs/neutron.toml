@@ -28,22 +28,20 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[swap_venues]]
 name = "neutron-astroport"
-# Testnet name
-#name = "testnet-neutron-astroport"
-
 router_contract_address = "neutron1eeyntmsq448c68ez06jsy6h2mtjke5tpuplnwtjfwcdznqmw72kswnlmm0"
-# Testnet address
-#router_contract_address = "neutron12jm24l9lr9cupufqjuxpdjnnweana4h66tsx5cl800mke26td26sq7m05p"
-
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
 
 [[swap_venues]]
 name = "neutron-lido-satellite"
-# Testnet name
-#name = "testnet-neutron-lido-satellite"
-
 lido_satellite_contract_address = "neutron1ug740qrkquxzrk2hh29qrlx3sktkfml3je7juusc2te7xmvsscns0n2wry"
-# Testnet address
-#lido_satellite_contract_address = "neutron1xdtwh5jr4zjx8g3zh29jud75c666wua7tsmum3ajm6ylf782etfs60dj2h"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_lido_satellite-aarch64.wasm"
 
+[[testnet_swap_venues]]
+name = "testnet-neutron-astroport"
+router_contract_address = "neutron12jm24l9lr9cupufqjuxpdjnnweana4h66tsx5cl800mke26td26sq7m05p"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
+
+[[testnet_swap_venues]]
+name = "testnet-neutron-lido-satellite"
+lido_satellite_contract_address = "neutron1xdtwh5jr4zjx8g3zh29jud75c666wua7tsmum3ajm6ylf782etfs60dj2h"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_lido_satellite-aarch64.wasm"

@@ -28,13 +28,10 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[swap_venues]]
 name = "terra-astroport"
-# Testnet name
-#name = "testnet-terra-astroport"
-
-# @DEV MUST CHANGE ROUTER CONTRACT ADDRESS ACCORDING TO NETWORK
-# MAINNET ROUTER CONTRACT ADDRESS
 router_contract_address = "terra1j8hayvehh3yy02c2vtw5fdhz9f4drhtee8p5n5rguvg3nyd6m83qd2y90a"
-# TESTNET ROUTER CONTRACT ADDRESS
-#router_contract_address = "terra1na348k6rvwxje9jj6ftpsapfeyaejxjeq6tuzdmzysps20l6z23smnlv64"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
 
+[[testnet_swap_venues]]
+name = "testnet-terra-astroport"
+router_contract_address = "terra1na348k6rvwxje9jj6ftpsapfeyaejxjeq6tuzdmzysps20l6z23smnlv64"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"

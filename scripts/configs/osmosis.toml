@@ -31,7 +31,8 @@ PERMISSIONED_UPLOADER_ADDRESS = "osmo1raa4kyx5ypz75qqk3566c6slx2mw3qzsu6rymw"
 
 [[swap_venues]]
 name = "osmosis-poolmanager"
-# Testnet name
-#name = "testnet-osmosis-poolmanager"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm"
 
+[[testnet_swap_venues]]
+name = "testnet-osmosis-poolmanager"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm"
