@@ -310,6 +310,7 @@ def init_deployed_contracts_info():
     DEPLOYED_CONTRACTS_INFO["info"]["network"] = NETWORK
     DEPLOYED_CONTRACTS_INFO["info"]["deploy_date"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     DEPLOYED_CONTRACTS_INFO["info"]["commit_hash"] = config["COMMIT_HASH"]
+    DEPLOYED_CONTRACTS_INFO["info"]["salt"] = config["SALT"]
     DEPLOYED_CONTRACTS_INFO["checksums"] = {}
     DEPLOYED_CONTRACTS_INFO["code-ids"] = {}
     DEPLOYED_CONTRACTS_INFO["contract-addresses"] = {}
