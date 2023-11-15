@@ -1,10 +1,12 @@
 use crate::{
+    asset::Asset,
     ibc::IbcInfo,
-    swap::{Swap, SwapExactCoinOut, SwapVenue},
+    swap::{Swap, SwapExactAssetOut, SwapVenue},
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Coin, Uint128};
+use cosmwasm_std::{Addr, Binary, Uint128};
+use cw20::Cw20ReceiveMsg;
 
 ///////////////////
 /// INSTANTIATE ///
@@ -26,9 +28,44 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
+    SwapAndActionWithRecover {
+        sent_asset: Asset,
+        user_swap: Swap,
+        min_asset: Asset,
+        timeout_timestamp: u64,
+        post_swap_action: Action,
+        affiliates: Vec<Affiliate>,
+        recovery_addr: Addr,
+    },
+    SwapAndAction {
+        sent_asset: Asset,
+        user_swap: Swap,
+        min_asset: Asset,
+        timeout_timestamp: u64,
+        post_swap_action: Action,
+        affiliates: Vec<Affiliate>,
+    },
+    UserSwap {
+        swap: Swap,
+        min_asset: Asset,
+        remaining_asset: Asset,
+        affiliates: Vec<Affiliate>,
+    },
+    PostSwapAction {
+        min_asset: Asset,
+        timeout_timestamp: u64,
+        post_swap_action: Action,
+        exact_out: bool,
+    },
+}
+
+/// This structure describes a CW20 hook message.
+#[cw_serde]
+pub enum Cw20HookMsg {
     SwapAndActionWithRecover {
         user_swap: Swap,
-        min_coin: Coin,
+        min_asset: Asset,
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
@@ -36,22 +73,10 @@ pub enum ExecuteMsg {
     },
     SwapAndAction {
         user_swap: Swap,
-        min_coin: Coin,
+        min_asset: Asset,
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
-    },
-    UserSwap {
-        swap: Swap,
-        min_coin: Coin,
-        remaining_coin: Coin,
-        affiliates: Vec<Affiliate>,
-    },
-    PostSwapAction {
-        min_coin: Coin,
-        timeout_timestamp: u64,
-        post_swap_action: Action,
-        exact_out: bool,
     },
 }
 
@@ -81,12 +106,12 @@ pub enum QueryMsg {
 // The Action enum is used to specify what action to take after a swap.
 #[cw_serde]
 pub enum Action {
-    BankSend {
+    Transfer {
         to_address: String,
     },
     IbcTransfer {
         ibc_info: IbcInfo,
-        fee_swap: Option<SwapExactCoinOut>,
+        fee_swap: Option<SwapExactAssetOut>,
     },
     ContractCall {
         contract_address: String,
@@ -95,7 +120,7 @@ pub enum Action {
 }
 
 // The Affiliate struct is used to specify an affiliate address and BPS fee taken
-// from the min_coin to send to that address.
+// from the min_asset to send to that address.
 #[cw_serde]
 pub struct Affiliate {
     pub basis_points_fee: Uint128,

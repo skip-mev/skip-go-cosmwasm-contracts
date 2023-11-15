@@ -5,12 +5,17 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
+use cw20::{Cw20Coin, Cw20ExecuteMsg};
 use skip::{
+    asset::Asset,
     entry_point::{Affiliate, ExecuteMsg},
     error::SkipError::{
-        SwapOperationsCoinInDenomMismatch, SwapOperationsCoinOutDenomMismatch, SwapOperationsEmpty,
+        Overflow, SwapOperationsAssetInDenomMismatch, SwapOperationsAssetOutDenomMismatch,
+        SwapOperationsEmpty,
     },
-    swap::{ExecuteMsg as SwapExecuteMsg, Swap, SwapExactCoinIn, SwapExactCoinOut, SwapOperation},
+    swap::{
+        ExecuteMsg as SwapExecuteMsg, Swap, SwapExactAssetIn, SwapExactAssetOut, SwapOperation,
+    },
 };
 use skip_api_entry_point::{error::ContractError, state::SWAP_VENUE_MAP};
 use test_case::test_case;
@@ -23,12 +28,16 @@ Expect Response
     - User Swap Exact Coin In With No Affiliates
     - User Swap Exact Coin In With Single Affiliate
     - User Swap Exact Coin In With Multiple Affiliates
+    - User Swap Exact Coin In With Zero Fee Affiliate
+    - User Swap Exact Cw20 Asset In With Single Affiliate
 
     // Swap Exact Coin Out
     - User Swap Exact Coin Out With No Affiliates
     - User Swap Exact Coin Out With Single Affiliate
     - User Swap Exact Coin Out With Multiple Affiliates
+    - User Swap Exact Coin Out With Zero Fee Affiliate
     - User Swap Exact Coin Out With Refund Amount Zero (Ensure No Refund Message Included)
+    - User Swap Exact Cw20 Asset Out With Single Affiliate
 
 Expect Error
     // Swap Exact Coin In
@@ -43,6 +52,7 @@ Expect Error
     - User Swap Exact Coin Out With No Refund Address
     - User Swap Exact Coin Out Where Coin In Denom Is Not The Same As Remaining Coin Received Denom
     - User Swap Exact Coin Out Where Coin In Amount More Than Remaining Coin Received Amount
+    - User Swap Exact Asset Out Where Asset In Amount More Than Remaining Asset Received Amount
 
     // General
     - Unauthorized Caller
@@ -53,8 +63,8 @@ Expect Error
 struct Params {
     caller: String,
     user_swap: Swap,
-    remaining_coin: Coin,
-    min_coin: Coin,
+    remaining_asset: Asset,
+    min_asset: Asset,
     affiliates: Vec<Affiliate>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
@@ -64,20 +74,20 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
@@ -88,12 +98,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                    funds: vec![Coin::new(1_000_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -106,20 +116,20 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![Affiliate {
             address: "affiliate".to_string(),
             basis_points_fee: Uint128::new(1000),
@@ -133,12 +143,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                    funds: vec![Coin::new(1_000_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -148,7 +158,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "affiliate".to_string(),
-                    amount: vec![Coin::new(100_000, "osmo")],
+                    amount: vec![Coin::new(100_000, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -161,20 +171,82 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
-                swap_venue_name: "swap_venue_name".to_string(),
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name_2".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::new(1_000_000),
+        }),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
+        affiliates: vec![Affiliate {
+            address: "affiliate".to_string(),
+            basis_points_fee: Uint128::new(1000),
+        }],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "neutron123".to_string(), 
+                    msg: to_binary(&Cw20ExecuteMsg::Send {
+                        contract: "swap_venue_adapter_2".to_string(),
+                        amount: Uint128::new(1_000_000),
+                        msg: to_binary(&SwapExecuteMsg::Swap {
+                            operations: vec![
+                                SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "neutron123".to_string(),
+                                    denom_out: "os".to_string(),
+                                }
+                            ],
+                        }).unwrap(),
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "affiliate".to_string(),
+                    amount: vec![Coin::new(100_000, "os")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap Exact Cw20 Asset In With Single Affiliate")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
+                    }
+                ],
+            }
+        ),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![
             Affiliate {
                 address: "affiliate_1".to_string(),
@@ -194,12 +266,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                    funds: vec![Coin::new(1_000_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -209,7 +281,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "affiliate_1".to_string(),
-                    amount: vec![Coin::new(100_000, "osmo")],
+                    amount: vec![Coin::new(100_000, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -219,7 +291,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "affiliate_2".to_string(),
-                    amount: vec![Coin::new(100_000, "osmo")],
+                    amount: vec![Coin::new(100_000, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -232,20 +304,20 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![Affiliate {
             address: "affiliate".to_string(),
             basis_points_fee: Uint128::new(0),
@@ -259,12 +331,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(1_000_000, "untrn")], 
+                    funds: vec![Coin::new(1_000_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -277,28 +349,28 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "refund_address".to_string(),
-                    amount: vec![Coin::new(500_000, "untrn")],
+                    amount: vec![Coin::new(500_000, "un")],
                 }
                 .into(),
                 gas_limit: None,
@@ -312,12 +384,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(500_000, "untrn")], 
+                    funds: vec![Coin::new(500_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -330,21 +402,21 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
         affiliates: vec![
             Affiliate {
                 address: "affiliate".to_string(),
@@ -356,7 +428,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "refund_address".to_string(),
-                    amount: vec![Coin::new(500_000, "untrn")],
+                    amount: vec![Coin::new(500_000, "un")],
                 }
                 .into(),
                 gas_limit: None,
@@ -370,12 +442,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(500_000, "untrn")], 
+                    funds: vec![Coin::new(500_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -385,7 +457,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "affiliate".to_string(),
-                    amount: vec![Coin::new(50_000, "osmo")],
+                    amount: vec![Coin::new(50_000, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -398,21 +470,105 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
-                swap_venue_name: "swap_venue_name".to_string(),
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
+                swap_venue_name: "swap_venue_name_2".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "neutron987".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::new(1_000_000),
+        }),
+        min_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron987".to_string(),
+            amount: Uint128::new(1_000_000),
+        }),
+        affiliates: vec![Affiliate {
+            address: "affiliate".to_string(),
+            basis_points_fee: Uint128::new(1000),
+        }],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "neutron123".to_string(), 
+                    msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                        recipient: "refund_address".to_string(),
+                        amount: Uint128::new(500_000),
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "neutron123".to_string(), 
+                    msg: to_binary(&Cw20ExecuteMsg::Send {
+                        contract: "swap_venue_adapter_2".to_string(),
+                        amount: Uint128::new(500_000),
+                        msg: to_binary(&SwapExecuteMsg::Swap {
+                            operations: vec![
+                                SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "neutron123".to_string(),
+                                    denom_out: "neutron987".to_string(),
+                                }
+                            ],
+                        }).unwrap(),
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "neutron987".to_string(), 
+                    msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                        recipient: "affiliate".to_string(),
+                        amount: Uint128::new(100_000),
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "User Swap Exact Cw20 Asset Out With Single Affiliate")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
+                    }
+                ],
+                refund_address: Some("refund_address".to_string()),
+            }
+        ),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
         affiliates: vec![
             Affiliate {
                 address: "affiliate_1".to_string(),
@@ -428,7 +584,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "refund_address".to_string(),
-                    amount: vec![Coin::new(500_000, "untrn")],
+                    amount: vec![Coin::new(500_000, "un")],
                 }
                 .into(),
                 gas_limit: None,
@@ -442,12 +598,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(500_000, "untrn")], 
+                    funds: vec![Coin::new(500_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -457,7 +613,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "affiliate_1".to_string(),
-                    amount: vec![Coin::new(50_000, "osmo")],
+                    amount: vec![Coin::new(50_000, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -467,7 +623,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "affiliate_2".to_string(),
-                    amount: vec![Coin::new(50_000, "osmo")],
+                    amount: vec![Coin::new(50_000, "os")],
                 }
                 .into(),
                 gas_limit: None,
@@ -480,21 +636,21 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![
             Affiliate {
                 address: "affiliate".to_string(),
@@ -506,7 +662,7 @@ struct Params {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "refund_address".to_string(),
-                    amount: vec![Coin::new(500_000, "untrn")],
+                    amount: vec![Coin::new(500_000, "un")],
                 }
                 .into(),
                 gas_limit: None,
@@ -520,12 +676,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(500_000, "untrn")], 
+                    funds: vec![Coin::new(500_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -538,21 +694,21 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(500_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(500_000, "un")),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
         affiliates: vec![],
         expected_messages: vec![
             SubMsg {
@@ -563,12 +719,12 @@ struct Params {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
+                                denom_in: "un".to_string(),
+                                denom_out: "os".to_string(),
                             }
                         ],
                     }).unwrap(),
-                    funds: vec![Coin::new(500_000, "untrn")], 
+                    funds: vec![Coin::new(500_000, "un")], 
                 }
                 .into(),
                 gas_limit: None,
@@ -581,58 +737,58 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool_2".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "uatom".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "ua".to_string(),
                     }
                 ],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "uosmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "uo")),
+        min_asset: Asset::Native(Coin::new(100_000, "ua")),
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
+        expected_error: Some(ContractError::Skip(SwapOperationsAssetInDenomMismatch)),
     };
     "User Swap Exact Coin In First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool_2".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "uo".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "osmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "uo")),
+        min_asset: Asset::Native(Coin::new(100_000, "ua")),
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
+        expected_error: Some(ContractError::Skip(SwapOperationsAssetOutDenomMismatch)),
     };
     "User Swap Exact Coin In Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn{
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
@@ -641,61 +797,61 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool_2".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "uatom".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "ua".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "uosmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "uo")),
+        min_asset: Asset::Native(Coin::new(100_000, "ua")),
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinInDenomMismatch)),
+        expected_error: Some(ContractError::Skip(SwapOperationsAssetInDenomMismatch)),
     };
     "User Swap Exact Coin Out First Swap Operation Denom In Is Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool_2".to_string(),
-                        denom_in: "osmo".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "osmo"),
-        min_coin: Coin::new(100_000, "uatom"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "os")),
+        min_asset: Asset::Native(Coin::new(100_000, "ua")),
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsCoinOutDenomMismatch)),
+        expected_error: Some(ContractError::Skip(SwapOperationsAssetOutDenomMismatch)),
     };
     "User Swap Exact Coin Out Last Swap Operation Denom Out Is Not The Same As Min Coin Out Denom - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![],
                 refund_address: Some("refund_address".to_string()),
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
@@ -704,21 +860,21 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: None,
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::NoRefundAddress),
@@ -727,64 +883,94 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "uatom".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "ua".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(1_000_000, "uatom"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "ua")),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::UserSwapCoinInDenomMismatch),
+        expected_error: Some(ContractError::UserSwapAssetInDenomMismatch),
     };
     "User Swap Exact Coin Out Where Coin In Denom Is Not The Same As Remaining Coin Received Denom - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        user_swap: Swap::SwapExactCoinOut (
-            SwapExactCoinOut{
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![
                     SwapOperation {
                         pool: "pool".to_string(),
-                        denom_in: "untrn".to_string(),
-                        denom_out: "osmo".to_string(),
+                        denom_in: "un".to_string(),
+                        denom_out: "os".to_string(),
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
         ),
-        remaining_coin: Coin::new(499_999, "untrn"),
-        min_coin: Coin::new(500_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(499_999, "un")),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Overflow(OverflowError {
+        expected_error: Some(ContractError::Skip(Overflow(OverflowError {
             operation: OverflowOperation::Sub,
             operand1: "499999".to_string(),
             operand2: "500000".to_string(),
-        })),
+        }))),
     };
     "User Swap Exact Coin Out Where Coin In Amount More Than Remaining Coin Received Amount - Expect Error")]
 #[test_case(
     Params {
+        caller: "entry_point".to_string(),
+        user_swap: Swap::SwapExactAssetOut (
+            SwapExactAssetOut{
+                swap_venue_name: "swap_venue_name_2".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "os".to_string(),
+                    }
+                ],
+                refund_address: Some("refund_address".to_string()),
+            }
+        ),
+        remaining_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::new(499_999),
+        }),
+        min_asset: Asset::Native(Coin::new(500_000, "os")),
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(Overflow(OverflowError {
+            operation: OverflowOperation::Sub,
+            operand1: "499999".to_string(),
+            operand2: "500000".to_string(),
+        }))),
+    };
+    "User Swap Exact Asset Out Where Asset In Amount More Than Remaining Asset Received Amount - Expect Error")]
+#[test_case(
+    Params {
         caller: "random".to_string(),
-        user_swap: Swap::SwapExactCoinIn (
-            SwapExactCoinIn {
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn {
                 swap_venue_name: "swap_venue_name".to_string(),
                 operations: vec![],
             },
         ),
-        remaining_coin: Coin::new(1_000_000, "osmo"),
-        min_coin: Coin::new(1_000_000, "osmo"),
+        remaining_asset: Asset::Native(Coin::new(1_000_000, "os")),
+        min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         affiliates: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Unauthorized),
@@ -794,16 +980,27 @@ fn test_execute_user_swap(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
         "entry_point",
-        &[Coin::new(1_000_000, "osmo"), Coin::new(1_000_000, "untrn")],
+        &[Coin::new(1_000_000, "os"), Coin::new(1_000_000, "un")],
     )]);
 
     // Create mock wasm handler to handle the swap adapter contract query
-    // Will always return 200_000 osmo
     let wasm_handler = |query: &WasmQuery| -> QuerierResult {
         match query {
-            WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&Coin::new(500_000, "untrn")).unwrap(),
-            )),
+            WasmQuery::Smart { contract_addr, .. } => {
+                if contract_addr == "swap_venue_adapter" {
+                    SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&Asset::Native(Coin::new(500_000, "un"))).unwrap(),
+                    ))
+                } else {
+                    SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&Asset::Cw20(Cw20Coin {
+                            address: "neutron123".to_string(),
+                            amount: Uint128::new(500_000),
+                        }))
+                        .unwrap(),
+                    ))
+                }
+            }
             _ => panic!("Unsupported query: {:?}", query),
         }
     };
@@ -819,13 +1016,21 @@ fn test_execute_user_swap(params: Params) {
     // Create mock info with entry point contract address
     let info = mock_info(&params.caller, &[]);
 
-    // Store the ibc transfer adapter contract address
+    // Store the swap venue adapter contract address in the swap venue map
     let swap_venue_adapter = Addr::unchecked("swap_venue_adapter");
+    let swap_venue_adapter_2 = Addr::unchecked("swap_venue_adapter_2");
     SWAP_VENUE_MAP
         .save(
             deps.as_mut().storage,
             "swap_venue_name",
             &swap_venue_adapter,
+        )
+        .unwrap();
+    SWAP_VENUE_MAP
+        .save(
+            deps.as_mut().storage,
+            "swap_venue_name_2",
+            &swap_venue_adapter_2,
         )
         .unwrap();
 
@@ -836,8 +1041,8 @@ fn test_execute_user_swap(params: Params) {
         info,
         ExecuteMsg::UserSwap {
             swap: params.user_swap,
-            remaining_coin: params.remaining_coin,
-            min_coin: params.min_coin,
+            remaining_asset: params.remaining_asset,
+            min_asset: params.min_asset,
             affiliates: params.affiliates,
         },
     );

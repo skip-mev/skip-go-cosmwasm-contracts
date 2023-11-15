@@ -4,7 +4,7 @@ import toml
 import httpx
 import time
 from hashlib import sha256
-from base64 import b64encode
+from base64 import b64encode, b64decode
 from datetime import datetime
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 from google.protobuf import any_pb2
@@ -89,7 +89,7 @@ def main():
     # Create network config and client
     cfg = NetworkConfig(
         chain_id=CHAIN_ID,
-        url=REST_URL,
+        url=f"rest+{REST_URL}",
         fee_minimum_gas_price=.01,
         fee_denomination=DENOM,
         staking_denomination=DENOM,
@@ -310,6 +310,7 @@ def init_deployed_contracts_info():
     DEPLOYED_CONTRACTS_INFO["info"]["network"] = NETWORK
     DEPLOYED_CONTRACTS_INFO["info"]["deploy_date"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     DEPLOYED_CONTRACTS_INFO["info"]["commit_hash"] = config["COMMIT_HASH"]
+    DEPLOYED_CONTRACTS_INFO["info"]["salt"] = config["SALT"]
     DEPLOYED_CONTRACTS_INFO["checksums"] = {}
     DEPLOYED_CONTRACTS_INFO["code-ids"] = {}
     DEPLOYED_CONTRACTS_INFO["contract-addresses"] = {}
@@ -319,7 +320,7 @@ def init_deployed_contracts_info():
 
 
 def store_contract(client, wallet, file_path, name, permissioned_uploader_address) -> int:
-    gas_limit = 4000000
+    gas_limit = 5000000
     store_tx = create_wasm_store_tx(
         client=client,
         wallet=wallet,
@@ -342,7 +343,7 @@ def store_contract(client, wallet, file_path, name, permissioned_uploader_addres
 
 
 def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
-    gas_limit = 200000
+    gas_limit = 300000
     instantiate_tx = create_wasm_instantiate_tx(
         client=client,
         wallet=wallet,
@@ -366,7 +367,7 @@ def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
 
 
 def instantiate2_contract(client, wallet, code_id, args, label, name, pre_gen_address) -> str:
-    gas_limit = 200000
+    gas_limit = 300000
     instantiate_2_tx = create_wasm_instantiate2_tx(
         client=client,
         wallet=wallet,
@@ -406,15 +407,19 @@ def broadcast_tx(tx) -> httpx.Response:
     encoded_tx = b64encode(tx_bytes).decode("utf-8")
     data = {
         'jsonrpc': '2.0',
-        'method': "broadcast_tx_commit",
+        'method': "broadcast_tx_sync",
         'params': [encoded_tx],
         'id': 1
     }
-    return httpx.post(RPC_URL, json=data, timeout=60)
+    httpx.post(RPC_URL, json=data, timeout=60)
+    print("Sleeping for 20 seconds...")
+    time.sleep(20)
+    resp = httpx.get(REST_URL + f"/cosmos/tx/v1beta1/txs/{sha256(tx_bytes).hexdigest()}", timeout=60)
+    return resp
 
 
 def get_attribute_value(resp, event_type, attr_key):
-    for event in resp.json()['result']['deliver_tx']['events']:
+    for event in resp.json()['tx_response']['logs'][0]['events']:
         if event['type'] == event_type:
             for attr in event['attributes']:
                 if attr['key'] == attr_key:
