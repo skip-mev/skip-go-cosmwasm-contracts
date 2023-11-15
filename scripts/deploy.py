@@ -58,10 +58,12 @@ if NETWORK == "mainnet":
     CHAIN_ID = config["MAINNET_CHAIN_ID"]
     if "PERMISSIONED_UPLOADER_ADDRESS" in config:
         PERMISSIONED_UPLOADER_ADDRESS = config["PERMISSIONED_UPLOADER_ADDRESS"]
+    SWAP_VENUES = config["swap_venues"]
 elif NETWORK == "testnet":
     REST_URL = config["TESTNET_REST_URL"]
     RPC_URL = config["TESTNET_RPC_URL"]
     CHAIN_ID = config["TESTNET_CHAIN_ID"]
+    SWAP_VENUES = config["testnet_swap_venues"]
 else:
     raise Exception("Must specify either 'mainnet' or 'testnet' for 2nd command line argument.")
 
@@ -128,7 +130,7 @@ def main():
     }
     
     # Swap Contracts
-    for venue in config["swap_venues"]:
+    for venue in SWAP_VENUES:
         swap_adapter_contract_code_id = store_contract(client, wallet, venue["swap_adapter_path"], f"swap_adapter_{venue['name']}", PERMISSIONED_UPLOADER_ADDRESS)
 
         swap_adapter_instantiate_args = {
