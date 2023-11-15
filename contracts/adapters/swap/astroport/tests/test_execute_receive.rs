@@ -5,7 +5,7 @@ use astroport::{
 use core::panic;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, Addr, Coin, ContractResult as SystemContractResult, QuerierResult,
+    to_binary, Addr, Coin, ContractResult as SystemContractResult, Decimal, QuerierResult,
     ReplyOn::Never,
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
@@ -81,7 +81,7 @@ struct Params {
                             ],
                             minimum_receive: None,
                             to: None,
-                            max_spread: None,
+                            max_spread: Some(Decimal::percent(50)),
                         })?,
                     })?,
                     funds: vec![],
@@ -143,7 +143,7 @@ struct Params {
                             ],
                             minimum_receive: None,
                             to: None,
-                            max_spread: None,
+                            max_spread: Some(Decimal::percent(50)),
                         })?,
                     })?,
                     funds: vec![],
