@@ -298,49 +298,9 @@ fn query_simulate_swap_exact_asset_in_with_spot_price(
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
-    // Error if swap operations is empty
-    let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
-        return Err(ContractError::SwapOperationsEmpty);
-    };
-
-    // Get coin in from asset in, error if asset in is not a
-    // native coin because Osmosis does not support CW20 tokens.
-    let coin_in = match asset_in {
-        Asset::Native(coin) => coin,
-        _ => return Err(ContractError::AssetNotNative),
-    };
-
-    // Ensure coin_in's denom is the same as the first swap operation's denom in
-    if coin_in.denom != first_op.denom_in {
-        return Err(ContractError::CoinInDenomMismatch);
-    }
-
-    // Get denom out from last swap operation  to be used as the return coin's denom
-    let denom_out = last_op.denom_out.clone();
-
-    // Convert the swap operations to osmosis swap amount in routes
-    // Return an error if there was an error converting the swap
-    // operations to osmosis swap amount in routes.
-    let osmosis_swap_amount_in_routes: Vec<SwapAmountInRoute> =
-        convert_swap_operations(swap_operations.clone()).map_err(ContractError::ParseIntPoolID)?;
-
-    let poolmanager_querier = PoolmanagerQuerier::new(&deps.querier);
-
-    // Query the osmosis poolmanager module to simulate the swap exact amount in
-    let res: EstimateSwapExactAmountInResponse = poolmanager_querier
-        .estimate_swap_exact_amount_in(
-            osmosis_swap_amount_in_routes.first().unwrap().pool_id,
-            coin_in.to_string(),
-            osmosis_swap_amount_in_routes.clone(),
-        )?;
-
     Ok(SimulateSwapExactAssetInResponse {
-        asset_out: Coin {
-            denom: denom_out,
-            amount: Uint128::from_str(&res.token_out_amount)?,
-        }
-        .into(),
-        spot_price: calculate_spot_price(&poolmanager_querier, swap_operations)?,
+        asset_out: query_simulate_swap_exact_asset_in(deps, asset_in, swap_operations.clone())?,
+        spot_price: calculate_spot_price(&PoolmanagerQuerier::new(&deps.querier), swap_operations)?,
     })
 }
 
@@ -350,50 +310,9 @@ fn query_simulate_swap_exact_asset_out_with_spot_price(
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<SimulateSwapExactAssetOutResponse> {
-    // Error if swap operations is empty
-    let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
-        return Err(ContractError::SwapOperationsEmpty);
-    };
-
-    // Get coin out from asset out, error if asset out is not a
-    // native coin because Osmosis does not support CW20 tokens.
-    let coin_out = match asset_out {
-        Asset::Native(coin) => coin,
-        _ => return Err(ContractError::AssetNotNative),
-    };
-
-    // Ensure coin_out's denom is the same as the last swap operation's denom out
-    if coin_out.denom != last_op.denom_out {
-        return Err(ContractError::CoinOutDenomMismatch);
-    }
-
-    // Get denom in from first swap operation to be used as the return coin's denom
-    let denom_in = first_op.denom_in.clone();
-
-    // Convert the swap operations to osmosis swap amount out routes
-    // Return an error if there was an error converting the swap
-    // operations to osmosis swap amount out routes.
-    let osmosis_swap_amount_out_routes: Vec<SwapAmountOutRoute> =
-        convert_swap_operations(swap_operations.clone()).map_err(ContractError::ParseIntPoolID)?;
-
-    // Create the osmosis poolmanager querier
-    let poolmanager_querier = PoolmanagerQuerier::new(&deps.querier);
-
-    // Query the osmosis poolmanager module to simulate the swap exact amount out
-    let res: EstimateSwapExactAmountOutResponse = poolmanager_querier
-        .estimate_swap_exact_amount_out(
-            osmosis_swap_amount_out_routes.first().unwrap().pool_id,
-            osmosis_swap_amount_out_routes,
-            coin_out.to_string(),
-        )?;
-
     Ok(SimulateSwapExactAssetOutResponse {
-        asset_in: Coin {
-            denom: denom_in,
-            amount: Uint128::from_str(&res.token_in_amount)?,
-        }
-        .into(),
-        spot_price: calculate_spot_price(&poolmanager_querier, swap_operations)?,
+        asset_in: query_simulate_swap_exact_asset_out(deps, asset_out, swap_operations.clone())?,
+        spot_price: calculate_spot_price(&PoolmanagerQuerier::new(&deps.querier), swap_operations)?,
     })
 }
 
