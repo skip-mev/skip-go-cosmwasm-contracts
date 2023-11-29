@@ -19,7 +19,8 @@ use skip::{
     asset::Asset,
     swap::{
         execute_transfer_funds_back, AstroportInstantiateMsg as InstantiateMsg, Cw20HookMsg,
-        ExecuteMsg, QueryMsg, SwapOperation,
+        ExecuteMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 
@@ -229,7 +230,7 @@ fn query_simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Asset> {
+) -> ContractResult<SimulateSwapExactAssetInResponse> {
     // Error if swap operations is empty
     let Some(first_op) = swap_operations.first() else {
         return Err(ContractError::SwapOperationsEmpty);
@@ -240,16 +241,15 @@ fn query_simulate_swap_exact_asset_in(
         return Err(ContractError::CoinInDenomMismatch);
     }
 
-    // Iterate through the swap operations, querying the astroport pool contracts to get the coin out
-    // for each swap operation, and then updating the coin out for the next swap operation until the
-    // coin out for the last swap operation is found.
-    let asset_out = swap_operations.iter().try_fold(
-        asset_in,
-        |asset_out, operation| -> Result<_, ContractError> {
+    // Iterate through the swap operations, querying the astroport pool contracts to get the asset out
+    // and spot price for each swap operation, and then updating the asset out and spot price until finished iterating.
+    let (asset_out, spot_price) = swap_operations.iter().try_fold(
+        (asset_in, Decimal::one()),
+        |(asset_out, curr_spot_price), operation| -> Result<_, ContractError> {
             // Get the astroport offer asset type
             let astroport_offer_asset = asset_out.into_astroport_asset(deps.api)?;
 
-            // Query the astroport pool contract to get the coin out for the swap operation
+            // Query the astroport pool contract to get the simulation response
             let res: SimulationResponse = deps.querier.query_wasm_smart(
                 &operation.pool,
                 &PairQueryMsg::Simulation {
@@ -261,16 +261,26 @@ fn query_simulate_swap_exact_asset_in(
             // Assert the operation does not exceed the max spread limit
             assert_max_spread(res.return_amount, res.spread_amount)?;
 
-            Ok(Asset::new(
-                deps.api,
-                &operation.denom_out,
-                res.return_amount,
+            // Calculate the amount out without slippage
+            let amount_out_without_slippage = res
+                .return_amount
+                .checked_add(res.spread_amount)?
+                .checked_add(res.commission_amount)?;
+
+            Ok((
+                Asset::new(deps.api, &operation.denom_out, res.return_amount),
+                curr_spot_price.checked_mul(Decimal::from_ratio(
+                    asset_out.amount(),
+                    amount_out_without_slippage,
+                ))?,
             ))
         },
     )?;
 
-    // Return the asset out
-    Ok(asset_out)
+    Ok(SimulateSwapExactAssetInResponse {
+        asset_out,
+        spot_price,
+    })
 }
 
 // Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
@@ -278,7 +288,7 @@ fn query_simulate_swap_exact_asset_out(
     deps: Deps,
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Asset> {
+) -> ContractResult<SimulateSwapExactAssetOutResponse> {
     // Error if swap operations is empty
     let Some(last_op) = swap_operations.last() else {
         return Err(ContractError::SwapOperationsEmpty);
@@ -290,15 +300,15 @@ fn query_simulate_swap_exact_asset_out(
     }
 
     // Iterate through the swap operations in reverse order, querying the astroport pool contracts
-    // contracts to get the coin in needed for each swap operation, and then updating the coin in
-    // needed for the next swap operation until the coin in needed for the first swap operation is found.
-    let asset_in_needed = swap_operations.iter().rev().try_fold(
-        asset_out,
-        |asset_in_needed, operation| -> Result<Asset, ContractError> {
+    // to get the asset in and spot price for each swap operation, and then updating the asset in
+    // and spot price until finished iterating.
+    let (asset_in, spot_price) = swap_operations.iter().rev().try_fold(
+        (asset_out, Decimal::one()),
+        |(asset_in_needed, curr_spot_price), operation| -> Result<_, ContractError> {
             // Get the astroport ask asset type
             let astroport_ask_asset = asset_in_needed.into_astroport_asset(deps.api)?;
 
-            // Query the astroport pool contract to get the coin in needed for the swap operation
+            // Query the astroport pool contract to get the reverse simulation response
             let res: ReverseSimulationResponse = deps.querier.query_wasm_smart(
                 &operation.pool,
                 &PairQueryMsg::ReverseSimulation {
@@ -310,16 +320,30 @@ fn query_simulate_swap_exact_asset_out(
             // Assert the operation does not exceed the max spread limit
             assert_max_spread(res.offer_amount, res.spread_amount)?;
 
-            Ok(Asset::new(
-                deps.api,
-                &operation.denom_in,
-                res.offer_amount.checked_add(Uint128::one())?,
+            // Calculate the amount out without slippage
+            let amount_out_without_slippage = asset_in_needed
+                .amount()
+                .checked_add(res.spread_amount)?
+                .checked_add(res.commission_amount)?;
+
+            Ok((
+                Asset::new(
+                    deps.api,
+                    &operation.denom_in,
+                    res.offer_amount.checked_add(Uint128::one())?,
+                ),
+                curr_spot_price.checked_mul(Decimal::from_ratio(
+                    res.offer_amount,
+                    amount_out_without_slippage,
+                ))?,
             ))
         },
     )?;
 
-    // Return the coin in needed
-    Ok(asset_in_needed)
+    Ok(SimulateSwapExactAssetOutResponse {
+        asset_in,
+        spot_price,
+    })
 }
 
 fn assert_max_spread(return_amount: Uint128, spread_amount: Uint128) -> ContractResult<()> {
