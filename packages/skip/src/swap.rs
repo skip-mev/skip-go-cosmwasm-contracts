@@ -67,14 +67,26 @@ pub enum QueryMsg {
     #[returns(Addr)]
     RouterContractAddress {},
     // SimulateSwapExactAssetOut returns the asset in necessary to receive the specified asset out
-    #[returns(SimulateSwapExactAssetOutResponse)]
+    #[returns(Asset)]
     SimulateSwapExactAssetOut {
         asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
     },
     // SimulateSwapExactAssetIn returns the asset out received from the specified asset in
-    #[returns(SimulateSwapExactAssetInResponse)]
+    #[returns(Asset)]
     SimulateSwapExactAssetIn {
+        asset_in: Asset,
+        swap_operations: Vec<SwapOperation>,
+    },
+    // SimulateSwapExactAssetOut returns the asset in necessary to receive the specified asset out
+    #[returns(SimulateSwapExactAssetOutResponse)]
+    SimulateSwapExactAssetOutWithSpotPrice {
+        asset_out: Asset,
+        swap_operations: Vec<SwapOperation>,
+    },
+    // SimulateSwapExactAssetIn returns the asset out received from the specified asset in
+    #[returns(SimulateSwapExactAssetInResponse)]
+    SimulateSwapExactAssetInWithSpotPrice {
         asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
     },
