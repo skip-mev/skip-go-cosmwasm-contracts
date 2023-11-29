@@ -15,12 +15,6 @@ pub enum ContractError {
     #[error(transparent)]
     Payment(#[from] cw_utils::PaymentError),
 
-    #[error(transparent)]
-    Decimal(#[from] cosmwasm_std::DecimalRangeExceeded),
-
-    #[error(transparent)]
-    Overflow(#[from] cosmwasm_std::OverflowError),
-
     #[error("Unauthorized")]
     Unauthorized,
 
