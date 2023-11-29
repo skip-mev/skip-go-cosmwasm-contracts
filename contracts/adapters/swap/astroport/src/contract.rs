@@ -384,8 +384,8 @@ fn query_simulate_swap_exact_asset_in_with_spot_price(
             Ok((
                 Asset::new(deps.api, &operation.denom_out, res.return_amount),
                 curr_spot_price.checked_mul(Decimal::from_ratio(
-                    asset_out.amount(),
                     amount_out_without_slippage,
+                    asset_out.amount(),
                 ))?,
             ))
         },
@@ -447,8 +447,8 @@ fn query_simulate_swap_exact_asset_out_with_spot_price(
                     res.offer_amount.checked_add(Uint128::one())?,
                 ),
                 curr_spot_price.checked_mul(Decimal::from_ratio(
-                    res.offer_amount,
                     amount_out_without_slippage,
+                    res.offer_amount,
                 ))?,
             ))
         },
