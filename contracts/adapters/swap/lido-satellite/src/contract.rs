@@ -6,14 +6,16 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, WasmMsg,
+    entry_point, to_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
+    WasmMsg,
 };
 use cw_utils::one_coin;
 use skip::{
     asset::Asset,
     swap::{
         execute_transfer_funds_back, ExecuteMsg, LidoSatelliteInstantiateMsg as InstantiateMsg,
-        QueryMsg, SwapOperation,
+        QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 
@@ -189,6 +191,36 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
                     asset_out.amount().u128(),
                     bridged_denom,
                 )))
+            } else {
+                unimplemented!()
+            }
+        }
+        QueryMsg::SimulateSwapExactAssetInWithSpotPrice { asset_in, .. } => {
+            if asset_in.denom() == bridged_denom {
+                to_binary(&SimulateSwapExactAssetInResponse {
+                    asset_out: Asset::Native(Coin::new(asset_in.amount().u128(), canonical_denom)),
+                    spot_price: Decimal::one(),
+                })
+            } else if asset_in.denom() == canonical_denom {
+                to_binary(&SimulateSwapExactAssetInResponse {
+                    asset_out: Asset::Native(Coin::new(asset_in.amount().u128(), bridged_denom)),
+                    spot_price: Decimal::one(),
+                })
+            } else {
+                unimplemented!()
+            }
+        }
+        QueryMsg::SimulateSwapExactAssetOutWithSpotPrice { asset_out, .. } => {
+            if asset_out.denom() == bridged_denom {
+                to_binary(&SimulateSwapExactAssetOutResponse {
+                    asset_in: Asset::Native(Coin::new(asset_out.amount().u128(), canonical_denom)),
+                    spot_price: Decimal::one(),
+                })
+            } else if asset_out.denom() == canonical_denom {
+                to_binary(&SimulateSwapExactAssetOutResponse {
+                    asset_in: Asset::Native(Coin::new(asset_out.amount().u128(), bridged_denom)),
+                    spot_price: Decimal::one(),
+                })
             } else {
                 unimplemented!()
             }
