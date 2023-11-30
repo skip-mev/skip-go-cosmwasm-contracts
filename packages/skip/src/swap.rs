@@ -78,13 +78,13 @@ pub enum QueryMsg {
         asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
     },
-    // SimulateSwapExactAssetOut returns the asset in necessary to receive the specified asset out
+    // SimulateSwapExactAssetOutWithSpotPrice returns the asset in necessary to receive the specified asset out and the spot price
     #[returns(SimulateSwapExactAssetOutResponse)]
     SimulateSwapExactAssetOutWithSpotPrice {
         asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
     },
-    // SimulateSwapExactAssetIn returns the asset out received from the specified asset in
+    // SimulateSwapExactAssetInWithSpotPrice returns the asset out received from the specified asset in and the spot price
     #[returns(SimulateSwapExactAssetInResponse)]
     SimulateSwapExactAssetInWithSpotPrice {
         asset_in: Asset,
