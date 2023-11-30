@@ -14,7 +14,7 @@ TESTNET_CHAIN_ID = "pion-1"
 
 ADDRESS_PREFIX = "neutron"
 DENOM = "untrn"
-GAS_PRICE = 0.01
+GAS_PRICE = 0.02
 
 # Contract Paths
 ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_api_entry_point-aarch64.wasm"
