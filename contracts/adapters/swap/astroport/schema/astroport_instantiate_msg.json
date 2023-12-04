@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AstroportInstantiateMsg",
+  "type": "object",
+  "required": [
+    "entry_point_contract_address",
+    "router_contract_address"
+  ],
+  "properties": {
+    "entry_point_contract_address": {
+      "type": "string"
+    },
+    "router_contract_address": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

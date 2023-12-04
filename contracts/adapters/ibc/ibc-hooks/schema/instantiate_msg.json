@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "description": "INSTANTIATE ///",
+  "type": "object",
+  "required": [
+    "entry_point_contract_address"
+  ],
+  "properties": {
+    "entry_point_contract_address": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
