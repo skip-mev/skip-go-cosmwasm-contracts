@@ -8,6 +8,12 @@ artifacts
 # Text file backups
 **/*.rs.bk
 
+# wasmkit
+build/
+artifacts/
+package-lock.json
+node_modules/
+
 # macOS
 .DS_Store
 

@@ -1,0 +1,16 @@
+{
+  "name": "skip-api-contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "tsc --build .",
+    "build:watch": "tsc -w -p ."
+  },
+  "dependencies": {
+    "@types/chai": "^4.3.0",
+    "chai": "^4.3.4",
+    "@kubiklabs/wasmkit": "^0.2.7",
+    "typescript": "^4.3.2"
+  }
+}
