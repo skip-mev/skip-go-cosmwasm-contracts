@@ -69,6 +69,9 @@ Expect Error
     - IBC Transfer With IBC Fees But More Than One IBC Fee Denom Specified
     - IBC Transfer With IBC Fees But No IBC Fee Coins Specified
     - IBC Transfer With IBC Fee Coin Amount Zero
+
+    // Sent Asset
+    - Sent Asset Not Given with Invalid One Coin
  */
 
 // Define test parameters
@@ -1615,6 +1618,32 @@ struct Params {
         expected_error: Some(ContractError::Timeout),
     };
     "Current Block Time Greater Than Timeout Timestamp - Expect Error")]
+#[test_case(
+    Params {
+        info_funds: vec![],
+        sent_asset: None,
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Payment(NoFunds{})),
+    };
+    "Sent Asset Not Given with Invalid One Coin")]
 fn test_execute_swap_and_action(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
