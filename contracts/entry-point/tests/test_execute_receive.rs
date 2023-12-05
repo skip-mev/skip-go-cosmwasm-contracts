@@ -142,7 +142,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
                     msg: to_binary(&ExecuteMsg::SwapAndAction {
-                        sent_asset: Asset::Cw20(Cw20Coin{address: "neutron123".to_string(), amount: Uint128::from(1_000_000u128)}),
+                        sent_asset: Some(Asset::Cw20(Cw20Coin{address: "neutron123".to_string(), amount: Uint128::from(1_000_000u128)})),
                         user_swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),

@@ -29,7 +29,7 @@ Expect Response
 // Define test parameters
 struct Params {
     info_funds: Vec<Coin>,
-    sent_asset: Asset,
+    sent_asset: Option<Asset>,
     user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
@@ -44,7 +44,7 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![Coin::new(1_000_000, "untrn")],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
             operations: vec![SwapOperation {
@@ -65,7 +65,7 @@ struct Params {
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
                 msg: to_binary(&ExecuteMsg::SwapAndAction {
-                    sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                    sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
                         operations: vec![SwapOperation {
@@ -93,7 +93,7 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![Coin::new(1_000_000, "untrn"), Coin::new(1_000_000, "osmo")],
-        sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+        sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
             operations: vec![SwapOperation {
@@ -114,7 +114,7 @@ struct Params {
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
                 msg: to_binary(&ExecuteMsg::SwapAndAction {
-                    sent_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                    sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
                         operations: vec![SwapOperation {
@@ -142,10 +142,10 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![],
-        sent_asset: Asset::Cw20(Cw20Coin{
+        sent_asset: Some(Asset::Cw20(Cw20Coin{
             address: "neutron123".to_string(),
             amount: Uint128::from(1_000_000u128),
-        }),
+        })),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
             operations: vec![SwapOperation {
@@ -169,10 +169,10 @@ struct Params {
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
                 msg: to_binary(&ExecuteMsg::SwapAndAction {
-                    sent_asset: Asset::Cw20(Cw20Coin{
+                    sent_asset: Some(Asset::Cw20(Cw20Coin{
                         address: "neutron123".to_string(),
                         amount: Uint128::from(1_000_000u128),
-                    }),
+                    })),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
                         operations: vec![SwapOperation {
@@ -200,10 +200,10 @@ struct Params {
 #[test_case(
     Params {
         info_funds: vec![Coin::new(1_000_000, "untrn"), Coin::new(1_000_000, "osmo")],
-        sent_asset: Asset::Cw20(Cw20Coin{
+        sent_asset: Some(Asset::Cw20(Cw20Coin{
             address: "neutron123".to_string(),
             amount: Uint128::from(1_000_000u128),
-        }),
+        })),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
             operations: vec![SwapOperation {
@@ -227,10 +227,10 @@ struct Params {
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
                 msg: to_binary(&ExecuteMsg::SwapAndAction {
-                    sent_asset: Asset::Cw20(Cw20Coin{
+                    sent_asset: Some(Asset::Cw20(Cw20Coin{
                         address: "neutron123".to_string(),
                         amount: Uint128::from(1_000_000u128),
-                    }),
+                    })),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
                         operations: vec![SwapOperation {
