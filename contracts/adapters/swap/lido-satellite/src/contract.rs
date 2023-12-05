@@ -195,31 +195,31 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
                 unimplemented!()
             }
         }
-        QueryMsg::SimulateSwapExactAssetInWithSpotPrice { asset_in, .. } => {
+        QueryMsg::SimulateSwapExactAssetInWithMetadata { asset_in, .. } => {
             if asset_in.denom() == bridged_denom {
                 to_binary(&SimulateSwapExactAssetInResponse {
                     asset_out: Asset::Native(Coin::new(asset_in.amount().u128(), canonical_denom)),
-                    spot_price: Decimal::one(),
+                    spot_price: Some(Decimal::one()),
                 })
             } else if asset_in.denom() == canonical_denom {
                 to_binary(&SimulateSwapExactAssetInResponse {
                     asset_out: Asset::Native(Coin::new(asset_in.amount().u128(), bridged_denom)),
-                    spot_price: Decimal::one(),
+                    spot_price: Some(Decimal::one()),
                 })
             } else {
                 unimplemented!()
             }
         }
-        QueryMsg::SimulateSwapExactAssetOutWithSpotPrice { asset_out, .. } => {
+        QueryMsg::SimulateSwapExactAssetOutWithMetadata { asset_out, .. } => {
             if asset_out.denom() == bridged_denom {
                 to_binary(&SimulateSwapExactAssetOutResponse {
                     asset_in: Asset::Native(Coin::new(asset_out.amount().u128(), canonical_denom)),
-                    spot_price: Decimal::one(),
+                    spot_price: Some(Decimal::one()),
                 })
             } else if asset_out.denom() == canonical_denom {
                 to_binary(&SimulateSwapExactAssetOutResponse {
                     asset_in: Asset::Native(Coin::new(asset_out.amount().u128(), bridged_denom)),
-                    spot_price: Decimal::one(),
+                    spot_price: Some(Decimal::one()),
                 })
             } else {
                 unimplemented!()

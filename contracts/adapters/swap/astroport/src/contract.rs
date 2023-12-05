@@ -221,18 +221,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_out,
             swap_operations,
         )?),
-        QueryMsg::SimulateSwapExactAssetInWithSpotPrice {
+        QueryMsg::SimulateSwapExactAssetInWithMetadata {
             asset_in,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_asset_in_with_spot_price(
+        } => to_binary(&query_simulate_swap_exact_asset_in_with_metadata(
             deps,
             asset_in,
             swap_operations,
         )?),
-        QueryMsg::SimulateSwapExactAssetOutWithSpotPrice {
+        QueryMsg::SimulateSwapExactAssetOutWithMetadata {
             asset_out,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_asset_out_with_spot_price(
+        } => to_binary(&query_simulate_swap_exact_asset_out_with_metadata(
             deps,
             asset_out,
             swap_operations,
@@ -339,8 +339,8 @@ fn query_simulate_swap_exact_asset_out(
     Ok(asset_in_needed)
 }
 
-// Queries the astroport router contract to simulate a swap exact amount in with spot price
-fn query_simulate_swap_exact_asset_in_with_spot_price(
+// Queries the astroport router contract to simulate a swap exact amount in with metadata
+fn query_simulate_swap_exact_asset_in_with_metadata(
     deps: Deps,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
@@ -393,12 +393,12 @@ fn query_simulate_swap_exact_asset_in_with_spot_price(
 
     Ok(SimulateSwapExactAssetInResponse {
         asset_out,
-        spot_price,
+        spot_price: Some(spot_price),
     })
 }
 
-// Queries the astroport pool contracts to simulate a multi-hop swap exact amount out with spot price
-fn query_simulate_swap_exact_asset_out_with_spot_price(
+// Queries the astroport pool contracts to simulate a multi-hop swap exact amount out with metadata
+fn query_simulate_swap_exact_asset_out_with_metadata(
     deps: Deps,
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
@@ -456,7 +456,7 @@ fn query_simulate_swap_exact_asset_out_with_spot_price(
 
     Ok(SimulateSwapExactAssetOutResponse {
         asset_in,
-        spot_price,
+        spot_price: Some(spot_price),
     })
 }
 
