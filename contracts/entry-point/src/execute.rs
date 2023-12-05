@@ -13,6 +13,7 @@ use cosmwasm_std::{
     SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
+use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
@@ -52,7 +53,7 @@ pub fn receive_cw20(
             deps,
             env,
             info,
-            sent_asset,
+            Some(sent_asset),
             user_swap,
             min_asset,
             timeout_timestamp,
@@ -70,7 +71,7 @@ pub fn receive_cw20(
             deps,
             env,
             info,
-            sent_asset,
+            Some(sent_asset),
             user_swap,
             min_asset,
             timeout_timestamp,
@@ -91,7 +92,7 @@ pub fn execute_swap_and_action(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    sent_asset: Asset,
+    sent_asset: Option<Asset>,
     user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
@@ -101,8 +102,14 @@ pub fn execute_swap_and_action(
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap_and_action");
 
-    // Validate the sent asset
-    sent_asset.validate(&deps, &env, &info)?;
+    // Validate and unwrap the sent asset
+    let sent_asset = match sent_asset {
+        Some(sent_asset) => {
+            sent_asset.validate(&deps, &env, &info)?;
+            sent_asset
+        }
+        None => one_coin(&info)?.into(),
+    };
 
     // Error if the current block time is greater than the timeout timestamp
     if env.block.time.nanos() > timeout_timestamp {
@@ -213,7 +220,7 @@ pub fn execute_swap_and_action_with_recover(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    sent_asset: Asset,
+    sent_asset: Option<Asset>,
     user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
@@ -223,8 +230,10 @@ pub fn execute_swap_and_action_with_recover(
 ) -> ContractResult<Response> {
     let mut assets: Vec<Asset> = info.funds.iter().cloned().map(Asset::Native).collect();
 
-    if let Asset::Cw20(_) = sent_asset {
-        assets.push(sent_asset.clone());
+    if let Some(asset) = &sent_asset {
+        if let Asset::Cw20(_) = asset {
+            assets.push(asset.clone());
+        }
     }
 
     // Store all parameters into a temporary storage.
