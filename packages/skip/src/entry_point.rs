@@ -30,7 +30,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     SwapAndActionWithRecover {
-        sent_asset: Asset,
+        sent_asset: Option<Asset>,
         user_swap: Swap,
         min_asset: Asset,
         timeout_timestamp: u64,
@@ -39,7 +39,7 @@ pub enum ExecuteMsg {
         recovery_addr: Addr,
     },
     SwapAndAction {
-        sent_asset: Asset,
+        sent_asset: Option<Asset>,
         user_swap: Swap,
         min_asset: Asset,
         timeout_timestamp: u64,
