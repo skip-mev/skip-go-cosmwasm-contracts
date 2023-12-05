@@ -35,6 +35,7 @@ Expect Response
         - User Swap Exact Coin In With IBC Transfer With IBC Fees
         - User Swap Exact Coin In With IBC Transfer Without IBC Fees
         - Fee Swap And User Swap Exact Coin In With IBC Fees
+        - Sent Asset Not Given, But Valid One Coin
 
     CW20 Asset
         - User Swap Exact Cw20 Asset In With Transfer
@@ -583,6 +584,80 @@ struct Params {
         expected_error: None,
     };
     "Fee Swap And User Swap Exact Coin In With IBC Fees")]
+#[test_case(
+    Params {
+        info_funds: vec![
+            Coin::new(1_000_000, "untrn"),
+        ],
+        sent_asset: None,
+        user_swap: Swap::SwapExactAssetIn (
+            SwapExactAssetIn{
+                swap_venue_name: "swap_venue_name".to_string(),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }
+                ],
+            }
+        ),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SwapExactAssetIn (
+                            SwapExactAssetIn{
+                                swap_venue_name: "swap_venue_name".to_string(),
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }
+                                ],
+                            }
+                        ),
+                        remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::Transfer {
+                            to_address: "to_address".to_string(),
+                        },
+                        exact_out: false,
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "Sent Asset Not Given, But Valid One Coin")]
 #[test_case(
     Params {
         info_funds: vec![],
