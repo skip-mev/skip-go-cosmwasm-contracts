@@ -78,15 +78,15 @@ pub enum QueryMsg {
         asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
     },
-    // SimulateSwapExactAssetOutWithSpotPrice returns the asset in necessary to receive the specified asset out and the spot price
+    // SimulateSwapExactAssetOutWithSpotPrice returns the asset in necessary to receive the specified asset out with metadata
     #[returns(SimulateSwapExactAssetOutResponse)]
-    SimulateSwapExactAssetOutWithSpotPrice {
+    SimulateSwapExactAssetOutWithMetadata {
         asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
     },
-    // SimulateSwapExactAssetInWithSpotPrice returns the asset out received from the specified asset in and the spot price
+    // SimulateSwapExactAssetInWithSpotPrice returns the asset out received from the specified asset in with metadata
     #[returns(SimulateSwapExactAssetInResponse)]
-    SimulateSwapExactAssetInWithSpotPrice {
+    SimulateSwapExactAssetInWithMetadata {
         asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
     },
@@ -97,7 +97,7 @@ pub enum QueryMsg {
 #[cw_serde]
 pub struct SimulateSwapExactAssetInResponse {
     pub asset_out: Asset,
-    pub spot_price: Decimal,
+    pub spot_price: Option<Decimal>,
 }
 
 // The SimulateSwapExactAssetOutResponse struct defines the response for the
@@ -105,7 +105,7 @@ pub struct SimulateSwapExactAssetInResponse {
 #[cw_serde]
 pub struct SimulateSwapExactAssetOutResponse {
     pub asset_in: Asset,
-    pub spot_price: Decimal,
+    pub spot_price: Option<Decimal>,
 }
 
 ////////////////////
