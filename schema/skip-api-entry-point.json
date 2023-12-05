@@ -73,7 +73,6 @@
               "min_asset",
               "post_swap_action",
               "recovery_addr",
-              "sent_asset",
               "timeout_timestamp",
               "user_swap"
             ],
@@ -94,7 +93,14 @@
                 "$ref": "#/definitions/Addr"
               },
               "sent_asset": {
-                "$ref": "#/definitions/Asset"
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Asset"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "timeout_timestamp": {
                 "type": "integer",
@@ -122,7 +128,6 @@
               "affiliates",
               "min_asset",
               "post_swap_action",
-              "sent_asset",
               "timeout_timestamp",
               "user_swap"
             ],
@@ -140,7 +145,14 @@
                 "$ref": "#/definitions/Action"
               },
               "sent_asset": {
-                "$ref": "#/definitions/Asset"
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Asset"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "timeout_timestamp": {
                 "type": "integer",
