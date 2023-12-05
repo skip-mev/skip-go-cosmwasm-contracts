@@ -18,6 +18,8 @@ Expect Response
     - Happy Path Single Coin
     - Happy Path Multiple Coins
     - Happy Path Cw20 Asset
+    - Sent Asset Not Given With Valid One Coin
+    - Sent Asset Not Given With Invalid One Coin
 
     // Note: The following test case is an invalid call to the contract
     // showing that under the circumstance both coins and a Cw20 token
@@ -197,6 +199,104 @@ struct Params {
         expected_error: None,
     };
     "Happy Path Cw20 Asset")]
+#[test_case(
+    Params {
+        info_funds: vec![Coin::new(1_000_000, "untrn")],
+        sent_asset: None,
+        user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![SwapOperation {
+                pool: "pool".to_string(),
+                denom_in: "untrn".to_string(),
+                denom_out: "osmo".to_string(),
+            }],
+        }),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_assets: vec![Asset::Native(Coin::new(1_000_000, "untrn"))],
+        expected_messages: vec![SubMsg {
+            id: 1,
+            msg: CosmosMsg::from(WasmMsg::Execute {
+                contract_addr: "entry_point".to_string(),
+                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                    sent_asset: None,
+                    user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+                        swap_venue_name: "swap_venue_name".to_string(),
+                        operations: vec![SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "untrn".to_string(),
+                            denom_out: "osmo".to_string(),
+                        }],
+                    }),
+                    min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                    timeout_timestamp: 101,
+                    post_swap_action: Action::Transfer {
+                        to_address: "to_address".to_string(),
+                    },
+                    affiliates: vec![],
+                })
+                .unwrap(),
+                funds: vec![Coin::new(1000000, "untrn")],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }],
+        expected_error: None,
+    };
+    "Sent Asset Not Given With Valid One Coin")]
+#[test_case(
+    Params {
+        info_funds: vec![Coin::new(1_000_000, "untrn"), Coin::new(1_000_000, "osmo")],
+        sent_asset: None,
+        user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            operations: vec![SwapOperation {
+                pool: "pool".to_string(),
+                denom_in: "untrn".to_string(),
+                denom_out: "osmo".to_string(),
+            }],
+        }),
+        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::Transfer {
+            to_address: "to_address".to_string(),
+        },
+        affiliates: vec![],
+        expected_assets: vec![Asset::Native(Coin::new(1_000_000, "untrn")), Asset::Native(Coin::new(1_000_000, "osmo"))],
+        expected_messages: vec![SubMsg {
+            id: 1,
+            msg: CosmosMsg::from(WasmMsg::Execute {
+                contract_addr: "entry_point".to_string(),
+                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                    sent_asset: None,
+                    user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
+                        swap_venue_name: "swap_venue_name".to_string(),
+                        operations: vec![SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "untrn".to_string(),
+                            denom_out: "osmo".to_string(),
+                        }],
+                    }),
+                    min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                    timeout_timestamp: 101,
+                    post_swap_action: Action::Transfer {
+                        to_address: "to_address".to_string(),
+                    },
+                    affiliates: vec![],
+                })
+                .unwrap(),
+                funds: vec![Coin::new(1000000, "untrn"), Coin::new(1000000, "osmo")],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }],
+        expected_error: None,
+    };
+    "Sent Asset Not Given With Invalid One Coin")]
 #[test_case(
     Params {
         info_funds: vec![Coin::new(1_000_000, "untrn"), Coin::new(1_000_000, "osmo")],

@@ -35,7 +35,7 @@ Expect Response
         - User Swap Exact Coin In With IBC Transfer With IBC Fees
         - User Swap Exact Coin In With IBC Transfer Without IBC Fees
         - Fee Swap And User Swap Exact Coin In With IBC Fees
-        - Sent Asset Not Given, But Valid One Coin
+        - Sent Asset Not Given With Valid One Coin
 
     CW20 Asset
         - User Swap Exact Cw20 Asset In With Transfer
@@ -660,7 +660,7 @@ struct Params {
         ],
         expected_error: None,
     };
-    "Sent Asset Not Given, But Valid One Coin")]
+    "Sent Asset Not Given With Valid One Coin")]
 #[test_case(
     Params {
         info_funds: vec![],
