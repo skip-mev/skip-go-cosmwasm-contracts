@@ -83,12 +83,14 @@ pub enum QueryMsg {
     SimulateSwapExactAssetOutWithMetadata {
         asset_out: Asset,
         swap_operations: Vec<SwapOperation>,
+        include_spot_price: bool,
     },
     // SimulateSwapExactAssetInWithSpotPrice returns the asset out received from the specified asset in with metadata
     #[returns(SimulateSwapExactAssetInResponse)]
     SimulateSwapExactAssetInWithMetadata {
         asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
+        include_spot_price: bool,
     },
 }
 
