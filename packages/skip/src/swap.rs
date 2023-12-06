@@ -4,7 +4,7 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response};
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
@@ -78,6 +78,36 @@ pub enum QueryMsg {
         asset_in: Asset,
         swap_operations: Vec<SwapOperation>,
     },
+    // SimulateSwapExactAssetOutWithSpotPrice returns the asset in necessary to receive the specified asset out with metadata
+    #[returns(SimulateSwapExactAssetOutResponse)]
+    SimulateSwapExactAssetOutWithMetadata {
+        asset_out: Asset,
+        swap_operations: Vec<SwapOperation>,
+        include_spot_price: bool,
+    },
+    // SimulateSwapExactAssetInWithSpotPrice returns the asset out received from the specified asset in with metadata
+    #[returns(SimulateSwapExactAssetInResponse)]
+    SimulateSwapExactAssetInWithMetadata {
+        asset_in: Asset,
+        swap_operations: Vec<SwapOperation>,
+        include_spot_price: bool,
+    },
+}
+
+// The SimulateSwapExactAssetInResponse struct defines the response for the
+// SimulateSwapExactAssetIn query.
+#[cw_serde]
+pub struct SimulateSwapExactAssetInResponse {
+    pub asset_out: Asset,
+    pub spot_price: Option<Decimal>,
+}
+
+// The SimulateSwapExactAssetOutResponse struct defines the response for the
+// SimulateSwapExactAssetOut query.
+#[cw_serde]
+pub struct SimulateSwapExactAssetOutResponse {
+    pub asset_in: Asset,
+    pub spot_price: Option<Decimal>,
 }
 
 ////////////////////

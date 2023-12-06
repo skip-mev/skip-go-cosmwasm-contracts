@@ -4,12 +4,12 @@ MNEMONIC = "<YOUR MNEMONIC HERE>"
 # Commut Hash
 COMMIT_HASH = "<COMMIT HASH HERE>"
 
-MAINNET_REST_URL = "https://lcd.osmosis.zone/"
+MAINNET_REST_URL = "https://osmosis-api.polkachu.com"
 MAINNET_RPC_URL = "https://osmosis-rpc.polkachu.com/"
 MAINNET_CHAIN_ID = "osmosis-1"
 
-TESTNET_REST_URL = "https://lcd.osmotest5.osmosis.zone/"
-TESTNET_RPC_URL = "https://rpc.testnet.osmosis.zone/"
+TESTNET_REST_URL = "https://osmosis-testnet-api.polkachu.com"
+TESTNET_RPC_URL = "https://osmosis-testnet-rpc.polkachu.com/"
 TESTNET_CHAIN_ID = "osmo-test-5" 
 
 ADDRESS_PREFIX = "osmo"
