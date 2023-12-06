@@ -278,14 +278,14 @@ fn query_simulate_swap_exact_asset_out(
         return Err(ContractError::SwapOperationsEmpty);
     };
 
-    // Ensure coin_out's denom is the same as the last swap operation's denom out
+    // Ensure asset_out's denom is the same as the last swap operation's denom out
     if asset_out.denom() != last_op.denom_out {
         return Err(ContractError::CoinOutDenomMismatch);
     }
 
     let (asset_in, _) = simulate_swap_exact_asset_out(deps, asset_out, swap_operations, false)?;
 
-    // Return the coin in needed
+    // Return the asset in needed
     Ok(asset_in)
 }
 
@@ -351,7 +351,7 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
         return Err(ContractError::SwapOperationsEmpty);
     };
 
-    // Ensure coin_out's denom is the same as the last swap operation's denom out
+    // Ensure asset_out's denom is the same as the last swap operation's denom out
     if asset_out.denom() != last_op.denom_out {
         return Err(ContractError::CoinOutDenomMismatch);
     }

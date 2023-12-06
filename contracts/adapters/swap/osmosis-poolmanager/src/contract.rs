@@ -240,7 +240,7 @@ fn query_simulate_swap_exact_asset_in(
             osmosis_swap_amount_in_routes,
         )?;
 
-    // Return the coin out
+    // Return the asset out
     Ok(Coin {
         denom: denom_out,
         amount: Uint128::from_str(&res.token_out_amount)?,
@@ -288,7 +288,7 @@ fn query_simulate_swap_exact_asset_out(
             coin_out.to_string(),
         )?;
 
-    // Return the coin in needed
+    // Return the asset in needed
     Ok(Coin {
         denom: denom_in,
         amount: Uint128::from_str(&res.token_in_amount)?,

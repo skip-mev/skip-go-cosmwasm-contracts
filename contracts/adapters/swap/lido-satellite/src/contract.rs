@@ -99,7 +99,6 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    // FIXME: seems like we are doomed to ignore this field at all?
     _operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
