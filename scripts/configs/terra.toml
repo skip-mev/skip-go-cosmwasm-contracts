@@ -8,7 +8,7 @@ MAINNET_REST_URL = "https://phoenix-lcd.terra.dev"
 MAINNET_RPC_URL = "https://terra-rpc.polkachu.com/"
 MAINNET_CHAIN_ID = "phoenix-1"
 
-TESTNET_REST_URL = "https://terra-testnet-api.polkachu.com"
+TESTNET_REST_URL = "https://pisco-lcd.terra.dev"
 TESTNET_RPC_URL = "https://terra-testnet-rpc.polkachu.com/"
 TESTNET_CHAIN_ID = "pisco-1"
 
