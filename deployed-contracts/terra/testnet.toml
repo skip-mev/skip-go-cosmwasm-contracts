@@ -1,24 +1,24 @@
 [info]
 chain_id = "pisco-1"
 network = "testnet"
-deploy_date = "29/11/2023 23:50:39"
-commit_hash = ""
+deploy_date = "06/12/2023 00:43:22"
+commit_hash = "4e6b9a5adaa483717ae96fb83f8df557e2099112"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "78aedc54514702fdd4c7385cfacf43ff8ba0ba6406053f89b37f247d52816aab"
+"skip_api_entry_point-aarch64.wasm" = "3e12c96f85d49e2f3ca7b03af5b6bd766a331faa7ac0af7f1ee13a4c86d04e4a"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "3a102d927b8ccd5f551730ee3454b4fb0f034b73c71cc36af7bf9918b4a79e91"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "e29cf405f43bf4392e44d9ecd534397846eb131c642dd7eef6ce6f93faddf728"
-"skip_api_swap_adapter_astroport-aarch64.wasm" = "1271398f1f1a9da56d245f737a9cf154e8c7862e94cdc1eae83e14d74cc40e61"
-"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "7ddba8dd382112df5f87cbf0d65d19f3713e74e70a4bb57abda0233c1e020ab7"
-"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "3239e27f19e8d427bab5738a0fd5b1ae31836d8900c1d4d37fe1340e6aa6e14b"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "c696ee6f3542815d436aa1f12381d4c29fe41ba7bc88773e2abf94a74eb1844f"
+"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "e56940041e5943ff4090047c7a5c3f4a0bc41687cc7a77fb5286b7f194caf438"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "e4f6732d3be7b878e851bc2b9b0d4999088b05e8774540b24b75ea3241ca6438"
 
 [code-ids]
-swap_adapter_testnet-terra-astroport_contract_code_id = "12143"
+swap_adapter_testnet-terra-astroport_contract_code_id = "12185"
 
 [contract-addresses]
-swap_adapter_testnet-terra-astroport_contract_address = "terra14ag8k2lpxv74jqlkk0dtcnvcvjj6keycrv2ak8ukdwey445l87fsrxwkqy"
+swap_adapter_testnet-terra-astroport_contract_address = "terra1hn224pg9pepe62d4dlnq9u7jw6s3qdanf4dmujswxsh27l7hz3hq357ue9"
 
 [tx-hashes]
-store_swap_adapter_testnet-terra-astroport_tx_hash = "e288d4a1fa61d69ee519b5326b295c2fbc2307bc47285972ceeb400d476feb1b"
-instantiate_swap_adapter_testnet-terra-astroport_tx_hash = "f11fed621231009d6e1e8c2476bde75c6cdbaba559f1f04af1097660150eb594"
+store_swap_adapter_testnet-terra-astroport_tx_hash = "a5d2643c7688448a3851d953dfc3315cb972544149f28f2fa708d87ac1179b53"
+instantiate_swap_adapter_testnet-terra-astroport_tx_hash = "ede1cc1a42ab7d7eb38065a325e954d410af43267c5091352f114fb0611ebb4d"
