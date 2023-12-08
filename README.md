@@ -189,6 +189,6 @@ To deploy the Skip Swap contracts, the steps are as follows:
 
 11. After running the deploy script, a toml file will be added/updated in the deployed-contracts/{CHAIN} folder with all relevant info for the deployment.
 
-# About Skip
+# About Skip 
 
 Skip helps developers provide extraordinary user experiences across all stages of the transaction lifecycle, from transaction construction, through cross-chain relaying + tracking, to block construction.
