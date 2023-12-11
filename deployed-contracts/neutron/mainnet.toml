@@ -1,12 +1,12 @@
 [info]
 chain_id = "neutron-1"
 network = "mainnet"
-deploy_date = "06/12/2023 00:12:29"
-commit_hash = "4e6b9a5adaa483717ae96fb83f8df557e2099112"
+deploy_date = "10/12/2023 23:42:27"
+commit_hash = "9f95ea333f77d9cd602009555e397dfeb08f2958"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "3e12c96f85d49e2f3ca7b03af5b6bd766a331faa7ac0af7f1ee13a4c86d04e4a"
+"skip_api_entry_point-aarch64.wasm" = "a7c050e36f5dd8a101d1def5b58d4b155bb6a88f7fa9c8282a6f8a489a9a8ec4"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "3a102d927b8ccd5f551730ee3454b4fb0f034b73c71cc36af7bf9918b4a79e91"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "e29cf405f43bf4392e44d9ecd534397846eb131c642dd7eef6ce6f93faddf728"
 "skip_api_swap_adapter_astroport-aarch64.wasm" = "c696ee6f3542815d436aa1f12381d4c29fe41ba7bc88773e2abf94a74eb1844f"
@@ -14,15 +14,23 @@ salt = "1"
 "skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "e4f6732d3be7b878e851bc2b9b0d4999088b05e8774540b24b75ea3241ca6438"
 
 [code-ids]
-swap_adapter_neutron-astroport_contract_code_id = "503"
-swap_adapter_neutron-lido-satellite_contract_code_id = "504"
+ibc_transfer_adapter_contract_code_id = "524"
+swap_adapter_neutron-astroport_contract_code_id = "525"
+swap_adapter_neutron-lido-satellite_contract_code_id = "526"
+entry_point_contract_code_id = "527"
 
 [contract-addresses]
-swap_adapter_neutron-astroport_contract_address = "neutron1rfecgx55wwnqmjtm9sq36xkph53xwfhah2uaslq8ghgg2qy66ads99d5cu"
-swap_adapter_neutron-lido-satellite_contract_address = "neutron16whscshfulc2cldxy0xprllvqqu7c4tet6u92qltdd6kjgn0phps67jt7k"
+ibc_transfer_adapter_contract_address = "neutron1x5ss2xz6fw9ctucxrwrs76f99trzwljmpk6wskp9wsdnlv74dhtsx2xt4t"
+swap_adapter_neutron-astroport_contract_address = "neutron1zku6at3gx7q2sydsapw79rnslac6h6rgyk62n43xmkkczvs498ms4jp0hp"
+swap_adapter_neutron-lido-satellite_contract_address = "neutron1frp6t9cnpsuue57aw7ves7pvaxwdcgjseudhp53em3erz80382ps0nlzdc"
+entry_point_contract_address = "neutron1clp46dz247hck0ns5jkv49hqzg8x0vh5hsx8yfvk6w87hnvc6hgsqgc985"
 
 [tx-hashes]
-store_swap_adapter_neutron-astroport_tx_hash = "10a106ecf5c130f3d567581f270a456448664a8e3dfbf60f87c802a76573910a"
-instantiate_swap_adapter_neutron-astroport_tx_hash = "ec9fa5c4fd4fd89d61d19923dd2ca76e82312b6f33ce852a9220a36e54298e8a"
-store_swap_adapter_neutron-lido-satellite_tx_hash = "584597221bbea030029be7c9712ae94fb5a52ec59ccb04c9f3a61b0d5e2375e2"
-instantiate_swap_adapter_neutron-lido-satellite_tx_hash = "fff3715a62ea49c74c2a00ad0fd24dc82da056fedaf45d5cb5bce444f54f7b29"
+store_ibc_transfer_adapter_tx_hash = "651cf0f4c4f021c3a6d83b18491660e21af17a1eefb311e305a5300c872dabaf"
+instantiate_ibc_transfer_adapter_tx_hash = "d012b6a97c2c350b1c7e6bc1f07ebae2f59a8b4ab4e9b5b233bf951a329c368d"
+store_swap_adapter_neutron-astroport_tx_hash = "bb48422d351510019e56cff937eb82adf3ff9e5299a84bd51c5245ed041ea7bf"
+instantiate_swap_adapter_neutron-astroport_tx_hash = "37f62f7261dd0c7a65e8ebc96762ab78fe6610bf01b9ac51dc5810fa881bb141"
+store_swap_adapter_neutron-lido-satellite_tx_hash = "4566c6cb4275795dd69cfd86f4ae8cd8c26c7befe011d038439d2f9779c5ceea"
+instantiate_swap_adapter_neutron-lido-satellite_tx_hash = "a4acab0c10a2868572ba042fe8354c2e36e692f1e9efbfd79fedc2e4923b40df"
+store_entry_point_tx_hash = "96dfcc705e3394c7fd49e54a1a72b69c8fe3f76d5c37667b86bfabefb54b8c89"
+instantiate_entry_point_tx_hash = "3e2451f71c219c0ce74bd1e75887c44ebe9fc6cfca49a335b0f32f8d53889b00"
