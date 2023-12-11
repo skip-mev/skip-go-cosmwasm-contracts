@@ -1,12 +1,12 @@
 [info]
 chain_id = "phoenix-1"
 network = "mainnet"
-deploy_date = "06/12/2023 00:45:22"
-commit_hash = "4e6b9a5adaa483717ae96fb83f8df557e2099112"
+deploy_date = "10/12/2023 23:47:51"
+commit_hash = "9f95ea333f77d9cd602009555e397dfeb08f2958"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "3e12c96f85d49e2f3ca7b03af5b6bd766a331faa7ac0af7f1ee13a4c86d04e4a"
+"skip_api_entry_point-aarch64.wasm" = "a7c050e36f5dd8a101d1def5b58d4b155bb6a88f7fa9c8282a6f8a489a9a8ec4"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "3a102d927b8ccd5f551730ee3454b4fb0f034b73c71cc36af7bf9918b4a79e91"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "e29cf405f43bf4392e44d9ecd534397846eb131c642dd7eef6ce6f93faddf728"
 "skip_api_swap_adapter_astroport-aarch64.wasm" = "c696ee6f3542815d436aa1f12381d4c29fe41ba7bc88773e2abf94a74eb1844f"
@@ -14,11 +14,19 @@ salt = "1"
 "skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "e4f6732d3be7b878e851bc2b9b0d4999088b05e8774540b24b75ea3241ca6438"
 
 [code-ids]
-swap_adapter_terra-astroport_contract_code_id = "2294"
+ibc_transfer_adapter_contract_code_id = "2318"
+swap_adapter_terra-astroport_contract_code_id = "2319"
+entry_point_contract_code_id = "2320"
 
 [contract-addresses]
-swap_adapter_terra-astroport_contract_address = "terra17wf3v0slvh7anc68f3rmz3s3u5x56qhw9yyul94vpcdwmp89fcqqylmvth"
+ibc_transfer_adapter_contract_address = "terra18yzyulzckdt2276p90mqezztl09cpaj2pgy609m4t0wh7kncxmmsxpt8jk"
+swap_adapter_terra-astroport_contract_address = "terra1ymtfmwl9tkdtwr7n6tza0zje364tqk8pn0l5csw573rumutuxm7qfsaxlv"
+entry_point_contract_address = "terra1rguu67l68ngn8mnaczx56c89muflp4z62wkjhm6ugxn0y3j2n22q4wr9ca"
 
 [tx-hashes]
-store_swap_adapter_terra-astroport_tx_hash = "899cc5d6c0b789ead09a17ed554dc27b4fbdf5674d6d5e94373493335985c7fb"
-instantiate_swap_adapter_terra-astroport_tx_hash = "fcf94af30d3227d5dab8b323e568355d76b23b5fd7d152aae2fc0f15cf8dc20c"
+store_ibc_transfer_adapter_tx_hash = "18ee5fe77a265029b9c989d2c3717cefafa9588e64ba367cb1e9922a8217c725"
+instantiate_ibc_transfer_adapter_tx_hash = "b63f70d693d6fad5c46753e7e85812a33a2a77290c0e406ed7d06ef41624e127"
+store_swap_adapter_terra-astroport_tx_hash = "f2be02f53c2c4ba45b3286e831a9bf245b6072f7b93d4deb43093b100c84a091"
+instantiate_swap_adapter_terra-astroport_tx_hash = "648079df7d880059335cc9967bab95f5dfedafc8ddddca51d8e20ab36dc53c08"
+store_entry_point_tx_hash = "3ef8583db3e608f0c78c7c217fd3262f82aab05edbc3cfe24df1f33171a0b081"
+instantiate_entry_point_tx_hash = "3ed8b8f57987078259004f5584a572e9f29e01e1b31cd2723f5993f2c5a89d99"
