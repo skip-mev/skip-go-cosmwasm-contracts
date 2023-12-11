@@ -32,7 +32,7 @@ The entry point contract is responsible for providing a standardized interface (
 Swap Adapter contracts are developed and deployed for each swap venue supported by Skip Swap. The contracts are responsible for:
 1. Taking the standardized entry point swap operations message format and converting it to the specific swap venue's format.
 2. Swapping by calling the swap venue's respective smart contract or module.
-3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out).
+3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out). 
 
 ## IBC Transfer Adapter Contracts
 
