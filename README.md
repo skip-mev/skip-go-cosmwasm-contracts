@@ -173,7 +173,7 @@ To deploy the Skip Swap contracts, the steps are as follows:
 
 9. Update the salt used in the config if needed (default is "1", which is 31 in the chain daemon generator)
     ``` toml
-    # SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+    # SALT USED TO GENERATE A DETERMINSTIC ADDRESS 
     SALT = "1"
     ```
 
