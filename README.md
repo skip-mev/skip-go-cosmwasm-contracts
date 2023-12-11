@@ -124,7 +124,7 @@ make fmt
 
 # Deployment
 
-To deploy the Skip Swap contracts, the steps are as follows:
+To deploy the Skip Swap contracts, the steps are as follows: 
 
 1. Build the optimized wasm bytecode of the contracts by running (they will appear in an artifacts folder):
 
