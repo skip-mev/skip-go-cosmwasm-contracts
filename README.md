@@ -68,7 +68,7 @@ The repository is organized in the following way:
 │       │   ├── ibc-hooks/
 │       │   └── neutron-transfer/
 │       └── swap/
-│           ├── astroport/
+│           ├── astroport/ 
 │           └── osmosis-poolmanager/
 │
 ├── deployed-contracts/     <- Contains deployed contracts info for each network
