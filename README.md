@@ -157,7 +157,7 @@ To deploy the Skip Swap contracts, the steps are as follows:
 
     ``` toml
     # Enter your mnemonic here
-    MNEMONIC = "<YOUR MNEMONIC HERE>"
+    MNEMONIC = "<YOUR MNEMONIC HERE>" 
     ```
 
 7. Generate the entry point contract address using `instatiate2` which generates determinsitic cosmwasm contract addresses. This is necessary to allow the adapter contracts to whitelist the entry point contract before it is instantiated. To do this, you will need the daemon of the respective chain you are deploying on, and running the following command for the chain's CLI (replace osmosisd with network client being used):
