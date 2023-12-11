@@ -47,7 +47,7 @@ IBC Transfer adapter contracts are developed and deployed for each chain support
 
 A simplified example flow showcasing the interactions between the contracts is as follows:
 1. A user calls `swap_and_action` on the entry point contract.
-2. The entry point contract performs pre-swap validation checks on the user call.
+2. The entry point contract performs pre-swap validation checks on the user call. 
 3. The entry point contract calls `swap` on the relevant swap adapter contract, sending the coin to swap to the swap adapter contract.
 4. The swap adapter contract swaps the coin sent by the entry point contract to the desired output denom through the relevant swap venue.
 5. The swap adapter contract calls `transfer_funds_back` on itself, which transfers the post-swap contract balance back to the entry point contract.
