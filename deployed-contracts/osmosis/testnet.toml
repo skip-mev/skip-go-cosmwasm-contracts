@@ -1,12 +1,12 @@
 [info]
 chain_id = "osmo-test-5"
 network = "testnet"
-deploy_date = "06/12/2023 01:47:50"
-commit_hash = "4e6b9a5adaa483717ae96fb83f8df557e2099112"
+deploy_date = "10/12/2023 23:44:29"
+commit_hash = "9f95ea333f77d9cd602009555e397dfeb08f2958"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "3e12c96f85d49e2f3ca7b03af5b6bd766a331faa7ac0af7f1ee13a4c86d04e4a"
+"skip_api_entry_point-aarch64.wasm" = "a7c050e36f5dd8a101d1def5b58d4b155bb6a88f7fa9c8282a6f8a489a9a8ec4"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "3a102d927b8ccd5f551730ee3454b4fb0f034b73c71cc36af7bf9918b4a79e91"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "e29cf405f43bf4392e44d9ecd534397846eb131c642dd7eef6ce6f93faddf728"
 "skip_api_swap_adapter_astroport-aarch64.wasm" = "c696ee6f3542815d436aa1f12381d4c29fe41ba7bc88773e2abf94a74eb1844f"
@@ -14,11 +14,19 @@ salt = "1"
 "skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "e4f6732d3be7b878e851bc2b9b0d4999088b05e8774540b24b75ea3241ca6438"
 
 [code-ids]
-swap_adapter_testnet-osmosis-poolmanager_contract_code_id = "5454"
+ibc_transfer_adapter_contract_code_id = "5479"
+swap_adapter_testnet-osmosis-poolmanager_contract_code_id = "5480"
+entry_point_contract_code_id = "5481"
 
 [contract-addresses]
-swap_adapter_testnet-osmosis-poolmanager_contract_address = "osmo1q2rhzptx8f9jqvkfuf8e962sqaym5lhh6ep4l4uy5wa89gzttzxqundgdc"
+ibc_transfer_adapter_contract_address = "osmo1av3z6amvryjg6aeguu3m6c8y2nxsca7pk8vsyf6r8uq2mla0jp4qcv6fsd"
+swap_adapter_testnet-osmosis-poolmanager_contract_address = "osmo1yp8qpg5t6azyu7vxxt80ycvnkvmhjvcdrapjthdarna4t3qakevqjgfqa0"
+entry_point_contract_address = "osmo1clp46dz247hck0ns5jkv49hqzg8x0vh5hsx8yfvk6w87hnvc6hgs563ew3"
 
 [tx-hashes]
-store_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "2780cdef30a23743f395eff959ceea724cdb8f8bec7761782f00231ca56a25e7"
-instantiate_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "5f2f9f4abfa6bb63bb78de8af3b58bb6703930e7e8c870b335e1b2aada59c17e"
+store_ibc_transfer_adapter_tx_hash = "6edfefe65ae7d08b765f850738eb8d10d6ef8b9dde03c0d8bd8b2984b5ea251b"
+instantiate_ibc_transfer_adapter_tx_hash = "5766c81403a74a38b6029d81b11419449cc71494a56dcb75d872931e10311480"
+store_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "afa24a05a536b2b68cea0b0506d6ecab153a48cd2564f094ea4d5b0b89b96569"
+instantiate_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "46845b18edaab76417288ed4dc2f70a3279df9b7b4b7bac15c6b53293fcb0bc4"
+store_entry_point_tx_hash = "e92526ef7613a1c9513ca4c47e8b869f6364c92ffb015d629ab558baa2807733"
+instantiate_entry_point_tx_hash = "c2d8e344c817dbc13ed2dfd8ae123dbbd0243efaea61dcfe4eb3c324f5df7c79"
