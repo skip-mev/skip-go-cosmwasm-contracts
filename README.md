@@ -1,6 +1,6 @@
 ![Skip Swap Swirl](assets/skip_swirl.png "Skipping, Swapping, and Swirling")
 
-# Skip API Contracts 
+# Skip API Contracts  
 
 The contracts in this repository are used in [Skip API](https://api-swagger.skip.money/) to enable any-to-any swaps as part of multi-chain workflows.
 
