@@ -150,7 +150,7 @@ To deploy the Skip Swap contracts, the steps are as follows:
 
 5. Install all the dependencies:
     ```
-    pip install -r requirements.txt
+    pip install -r requirements.txt 
     ```
 
 6. Add the mnemonic of the deployer address in the respsective chain's config toml file (located in configs folder):
