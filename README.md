@@ -17,7 +17,7 @@ The on-chain components of the swapping functionality consist of:
 
 ## Entry Point Contract
 
-The entry point contract is responsible for providing a standardized interface (w/ safety checks) to interact with Skip Swap across all CosmWasm-enabled chains. The contract:
+The entry point contract is responsible for providing a standardized interface (w/ safety checks) to interact with Skip Swap across all CosmWasm-enabled chains. The contract: 
 1. Performs basic validation on the call data.
 2. If a fee swap is provided, queries the swap adapter contract to determine how much of the coin sent with the contract call is needed to receive the required fee coin(s), and dispatches the swap.
 3. Dispatches the user swap provided in the call data to the relevant swap adapter contract.
