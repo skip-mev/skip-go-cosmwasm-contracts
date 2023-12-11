@@ -61,7 +61,7 @@ A simplified example flow showcasing the interactions between the contracts is a
 The repository is organized in the following way:
 ```
 │
-├── contracts/              <- Contains all contracts
+├── contracts/              <- Contains all contracts 
 │   ├── entry-point/        <- Contains source code and tests for entry point contract
 │   └── adapters/           <- Contains source code and tests for all network adapter contracts
 │       ├── ibc/
