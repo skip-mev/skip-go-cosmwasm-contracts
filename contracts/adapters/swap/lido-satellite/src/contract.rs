@@ -6,14 +6,16 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Response, WasmMsg,
+    entry_point, to_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
+    WasmMsg,
 };
 use cw_utils::one_coin;
 use skip::{
     asset::Asset,
     swap::{
         execute_transfer_funds_back, ExecuteMsg, LidoSatelliteInstantiateMsg as InstantiateMsg,
-        QueryMsg, SwapOperation,
+        QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 
@@ -97,7 +99,6 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    // FIXME: seems like we are doomed to ignore this field at all?
     _operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
@@ -164,38 +165,72 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 
     match msg {
         QueryMsg::SimulateSwapExactAssetIn { asset_in, .. } => {
-            if asset_in.denom() == bridged_denom {
-                to_binary(&Asset::Native(Coin::new(
-                    asset_in.amount().u128(),
-                    canonical_denom,
-                )))
-            } else if asset_in.denom() == canonical_denom {
-                to_binary(&Asset::Native(Coin::new(
-                    asset_in.amount().u128(),
-                    bridged_denom,
-                )))
-            } else {
-                unimplemented!()
-            }
+            let asset_out_denom =
+                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+
+            to_binary(&Asset::Native(Coin::new(
+                asset_in.amount().u128(),
+                asset_out_denom,
+            )))
         }
         QueryMsg::SimulateSwapExactAssetOut { asset_out, .. } => {
-            if asset_out.denom() == bridged_denom {
-                to_binary(&Asset::Native(Coin::new(
-                    asset_out.amount().u128(),
-                    canonical_denom,
-                )))
-            } else if asset_out.denom() == canonical_denom {
-                to_binary(&Asset::Native(Coin::new(
-                    asset_out.amount().u128(),
-                    bridged_denom,
-                )))
+            let asset_in_denom =
+                get_opposite_denom(asset_out.denom(), &bridged_denom, &canonical_denom);
+
+            to_binary(&Asset::Native(Coin::new(
+                asset_out.amount().u128(),
+                asset_in_denom,
+            )))
+        }
+        QueryMsg::SimulateSwapExactAssetInWithMetadata {
+            asset_in,
+            include_spot_price,
+            ..
+        } => {
+            let asset_out_denom =
+                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+
+            let spot_price = if include_spot_price {
+                Some(Decimal::one())
             } else {
-                unimplemented!()
-            }
+                None
+            };
+
+            to_binary(&SimulateSwapExactAssetInResponse {
+                asset_out: Asset::Native(Coin::new(asset_in.amount().u128(), asset_out_denom)),
+                spot_price,
+            })
+        }
+        QueryMsg::SimulateSwapExactAssetOutWithMetadata {
+            asset_out,
+            include_spot_price,
+            ..
+        } => {
+            let asset_in_denom =
+                get_opposite_denom(asset_out.denom(), &bridged_denom, &canonical_denom);
+
+            let spot_price = if include_spot_price {
+                Some(Decimal::one())
+            } else {
+                None
+            };
+
+            to_binary(&SimulateSwapExactAssetOutResponse {
+                asset_in: Asset::Native(Coin::new(asset_out.amount().u128(), asset_in_denom)),
+                spot_price,
+            })
         }
         _ => {
             unimplemented!()
         }
     }
     .map_err(From::from)
+}
+
+fn get_opposite_denom(denom: &str, bridged_denom: &str, canonical_denom: &str) -> String {
+    match denom {
+        denom if denom == bridged_denom => canonical_denom.to_string(),
+        denom if denom == canonical_denom => bridged_denom.to_string(),
+        _ => unimplemented!(),
+    }
 }
