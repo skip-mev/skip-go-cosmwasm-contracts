@@ -17,11 +17,11 @@ The on-chain components of the swapping functionality consist of:
 
 ## Entry Point Contract
 
-The entry point contract is responsible for providing a standardized interface (w/ safety checks) to interact with Skip Swap across all CosmWasm-enabled chains. The contract: 
+The entry point contract is responsible for providing a standardized interface (w/ safety checks) to interact with Skip Swap across all CosmWasm-enabled chains. The contract:
 1. Performs basic validation on the call data.
 2. If a fee swap is provided, queries the swap adapter contract to determine how much of the coin sent with the contract call is needed to receive the required fee coin(s), and dispatches the swap.
 3. Dispatches the user swap provided in the call data to the relevant swap adapter contract.
-4. Verifies the amount out received from the swap(s) is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate).  
+4. Verifies the amount out received from the swap(s) is greater than the minimum amount required by the caller after all fees have been subtracted (swap, ibc, affiliate).
 5. Dispatches one of the following post-swap actions with the received funds from the swap:
     - Transfer to an address on the same chain.
     - IBC transfer to an address on a different chain (which allows for multi-hop IBC transfers or contract calls if the destination chains support it).
@@ -32,7 +32,7 @@ The entry point contract is responsible for providing a standardized interface (
 Swap Adapter contracts are developed and deployed for each swap venue supported by Skip Swap. The contracts are responsible for:
 1. Taking the standardized entry point swap operations message format and converting it to the specific swap venue's format.
 2. Swapping by calling the swap venue's respective smart contract or module.
-3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out). 
+3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out).
 
 ## IBC Transfer Adapter Contracts
 
@@ -47,7 +47,7 @@ IBC Transfer adapter contracts are developed and deployed for each chain support
 
 A simplified example flow showcasing the interactions between the contracts is as follows:
 1. A user calls `swap_and_action` on the entry point contract.
-2. The entry point contract performs pre-swap validation checks on the user call. 
+2. The entry point contract performs pre-swap validation checks on the user call.
 3. The entry point contract calls `swap` on the relevant swap adapter contract, sending the coin to swap to the swap adapter contract.
 4. The swap adapter contract swaps the coin sent by the entry point contract to the desired output denom through the relevant swap venue.
 5. The swap adapter contract calls `transfer_funds_back` on itself, which transfers the post-swap contract balance back to the entry point contract.
@@ -61,14 +61,14 @@ A simplified example flow showcasing the interactions between the contracts is a
 The repository is organized in the following way:
 ```
 │
-├── contracts/              <- Contains all contracts 
+├── contracts/              <- Contains all contracts
 │   ├── entry-point/        <- Contains source code and tests for entry point contract
 │   └── adapters/           <- Contains source code and tests for all network adapter contracts
 │       ├── ibc/
 │       │   ├── ibc-hooks/
 │       │   └── neutron-transfer/
 │       └── swap/
-│           ├── astroport/ 
+│           ├── astroport/
 │           └── osmosis-poolmanager/
 │
 ├── deployed-contracts/     <- Contains deployed contracts info for each network
@@ -124,7 +124,7 @@ make fmt
 
 # Deployment
 
-To deploy the Skip Swap contracts, the steps are as follows: 
+To deploy the Skip Swap contracts, the steps are as follows:
 
 1. Build the optimized wasm bytecode of the contracts by running (they will appear in an artifacts folder):
 
@@ -150,14 +150,14 @@ To deploy the Skip Swap contracts, the steps are as follows:
 
 5. Install all the dependencies:
     ```
-    pip install -r requirements.txt 
+    pip install -r requirements.txt
     ```
 
 6. Add the mnemonic of the deployer address in the respsective chain's config toml file (located in configs folder):
 
     ``` toml
     # Enter your mnemonic here
-    MNEMONIC = "<YOUR MNEMONIC HERE>" 
+    MNEMONIC = "<YOUR MNEMONIC HERE>"
     ```
 
 7. Generate the entry point contract address using `instatiate2` which generates determinsitic cosmwasm contract addresses. This is necessary to allow the adapter contracts to whitelist the entry point contract before it is instantiated. To do this, you will need the daemon of the respective chain you are deploying on, and running the following command for the chain's CLI (replace osmosisd with network client being used):
@@ -173,7 +173,7 @@ To deploy the Skip Swap contracts, the steps are as follows:
 
 9. Update the salt used in the config if needed (default is "1", which is 31 in the chain daemon generator)
     ``` toml
-    # SALT USED TO GENERATE A DETERMINSTIC ADDRESS 
+    # SALT USED TO GENERATE A DETERMINSTIC ADDRESS
     SALT = "1"
     ```
 
