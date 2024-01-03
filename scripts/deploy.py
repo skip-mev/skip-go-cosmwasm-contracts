@@ -13,7 +13,6 @@ from cosmpy.aerial.client import LedgerClient, NetworkConfig
 from cosmpy.aerial.tx import Transaction, SigningCfg
 from cosmpy.aerial.wallet import LocalWallet
 from cosmpy.crypto.keypairs import PrivateKey
-from cosmpy.protos.cosmos.base.v1beta1.coin_pb2 import Coin
 from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import (
     MsgStoreCode, 
     MsgInstantiateContract, 
