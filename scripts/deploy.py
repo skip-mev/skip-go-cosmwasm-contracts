@@ -86,7 +86,7 @@ SALT = config["SALT"].encode("utf-8")
 ENTRY_POINT_PRE_GENERATED_ADDRESS = config["ENTRY_POINT_PRE_GENERATED_ADDRESS"]
 
 # Admin address for future migrations
-# ADMIN_ADDRESS = config["ADMIN_ADDRESS"]
+ADMIN_ADDRESS = config["ADMIN_ADDRESS"]
 
 MNEMONIC = config["MNEMONIC"]
 del config["MNEMONIC"]
@@ -298,7 +298,7 @@ def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
     gas_limit = 300000
     msg = MsgInstantiateContract(
         sender=str(wallet.address()),
-        #admin=ADMIN_ADDRESS,
+        admin=ADMIN_ADDRESS,
         code_id=code_id,
         msg=json_encode(args).encode("UTF8"),
         label=label,
@@ -334,7 +334,7 @@ def instantiate2_contract(
     gas_limit = 300000
     msg = MsgInstantiateContract2(
         sender=str(wallet.address()),
-        #admin=ADMIN_ADDRESS,
+        admin=ADMIN_ADDRESS,
         code_id=code_id,
         msg=json_encode(args).encode("UTF8"),
         label=label,
