@@ -12,7 +12,16 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 use cw2::set_contract_version;
-use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use skip::entry_point::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+
+///////////////
+/// MIGRATE ///
+///////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    unimplemented!()
+}
 
 ///////////////////
 /// INSTANTIATE ///
@@ -31,7 +40,7 @@ pub fn instantiate(
 ) -> ContractResult<Response> {
     // Set contract version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    
+
     // Create response object to return
     let mut response: Response = Response::new().add_attribute("action", "instantiate");
 
