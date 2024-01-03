@@ -10,7 +10,6 @@ from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 from google.protobuf import any_pb2
 
 from cosmpy.aerial.client import LedgerClient, NetworkConfig
-from cosmpy.aerial.contract import create_cosmwasm_execute_msg
 from cosmpy.aerial.tx import Transaction, SigningCfg
 from cosmpy.aerial.wallet import LocalWallet
 from cosmpy.crypto.keypairs import PrivateKey
