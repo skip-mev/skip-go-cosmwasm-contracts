@@ -14,13 +14,22 @@ use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferRespons
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
-    ibc::{AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, QueryMsg},
+    ibc::{AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, MigrateMsg, QueryMsg},
     proto_coin::ProtoCoin,
     sudo::{OsmosisSudoMsg as SudoMsg, SudoType},
 };
 
 const IBC_MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 const REPLY_ID: u64 = 1;
+
+///////////////
+/// MIGRATE ///
+///////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Response> {
+    unimplemented!()
+}
 
 ///////////////////
 /// INSTANTIATE ///

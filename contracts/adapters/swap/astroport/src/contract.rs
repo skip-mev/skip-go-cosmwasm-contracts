@@ -20,10 +20,19 @@ use skip::{
     asset::Asset,
     swap::{
         execute_transfer_funds_back, AstroportInstantiateMsg as InstantiateMsg, Cw20HookMsg,
-        ExecuteMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
-        SwapOperation,
+        ExecuteMsg, MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse,
+        SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
+
+///////////////
+/// MIGRATE ///
+///////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Response> {
+    unimplemented!()
+}
 
 ///////////////////
 /// INSTANTIATE ///

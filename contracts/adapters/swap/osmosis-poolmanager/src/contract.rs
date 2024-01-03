@@ -16,12 +16,21 @@ use skip::{
     asset::Asset,
     proto_coin::ProtoCoin,
     swap::{
-        convert_swap_operations, execute_transfer_funds_back, ExecuteMsg,
+        convert_swap_operations, execute_transfer_funds_back, ExecuteMsg, MigrateMsg,
         OsmosisInstantiateMsg as InstantiateMsg, QueryMsg, SimulateSwapExactAssetInResponse,
         SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 use std::str::FromStr;
+
+///////////////
+/// MIGRATE ///
+///////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Response> {
+    unimplemented!()
+}
 
 ///////////////////
 /// INSTANTIATE ///

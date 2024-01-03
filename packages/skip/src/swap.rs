@@ -11,6 +11,14 @@ use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
 
+///////////////
+/// MIGRATE ///
+///////////////
+
+// The MigrateMsg struct defines the migration parameters for the entry point contract.
+#[cw_serde]
+pub struct MigrateMsg {}
+
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////
