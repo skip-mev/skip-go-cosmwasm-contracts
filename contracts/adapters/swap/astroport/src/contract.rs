@@ -42,7 +42,7 @@ pub fn instantiate(
 ) -> ContractResult<Response> {
     // Set contract version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    
+
     // Validate entry point contract address
     let checked_entry_point_contract_address =
         deps.api.addr_validate(&msg.entry_point_contract_address)?;
