@@ -4,7 +4,7 @@ import toml
 import httpx
 import time
 from hashlib import sha256
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from datetime import datetime
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 from google.protobuf import any_pb2
@@ -39,7 +39,9 @@ for file in os.listdir("configs"):
 
 # Raise exception if config not found
 if not found_config:
-    raise Exception(f"Could not find config for chain {CHAIN}; Must enter a chain as 1st command line argument.")
+    raise Exception(
+        f"Could not find config for chain {CHAIN}; Must enter a chain as 1st cli arg."
+    )
 
 # Create deployed-contracts folder if it doesn't exist
 if not os.path.exists("../deployed-contracts"):
@@ -65,7 +67,9 @@ elif NETWORK == "testnet":
     CHAIN_ID = config["TESTNET_CHAIN_ID"]
     SWAP_VENUES = config["testnet_swap_venues"]
 else:
-    raise Exception("Must specify either 'mainnet' or 'testnet' for 2nd command line argument.")
+    raise Exception(
+        "Must specify either 'mainnet' or 'testnet' for 2nd cli arg."
+    )
 
 ADDRESS_PREFIX = config["ADDRESS_PREFIX"]
 DENOM = config["DENOM"]
@@ -80,6 +84,9 @@ SALT = config["SALT"].encode("utf-8")
 
 # Pregenerated Contract Addresses
 ENTRY_POINT_PRE_GENERATED_ADDRESS = config["ENTRY_POINT_PRE_GENERATED_ADDRESS"]
+
+# Admin address for future migrations
+# ADMIN_ADDRESS = config["ADMIN_ADDRESS"]
 
 MNEMONIC = config["MNEMONIC"]
 del config["MNEMONIC"]
@@ -114,7 +121,12 @@ def main():
             toml.dump(DEPLOYED_CONTRACTS_INFO, f)
             
     # IBC Contracts
-    ibc_transfer_adapter_contract_code_id = store_contract(client, wallet, IBC_TRANSFER_ADAPTER_PATH, "ibc_transfer_adapter", PERMISSIONED_UPLOADER_ADDRESS)
+    ibc_transfer_adapter_contract_code_id = store_contract(
+        client, wallet, 
+        IBC_TRANSFER_ADAPTER_PATH, 
+        "ibc_transfer_adapter", 
+        PERMISSIONED_UPLOADER_ADDRESS
+    )
     ibc_transfer_adapter_contract_address = instantiate_contract(
         client, 
         wallet, 
@@ -131,8 +143,13 @@ def main():
     
     # Swap Contracts
     for venue in SWAP_VENUES:
-        swap_adapter_contract_code_id = store_contract(client, wallet, venue["swap_adapter_path"], f"swap_adapter_{venue['name']}", PERMISSIONED_UPLOADER_ADDRESS)
-
+        swap_adapter_contract_code_id = store_contract(
+            client, 
+            wallet, 
+            venue["swap_adapter_path"], 
+            f"swap_adapter_{venue['name']}", 
+            PERMISSIONED_UPLOADER_ADDRESS
+        )
         swap_adapter_instantiate_args = {
             "entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS
         }
@@ -158,7 +175,13 @@ def main():
         )
     
     # Entry Point Contract
-    entry_point_contract_code_id = store_contract(client, wallet, ENTRY_POINT_CONTRACT_PATH, "entry_point", PERMISSIONED_UPLOADER_ADDRESS)
+    entry_point_contract_code_id = store_contract(
+        client, 
+        wallet, 
+        ENTRY_POINT_CONTRACT_PATH, 
+        "entry_point", 
+        PERMISSIONED_UPLOADER_ADDRESS
+    )
     instantiate2_contract(
         client=client, 
         wallet=wallet, 
@@ -168,6 +191,7 @@ def main():
         name="entry_point",
         pre_gen_address=ENTRY_POINT_PRE_GENERATED_ADDRESS
     )
+    
     
 def create_tx(msg,
               client, 
@@ -183,115 +207,16 @@ def create_tx(msg,
     account = client.query_account(str(wallet.address()))
     
     # Seal, Sign, and Complete Tx
-    tx.seal(signing_cfgs=[SigningCfg.direct(wallet.public_key(), account.sequence)], fee = fee, gas_limit=gas_limit)
+    tx.seal(
+        signing_cfgs=[SigningCfg.direct(wallet.public_key(), account.sequence)], 
+        fee=fee, 
+        gas_limit=gas_limit
+    )
     tx.sign(wallet.signer(), client.network_config.chain_id, account.number)
     tx.complete()
     
     return tx
-    
-def create_wasm_store_tx(client, 
-                         wallet, 
-                         address: str,
-                         gas_fee: str,
-                         gas_limit: int, 
-                         file: str,
-                         permissioned_uploader_address: str | None = None
-                         ) -> tuple[bytes, str]:
-    if permissioned_uploader_address is not None:
-        msg_store_code = MsgStoreCode(
-            sender=permissioned_uploader_address,
-            wasm_byte_code=open(file, "rb").read(),
-            instantiate_permission=None
-        )
-        msg = create_exec_msg(msg=msg_store_code, grantee_address=address)
-    else:
-        msg = MsgStoreCode(
-            sender=address,
-            wasm_byte_code=open(file, "rb").read(),
-            instantiate_permission=None
-        )
-    
-    return create_tx(msg=msg, 
-                     client=client, 
-                     wallet=wallet, 
-                     gas_limit=gas_limit,
-                     fee=gas_fee)
 
-def create_wasm_instantiate_tx(
-                         client, 
-                         wallet, 
-                         address: str,
-                         gas_fee: str,
-                         gas_limit: int, 
-                         code_id: int,
-                         args: dict,
-                         label: str,
-                         ) -> tuple[bytes, str]:
-    
-    msg = MsgInstantiateContract(
-        sender=str(address),
-        code_id=code_id,
-        msg=json_encode(args).encode("UTF8"),
-        label=label,
-    )
-        
-    return create_tx(msg=msg, 
-                     client=client, 
-                     wallet=wallet, 
-                     gas_limit=gas_limit,
-                     fee=gas_fee)
-
-    
-def create_wasm_instantiate2_tx(
-                         client, 
-                         wallet, 
-                         address: str,
-                         gas_fee: str,
-                         gas_limit: int, 
-                         code_id: int,
-                         args: dict,
-                         label: str,
-                         ) -> tuple[bytes, str]:
-    
-    msg = MsgInstantiateContract2(
-        sender=address,
-        code_id=code_id,
-        msg=json_encode(args).encode("UTF8"),
-        label=label,
-        salt=SALT,
-        fix_msg=False,
-    )
-        
-    return create_tx(msg=msg, 
-                     client=client, 
-                     wallet=wallet, 
-                     gas_limit=gas_limit,
-                     fee=gas_fee)
-    
-    
-def create_wasm_execute_tx(
-                         client, 
-                         wallet, 
-                         contract_address: str,
-                         args: dict,
-                         address: str,
-                         gas_fee: str,
-                         gas_limit: int, 
-                         funds_coin: Coin | None,
-                         ) -> tuple[bytes, str]:
-    msg = create_cosmwasm_execute_msg(
-        contract_address=contract_address,
-        args=args,
-        sender_address=address
-    )
-    if funds_coin:
-        msg.funds.append(funds_coin)
-    return create_tx(msg=msg, 
-                     client=client, 
-                     wallet=wallet, 
-                     gas_limit=gas_limit,
-                     fee=gas_fee)
-    
     
 def create_wallet(client) -> LocalWallet:
     """ Create a wallet from a mnemonic and return it"""
@@ -305,7 +230,10 @@ def create_wallet(client) -> LocalWallet:
     else:
         seed_bytes = Bip39SeedGenerator(MNEMONIC).Generate()
         bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.COSMOS).DeriveDefaultPath()
-        wallet = LocalWallet(PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes()), prefix=ADDRESS_PREFIX)  
+        wallet = LocalWallet(
+            PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes()), 
+            prefix=ADDRESS_PREFIX
+        )  
         balance = client.query_bank_balance(str(wallet.address()), DENOM)
         print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
     return wallet
@@ -326,16 +254,33 @@ def init_deployed_contracts_info():
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
 
 
-def store_contract(client, wallet, file_path, name, permissioned_uploader_address) -> int:
+def store_contract(
+    client, 
+    wallet, 
+    file_path, 
+    name, 
+    permissioned_uploader_address
+) -> int:
     gas_limit = 5000000
-    store_tx = create_wasm_store_tx(
-        client=client,
-        wallet=wallet,
-        address=str(wallet.address()),
-        gas_fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}",
+    if permissioned_uploader_address is not None:
+        msg_store_code = MsgStoreCode(
+            sender=permissioned_uploader_address,
+            wasm_byte_code=open(file, "rb").read(),
+            instantiate_permission=None
+        )
+        msg = create_exec_msg(msg=msg_store_code, grantee_address=str(wallet.address()))
+    else:
+        msg = MsgStoreCode(
+            sender=str(wallet.address()),
+            wasm_byte_code=open(file, "rb").read(),
+            instantiate_permission=None
+        )
+    store_tx = create_tx(
+        msg=msg, 
+        client=client, 
+        wallet=wallet, 
         gas_limit=gas_limit,
-        file=file_path,
-        permissioned_uploader_address=permissioned_uploader_address
+        fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}"
     )
     tx_hash = sha256(store_tx.tx.SerializeToString()).hexdigest()
     print("Tx hash: ", tx_hash)
@@ -351,15 +296,19 @@ def store_contract(client, wallet, file_path, name, permissioned_uploader_addres
 
 def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
     gas_limit = 300000
-    instantiate_tx = create_wasm_instantiate_tx(
-        client=client,
-        wallet=wallet,
-        address=str(wallet.address()),
-        gas_fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}",
-        gas_limit=gas_limit,
+    msg = MsgInstantiateContract(
+        sender=str(wallet.address()),
+        #admin=ADMIN_ADDRESS,
         code_id=code_id,
-        args=args,
-        label=label
+        msg=json_encode(args).encode("UTF8"),
+        label=label,
+    )
+    instantiate_tx = create_tx(
+        msg=msg, 
+        client=client, 
+        wallet=wallet, 
+        gas_limit=gas_limit,
+        fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}"
     )
     tx_hash = sha256(instantiate_tx.tx.SerializeToString()).hexdigest()
     print("Tx hash: ", tx_hash)
@@ -373,17 +322,31 @@ def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
     return contract_address
 
 
-def instantiate2_contract(client, wallet, code_id, args, label, name, pre_gen_address) -> str:
+def instantiate2_contract(
+    client, 
+    wallet, 
+    code_id, 
+    args, 
+    label, 
+    name, 
+    pre_gen_address
+) -> str:
     gas_limit = 300000
-    instantiate_2_tx = create_wasm_instantiate2_tx(
-        client=client,
-        wallet=wallet,
-        address=str(wallet.address()),
-        gas_fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}",
-        gas_limit=gas_limit,
+    msg = MsgInstantiateContract2(
+        sender=str(wallet.address()),
+        #admin=ADMIN_ADDRESS,
         code_id=code_id,
-        args=args,
-        label=label
+        msg=json_encode(args).encode("UTF8"),
+        label=label,
+        salt=SALT,
+        fix_msg=False,
+    )
+    instantiate_2_tx = create_tx(
+        msg=msg, 
+        client=client, 
+        wallet=wallet, 
+        gas_limit=gas_limit,
+        fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}"
     )
     tx_hash = sha256(instantiate_2_tx.tx.SerializeToString()).hexdigest()
     print("Tx hash: ", tx_hash)
@@ -421,7 +384,10 @@ def broadcast_tx(tx) -> httpx.Response:
     httpx.post(RPC_URL, json=data, timeout=60)
     print("Sleeping for 20 seconds...")
     time.sleep(20)
-    resp = httpx.get(REST_URL + f"/cosmos/tx/v1beta1/txs/{sha256(tx_bytes).hexdigest()}", timeout=60)
+    resp = httpx.get(
+        REST_URL + f"/cosmos/tx/v1beta1/txs/{sha256(tx_bytes).hexdigest()}", 
+        timeout=60
+    )
     return resp
 
 
