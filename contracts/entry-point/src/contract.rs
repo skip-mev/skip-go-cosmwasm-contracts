@@ -11,11 +11,16 @@ use crate::{
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
+use cw2::set_contract_version;
 use skip::entry_point::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////
+
+// Contract name and version used for migration.
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -24,6 +29,9 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> ContractResult<Response> {
+    // Set contract version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    
     // Create response object to return
     let mut response: Response = Response::new().add_attribute("action", "instantiate");
 
