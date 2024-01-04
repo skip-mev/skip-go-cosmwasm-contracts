@@ -12,7 +12,7 @@ use skip::{
 };
 use skip_api_entry_point::{
     error::ContractError,
-    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS},
+    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT},
 };
 use test_case::test_case;
 
@@ -38,6 +38,9 @@ Expect Response
     - Ibc Transfer w/ IBC Fees of same denom as min coin With Exact Out Set To True
     - Contract Call With Exact Out Set To True
 
+    // Invariants
+    - Pre Swap Out Asset Contract Balance Preserved
+
 Expect Error
     - Transfer Timeout
     - Received Less Native Asset From Swap Than Min Asset
@@ -53,6 +56,7 @@ struct Params {
     min_asset: Asset,
     post_swap_action: Action,
     exact_out: bool,
+    pre_swap_out_asset_amount: Uint128,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -66,6 +70,7 @@ struct Params {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
         exact_out: true,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: BankMsg::Send {
@@ -87,6 +92,7 @@ struct Params {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: BankMsg::Send {
@@ -111,6 +117,7 @@ struct Params {
             to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -144,6 +151,7 @@ struct Params {
             fee_swap: None,
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -186,6 +194,7 @@ struct Params {
             fee_swap: None,
         },
         exact_out: true,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -232,6 +241,7 @@ struct Params {
             fee_swap: None,
         },
         exact_out: true,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -284,6 +294,7 @@ struct Params {
             fee_swap: None,
         },
         exact_out: true,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -323,6 +334,7 @@ struct Params {
             msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -349,6 +361,7 @@ struct Params {
             msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -376,6 +389,7 @@ struct Params {
             msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: true,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -410,6 +424,7 @@ struct Params {
             fee_swap: None,
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -462,6 +477,7 @@ struct Params {
             fee_swap: None,
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
@@ -495,6 +511,28 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
+        min_asset: Asset::Native(Coin::new(700_000, "os")),
+        post_swap_action: Action::Transfer {
+            to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+        },
+        exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(200_000),
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: BankMsg::Send {
+                to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                amount: vec![Coin::new(800_000, "os")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Pre Swap Out Asset Contract Balance Preserved")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
         min_asset: Asset::Cw20(Cw20Coin{
             address: "neutron123".to_string(),
             amount: Uint128::new(1_000_000),
@@ -511,6 +549,7 @@ struct Params {
             fee_swap: None,
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![],
         expected_error: Some(ContractError::NonNativeIbcTransfer),
     };
@@ -523,6 +562,7 @@ struct Params {
             to_address: "swapper".to_string(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![],
         expected_error: Some(ContractError::ReceivedLessAssetFromSwapsThanMinAsset),
     };
@@ -538,6 +578,7 @@ struct Params {
             to_address: "swapper".to_string(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![],
         expected_error: Some(ContractError::ReceivedLessAssetFromSwapsThanMinAsset),
     };
@@ -550,6 +591,7 @@ struct Params {
             to_address: "swapper".to_string(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![],
         expected_error: Some(ContractError::Unauthorized),
     };
@@ -563,6 +605,7 @@ struct Params {
             msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
         expected_messages: vec![],
         expected_error: Some(ContractError::ContractCallAddressBlocked),
     };
@@ -607,6 +650,11 @@ fn test_execute_post_swap_action(params: Params) {
     // Store the entry point contract address in the blocked contract addresses map
     BLOCKED_CONTRACT_ADDRESSES
         .save(deps.as_mut().storage, &Addr::unchecked("entry_point"), &())
+        .unwrap();
+
+    // Store the pre swap out asset amount
+    PRE_SWAP_OUT_ASSET_AMOUNT
+        .save(deps.as_mut().storage, &params.pre_swap_out_asset_amount)
         .unwrap();
 
     // Call execute_post_swap_action with the given test parameters
