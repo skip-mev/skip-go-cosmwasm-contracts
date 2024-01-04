@@ -116,10 +116,10 @@ pub fn execute_swap_and_action(
         return Err(ContractError::Timeout);
     }
 
-    // Save the current out asset amount to storage
-    let current_out_asset_amount =
+    // Save the current out asset amount to storage as the pre swap out asset amount
+    let pre_swap_out_asset_amount =
         get_current_asset_available(&deps, &env, min_asset.denom())?.amount();
-    PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &current_out_asset_amount)?;
+    PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &pre_swap_out_asset_amount)?;
 
     // Already validated at entrypoints (both direct and cw20_receive)
     let mut remaining_asset = sent_asset;
