@@ -5,7 +5,7 @@ use astroport::{
 use core::panic;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, Addr, Coin, ContractResult as SystemContractResult, Decimal, QuerierResult,
+    to_json_binary, Addr, Coin, ContractResult as SystemContractResult, Decimal, QuerierResult,
     ReplyOn::Never,
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
@@ -65,10 +65,10 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "neutron123".to_string(),
-                    msg: to_binary(&Cw20ExecuteMsg::Send {
+                    msg: to_json_binary(&Cw20ExecuteMsg::Send {
                         contract: "router_contract".to_string(),
                         amount: Uint128::from(100u128),
-                        msg: to_binary(&RouterExecuteMsg::ExecuteSwapOperations {
+                        msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
                             operations: vec![
                                 AstroportSwapOperation::AstroSwap {
                                     offer_asset_info: AssetInfo::Token {
@@ -93,7 +93,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
-                    msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         return_denom: "ua".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
@@ -127,10 +127,10 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "neutron123".to_string(),
-                    msg: to_binary(&Cw20ExecuteMsg::Send {
+                    msg: to_json_binary(&Cw20ExecuteMsg::Send {
                         contract: "router_contract".to_string(),
                         amount: Uint128::from(100u128),
-                        msg: to_binary(&RouterExecuteMsg::ExecuteSwapOperations {
+                        msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
                             operations: vec![
                                 AstroportSwapOperation::AstroSwap {
                                     offer_asset_info: AssetInfo::Token {
@@ -155,7 +155,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
-                    msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         return_denom: "neutron987".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
@@ -194,7 +194,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
             WasmQuery::Smart { contract_addr, .. } => {
                 if contract_addr == "neutron123" {
                     SystemResult::Ok(SystemContractResult::Ok(
-                        to_binary(&BalanceResponse {
+                        to_json_binary(&BalanceResponse {
                             balance: Uint128::from(100u128),
                         })
                         .unwrap(),
@@ -234,7 +234,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         ExecuteMsg::Receive(Cw20ReceiveMsg {
             sender: params.caller,
             amount: params.sent_asset.amount(),
-            msg: to_binary(&ExecuteMsg::Swap {
+            msg: to_json_binary(&ExecuteMsg::Swap {
                 operations: params.swap_operations,
             })
             .unwrap(),

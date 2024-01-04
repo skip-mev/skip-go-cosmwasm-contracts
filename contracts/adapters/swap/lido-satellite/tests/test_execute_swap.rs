@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, Addr, Coin,
+    to_json_binary, Addr, Coin,
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
@@ -50,7 +50,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "lido_satellite_contract".to_string(),
-                    msg: to_binary(&LidoSatelliteExecuteMsg::Mint{ receiver: None })?,
+                    msg: to_json_binary(&LidoSatelliteExecuteMsg::Mint{ receiver: None })?,
                     funds: vec![Coin::new(100, "ibc/wstETH")],
                 }
                 .into(),
@@ -61,7 +61,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
-                    msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         swapper: Addr::unchecked("entry_point"),
                         return_denom: String::from("factory/wstETH"),
                     })?,
@@ -85,7 +85,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "lido_satellite_contract".to_string(),
-                    msg: to_binary(&LidoSatelliteExecuteMsg::Burn{ receiver: None })?,
+                    msg: to_json_binary(&LidoSatelliteExecuteMsg::Burn{ receiver: None })?,
                     funds: vec![Coin::new(100, "factory/wstETH")],
                 }
                 .into(),
@@ -96,7 +96,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
-                    msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         swapper: Addr::unchecked("entry_point"),
                         return_denom: String::from("ibc/wstETH"),
                     })?,

@@ -3,7 +3,7 @@ use crate::{
     state::{ACK_ID_TO_RECOVER_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_RECOVER_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply,
+    entry_point, to_json_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply,
     Response, SubMsg, SubMsgResult,
 };
 use cw2::set_contract_version;
@@ -252,7 +252,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::InProgressRecoverAddress {
             channel_id,
             sequence_id,
-        } => to_binary(&ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, (&channel_id, sequence_id))?),
+        } => to_json_binary(
+            &ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, (&channel_id, sequence_id))?,
+        ),
     }
     .map_err(From::from)
 }

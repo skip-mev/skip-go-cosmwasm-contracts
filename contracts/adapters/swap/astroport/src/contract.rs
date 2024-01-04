@@ -10,7 +10,7 @@ use astroport::{
     router::ExecuteMsg as RouterExecuteMsg,
 };
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Addr, Api, Binary, Decimal, Deps, DepsMut, Env,
+    entry_point, from_json, to_json_binary, Addr, Api, Binary, Decimal, Deps, DepsMut, Env,
     MessageInfo, Response, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
@@ -99,7 +99,7 @@ pub fn receive_cw20(
     // This is later validated / enforced to be the entry point contract address
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
-    match from_binary(&cw20_msg.msg)? {
+    match from_json(&cw20_msg.msg)? {
         Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, sent_asset, operations),
     }
 }
@@ -165,7 +165,7 @@ fn execute_swap(
     // Create the transfer funds back message
     let transfer_funds_back_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::TransferFundsBack {
+        msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
             swapper: entry_point_contract_address,
             return_denom,
         })?,
@@ -206,7 +206,7 @@ fn create_astroport_swap_msg(
     // Create the astroport router swap message
     let swap_msg = asset_in.into_wasm_msg(
         router_contract_address.to_string(),
-        to_binary(&astroport_router_msg_args)?,
+        to_json_binary(&astroport_router_msg_args)?,
     )?;
 
     Ok(swap_msg)
@@ -220,12 +220,12 @@ fn create_astroport_swap_msg(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
         QueryMsg::RouterContractAddress {} => {
-            to_binary(&ROUTER_CONTRACT_ADDRESS.load(deps.storage)?)
+            to_json_binary(&ROUTER_CONTRACT_ADDRESS.load(deps.storage)?)
         }
         QueryMsg::SimulateSwapExactAssetIn {
             asset_in,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_asset_in(
+        } => to_json_binary(&query_simulate_swap_exact_asset_in(
             deps,
             asset_in,
             swap_operations,
@@ -233,7 +233,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::SimulateSwapExactAssetOut {
             asset_out,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_asset_out(
+        } => to_json_binary(&query_simulate_swap_exact_asset_out(
             deps,
             asset_out,
             swap_operations,
@@ -242,7 +242,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_in,
             swap_operations,
             include_spot_price,
-        } => to_binary(&query_simulate_swap_exact_asset_in_with_metadata(
+        } => to_json_binary(&query_simulate_swap_exact_asset_in_with_metadata(
             deps,
             asset_in,
             swap_operations,
@@ -252,7 +252,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_out,
             swap_operations,
             include_spot_price,
-        } => to_binary(&query_simulate_swap_exact_asset_out_with_metadata(
+        } => to_json_binary(&query_simulate_swap_exact_asset_out_with_metadata(
             deps,
             asset_out,
             swap_operations,

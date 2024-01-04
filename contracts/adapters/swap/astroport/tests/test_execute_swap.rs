@@ -4,7 +4,7 @@ use astroport::{
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, Addr, Coin, Decimal,
+    to_json_binary, Addr, Coin, Decimal,
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
@@ -56,7 +56,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "router_contract".to_string(),
-                    msg: to_binary(&RouterExecuteMsg::ExecuteSwapOperations {
+                    msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
                         operations: vec![
                             AstroportSwapOperation::AstroSwap {
                                 offer_asset_info: AssetInfo::NativeToken {
@@ -81,7 +81,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
-                    msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         return_denom: "ua".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
@@ -116,7 +116,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "router_contract".to_string(),
-                    msg: to_binary(&RouterExecuteMsg::ExecuteSwapOperations {
+                    msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
                         operations: vec![
                             AstroportSwapOperation::AstroSwap {
                                 offer_asset_info: AssetInfo::NativeToken {
@@ -149,7 +149,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
-                    msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         return_denom: "un".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
@@ -173,7 +173,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "router_contract".to_string(),
-                    msg: to_binary(&RouterExecuteMsg::ExecuteSwapOperations {
+                    msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
                         operations: vec![],
                         minimum_receive: None,
                         to: None,
@@ -189,7 +189,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
-                    msg: to_binary(&ExecuteMsg::TransferFundsBack {
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         return_denom: "ua".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,

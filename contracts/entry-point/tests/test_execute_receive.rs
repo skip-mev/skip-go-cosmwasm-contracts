@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, Coin, ContractResult, QuerierResult,
+    to_json_binary, Addr, Coin, ContractResult, QuerierResult,
     ReplyOn::{Always, Never},
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
@@ -68,7 +68,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
-                    msg: to_binary(&ExecuteMsg::UserSwap {
+                    msg: to_json_binary(&ExecuteMsg::UserSwap {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
@@ -95,7 +95,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
-                    msg: to_binary(&ExecuteMsg::PostSwapAction {
+                    msg: to_json_binary(&ExecuteMsg::PostSwapAction {
                         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                         timeout_timestamp: 101,
                         post_swap_action: Action::Transfer {
@@ -141,7 +141,7 @@ struct Params {
                 id: RECOVER_REPLY_ID,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(), 
-                    msg: to_binary(&ExecuteMsg::SwapAndAction {
+                    msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                         sent_asset: Some(Asset::Cw20(Cw20Coin{address: "neutron123".to_string(), amount: Uint128::from(1_000_000u128)})),
                         user_swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
@@ -185,11 +185,11 @@ fn test_execute_receive(params: Params) {
             WasmQuery::Smart { contract_addr, .. } => {
                 if contract_addr == "swap_venue_adapter" {
                     SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&Asset::Native(Coin::new(200_000, "osmo"))).unwrap(),
+                        to_json_binary(&Asset::Native(Coin::new(200_000, "osmo"))).unwrap(),
                     ))
                 } else {
                     SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&BalanceResponse {
+                        to_json_binary(&BalanceResponse {
                             balance: Uint128::from(1_000_000u128),
                         })
                         .unwrap(),
@@ -239,7 +239,7 @@ fn test_execute_receive(params: Params) {
             ExecuteMsg::Receive(Cw20ReceiveMsg {
                 sender: "swapper".to_string(),
                 amount: params.sent_asset.amount(),
-                msg: to_binary(&Cw20HookMsg::SwapAndActionWithRecover {
+                msg: to_json_binary(&Cw20HookMsg::SwapAndActionWithRecover {
                     user_swap: params.user_swap,
                     min_asset: params.min_asset,
                     timeout_timestamp: params.timeout_timestamp,
@@ -257,7 +257,7 @@ fn test_execute_receive(params: Params) {
             ExecuteMsg::Receive(Cw20ReceiveMsg {
                 sender: "swapper".to_string(),
                 amount: params.sent_asset.amount(),
-                msg: to_binary(&Cw20HookMsg::SwapAndAction {
+                msg: to_json_binary(&Cw20HookMsg::SwapAndAction {
                     user_swap: params.user_swap,
                     min_asset: params.min_asset,
                     timeout_timestamp: params.timeout_timestamp,

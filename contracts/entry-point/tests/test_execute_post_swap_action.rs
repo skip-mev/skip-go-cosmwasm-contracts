@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, BankMsg, Coin, ContractResult, QuerierResult,
+    to_json_binary, Addr, BankMsg, Coin, ContractResult, QuerierResult,
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
@@ -115,7 +115,7 @@ struct Params {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "neutron123".to_string(), 
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
                     amount: Uint128::new(1_000_000),
                 }).unwrap(),
@@ -148,7 +148,7 @@ struct Params {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "ibc_transfer_adapter".to_string(),
-                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                msg: to_json_binary(&IbcTransferExecuteMsg::IbcTransfer {
                     info: IbcInfo {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
@@ -190,7 +190,7 @@ struct Params {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "ibc_transfer_adapter".to_string(),
-                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                msg: to_json_binary(&IbcTransferExecuteMsg::IbcTransfer {
                     info: IbcInfo {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
@@ -236,7 +236,7 @@ struct Params {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "ibc_transfer_adapter".to_string(),
-                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                msg: to_json_binary(&IbcTransferExecuteMsg::IbcTransfer {
                     info: IbcInfo {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
@@ -288,7 +288,7 @@ struct Params {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "ibc_transfer_adapter".to_string(),
-                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                msg: to_json_binary(&IbcTransferExecuteMsg::IbcTransfer {
                     info: IbcInfo {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
@@ -320,14 +320,14 @@ struct Params {
         min_asset: Asset::Native(Coin::new(1_000_000, "os")),
         post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
-            msg: to_binary(&"contract_call_msg").unwrap(),
+            msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: false,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "contract_call".to_string(),
-                msg: to_binary(&"contract_call_msg").unwrap(),
+                msg: to_json_binary(&"contract_call_msg").unwrap(),
                 funds: vec![Coin::new(1_000_000, "os")],
             }
             .into(),
@@ -346,17 +346,17 @@ struct Params {
         }),
         post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
-            msg: to_binary(&"contract_call_msg").unwrap(),
+            msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: false,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "neutron123".to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Send {
+                msg: to_json_binary(&Cw20ExecuteMsg::Send {
                     contract: "contract_call".to_string(),
                     amount: Uint128::new(1_000_000),
-                    msg: to_binary(&"contract_call_msg").unwrap(),
+                    msg: to_json_binary(&"contract_call_msg").unwrap(),
                 }).unwrap(),
                 funds: vec![],
             }
@@ -373,14 +373,14 @@ struct Params {
         min_asset: Asset::Native(Coin::new(100_000, "os")),
         post_swap_action: Action::ContractCall {
             contract_address: "contract_call".to_string(),
-            msg: to_binary(&"contract_call_msg").unwrap(),
+            msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: true,
         expected_messages: vec![SubMsg {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "contract_call".to_string(),
-                msg: to_binary(&"contract_call_msg").unwrap(),
+                msg: to_json_binary(&"contract_call_msg").unwrap(),
                 funds: vec![Coin::new(100_000, "os")],
             }
             .into(),
@@ -414,7 +414,7 @@ struct Params {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "ibc_transfer_adapter".to_string(),
-                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                msg: to_json_binary(&IbcTransferExecuteMsg::IbcTransfer {
                     info: IbcInfo {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
@@ -466,7 +466,7 @@ struct Params {
             id: 0,
             msg: WasmMsg::Execute {
                 contract_addr: "ibc_transfer_adapter".to_string(),
-                msg: to_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                msg: to_json_binary(&IbcTransferExecuteMsg::IbcTransfer {
                     info: IbcInfo {
                         source_channel: "channel-0".to_string(),
                         receiver: "receiver".to_string(),
@@ -560,7 +560,7 @@ struct Params {
         min_asset: Asset::Native(Coin::new(900_000, "un")),
         post_swap_action: Action::ContractCall {
             contract_address: "entry_point".to_string(),
-            msg: to_binary(&"contract_call_msg").unwrap(),
+            msg: to_json_binary(&"contract_call_msg").unwrap(),
         },
         exact_out: false,
         expected_messages: vec![],
@@ -578,7 +578,7 @@ fn test_execute_post_swap_action(params: Params) {
     let wasm_handler = |query: &WasmQuery| -> QuerierResult {
         match query {
             WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&BalanceResponse {
+                to_json_binary(&BalanceResponse {
                     balance: Uint128::from(1_000_000u128),
                 })
                 .unwrap(),

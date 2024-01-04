@@ -2,7 +2,8 @@ use crate::error::SkipError;
 use astroport::asset::{Asset as AstroportAsset, AssetInfo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128, WasmMsg,
+    to_json_binary, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128,
+    WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
 use cw_utils::{nonpayable, one_coin};
@@ -100,7 +101,7 @@ impl Asset {
             }),
             Asset::Cw20(coin) => CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: coin.address.clone(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: to_address.to_string(),
                     amount: coin.amount,
                 })
@@ -119,7 +120,7 @@ impl Asset {
             }),
             Asset::Cw20(coin) => Ok(WasmMsg::Execute {
                 contract_addr: coin.address,
-                msg: to_binary(&Cw20ExecuteMsg::Send {
+                msg: to_json_binary(&Cw20ExecuteMsg::Send {
                     contract: contract_addr,
                     amount: coin.amount,
                     msg,
@@ -359,7 +360,7 @@ mod tests {
                 assert_eq!(contract_addr, "asset");
                 assert_eq!(
                     msg,
-                    to_binary(&Cw20ExecuteMsg::Transfer {
+                    to_json_binary(&Cw20ExecuteMsg::Transfer {
                         recipient: "addr".to_string(),
                         amount: Uint128::new(100),
                     })
@@ -502,7 +503,7 @@ mod tests {
         let wasm_handler = |query: &WasmQuery| -> QuerierResult {
             match query {
                 WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&BalanceResponse {
+                    to_json_binary(&BalanceResponse {
                         balance: Uint128::from(100u128),
                     })
                     .unwrap(),
@@ -553,7 +554,7 @@ mod tests {
         let wasm_handler = |query: &WasmQuery| -> QuerierResult {
             match query {
                 WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&BalanceResponse {
+                    to_json_binary(&BalanceResponse {
                         balance: Uint128::from(50u128),
                     })
                     .unwrap(),
@@ -599,7 +600,7 @@ mod tests {
         let wasm_handler = |query: &WasmQuery| -> QuerierResult {
             match query {
                 WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&BalanceResponse {
+                    to_json_binary(&BalanceResponse {
                         balance: Uint128::from(100u128),
                     })
                     .unwrap(),

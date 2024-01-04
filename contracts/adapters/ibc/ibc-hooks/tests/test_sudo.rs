@@ -113,7 +113,7 @@ struct Params {
         }),
         stored_in_progress_recover_address: None,
         expected_messages: vec![],
-        expected_error_string: "alloc::string::String not found".to_string(),
+        expected_error_string: "type: alloc::string::String; key: [00, 19, 61, 63, 6B, 5F, 69, 64, 5F, 74, 6F, 5F, 72, 65, 63, 6F, 76, 65, 72, 5F, 61, 64, 64, 72, 65, 73, 73, 00, 0A, 63, 68, 61, 6E, 6E, 65, 6C, 5F, 69, 64, 00, 00, 00, 00, 00, 00, 00, 01] not found".to_string(),
     };
     "No In Progress Ibc Transfer Mapped To Sudo Ack ID - Expect Error")]
 #[test_case(
@@ -175,11 +175,10 @@ fn test_sudo(params: Params) -> ContractResult<()> {
                         in_progress_recover_address
                     )
                 }
-                Err(err) => assert_eq!(
-                    err,
-                    StdError::NotFound {
-                        kind: "alloc::string::String".to_string()
-                    }
+                Err(err) => assert!(
+                    matches!(err, StdError::NotFound { .. }),
+                    "unexpected error: {:?}",
+                    err
                 ),
             };
 
