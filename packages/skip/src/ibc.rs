@@ -6,6 +6,14 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Coins, StdError};
 use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
 
+///////////////
+/// MIGRATE ///
+///////////////
+
+// The MigrateMsg struct defines the migration parameters for the entry point contract.
+#[cw_serde]
+pub struct MigrateMsg {}
+
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////

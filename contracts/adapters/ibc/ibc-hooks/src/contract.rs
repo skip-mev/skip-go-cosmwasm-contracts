@@ -9,11 +9,12 @@ use cosmwasm_std::{
     entry_point, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Reply, Response, SubMsg, SubMsgResult,
 };
+use cw2::set_contract_version;
 use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferResponse};
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
-    ibc::{AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, QueryMsg},
+    ibc::{AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, MigrateMsg, QueryMsg},
     proto_coin::ProtoCoin,
     sudo::{OsmosisSudoMsg as SudoMsg, SudoType},
 };
@@ -21,9 +22,22 @@ use skip::{
 const IBC_MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 const REPLY_ID: u64 = 1;
 
+///////////////
+/// MIGRATE ///
+///////////////
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Response> {
+    unimplemented!()
+}
+
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////
+
+// Contract name and version used for migration.
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -32,6 +46,9 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> ContractResult<Response> {
+    // Set contract version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     // Validate entry point contract address
     let checked_entry_point_contract_address =
         deps.api.addr_validate(&msg.entry_point_contract_address)?;

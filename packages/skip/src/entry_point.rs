@@ -8,6 +8,14 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Uint128};
 use cw20::Cw20ReceiveMsg;
 
+///////////////
+/// MIGRATE ///
+///////////////
+
+// The MigrateMsg struct defines the migration parameters for the entry point contract.
+#[cw_serde]
+pub struct MigrateMsg {}
+
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////

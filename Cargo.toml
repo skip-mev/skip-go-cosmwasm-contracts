@@ -8,7 +8,7 @@ members  = [
 ]
 
 [workspace.package]
-version       = "0.2.1"
+version       = "0.3.0"
 authors       = ["Skip"]
 edition       = "2021"
 rust-version  = "1.71.0"
@@ -35,7 +35,7 @@ osmosis-std      = "0.15.3"
 prost            = "0.11"
 serde-cw-value   = "0.7.0"
 serde-json-wasm  = "0.5.1"
-skip             = { version = "0.2.0", path = "./packages/skip" }
+skip             = { version = "0.3.0", path = "./packages/skip" }
 test-case        = "3.1.0"
 thiserror        = "1"
 
