@@ -9,7 +9,8 @@ use crate::{
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdResult,
 };
 use cw2::set_contract_version;
 use skip::entry_point::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -192,10 +193,10 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::SwapVenueAdapterContract { name } => {
-            to_binary(&query_swap_venue_adapter_contract(deps, name)?)
+            to_json_binary(&query_swap_venue_adapter_contract(deps, name)?)
         }
         QueryMsg::IbcTransferAdapterContract {} => {
-            to_binary(&query_ibc_transfer_adapter_contract(deps)?)
+            to_json_binary(&query_ibc_transfer_adapter_contract(deps)?)
         }
     }
 }

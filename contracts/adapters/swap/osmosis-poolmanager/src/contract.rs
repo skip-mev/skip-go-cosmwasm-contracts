@@ -3,7 +3,7 @@ use crate::{
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Empty, Env,
+    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Empty, Env,
     MessageInfo, Response, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
@@ -123,7 +123,7 @@ fn execute_swap(
     // Create the transfer funds back message
     let transfer_funds_back_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::TransferFundsBack {
+        msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
             swapper: info.sender,
             return_denom,
         })?,
@@ -177,7 +177,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::SimulateSwapExactAssetIn {
             asset_in,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_asset_in(
+        } => to_json_binary(&query_simulate_swap_exact_asset_in(
             deps,
             asset_in,
             swap_operations,
@@ -185,7 +185,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::SimulateSwapExactAssetOut {
             asset_out,
             swap_operations,
-        } => to_binary(&query_simulate_swap_exact_asset_out(
+        } => to_json_binary(&query_simulate_swap_exact_asset_out(
             deps,
             asset_out,
             swap_operations,
@@ -194,7 +194,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_in,
             swap_operations,
             include_spot_price,
-        } => to_binary(&query_simulate_swap_exact_asset_in_with_metadata(
+        } => to_json_binary(&query_simulate_swap_exact_asset_in_with_metadata(
             deps,
             asset_in,
             swap_operations,
@@ -204,7 +204,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_out,
             swap_operations,
             include_spot_price,
-        } => to_binary(&query_simulate_swap_exact_asset_out_with_metadata(
+        } => to_json_binary(&query_simulate_swap_exact_asset_out_with_metadata(
             deps,
             asset_out,
             swap_operations,

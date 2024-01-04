@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
+    to_json_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
     QuerierResult,
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
@@ -94,7 +94,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -139,7 +139,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -197,10 +197,10 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "neutron123".to_string(), 
-                    msg: to_binary(&Cw20ExecuteMsg::Send {
+                    msg: to_json_binary(&Cw20ExecuteMsg::Send {
                         contract: "swap_venue_adapter_2".to_string(),
                         amount: Uint128::new(1_000_000),
-                        msg: to_binary(&SwapExecuteMsg::Swap {
+                        msg: to_json_binary(&SwapExecuteMsg::Swap {
                             operations: vec![
                                 SwapOperation {
                                     pool: "pool".to_string(),
@@ -262,7 +262,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -327,7 +327,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -380,7 +380,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -438,7 +438,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -500,7 +500,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "neutron123".to_string(), 
-                    msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
                         recipient: "refund_address".to_string(),
                         amount: Uint128::new(500_000),
                     }).unwrap(),
@@ -514,10 +514,10 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "neutron123".to_string(), 
-                    msg: to_binary(&Cw20ExecuteMsg::Send {
+                    msg: to_json_binary(&Cw20ExecuteMsg::Send {
                         contract: "swap_venue_adapter_2".to_string(),
                         amount: Uint128::new(500_000),
-                        msg: to_binary(&SwapExecuteMsg::Swap {
+                        msg: to_json_binary(&SwapExecuteMsg::Swap {
                             operations: vec![
                                 SwapOperation {
                                     pool: "pool".to_string(),
@@ -537,7 +537,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "neutron987".to_string(), 
-                    msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                    msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
                         recipient: "affiliate".to_string(),
                         amount: Uint128::new(100_000),
                     }).unwrap(),
@@ -594,7 +594,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -672,7 +672,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -715,7 +715,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
-                    msg: to_binary(&SwapExecuteMsg::Swap {
+                    msg: to_json_binary(&SwapExecuteMsg::Swap {
                         operations: vec![
                             SwapOperation {
                                 pool: "pool".to_string(),
@@ -989,11 +989,11 @@ fn test_execute_user_swap(params: Params) {
             WasmQuery::Smart { contract_addr, .. } => {
                 if contract_addr == "swap_venue_adapter" {
                     SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&Asset::Native(Coin::new(500_000, "un"))).unwrap(),
+                        to_json_binary(&Asset::Native(Coin::new(500_000, "un"))).unwrap(),
                     ))
                 } else {
                     SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&Asset::Cw20(Cw20Coin {
+                        to_json_binary(&Asset::Cw20(Cw20Coin {
                             address: "neutron123".to_string(),
                             amount: Uint128::new(500_000),
                         }))

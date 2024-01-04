@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
+    entry_point, to_json_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
     WasmMsg,
 };
 use cw2::set_contract_version;
@@ -151,14 +151,14 @@ fn execute_swap(
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: lido_satellite_contract_address.to_string(),
-        msg: to_binary(&lido_satellite_msg)?,
+        msg: to_json_binary(&lido_satellite_msg)?,
         funds: vec![coin_in],
     };
 
     // Create the transfer funds back message
     let transfer_funds_back_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::TransferFundsBack {
+        msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
             swapper: info.sender,
             return_denom,
         })?,
@@ -185,7 +185,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             let asset_out_denom =
                 get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
 
-            to_binary(&Asset::Native(Coin::new(
+            to_json_binary(&Asset::Native(Coin::new(
                 asset_in.amount().u128(),
                 asset_out_denom,
             )))
@@ -194,7 +194,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             let asset_in_denom =
                 get_opposite_denom(asset_out.denom(), &bridged_denom, &canonical_denom);
 
-            to_binary(&Asset::Native(Coin::new(
+            to_json_binary(&Asset::Native(Coin::new(
                 asset_out.amount().u128(),
                 asset_in_denom,
             )))
@@ -213,7 +213,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
                 None
             };
 
-            to_binary(&SimulateSwapExactAssetInResponse {
+            to_json_binary(&SimulateSwapExactAssetInResponse {
                 asset_out: Asset::Native(Coin::new(asset_in.amount().u128(), asset_out_denom)),
                 spot_price,
             })
@@ -232,7 +232,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
                 None
             };
 
-            to_binary(&SimulateSwapExactAssetOutResponse {
+            to_json_binary(&SimulateSwapExactAssetOutResponse {
                 asset_in: Asset::Native(Coin::new(asset_out.amount().u128(), asset_in_denom)),
                 spot_price,
             })

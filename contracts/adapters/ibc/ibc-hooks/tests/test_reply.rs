@@ -109,7 +109,7 @@ struct Params {
         pre_reply_in_progress_recover_address: None,
         pre_reply_in_progress_channel_id: Some("channel_id".to_string()),
         store_ack_id_to_recover_address: false,
-        expected_error_string: "alloc::string::String not found".to_string(),
+        expected_error_string: "type: alloc::string::String; key: [69, 6E, 5F, 70, 72, 6F, 67, 72, 65, 73, 73, 5F, 72, 65, 63, 6F, 76, 65, 72, 5F, 61, 64, 64, 72, 65, 73, 73] not found".to_string(),
     };
     "No In Progress Recover Address To Load - Expect Error")]
 #[test_case(
@@ -126,7 +126,7 @@ struct Params {
         pre_reply_in_progress_recover_address: Some("recover_address".to_string()),
         pre_reply_in_progress_channel_id: None,
         store_ack_id_to_recover_address: false,
-        expected_error_string: "alloc::string::String not found".to_string(),
+        expected_error_string: "type: alloc::string::String; key: [69, 6E, 5F, 70, 72, 6F, 67, 72, 65, 73, 73, 5F, 63, 68, 61, 6E, 6E, 65, 6C, 5F, 69, 64] not found".to_string(),
     };
     "No In Progress Channel ID To Load - Expect Error")]
 #[test_case(
@@ -226,11 +226,10 @@ fn test_reply(params: Params) -> ContractResult<()> {
                         in_progress_ibc_transfer
                     )
                 }
-                Err(err) => assert_eq!(
-                    err,
-                    StdError::NotFound {
-                        kind: "alloc::string::String".to_string()
-                    }
+                Err(err) => assert!(
+                    matches!(err, StdError::NotFound { .. }),
+                    "unexpected error: {:?}",
+                    err
                 ),
             };
 

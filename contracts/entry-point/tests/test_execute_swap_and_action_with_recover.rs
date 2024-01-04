@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_binary, Addr, Coin, CosmosMsg, ReplyOn, SubMsg, Timestamp, Uint128, WasmMsg,
+    to_json_binary, Addr, Coin, CosmosMsg, ReplyOn, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::Cw20Coin;
 use skip::{
@@ -66,7 +66,7 @@ struct Params {
             id: 1,
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
-                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                     sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
@@ -115,7 +115,7 @@ struct Params {
             id: 1,
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
-                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                     sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
@@ -170,7 +170,7 @@ struct Params {
             id: 1,
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
-                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                     sent_asset: Some(Asset::Cw20(Cw20Coin{
                         address: "neutron123".to_string(),
                         amount: Uint128::from(1_000_000u128),
@@ -222,7 +222,7 @@ struct Params {
             id: 1,
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
-                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                     sent_asset: None,
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
@@ -271,7 +271,7 @@ struct Params {
             id: 1,
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
-                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                     sent_asset: None,
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
@@ -326,7 +326,7 @@ struct Params {
             id: 1,
             msg: CosmosMsg::from(WasmMsg::Execute {
                 contract_addr: "entry_point".to_string(),
-                msg: to_binary(&ExecuteMsg::SwapAndAction {
+                msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                     sent_asset: Some(Asset::Cw20(Cw20Coin{
                         address: "neutron123".to_string(),
                         amount: Uint128::from(1_000_000u128),

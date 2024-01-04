@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
+    from_json, to_json_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
     SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
@@ -41,7 +41,7 @@ pub fn receive_cw20(
         amount: cw20_msg.amount,
     });
 
-    match from_binary(&cw20_msg.msg)? {
+    match from_json(&cw20_msg.msg)? {
         Cw20HookMsg::SwapAndActionWithRecover {
             user_swap,
             min_asset,
@@ -181,7 +181,7 @@ pub fn execute_swap_and_action(
 
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::UserSwap {
+        msg: to_json_binary(&ExecuteMsg::UserSwap {
             swap: user_swap,
             min_asset: min_asset.clone(),
             remaining_asset,
@@ -198,7 +198,7 @@ pub fn execute_swap_and_action(
     // Create the post swap action message
     let post_swap_action_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::PostSwapAction {
+        msg: to_json_binary(&ExecuteMsg::PostSwapAction {
             min_asset,
             timeout_timestamp,
             post_swap_action,
@@ -249,7 +249,7 @@ pub fn execute_swap_and_action_with_recover(
     let sub_msg = SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
-            msg: to_binary(&ExecuteMsg::SwapAndAction {
+            msg: to_json_binary(&ExecuteMsg::SwapAndAction {
                 sent_asset,
                 user_swap,
                 min_asset,
@@ -330,7 +330,7 @@ pub fn execute_user_swap(
             // Create the user swap message
             let user_swap_msg = remaining_asset.into_wasm_msg(
                 user_swap_adapter_contract_address.to_string(),
-                to_binary(&user_swap_msg_args)?,
+                to_json_binary(&user_swap_msg_args)?,
             )?;
 
             response = response
@@ -395,7 +395,7 @@ pub fn execute_user_swap(
             // Create the user swap message
             let user_swap_msg = user_swap_asset_in.into_wasm_msg(
                 user_swap_adapter_contract_address.to_string(),
-                to_binary(&user_swap_msg_args)?,
+                to_json_binary(&user_swap_msg_args)?,
             )?;
 
             response = response
@@ -484,7 +484,7 @@ pub fn execute_post_swap_action(
             // Send the IBC transfer by calling the IBC transfer contract
             let ibc_transfer_msg = WasmMsg::Execute {
                 contract_addr: ibc_transfer_contract_address.to_string(),
-                msg: to_binary(&ibc_transfer_msg)?,
+                msg: to_json_binary(&ibc_transfer_msg)?,
                 funds: vec![transfer_out_coin],
             };
 
@@ -566,7 +566,7 @@ fn verify_and_create_fee_swap_msg(
     // Create the fee swap message
     let fee_swap_msg = fee_swap_asset_in.into_wasm_msg(
         fee_swap_adapter_contract_address.to_string(),
-        to_binary(&fee_swap_msg_args)?,
+        to_json_binary(&fee_swap_msg_args)?,
     )?;
 
     Ok(fee_swap_msg)

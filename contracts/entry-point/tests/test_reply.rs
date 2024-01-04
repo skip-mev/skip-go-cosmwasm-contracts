@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env},
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Reply, StdError, SubMsg, SubMsgResponse,
+    to_json_binary, Addr, BankMsg, Coin, CosmosMsg, Reply, StdError, SubMsg, SubMsgResponse,
     SubMsgResult, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ExecuteMsg};
@@ -84,7 +84,7 @@ struct Params {
         }),
         expected_messages: vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: "neutron123".to_string(),
-            msg: to_binary(&Cw20ExecuteMsg::Transfer {
+            msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: "recovery_addr".to_string(),
                 amount: Uint128::new(1_000_000),
             }).unwrap(),
@@ -137,7 +137,7 @@ struct Params {
             })),
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "neutron123".to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "recovery_addr".to_string(),
                     amount: Uint128::new(1_000_000),
                 }).unwrap(),
@@ -201,11 +201,10 @@ fn test_reply(params: Params) {
                         recover_temp_storage
                     )
                 }
-                Err(err) => assert_eq!(
-                    err,
-                    StdError::NotFound {
-                        kind: "skip_api_entry_point::reply::RecoverTempStorage".to_string(),
-                    }
+                Err(err) => assert!(
+                    matches!(err, StdError::NotFound { .. }),
+                    "unexpected error: {:?}",
+                    err
                 ),
             };
         }
