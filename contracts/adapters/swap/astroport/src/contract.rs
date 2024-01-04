@@ -187,6 +187,11 @@ fn execute_astroport_pool_swap(
     // Get the current asset available on contract to swap in
     let offer_asset = get_current_asset_available(&deps, &env, &operation.denom_in)?;
 
+    // Error if the offer asset amount is zero
+    if offer_asset.amount().is_zero() {
+        return Err(ContractError::NoOfferAssetAmount);
+    }
+
     // Create the astroport pool swap message args
     let astroport_pool_swap_msg_args = PairExecuteMsg::Swap {
         offer_asset: offer_asset.into_astroport_asset(deps.api)?,
