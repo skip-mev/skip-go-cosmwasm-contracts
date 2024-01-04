@@ -263,14 +263,14 @@ def store_contract(
     if permissioned_uploader_address is not None:
         msg_store_code = MsgStoreCode(
             sender=permissioned_uploader_address,
-            wasm_byte_code=open(file, "rb").read(),
+            wasm_byte_code=open(file_path, "rb").read(),
             instantiate_permission=None
         )
         msg = create_exec_msg(msg=msg_store_code, grantee_address=str(wallet.address()))
     else:
         msg = MsgStoreCode(
             sender=str(wallet.address()),
-            wasm_byte_code=open(file, "rb").read(),
+            wasm_byte_code=open(file_path, "rb").read(),
             instantiate_permission=None
         )
     store_tx = create_tx(
