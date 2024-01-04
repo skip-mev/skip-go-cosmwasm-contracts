@@ -151,8 +151,6 @@ def main():
         swap_adapter_instantiate_args = {
             "entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS
         }
-        if "router_contract_address" in venue:
-            swap_adapter_instantiate_args["router_contract_address"] = venue["router_contract_address"]
         if "lido_satellite_contract_address" in venue:
             swap_adapter_instantiate_args["lido_satellite_contract_address"] = venue["lido_satellite_contract_address"]
         
