@@ -21,7 +21,7 @@ use skip::{
 };
 use skip_api_entry_point::{
     error::ContractError,
-    state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP, PRE_SWAP_OUT_ASSET_AMOUNT},
+    state::{IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT, SWAP_VENUE_MAP},
 };
 use test_case::test_case;
 
