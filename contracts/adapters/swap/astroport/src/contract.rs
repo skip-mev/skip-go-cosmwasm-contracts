@@ -1,23 +1,20 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS},
+    state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
-use astroport::{
-    pair::{
-        QueryMsg as PairQueryMsg, ReverseSimulationResponse, SimulationResponse,
-        MAX_ALLOWED_SLIPPAGE,
-    },
-    router::ExecuteMsg as RouterExecuteMsg,
+use astroport::pair::{
+    ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, ReverseSimulationResponse,
+    SimulationResponse, MAX_ALLOWED_SLIPPAGE,
 };
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, Addr, Api, Binary, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Response, Uint128, WasmMsg,
+    entry_point, from_json, to_json_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
+    Response, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 use skip::{
-    asset::Asset,
+    asset::{get_current_asset_available, Asset},
     swap::{
         execute_transfer_funds_back, AstroportInstantiateMsg as InstantiateMsg, Cw20HookMsg,
         ExecuteMsg, MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse,
@@ -59,21 +56,11 @@ pub fn instantiate(
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
 
-    // Validate router contract address
-    let checked_router_contract_address = deps.api.addr_validate(&msg.router_contract_address)?;
-
-    // Store the router contract address
-    ROUTER_CONTRACT_ADDRESS.save(deps.storage, &checked_router_contract_address)?;
-
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute(
             "entry_point_contract_address",
             checked_entry_point_contract_address.to_string(),
-        )
-        .add_attribute(
-            "router_contract_address",
-            checked_router_contract_address.to_string(),
         ))
 }
 
@@ -100,7 +87,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, sent_asset, operations),
+        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, operations),
     }
 }
 
@@ -118,8 +105,8 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Swap { operations } => {
-            let sent_asset: Asset = one_coin(&info)?.into();
-            execute_swap(deps, env, info, sent_asset, operations)
+            one_coin(&info)?;
+            execute_swap(deps, env, info, operations)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -131,6 +118,9 @@ pub fn execute(
             swapper,
             return_denom,
         )?),
+        ExecuteMsg::AstroportPoolSwap { operation } => {
+            execute_astroport_pool_swap(deps, env, info, operation)
+        }
     }
 }
 
@@ -138,7 +128,6 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    sent_asset: Asset,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
@@ -149,13 +138,20 @@ fn execute_swap(
         return Err(ContractError::Unauthorized);
     }
 
-    // Create the astroport swap message
-    let swap_msg = create_astroport_swap_msg(
-        deps.api,
-        ROUTER_CONTRACT_ADDRESS.load(deps.storage)?,
-        sent_asset,
-        &operations,
-    )?;
+    // Create a response object to return
+    let mut response: Response = Response::new().add_attribute("action", "execute_swap");
+
+    // Add an astroport pool swap message to the response for each swap operation
+    for operation in &operations {
+        let swap_msg = WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                operation: operation.clone(),
+            })?,
+            funds: vec![],
+        };
+        response = response.add_message(swap_msg);
+    }
 
     let return_denom = match operations.last() {
         Some(last_op) => last_op.denom_out.clone(),
@@ -172,44 +168,43 @@ fn execute_swap(
         funds: vec![],
     };
 
-    Ok(Response::new()
-        .add_message(swap_msg)
+    Ok(response
         .add_message(transfer_funds_back_msg)
-        .add_attribute("action", "dispatch_swap_and_transfer_back"))
+        .add_attribute("action", "dispatch_swaps_and_transfer_back"))
 }
 
-////////////////////////
-/// HELPER FUNCTIONS ///
-////////////////////////
+fn execute_astroport_pool_swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    operation: SwapOperation,
+) -> ContractResult<Response> {
+    // Ensure the caller is the contract itself
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized);
+    }
 
-// Converts the swap operations to astroport AstroSwap operations
-fn create_astroport_swap_msg(
-    api: &dyn Api,
-    router_contract_address: Addr,
-    asset_in: Asset,
-    swap_operations: &[SwapOperation],
-) -> ContractResult<WasmMsg> {
-    // Convert the swap operations to astroport swap operations
-    let astroport_swap_operations = swap_operations
-        .iter()
-        .map(|swap_operation| swap_operation.into_astroport_swap_operation(api))
-        .collect();
+    // Get the current asset available on contract to swap in
+    let offer_asset = get_current_asset_available(&deps, &env, &operation.denom_in)?;
 
-    // Create the astroport router execute message arguments
-    let astroport_router_msg_args = RouterExecuteMsg::ExecuteSwapOperations {
-        operations: astroport_swap_operations,
-        minimum_receive: None,
-        to: None,
+    // Create the astroport pool swap message args
+    let astroport_pool_swap_msg_args = PairExecuteMsg::Swap {
+        offer_asset: offer_asset.into_astroport_asset(deps.api)?,
+        ask_asset_info: None,
+        belief_price: None,
         max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
+        to: None,
     };
 
-    // Create the astroport router swap message
-    let swap_msg = asset_in.into_wasm_msg(
-        router_contract_address.to_string(),
-        to_json_binary(&astroport_router_msg_args)?,
+    // Create the wasm astroport pool swap message
+    let swap_msg = offer_asset.into_wasm_msg(
+        operation.pool,
+        to_json_binary(&astroport_pool_swap_msg_args)?,
     )?;
 
-    Ok(swap_msg)
+    Ok(Response::new()
+        .add_message(swap_msg)
+        .add_attribute("action", "dispatch_astroport_pool_swap"))
 }
 
 /////////////
@@ -219,9 +214,6 @@ fn create_astroport_swap_msg(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
-        QueryMsg::RouterContractAddress {} => {
-            to_json_binary(&ROUTER_CONTRACT_ADDRESS.load(deps.storage)?)
-        }
         QueryMsg::SimulateSwapExactAssetIn {
             asset_in,
             swap_operations,
@@ -262,7 +254,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     .map_err(From::from)
 }
 
-// Queries the astroport router contract to simulate a swap exact amount in
+// Queries the astroport pool contracts to simulate a swap exact amount in
 fn query_simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
@@ -306,7 +298,7 @@ fn query_simulate_swap_exact_asset_out(
     Ok(asset_in)
 }
 
-// Queries the astroport router contract to simulate a swap exact amount in with metadata
+// Queries the astroport pool contracts to simulate a swap exact amount in with metadata
 fn query_simulate_swap_exact_asset_in_with_metadata(
     deps: Deps,
     asset_in: Asset,

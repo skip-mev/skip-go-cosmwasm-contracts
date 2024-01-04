@@ -55,6 +55,7 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     Swap { operations: Vec<SwapOperation> },
     TransferFundsBack { swapper: Addr, return_denom: String },
+    AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
 }
 
 #[cw_serde]
@@ -71,9 +72,6 @@ pub enum Cw20HookMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    // RouterContractAddress returns the address of the router contract
-    #[returns(Addr)]
-    RouterContractAddress {},
     // SimulateSwapExactAssetOut returns the asset in necessary to receive the specified asset out
     #[returns(Asset)]
     SimulateSwapExactAssetOut {
