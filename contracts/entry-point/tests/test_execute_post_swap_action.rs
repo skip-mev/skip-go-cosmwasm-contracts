@@ -38,6 +38,9 @@ Expect Response
     - Ibc Transfer w/ IBC Fees of same denom as min coin With Exact Out Set To True
     - Contract Call With Exact Out Set To True
 
+    // Invariants
+    - Pre Swap Out Asset Contract Balance Preserved
+
 Expect Error
     - Transfer Timeout
     - Received Less Native Asset From Swap Than Min Asset
@@ -505,6 +508,28 @@ struct Params {
         expected_error: None,
     };
     "Ibc Transfer w/ IBC Fees of same denom as min coin")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_asset: Asset::Native(Coin::new(700_000, "os")),
+        post_swap_action: Action::Transfer {
+            to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+        },
+        exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(200_000),
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: BankMsg::Send {
+                to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                amount: vec![Coin::new(800_000, "os")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Pre Swap Out Asset Contract Balance Preserved")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
