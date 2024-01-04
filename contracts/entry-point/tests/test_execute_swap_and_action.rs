@@ -21,7 +21,7 @@ use skip::{
 };
 use skip_api_entry_point::{
     error::ContractError,
-    state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP, PRE_SWAP_OUT_ASSET_AMOUNT},
 };
 use test_case::test_case;
 
@@ -1753,6 +1753,10 @@ fn test_execute_swap_and_action(params: Params) {
 
             // Assert the messages in the response are correct
             assert_eq!(res.messages, params.expected_messages,);
+
+            // Assert the pre swap out asset amount set is correct
+            let pre_swap_out_asset_amount = PRE_SWAP_OUT_ASSET_AMOUNT.load(&deps.storage).unwrap();
+            assert_eq!(pre_swap_out_asset_amount, Uint128::from(1_000_000u128));
         }
         Err(err) => {
             // Assert the test expected an error
