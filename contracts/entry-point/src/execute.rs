@@ -4,8 +4,8 @@ use crate::{
     error::{ContractError, ContractResult},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
-        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, RECOVER_TEMP_STORAGE,
-        SWAP_VENUE_MAP,
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT,
+        RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
     },
 };
 use cosmwasm_std::{
@@ -115,6 +115,11 @@ pub fn execute_swap_and_action(
     if env.block.time.nanos() > timeout_timestamp {
         return Err(ContractError::Timeout);
     }
+
+    // Save the current out asset amount to storage
+    let current_out_asset_amount =
+        get_current_asset_available(&deps, &env, min_asset.denom())?.amount();
+    PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &current_out_asset_amount)?;
 
     // Already validated at entrypoints (both direct and cw20_receive)
     let mut remaining_asset = sent_asset;
@@ -432,9 +437,22 @@ pub fn execute_post_swap_action(
     let mut response: Response =
         Response::new().add_attribute("action", "execute_post_swap_action");
 
-    // Get contract balance of min out asset immediately after swap
+    // Get the pre swap out asset amount from storage
+    let pre_swap_out_asset_amount = PRE_SWAP_OUT_ASSET_AMOUNT.load(deps.storage)?;
+
+    // Get contract balance of min out asset post swap
     // for fee deduction and transfer out amount enforcement
-    let transfer_out_asset = get_current_asset_available(&deps, &env, min_asset.denom())?;
+    let post_swap_out_asset = get_current_asset_available(&deps, &env, min_asset.denom())?;
+
+    // Set the transfer out asset to the post swap out asset amount minus the pre swap out asset amount
+    // Since we only want to transfer out the amount received from the swap
+    let transfer_out_asset = Asset::new(
+        deps.api,
+        min_asset.denom(),
+        post_swap_out_asset
+            .amount()
+            .checked_sub(pre_swap_out_asset_amount)?,
+    );
 
     // Error if the contract balance is less than the min asset out amount
     if transfer_out_asset.amount() < min_asset.amount() {
