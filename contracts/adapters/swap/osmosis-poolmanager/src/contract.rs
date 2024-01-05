@@ -16,9 +16,9 @@ use skip::{
     asset::Asset,
     proto_coin::ProtoCoin,
     swap::{
-        convert_swap_operations, execute_transfer_funds_back, ExecuteMsg, MigrateMsg,
-        OsmosisInstantiateMsg as InstantiateMsg, QueryMsg, SimulateSwapExactAssetInResponse,
-        SimulateSwapExactAssetOutResponse, SwapOperation,
+        convert_swap_operations, execute_transfer_funds_back, ExecuteMsg, InstantiateMsg,
+        MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 use std::str::FromStr;

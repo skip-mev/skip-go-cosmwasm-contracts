@@ -16,9 +16,8 @@ use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
     swap::{
-        execute_transfer_funds_back, AstroportInstantiateMsg as InstantiateMsg, Cw20HookMsg,
-        ExecuteMsg, MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse,
-        SimulateSwapExactAssetOutResponse, SwapOperation,
+        execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
+        SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 
