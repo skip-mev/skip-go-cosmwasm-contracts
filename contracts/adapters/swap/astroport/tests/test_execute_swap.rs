@@ -1,17 +1,13 @@
-use astroport::{
-    asset::AssetInfo,
-    router::{ExecuteMsg as RouterExecuteMsg, SwapOperation as AstroportSwapOperation},
-};
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_json_binary, Addr, Coin, Decimal,
+    to_json_binary, Addr, Coin,
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
 use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_api_swap_adapter_astroport::{
     error::{ContractError, ContractResult},
-    state::{ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS},
+    state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use test_case::test_case;
 
@@ -21,7 +17,7 @@ Test Cases:
 Expect Success
     - One Swap Operation
     - Multiple Swap Operations
-    - No Swap Operations (This is prevented in the entry point contract; and will fail on Astroport router if attempted)
+    - No Swap Operations (This is prevented in the entry point contract; and will not add any swap messages to the response)
 
 Expect Error
     - Unauthorized Caller (Only the stored entry point contract can call this function)
@@ -55,25 +51,16 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "router_contract".to_string(),
-                    msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
-                        operations: vec![
-                            AstroportSwapOperation::AstroSwap {
-                                offer_asset_info: AssetInfo::NativeToken {
-                                    denom: "os".to_string(),
-                                },
-                                ask_asset_info: AssetInfo::NativeToken {
-                                    denom: "ua".to_string(),
-                                },
-                            }
-                        ],
-                        minimum_receive: None,
-                        to: None,
-                        max_spread: Some(Decimal::percent(50)),
+                    contract_addr: "swap_contract_address".to_string(),
+                    msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                        operation: SwapOperation {
+                            pool: "pool_1".to_string(),
+                            denom_in: "os".to_string(),
+                            denom_out: "ua".to_string(),
+                        }
                     })?,
-                    funds: vec![Coin::new(100, "os")],
-                }
-                .into(),
+                    funds: vec![],
+                }.into(),
                 gas_limit: None,
                 reply_on: Never,
             },
@@ -115,33 +102,32 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "router_contract".to_string(),
-                    msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
-                        operations: vec![
-                            AstroportSwapOperation::AstroSwap {
-                                offer_asset_info: AssetInfo::NativeToken {
-                                    denom: "os".to_string(),
-                                },
-                                ask_asset_info: AssetInfo::NativeToken {
-                                    denom: "ua".to_string(),
-                                },
-                            },
-                            AstroportSwapOperation::AstroSwap {
-                                offer_asset_info: AssetInfo::NativeToken {
-                                    denom: "ua".to_string(),
-                                },
-                                ask_asset_info: AssetInfo::NativeToken {
-                                    denom: "un".to_string(),
-                                },
-                            }
-                        ],
-                        minimum_receive: None,
-                        to: None,
-                        max_spread: Some(Decimal::percent(50)),
+                    contract_addr: "swap_contract_address".to_string(),
+                    msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                        operation: SwapOperation {
+                            pool: "pool_1".to_string(),
+                            denom_in: "os".to_string(),
+                            denom_out: "ua".to_string(),
+                        }
                     })?,
-                    funds: vec![Coin::new(100, "os")],
-                }
-                .into(),
+                    funds: vec![],
+                }.into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_contract_address".to_string(),
+                    msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                        operation: SwapOperation {
+                            pool: "pool_2".to_string(),
+                            denom_in: "ua".to_string(),
+                            denom_out: "un".to_string(),
+                        }
+                    })?,
+                    funds: vec![],
+                }.into(),
                 gas_limit: None,
                 reply_on: Never,
             },
@@ -168,38 +154,7 @@ struct Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
         swap_operations: vec![],
-        expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "router_contract".to_string(),
-                    msg: to_json_binary(&RouterExecuteMsg::ExecuteSwapOperations {
-                        operations: vec![],
-                        minimum_receive: None,
-                        to: None,
-                        max_spread: Some(Decimal::percent(50)),
-                    })?,
-                    funds: vec![Coin::new(100, "os")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "ua".to_string(),
-                        swapper: Addr::unchecked("entry_point"),
-                    })?,
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-        ],
+        expected_messages: vec![],
         expected_error: Some(ContractError::SwapOperationsEmpty),
     };
     "No Swap Operations")]
@@ -251,9 +206,6 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
 
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
-
-    // Store the router contract address
-    ROUTER_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("router_contract"))?;
 
     // Call execute_swap with the given test parameters
     let res = skip_api_swap_adapter_astroport::contract::execute(

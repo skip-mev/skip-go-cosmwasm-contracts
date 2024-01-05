@@ -31,7 +31,6 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[swap_venues]]
 name = "neutron-astroport"
-router_contract_address = "neutron1eeyntmsq448c68ez06jsy6h2mtjke5tpuplnwtjfwcdznqmw72kswnlmm0"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
 
 [[swap_venues]]
@@ -41,7 +40,6 @@ swap_adapter_path = "../artifacts/skip_api_swap_adapter_lido_satellite-aarch64.w
 
 [[testnet_swap_venues]]
 name = "testnet-neutron-astroport"
-router_contract_address = "neutron12jm24l9lr9cupufqjuxpdjnnweana4h66tsx5cl800mke26td26sq7m05p"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
 
 [[testnet_swap_venues]]

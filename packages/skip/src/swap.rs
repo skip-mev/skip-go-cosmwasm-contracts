@@ -23,19 +23,11 @@ pub struct MigrateMsg {}
 /// INSTANTIATE ///
 ///////////////////
 
-// The OsmosisInstantiateMsg struct defines the initialization parameters for the
-// Osmosis Poolmanager swap adapter contract.
+// The InstantiateMsg struct defines the initialization parameters for the
+// Osmosis Poolmanager and Astroport swap adapter contracts.
 #[cw_serde]
-pub struct OsmosisInstantiateMsg {
+pub struct InstantiateMsg {
     pub entry_point_contract_address: String,
-}
-
-// The NeutronInstantiateMsg struct defines the initialization parameters for the
-// Neutron Astroport swap adapter contract.
-#[cw_serde]
-pub struct AstroportInstantiateMsg {
-    pub entry_point_contract_address: String,
-    pub router_contract_address: String,
 }
 
 #[cw_serde]
@@ -55,6 +47,7 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     Swap { operations: Vec<SwapOperation> },
     TransferFundsBack { swapper: Addr, return_denom: String },
+    AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
 }
 
 #[cw_serde]
@@ -67,13 +60,9 @@ pub enum Cw20HookMsg {
 /////////////////////////
 
 // The QueryMsg enum defines the queries the swap adapter contracts provide.
-// RouterContractAddress is only implemented for Astroport swap adapter contracts.
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    // RouterContractAddress returns the address of the router contract
-    #[returns(Addr)]
-    RouterContractAddress {},
     // SimulateSwapExactAssetOut returns the asset in necessary to receive the specified asset out
     #[returns(Asset)]
     SimulateSwapExactAssetOut {

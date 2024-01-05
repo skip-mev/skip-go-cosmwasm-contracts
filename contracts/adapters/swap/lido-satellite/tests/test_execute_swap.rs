@@ -169,7 +169,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
-    // Store the router contract address
+    // Store the lido satellite contract address
     LIDO_SATELLITE_CONTRACT_ADDRESS.save(
         deps.as_mut().storage,
         &Addr::unchecked("lido_satellite_contract"),

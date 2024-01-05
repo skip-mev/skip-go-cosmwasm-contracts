@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use skip::swap::{AstroportInstantiateMsg as InstantiateMsg, ExecuteMsg, QueryMsg};
+use skip::swap::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {

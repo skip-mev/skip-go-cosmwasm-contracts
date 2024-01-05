@@ -32,4 +32,7 @@ pub enum ContractError {
 
     #[error("Operation exceeds max spread limit")]
     MaxSpreadAssertion,
+
+    #[error("Contract has no balance of offer asset")]
+    NoOfferAssetAmount,
 }

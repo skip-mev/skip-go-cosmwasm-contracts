@@ -1,8 +1,8 @@
 # Neutron Astroport Swap Adapter Contract
 
 The Neutron Astroport swap adapter contract is responsible for:
-1. Taking the standardized entry point swap operations message format and converting it to the Astroport Router `SwapOperation` format.
-2. Swapping by calling the Astroport router.
+1. Taking the standardized entry point swap operations message format and converting it to Astroport pool swaps message format.
+2. Swapping by dispatching swaps to Astroport pool contracts.
 3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out).
 
 Note: Swap adapter contracts expect to be called by an entry point contract that provides basic validation and minimum amount out safety guarantees for the caller. There are no slippage guarantees provided by swap adapter contracts.
@@ -11,11 +11,11 @@ WARNING: Do not send funds directly to the contract without calling one of its f
 
 ## InstantiateMsg
 
-Instantiates a new Neutron Astroport swap adapter contract using the Astroport router provided in the instantiation message.
+Instantiates a new Neutron Astroport swap adapter contract using the Entrypoint contract address provided in the instantiation message.
 
 ``` json
 {
-    "router_contract_address": "neutron..."
+    "entry_point_contract_address": "neutron..."
 }
 ```
 
@@ -59,22 +59,6 @@ Note: This function can be called by anyone as the contract is assumed to have n
 ```
 
 ## QueryMsg
-
-### `router_contract_address`
-
-Returns the Astroport router contract address set at instantiation.
-
-Query:
-``` json
-{
-    "router_contract_address": {}
-}
-```
-
-Response:
-``` json
-"neutron..."
-```
 
 ### `simulate_swap_exact_coin_out`
 
