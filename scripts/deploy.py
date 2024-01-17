@@ -257,7 +257,10 @@ def store_contract(
     name, 
     permissioned_uploader_address
 ) -> int:
-    gas_limit = 5000000
+    if CHAIN == "osmosis":
+        gas_limit = 9000000
+    else:
+        gas_limit = 5000000
     if permissioned_uploader_address is not None:
         msg_store_code = MsgStoreCode(
             sender=permissioned_uploader_address,
@@ -291,7 +294,10 @@ def store_contract(
 
 
 def instantiate_contract(client, wallet, code_id, args, label, name) -> str:
-    gas_limit = 300000
+    if CHAIN == "osmosis":
+        gas_limit = 600000
+    else:
+        gas_limit = 300000
     msg = MsgInstantiateContract(
         sender=str(wallet.address()),
         admin=ADMIN_ADDRESS,
@@ -327,7 +333,10 @@ def instantiate2_contract(
     name, 
     pre_gen_address
 ) -> str:
-    gas_limit = 300000
+    if CHAIN == "osmosis":
+        gas_limit = 600000
+    else:
+        gas_limit = 300000
     msg = MsgInstantiateContract2(
         sender=str(wallet.address()),
         admin=ADMIN_ADDRESS,
@@ -377,7 +386,8 @@ def broadcast_tx(tx) -> httpx.Response:
         'params': [encoded_tx],
         'id': 1
     }
-    httpx.post(RPC_URL, json=data, timeout=60)
+    postResp = httpx.post(RPC_URL, json=data, timeout=60)
+    print("postResp.json(): ", postResp.json())
     print("Sleeping for 20 seconds...")
     time.sleep(20)
     resp = httpx.get(
