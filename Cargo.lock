@@ -372,6 +372,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20-base"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17ad79e86ea3707229bf78df94e08732e8f713207b4a77b2699755596725e7d9"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "schemars",
+ "semver",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "der"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -399,6 +416,25 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "dexter"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fe817d840ade14e63d64617f24523243614908b6e840afda8a034c297f284ca"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw20 1.1.2",
+ "cw20-base",
+ "itertools 0.10.5",
+ "protobuf 2.28.0",
+ "schemars",
+ "serde",
+ "thiserror",
+ "uint",
 ]
 
 [[package]]
@@ -678,7 +714,7 @@ dependencies = [
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
  "cosmwasm-std",
- "protobuf",
+ "protobuf 3.3.0",
  "schemars",
  "serde",
  "serde-json-wasm 1.0.0",
@@ -697,7 +733,7 @@ dependencies = [
  "cosmwasm-std",
  "prost 0.12.3",
  "prost-types 0.12.3",
- "protobuf",
+ "protobuf 3.3.0",
  "schemars",
  "serde",
  "serde-json-wasm 1.0.0",
@@ -859,6 +895,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "193898f59edcf43c26227dcd4c8427f00d99d61e95dcde58dabd49fa291d470e"
 dependencies = [
  "prost 0.12.3",
+]
+
+[[package]]
+name = "protobuf"
+version = "2.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "106dd99e98437432fed6519dedecfade6a06a73bb7b2a1e019fdd2bee5778d94"
+dependencies = [
+ "bytes",
 ]
 
 [[package]]
@@ -1169,6 +1214,22 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "cw20 1.1.2",
+ "skip",
+ "test-case",
+ "thiserror",
+]
+
+[[package]]
+name = "skip-api-swap-adapter-dexter"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "dexter",
  "skip",
  "test-case",
  "thiserror",
