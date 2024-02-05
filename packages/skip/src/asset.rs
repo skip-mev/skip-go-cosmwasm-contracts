@@ -7,6 +7,9 @@ use cosmwasm_std::{
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
 use cw_utils::{nonpayable, one_coin};
+use white_whale_std::pool_network::asset::{
+    Asset as WhiteWhaleAsset, AssetInfo as WhiteWhaleAssetInfo,
+};
 
 #[cw_serde]
 pub enum Asset {
@@ -141,6 +144,23 @@ impl Asset {
             Asset::Cw20(cw20_coin) => Ok(AstroportAsset {
                 info: AssetInfo::Token {
                     contract_addr: api.addr_validate(&cw20_coin.address)?,
+                },
+                amount: cw20_coin.amount,
+            }),
+        }
+    }
+
+    pub fn into_white_whale_asset(&self, api: &dyn Api) -> Result<WhiteWhaleAsset, SkipError> {
+        match self {
+            Asset::Native(coin) => Ok(WhiteWhaleAsset {
+                info: WhiteWhaleAssetInfo::NativeToken {
+                    denom: coin.denom.clone(),
+                },
+                amount: coin.amount,
+            }),
+            Asset::Cw20(cw20_coin) => Ok(WhiteWhaleAsset {
+                info: WhiteWhaleAssetInfo::Token {
+                    contract_addr: api.addr_validate(&cw20_coin.address)?.into_string(),
                 },
                 amount: cw20_coin.amount,
             }),

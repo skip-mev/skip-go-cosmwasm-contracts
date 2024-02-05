@@ -48,6 +48,7 @@ pub enum ExecuteMsg {
     Swap { operations: Vec<SwapOperation> },
     TransferFundsBack { swapper: Addr, return_denom: String },
     AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
+    WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
 }
 
 #[cw_serde]

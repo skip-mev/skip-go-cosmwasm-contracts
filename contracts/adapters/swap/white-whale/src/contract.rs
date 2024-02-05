@@ -2,10 +2,6 @@ use crate::{
     error::{ContractError, ContractResult},
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
-use astroport::pair::{
-    ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, ReverseSimulationResponse,
-    SimulationResponse, MAX_ALLOWED_SLIPPAGE,
-};
 use cosmwasm_std::{
     entry_point, from_json, to_json_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
     Response, Uint128, WasmMsg,
@@ -19,6 +15,13 @@ use skip::{
         execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
+};
+use white_whale_std::pool_network::{
+    pair::{
+        ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, ReverseSimulationResponse,
+        SimulationResponse,
+    },
+    swap::MAX_ALLOWED_SLIPPAGE,
 };
 
 ///////////////
@@ -117,10 +120,10 @@ pub fn execute(
             swapper,
             return_denom,
         )?),
-        ExecuteMsg::AstroportPoolSwap { operation } => {
-            execute_astroport_pool_swap(deps, env, info, operation)
+        ExecuteMsg::WhiteWhalePoolSwap { operation } => {
+            execute_white_whale_pool_swap(deps, env, info, operation)
         }
-        ExecuteMsg::WhiteWhalePoolSwap { operation: _ } => unimplemented!(),
+        ExecuteMsg::AstroportPoolSwap { operation: _ } => unimplemented!(),
     }
 }
 
@@ -141,11 +144,11 @@ fn execute_swap(
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    // Add an astroport pool swap message to the response for each swap operation
+    // Add a white whale pool swap message to the response for each swap operation
     for operation in &operations {
         let swap_msg = WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
-            msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+            msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
                 operation: operation.clone(),
             })?,
             funds: vec![],
@@ -173,7 +176,7 @@ fn execute_swap(
         .add_attribute("action", "dispatch_swaps_and_transfer_back"))
 }
 
-fn execute_astroport_pool_swap(
+fn execute_white_whale_pool_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -192,24 +195,23 @@ fn execute_astroport_pool_swap(
         return Err(ContractError::NoOfferAssetAmount);
     }
 
-    // Create the astroport pool swap message args
-    let astroport_pool_swap_msg_args = PairExecuteMsg::Swap {
-        offer_asset: offer_asset.into_astroport_asset(deps.api)?,
-        ask_asset_info: None,
+    // Create the white whale pool swap message args
+    let white_whale_pool_swap_msg_args = PairExecuteMsg::Swap {
+        offer_asset: offer_asset.into_white_whale_asset(deps.api)?,
         belief_price: None,
         max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
         to: None,
     };
 
-    // Create the wasm astroport pool swap message
+    // Create the wasm white whale pool swap message
     let swap_msg = offer_asset.into_wasm_msg(
         operation.pool,
-        to_json_binary(&astroport_pool_swap_msg_args)?,
+        to_json_binary(&white_whale_pool_swap_msg_args)?,
     )?;
 
     Ok(Response::new()
         .add_message(swap_msg)
-        .add_attribute("action", "dispatch_astroport_pool_swap"))
+        .add_attribute("action", "dispatch_white_whale_pool_swap"))
 }
 
 /////////////
@@ -259,7 +261,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     .map_err(From::from)
 }
 
-// Queries the astroport pool contracts to simulate a swap exact amount in
+// Queries the white whale pool contracts to simulate a swap exact amount in
 fn query_simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
@@ -281,7 +283,7 @@ fn query_simulate_swap_exact_asset_in(
     Ok(asset_out)
 }
 
-// Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
+// Queries the white whale pool contracts to simulate a multi-hop swap exact amount out
 fn query_simulate_swap_exact_asset_out(
     deps: Deps,
     asset_out: Asset,
@@ -303,7 +305,7 @@ fn query_simulate_swap_exact_asset_out(
     Ok(asset_in)
 }
 
-// Queries the astroport pool contracts to simulate a swap exact amount in with metadata
+// Queries the white whale pool contracts to simulate a swap exact amount in with metadata
 fn query_simulate_swap_exact_asset_in_with_metadata(
     deps: Deps,
     asset_in: Asset,
@@ -353,7 +355,7 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     Ok(response)
 }
 
-// Queries the astroport pool contracts to simulate a multi-hop swap exact amount out with metadata
+// Queries the white whale pool contracts to simulate a multi-hop swap exact amount out with metadata
 fn query_simulate_swap_exact_asset_out_with_metadata(
     deps: Deps,
     asset_out: Asset,
@@ -421,15 +423,14 @@ fn simulate_swap_exact_asset_in(
     let (asset_out, responses) = swap_operations.iter().try_fold(
         (asset_in, Vec::new()),
         |(asset_out, mut responses), operation| -> Result<_, ContractError> {
-            // Get the astroport offer asset type
-            let astroport_offer_asset = asset_out.into_astroport_asset(deps.api)?;
+            // Get the white whale offer asset type
+            let white_whale_offer_asset = asset_out.into_white_whale_asset(deps.api)?;
 
-            // Query the astroport pool contract to get the simulation response
+            // Query the white whale pool contract to get the simulation response
             let res: SimulationResponse = deps.querier.query_wasm_smart(
                 &operation.pool,
                 &PairQueryMsg::Simulation {
-                    offer_asset: astroport_offer_asset,
-                    ask_asset_info: None,
+                    offer_asset: white_whale_offer_asset,
                 },
             )?;
 
@@ -460,15 +461,14 @@ fn simulate_swap_exact_asset_out(
     let (asset_in, responses) = swap_operations.iter().rev().try_fold(
         (asset_out, Vec::new()),
         |(asset_in_needed, mut responses), operation| -> Result<_, ContractError> {
-            // Get the astroport ask asset type
-            let astroport_ask_asset = asset_in_needed.into_astroport_asset(deps.api)?;
+            // Get the white whale ask asset type
+            let white_whale_ask_asset = asset_in_needed.into_white_whale_asset(deps.api)?;
 
-            // Query the astroport pool contract to get the reverse simulation response
+            // Query the white whale pool contract to get the reverse simulation response
             let res: ReverseSimulationResponse = deps.querier.query_wasm_smart(
                 &operation.pool,
                 &PairQueryMsg::ReverseSimulation {
-                    offer_asset_info: None,
-                    ask_asset: astroport_ask_asset,
+                    ask_asset: white_whale_ask_asset,
                 },
             )?;
 
@@ -504,10 +504,7 @@ fn calculate_spot_price_from_simulation_responses(
         (asset_in, Decimal::one()),
         |(asset_out, curr_spot_price), (op, res)| -> Result<_, ContractError> {
             // Calculate the amount out without slippage
-            let amount_out_without_slippage = res
-                .return_amount
-                .checked_add(res.spread_amount)?
-                .checked_add(res.commission_amount)?;
+            let amount_out_without_slippage = res.return_amount.checked_add(res.spread_amount)?;
 
             Ok((
                 Asset::new(deps.api, &op.denom_out, res.return_amount),
@@ -536,10 +533,8 @@ fn calculate_spot_price_from_reverse_simulation_responses(
         .try_fold(
             (asset_out, Decimal::one()),
             |(asset_in_needed, curr_spot_price), (op, res)| -> Result<_, ContractError> {
-                let amount_out_without_slippage = asset_in_needed
-                    .amount()
-                    .checked_add(res.spread_amount)?
-                    .checked_add(res.commission_amount)?;
+                let amount_out_without_slippage =
+                    asset_in_needed.amount().checked_add(res.spread_amount)?;
 
                 Ok((
                     Asset::new(
