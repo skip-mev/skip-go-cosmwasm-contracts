@@ -59,7 +59,7 @@ jobs:
 
       - name: Run clippy
         # use nightly toolchain so that we get all the latest linter features
-        run: cargo +nightly clippy --tests -- -D warnings
+        run: cargo clippy --tests -- -D warnings
 
   format:
     name: Format
@@ -76,7 +76,7 @@ jobs:
 
       - name: Run format
         # use nightly toolchain so that we get all the latest formatting features
-        run: cargo +nightly fmt --check
+        run: cargo fmt --check
 
   schema:
     name: Schema
@@ -93,7 +93,7 @@ jobs:
       - name: Run schema diff check
         # use nightly toolchain so that we get all the latest formatting features
         run: |
-          cargo +nightly run --package skip-api-entry-point --bin schema     
+          cargo run --package skip-api-entry-point --bin schema     
           if [[ `git status --porcelain` ]]; then
             echo "Schema is different, please run make schema"
             exit 1
