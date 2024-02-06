@@ -119,7 +119,7 @@ pub fn execute(
         )?),
         ExecuteMsg::AstroportPoolSwap { operation } => {
             execute_astroport_pool_swap(deps, env, info, operation)
-        },
+        }
         _ => {
             unimplemented!()
         }

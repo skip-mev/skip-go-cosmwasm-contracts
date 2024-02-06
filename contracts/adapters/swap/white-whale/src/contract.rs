@@ -122,7 +122,7 @@ pub fn execute(
         )?),
         ExecuteMsg::WhiteWhalePoolSwap { operation } => {
             execute_white_whale_pool_swap(deps, env, info, operation)
-        },
+        }
         _ => {
             unimplemented!()
         }
