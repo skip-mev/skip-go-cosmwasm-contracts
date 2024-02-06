@@ -1,0 +1,29 @@
+[info]
+chain_id = "injective-1"
+network = "mainnet"
+deploy_date = "19/01/2024 04:30:20"
+commit_hash = "83a503313985b44344b6b291dfcc627a952c862a"
+salt = "1"
+
+[checksums]
+"skip_api_entry_point-aarch64.wasm" = "cfc300d1cd1eadcb77fe816b0faeb3b231aa8268acfce760a67e33cdb0487fa1"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "f4f1e590c8be0c0517247dcd456ebf9a59b7dc7160d67c2e3c2ac0012cf49d33"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "e010c12ccfe7d3c04c99dccbdef31d33ae1f456358a2af98780ae5081adca8ba"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "6c3119057250f464f03c03f11f9c2c9f1dcc55285e342b60f85843014d2fcc07"
+"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "45255085f5b26cab6813a7bcc259493cbcac05e0dfd660f630a17bed3be6fe76"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "c1db07e302da68606e2dd7890a5328d0dfb336e5da870debb364b0f65eb0a314"
+
+[code-ids]
+ibc_transfer_adapter_contract_code_id = 348
+swap_adapter_injective-astroport_contract_code_id = 349
+entry_point_contract_code_id = 347
+
+[contract-addresses]
+ibc_transfer_adapter_contract_address = "inj1q9m3flmg65ckzklyw49gutn0xtrflm350uylu9"
+swap_adapter_injective-astroport_contract_address = "inj1ymaqs50g98uz37wvuxarw8ryumr9kvrpww4az0"
+entry_point_contract_address = "inj1q0cr3tkhufq8dyehgw4rq8gtpsl0r0f6tdyh6h"
+
+[tx-hashes]
+instantiate_ibc_transfer_adapter_tx_hash = "5C35542107391031A82F9D0B3EBF4CAD93530F0CBDC1ED71AF14DA26F093BB91"
+instantiate_swap_adapter_injective-astroport_tx_hash = "4F7C8AFD04379E9261ED879488732D3F2168796CD32C5D160A829143726D6C1C"
+instantiate_entry_point_tx_hash = "E7D28E1F85F34B587F478045C3CF042CCBEC332C5CB1D17BC25E97BA64F52AEB"
