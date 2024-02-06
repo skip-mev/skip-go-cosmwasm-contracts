@@ -1,0 +1,38 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+# Admin address to execute migrations from
+ADMIN_ADDRESS = "<ADMIN ADDRESS HERE>"
+
+MAINNET_REST_URL = "https://sentry.lcd.injective.network:443"
+MAINNET_RPC_URL = "	https://sentry.tm.injective.network:443/"
+MAINNET_CHAIN_ID = "injective-1"
+
+TESTNET_REST_URL = "https://testnet.sentry.lcd.injective.network:443"
+TESTNET_RPC_URL = "https://testnet.sentry.tm.injective.network:443/"
+TESTNET_CHAIN_ID = "injective-888"
+
+ADDRESS_PREFIX = "inj"
+DENOM = "inj"
+GAS_PRICE = 0.015
+
+# Contract Code IDs
+ENTRY_POINT_CODE_ID = "<ENTRY POINT CODE ID AS INT>"
+IBC_TRANSFER_CODE_ID = "<IBC TRANSFER ADAPTER CODE ID AS INT>"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+[[swap_venues]]
+name = "injective-astroport"
+code_id = "<ASTROPORT SWAP ADAPTER CODE ID AS INT>"
+
+# [[testnet_swap_venues]]
+# name = "testnet-injective-astroport"
+# code_id = "<ASTROPORT SWAP ADAPTER CODE ID AS INT>"

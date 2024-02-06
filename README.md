@@ -187,6 +187,11 @@ To deploy the Skip Swap contracts, the steps are as follows:
     python deploy.py osmosis testnet
     ```
 
+    Note: If deploying injective, must run this command instead:
+    ``` bash
+    python deploy_injective.py injective mainnet
+    ```
+
 11. After running the deploy script, a toml file will be added/updated in the deployed-contracts/{CHAIN} folder with all relevant info for the deployment.
 
 # About Skip

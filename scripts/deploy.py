@@ -27,6 +27,11 @@ CHAIN = sys.argv[1]
 NETWORK = sys.argv[2]
 DEPLOYED_CONTRACTS_FOLDER_PATH = "../deployed-contracts"
 
+if CHAIN == "injective":
+    raise Exception(
+        "Injective is not supported in deploy.py. Use deploy_injective.py instead."
+    )
+
 # Match the CHAIN to the file name in the configs folder
 found_config = False
 for file in os.listdir("configs"):
