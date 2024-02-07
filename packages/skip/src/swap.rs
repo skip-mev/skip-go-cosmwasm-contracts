@@ -15,9 +15,11 @@ use osmosis_std::types::osmosis::poolmanager::v1beta1::{
 /// MIGRATE ///
 ///////////////
 
-// The MigrateMsg struct defines the migration parameters for the entry point contract.
+// The MigrateMsg struct defines the migration parameters used.
 #[cw_serde]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub entry_point_contract_address: String,
+}
 
 ///////////////////
 /// INSTANTIATE ///
