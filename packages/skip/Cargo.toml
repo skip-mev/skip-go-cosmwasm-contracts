@@ -25,3 +25,4 @@ ibc-proto           = { workspace = true }
 neutron-proto       = { workspace = true }
 osmosis-std         = { workspace = true }
 thiserror           = { workspace = true }
+white-whale-std     = { workspace = true }

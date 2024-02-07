@@ -867,6 +867,7 @@ version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b65f4a8ec18723a734e5dc09c173e0abf9690432da5340285d536edcb4dac190"
 dependencies = [
+ "bytes",
  "once_cell",
  "protobuf-support",
  "thiserror",
@@ -1097,6 +1098,7 @@ dependencies = [
  "neutron-proto",
  "osmosis-std",
  "thiserror",
+ "white-whale-std",
 ]
 
 [[package]]
@@ -1192,6 +1194,22 @@ dependencies = [
  "skip",
  "test-case",
  "thiserror",
+]
+
+[[package]]
+name = "skip-api-swap-adapter-white-whale"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "skip",
+ "test-case",
+ "thiserror",
+ "white-whale-std",
 ]
 
 [[package]]
@@ -1430,6 +1448,25 @@ name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
+
+[[package]]
+name = "white-whale-std"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e8a9b86670af680cc07207c24cd2b380e2b185cd489907576ec21f11d0694bd"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "osmosis-std-derive",
+ "prost 0.11.9",
+ "prost-types 0.11.9",
+ "protobuf",
+ "schemars",
+ "serde",
+ "uint",
+]
 
 [[package]]
 name = "zeroize"
