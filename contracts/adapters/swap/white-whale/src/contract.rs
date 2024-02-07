@@ -506,7 +506,12 @@ fn calculate_spot_price_from_simulation_responses(
         (asset_in, Decimal::one()),
         |(asset_out, curr_spot_price), (op, res)| -> Result<_, ContractError> {
             // Calculate the amount out without slippage
-            let amount_out_without_slippage = res.return_amount.checked_add(res.spread_amount)?;
+            let amount_out_without_slippage = res
+                .return_amount
+                .checked_add(res.spread_amount)?
+                .checked_add(res.swap_fee_amount)?
+                .checked_add(res.protocol_fee_amount)?
+                .checked_add(res.burn_fee_amount)?;
 
             Ok((
                 Asset::new(deps.api, &op.denom_out, res.return_amount),
@@ -535,8 +540,12 @@ fn calculate_spot_price_from_reverse_simulation_responses(
         .try_fold(
             (asset_out, Decimal::one()),
             |(asset_in_needed, curr_spot_price), (op, res)| -> Result<_, ContractError> {
-                let amount_out_without_slippage =
-                    asset_in_needed.amount().checked_add(res.spread_amount)?;
+                let amount_out_without_slippage = asset_in_needed
+                    .amount()
+                    .checked_add(res.spread_amount)?
+                    .checked_add(res.swap_fee_amount)?
+                    .checked_add(res.protocol_fee_amount)?
+                    .checked_add(res.burn_fee_amount)?;
 
                 Ok((
                     Asset::new(
