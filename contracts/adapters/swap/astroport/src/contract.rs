@@ -42,7 +42,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Resp
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
 
     Ok(Response::new()
-        .add_attribute("action", "instantiate")
+        .add_attribute("action", "migrate")
         .add_attribute(
             "entry_point_contract_address",
             checked_entry_point_contract_address.to_string(),
