@@ -33,6 +33,14 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 name = "terra-astroport"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
 
+[[swap_venues]]
+name = "terra-white-whale"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_white_whale-aarch64.wasm"
+
 [[testnet_swap_venues]]
 name = "testnet-terra-astroport"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
+
+[[testnet_swap_venues]]
+name = "testnet-terra-white-whale"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_white_whale-aarch64.wasm"
