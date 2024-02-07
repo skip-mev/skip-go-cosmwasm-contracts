@@ -1,0 +1,33 @@
+[info]
+chain_id = "migaloo-1"
+network = "mainnet"
+deploy_date = "07/02/2024 03:02:35"
+commit_hash = "4380bb02f6dc3da3ab72d94b44e9c76f01950b55"
+salt = "1"
+
+[checksums]
+"skip_api_entry_point-aarch64.wasm" = "55e08a09d7ddcb48b46ebce800e2e5e422cee52c57644797faa126c1799f3770"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "f82e3d0b9d39dc2562f464d7fdd8aaa4d8ef98d09103da6ae010e69151fc2e71"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "3ab70b82dab7396e2b888cabbf0677ba8dbe98234172ad8941125a545b5c7d1d"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "23767e1f23d75725a127691dcc71b99d48141bcbeaba6d5337dd4ef52edb8f1c"
+"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "aaeb207b5ef2203268fd941ca226b18315b21a9907bc61468dd5da282a0ac2be"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "894bcde80cdd2cc5d58aa37ab67d3ad7412d465a811bbb380830a31d070085e2"
+"skip_api_swap_adapter_white_whale-aarch64.wasm" = "fb5beae3f51651aae754a4e2f4d395215a54fa57a688f7a4352a34cdce1d3b86"
+
+[code-ids]
+ibc_transfer_adapter_contract_code_id = "389"
+swap_adapter_migaloo-white-whale_contract_code_id = "390"
+entry_point_contract_code_id = "391"
+
+[contract-addresses]
+ibc_transfer_adapter_contract_address = "migaloo1wq9rrqs9q7t6ey3rlsj2g4d3cqa223dasuwcxvuz7kvhj4lu007s5crmt5"
+swap_adapter_migaloo-white-whale_contract_address = "migaloo1ympk5zghdcv8ezu0py4t9j6hzzdmwa2jgfukhe9rvdvcj2l2whpqvkrp0d"
+entry_point_contract_address = "migaloo16sd7av05u7tx5wlg23cvyx96mxa3w0ejp90mgfes8vcfgfeldp4qwsan73"
+
+[tx-hashes]
+store_ibc_transfer_adapter_tx_hash = "86500f6ee1383a8bcaf3d8efa327c4978c55f2504211a25ab3f7fc45596ed877"
+instantiate_ibc_transfer_adapter_tx_hash = "a6b3a9253c5dd42a1e2bebe054bd5adc0d0d8b3e37d68efab7be6831e695ef06"
+store_swap_adapter_migaloo-white-whale_tx_hash = "d6f56bab186c765591c1f2d6a01d65ca1745c206814cff6f52c9ec38bcf52069"
+instantiate_swap_adapter_migaloo-white-whale_tx_hash = "fa2195afa959b533aa75b845ccd5daa22ef812b4e65c884f139bcb0f4368d1dc"
+store_entry_point_tx_hash = "ec922da52e681e30d423a363522bb724551a9fa25fa079c44b4b084991a5baa9"
+instantiate_entry_point_tx_hash = "aa50a06e39b57b45e0aef6f5a0fdb846b69f988cac27049fcd4e5f1d61256072"
