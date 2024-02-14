@@ -12,7 +12,7 @@ use skip_api_swap_adapter_white_whale::error::{ContractError, ContractResult};
 use test_case::test_case;
 use white_whale_std::pool_network::{
     asset::{Asset as WhiteWhaleAsset, AssetInfo},
-    pair::ExecuteMsg as WhiteWhalePairExecuteMsg,
+    pair::{Cw20HookMsg as WhiteWhalePairCw20HookMsg, ExecuteMsg as WhiteWhalePairExecuteMsg},
 };
 
 /*
@@ -88,13 +88,7 @@ struct Params {
                 msg: to_json_binary(&Cw20ExecuteMsg::Send {
                     contract: "pool_1".to_string(),
                     amount: Uint128::from(100u128),
-                    msg: to_json_binary(&WhiteWhalePairExecuteMsg::Swap {
-                        offer_asset: WhiteWhaleAsset {
-                            info: AssetInfo::Token {
-                                contract_addr: "neutron123".into(),
-                            },
-                            amount: Uint128::new(100),
-                        },
+                    msg: to_json_binary(&WhiteWhalePairCw20HookMsg::Swap {
                         belief_price: None,
                         max_spread: Some(Decimal::percent(50)),
                         to: None,

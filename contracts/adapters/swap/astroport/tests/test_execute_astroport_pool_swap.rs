@@ -2,7 +2,7 @@ use std::vec;
 
 use astroport::{
     asset::{Asset as AstroportAsset, AssetInfo},
-    pair::{ExecuteMsg as AstroportPairExecuteMsg, Cw20HookMsg as AstroportPairCw20HookMsg},
+    pair::{Cw20HookMsg as AstroportPairCw20HookMsg, ExecuteMsg as AstroportPairExecuteMsg},
 };
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
