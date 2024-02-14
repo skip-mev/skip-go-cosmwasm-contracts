@@ -1,0 +1,33 @@
+[info]
+chain_id = "chihuahua-1"
+network = "mainnet"
+deploy_date = "07/02/2024 03:14:34"
+commit_hash = "4380bb02f6dc3da3ab72d94b44e9c76f01950b55"
+salt = "1"
+
+[checksums]
+"skip_api_entry_point-aarch64.wasm" = "55e08a09d7ddcb48b46ebce800e2e5e422cee52c57644797faa126c1799f3770"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "f82e3d0b9d39dc2562f464d7fdd8aaa4d8ef98d09103da6ae010e69151fc2e71"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "3ab70b82dab7396e2b888cabbf0677ba8dbe98234172ad8941125a545b5c7d1d"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "23767e1f23d75725a127691dcc71b99d48141bcbeaba6d5337dd4ef52edb8f1c"
+"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "aaeb207b5ef2203268fd941ca226b18315b21a9907bc61468dd5da282a0ac2be"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "894bcde80cdd2cc5d58aa37ab67d3ad7412d465a811bbb380830a31d070085e2"
+"skip_api_swap_adapter_white_whale-aarch64.wasm" = "fb5beae3f51651aae754a4e2f4d395215a54fa57a688f7a4352a34cdce1d3b86"
+
+[code-ids]
+ibc_transfer_adapter_contract_code_id = "517"
+swap_adapter_chihuahua-white-whale_contract_code_id = "518"
+entry_point_contract_code_id = "519"
+
+[contract-addresses]
+ibc_transfer_adapter_contract_address = "chihuahua19tn6flcfh8572paph5ddetsade286c85yxrra7w7haxtacqcnarqvd2tm6"
+swap_adapter_chihuahua-white-whale_contract_address = "chihuahua1gd7ddyrjnpp840ay3mfum90qzndzyt8033ax8jd67m34dcja580smqsm22"
+entry_point_contract_address = "chihuahua16sd7av05u7tx5wlg23cvyx96mxa3w0ejp90mgfes8vcfgfeldp4qv2n48h"
+
+[tx-hashes]
+store_ibc_transfer_adapter_tx_hash = "aeef498fee0579c5de29f8c6f0aae1c27490bf01a5b0d979a72ab852b8b59ac4"
+instantiate_ibc_transfer_adapter_tx_hash = "b3775934335c63e4c2781e219234eaec26ee92610c5411349c8bd3ae36925964"
+store_swap_adapter_chihuahua-white-whale_tx_hash = "69e08cd9cf56f7b6f5d6ed057eaa4396490b14346d165e7fab48e7f8ebf928f4"
+instantiate_swap_adapter_chihuahua-white-whale_tx_hash = "45684a4a3485f4140881ab057970ce32bf718fb5698e464a153a768c5c8f1ca3"
+store_entry_point_tx_hash = "e6dd87110b44d6a6759a2b1325a4aa6f4240f80a5dbf7c24f686af6db6f7c98a"
+instantiate_entry_point_tx_hash = "f8db286d50c052c4d5481fbad4b05fc1302a7ce231a124d991788267de8a6736"
