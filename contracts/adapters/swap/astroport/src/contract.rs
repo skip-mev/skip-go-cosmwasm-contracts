@@ -21,22 +21,37 @@ use skip::{
     },
 };
 
+// Contract name and version used for migration.
+const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 ///////////////
 /// MIGRATE ///
 ///////////////
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Response> {
-    unimplemented!()
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Response> {
+    // Set contract version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // Validate entry point contract address
+    let checked_entry_point_contract_address =
+        deps.api.addr_validate(&msg.entry_point_contract_address)?;
+
+    // Store the entry point contract address
+    ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "migrate")
+        .add_attribute(
+            "entry_point_contract_address",
+            checked_entry_point_contract_address.to_string(),
+        ))
 }
 
 ///////////////////
 /// INSTANTIATE ///
 ///////////////////
-
-// Contract name and version used for migration.
-const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

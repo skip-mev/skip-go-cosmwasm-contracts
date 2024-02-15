@@ -1151,6 +1151,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "skip-api-placeholder"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-std",
+ "cw2 1.1.2",
+]
+
+[[package]]
 name = "skip-api-swap-adapter-astroport"
 version = "0.3.0"
 dependencies = [

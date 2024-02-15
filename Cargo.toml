@@ -4,6 +4,7 @@ members  = [
   "contracts/entry-point",
   "contracts/adapters/ibc/*",
   "contracts/adapters/swap/*",
+  "contracts/placeholder",
   "packages/*",
 ]
 
