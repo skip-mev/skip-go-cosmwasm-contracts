@@ -3,8 +3,8 @@ use crate::{
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use astroport::pair::{
-    ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, ReverseSimulationResponse,
-    SimulationResponse, MAX_ALLOWED_SLIPPAGE,
+    Cw20HookMsg as PairCw20HookMsg, ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg,
+    ReverseSimulationResponse, SimulationResponse, MAX_ALLOWED_SLIPPAGE,
 };
 use cosmwasm_std::{
     entry_point, from_json, to_json_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
@@ -209,20 +209,25 @@ fn execute_astroport_pool_swap(
         return Err(ContractError::NoOfferAssetAmount);
     }
 
-    // Create the astroport pool swap message args
-    let astroport_pool_swap_msg_args = PairExecuteMsg::Swap {
-        offer_asset: offer_asset.into_astroport_asset(deps.api)?,
-        ask_asset_info: None,
-        belief_price: None,
-        max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
-        to: None,
+    // Create the astroport pool swap msg depending on the offer asset type
+    let msg = match offer_asset {
+        Asset::Native(_) => to_json_binary(&PairExecuteMsg::Swap {
+            offer_asset: offer_asset.into_astroport_asset(deps.api)?,
+            ask_asset_info: None,
+            belief_price: None,
+            max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
+            to: None,
+        })?,
+        Asset::Cw20(_) => to_json_binary(&PairCw20HookMsg::Swap {
+            ask_asset_info: None,
+            belief_price: None,
+            max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
+            to: None,
+        })?,
     };
 
     // Create the wasm astroport pool swap message
-    let swap_msg = offer_asset.into_wasm_msg(
-        operation.pool,
-        to_json_binary(&astroport_pool_swap_msg_args)?,
-    )?;
+    let swap_msg = offer_asset.into_wasm_msg(operation.pool, msg)?;
 
     Ok(Response::new()
         .add_message(swap_msg)

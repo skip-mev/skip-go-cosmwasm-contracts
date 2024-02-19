@@ -18,8 +18,8 @@ use skip::{
 };
 use white_whale_std::pool_network::{
     pair::{
-        ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg, ReverseSimulationResponse,
-        SimulationResponse,
+        Cw20HookMsg as PairCw20HookMsg, ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg,
+        ReverseSimulationResponse, SimulationResponse,
     },
     swap::MAX_ALLOWED_SLIPPAGE,
 };
@@ -197,19 +197,23 @@ fn execute_white_whale_pool_swap(
         return Err(ContractError::NoOfferAssetAmount);
     }
 
-    // Create the white whale pool swap message args
-    let white_whale_pool_swap_msg_args = PairExecuteMsg::Swap {
-        offer_asset: offer_asset.into_white_whale_asset(deps.api)?,
-        belief_price: None,
-        max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
-        to: None,
+    // Create the whitewhale pool swap msg depending on the offer asset type
+    let msg = match offer_asset {
+        Asset::Native(_) => to_json_binary(&PairExecuteMsg::Swap {
+            offer_asset: offer_asset.into_white_whale_asset(deps.api)?,
+            belief_price: None,
+            max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
+            to: None,
+        })?,
+        Asset::Cw20(_) => to_json_binary(&PairCw20HookMsg::Swap {
+            belief_price: None,
+            max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
+            to: None,
+        })?,
     };
 
     // Create the wasm white whale pool swap message
-    let swap_msg = offer_asset.into_wasm_msg(
-        operation.pool,
-        to_json_binary(&white_whale_pool_swap_msg_args)?,
-    )?;
+    let swap_msg = offer_asset.into_wasm_msg(operation.pool, msg)?;
 
     Ok(Response::new()
         .add_message(swap_msg)

@@ -2,7 +2,7 @@ use std::vec;
 
 use astroport::{
     asset::{Asset as AstroportAsset, AssetInfo},
-    pair::ExecuteMsg as AstroportPairExecuteMsg,
+    pair::{Cw20HookMsg as AstroportPairCw20HookMsg, ExecuteMsg as AstroportPairExecuteMsg},
 };
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
@@ -89,13 +89,7 @@ struct Params {
                 msg: to_json_binary(&Cw20ExecuteMsg::Send {
                     contract: "pool_1".to_string(),
                     amount: Uint128::from(100u128),
-                    msg: to_json_binary(&AstroportPairExecuteMsg::Swap {
-                        offer_asset: AstroportAsset {
-                            info: AssetInfo::Token {
-                                contract_addr: Addr::unchecked("neutron123"),
-                            },
-                            amount: Uint128::new(100),
-                        },
+                    msg: to_json_binary(&AstroportPairCw20HookMsg::Swap {
                         ask_asset_info: None,
                         belief_price: None,
                         max_spread: Some(Decimal::percent(50)),
