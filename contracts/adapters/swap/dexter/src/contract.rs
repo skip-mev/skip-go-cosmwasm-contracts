@@ -1,19 +1,20 @@
+use std::str::FromStr;
+
 use crate::{
     error::{ContractError, ContractResult},
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use dexter::{
-    pool, router::{HopSwapRequest, ExecuteMsg as RouterExecuteMsg, QueryMsg as RouterQueryMsg}, vault::{SingleSwapRequest, ExecuteMsg as VaultExecuteMsg, QueryMsg as VaultQueryMsg}
+    pool::{self, ResponseType, SpotPrice}, router::{ExecuteMsg as RouterExecuteMsg, HopSwapRequest, QueryMsg as RouterQueryMsg}, vault::{PoolInfoResponse, QueryMsg as VaultQueryMsg}
 };
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
-    Response, Uint128, WasmMsg,
+    entry_point, from_json, to_json_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg
 };
 use cw2::set_contract_version;
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 use skip::{
-    asset::{get_current_asset_available, Asset},
+    asset::Asset,
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
@@ -142,7 +143,7 @@ fn execute_swap(
     let coin_in = one_coin(&info)?;
 
     // Create a response object to return
-    let mut response: Response = Response::new().add_attribute("action", "execute_swap");
+    let response: Response = Response::new().add_attribute("action", "execute_swap");
 
     let mut hop_swap_requests = vec![];
     // Add an astroport pool swap message to the response for each swap operation
@@ -154,8 +155,8 @@ fn execute_swap(
 
         hop_swap_requests.push(HopSwapRequest {
             pool_id: pool_id_u128,
-            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out),
+            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
             max_spread: Some(Decimal::from_ratio(Uint128::from(5u64), Uint128::from(100u64))),
             belief_price: None
         });
@@ -167,6 +168,12 @@ fn execute_swap(
         offer_amount: coin_in.amount,
         // doing this since we would validate it anyway in the entrypoint contract from where swap adapter is called
         minimum_receive: None,
+    };
+
+    let dexter_router_wasm_msg = WasmMsg::Execute {
+        contract_addr: DEXTER_ROUTER_ADDRESS.to_string(),
+        msg: to_json_binary(&dexter_router_msg)?,
+        funds: vec![coin_in],
     };
 
     let return_denom = match operations.last() {
@@ -185,6 +192,7 @@ fn execute_swap(
     };
 
     Ok(response
+        .add_message(dexter_router_wasm_msg)
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swaps_and_transfer_back"))
 }
@@ -248,7 +256,7 @@ fn query_simulate_swap_exact_asset_in(
         return Err(ContractError::CoinInDenomMismatch);
     }
 
-    let (asset_out, _) = simulate_swap_exact_asset_in(deps, asset_in, swap_operations, false)?;
+    let asset_out = simulate_swap_exact_asset_in(deps, asset_in, swap_operations)?;
 
     // Return the asset out
     Ok(asset_out)
@@ -270,7 +278,7 @@ fn query_simulate_swap_exact_asset_out(
         return Err(ContractError::CoinOutDenomMismatch);
     }
 
-    let (asset_in, _) = simulate_swap_exact_asset_out(deps, asset_out, swap_operations, false)?;
+    let asset_in = simulate_swap_exact_asset_out(deps, asset_out, swap_operations)?;
 
     // Return the asset in needed
     Ok(asset_in)
@@ -293,18 +301,11 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
         return Err(ContractError::CoinInDenomMismatch);
     }
 
-    // Determine if we should request the simulation responses from simulate_swap_exact_asset_in
-    let mut include_sim_resps = false;
-    if include_spot_price {
-        include_sim_resps = true;
-    }
-
     // Simulate the swap exact amount in
-    let (asset_out, sim_resps) = simulate_swap_exact_asset_in(
+    let asset_out = simulate_swap_exact_asset_in(
         deps,
         asset_in.clone(),
         swap_operations.clone(),
-        include_sim_resps,
     )?;
 
     // Create the response
@@ -315,12 +316,8 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
 
     // Include the spot price in the response if requested
     if include_spot_price {
-        response.spot_price = Some(calculate_spot_price_from_simulation_responses(
-            deps,
-            asset_in,
-            swap_operations,
-            sim_resps,
-        )?)
+        let spot_price = calculate_spot_price(deps, swap_operations)?;
+        response.spot_price = Some(spot_price);
     }
 
     Ok(response)
@@ -343,18 +340,11 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
         return Err(ContractError::CoinOutDenomMismatch);
     }
 
-    // Determine if we should request the simulation responses from simulate_swap_exact_asset_out
-    let mut include_sim_resps = false;
-    if include_spot_price {
-        include_sim_resps = true;
-    }
-
     // Simulate the swap exact amount out
-    let (asset_in, sim_resps) = simulate_swap_exact_asset_out(
+    let asset_in = simulate_swap_exact_asset_out(
         deps,
         asset_out.clone(),
-        swap_operations.clone(),
-        include_sim_resps,
+        swap_operations.clone()
     )?;
 
     // Create the response
@@ -365,168 +355,138 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
 
     // Include the spot price in the response if requested
     if include_spot_price {
-        response.spot_price = Some(calculate_spot_price_from_reverse_simulation_responses(
-            deps,
-            asset_out,
-            swap_operations,
-            sim_resps,
-        )?)
+        let spot_price = calculate_spot_price(deps, swap_operations)?;
+        response.spot_price = Some(spot_price);
     }
 
     Ok(response)
-}
-
-fn assert_max_spread(return_amount: Uint128, spread_amount: Uint128) -> ContractResult<()> {
-    // let max_spread = MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?;
-    // if Decimal::from_ratio(spread_amount, return_amount + spread_amount) > max_spread {
-    //     return Err(ContractError::MaxSpreadAssertion {});
-    // }
-    Ok(())
 }
 
 // Simulates a swap exact amount in request, returning the asset out and optionally the reverse simulation responses
 fn simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
-    swap_operations: Vec<SwapOperation>,
-    include_responses: bool,
-) -> ContractResult<(Asset, Vec<SimulationResponse>)> {
-    let (asset_out, responses) = swap_operations.iter().try_fold(
-        (asset_in, Vec::new()),
-        |(asset_out, mut responses), operation| -> Result<_, ContractError> {
-            // Get the astroport offer asset type
-            let astroport_offer_asset = asset_out.into_astroport_asset(deps.api)?;
+    swap_operations: Vec<SwapOperation>
+) -> ContractResult<Asset> {
+    let mut  hop_swap_requests: Vec<HopSwapRequest> = vec![];
+    for operation in &swap_operations {
 
-            // Query the astroport pool contract to get the simulation response
-            let res: SimulationResponse = deps.querier.query_wasm_smart(
-                &operation.pool,
-                &PairQueryMsg::Simulation {
-                    offer_asset: astroport_offer_asset,
-                    ask_asset_info: None,
-                },
-            )?;
+        let pool_id: u64 = operation.pool.parse().unwrap();
+        let pool_id_u128 = Uint128::from(pool_id);
+        
+        hop_swap_requests.push(HopSwapRequest {
+            pool_id: pool_id_u128,
+            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
+            max_spread: Some(Decimal::from_ratio(Uint128::from(5u64), Uint128::from(100u64))),
+            belief_price: None
+        });
+    }
 
-            // Assert the operation does not exceed the max spread limit
-            assert_max_spread(res.return_amount, res.spread_amount)?;
+    let dexter_router_query = RouterQueryMsg::SimulateMultihopSwap { 
+        multiswap_request: hop_swap_requests, 
+        swap_type: dexter::vault::SwapType::GiveIn {}, 
+        amount: asset_in.amount() 
+    };
 
-            if include_responses {
-                responses.push(res.clone());
-            }
-
-            Ok((
-                Asset::new(deps.api, &operation.denom_out, res.return_amount),
-                responses,
-            ))
-        },
+    let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps.querier.query_wasm_smart(
+        DEXTER_ROUTER_ADDRESS,
+        &dexter_router_query,
     )?;
 
-    Ok((asset_out, responses))
+    if let ResponseType::Success {} = dexter_router_response.response {
+        // Get the asset out
+        let last_response = dexter_router_response.swap_operations.last().unwrap();
+
+        let asset_out = Asset::Native(Coin {
+            denom: last_response.asset_out.to_string(),
+            amount: last_response.received_amount,
+        });
+
+        // Return the asset out and optionally the simulation responses
+        return Ok(asset_out);
+    } else {
+        // TODO: Fix this
+        return Err(ContractError::SwapOperationsEmpty);
+    }
 }
 
 // Simulates a swap exact amount out request, returning the asset in needed and optionally the reverse simulation responses
 fn simulate_swap_exact_asset_out(
     deps: Deps,
     asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
-    include_responses: bool,
-) -> ContractResult<(Asset, Vec<ReverseSimulationResponse>)> {
-    let (asset_in, responses) = swap_operations.iter().rev().try_fold(
-        (asset_out, Vec::new()),
-        |(asset_in_needed, mut responses), operation| -> Result<_, ContractError> {
-            // Get the astroport ask asset type
-            let astroport_ask_asset = asset_in_needed.into_astroport_asset(deps.api)?;
+    swap_operations: Vec<SwapOperation>
+) -> ContractResult<Asset> {
 
-            // Query the astroport pool contract to get the reverse simulation response
-            let res: ReverseSimulationResponse = deps.querier.query_wasm_smart(
-                &operation.pool,
-                &PairQueryMsg::ReverseSimulation {
-                    offer_asset_info: None,
-                    ask_asset: astroport_ask_asset,
-                },
-            )?;
+    let mut  hop_swap_requests: Vec<HopSwapRequest> = vec![];
+    for operation in &swap_operations {
 
-            // Assert the operation does not exceed the max spread limit
-            assert_max_spread(res.offer_amount, res.spread_amount)?;
+        let pool_id: u64 = operation.pool.parse().unwrap();
+        let pool_id_u128 = Uint128::from(pool_id);
+        
+        hop_swap_requests.push(HopSwapRequest {
+            pool_id: pool_id_u128,
+            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
+            max_spread: Some(Decimal::from_ratio(Uint128::from(5u64), Uint128::from(100u64))),
+            belief_price: None
+        });
+    }
 
-            if include_responses {
-                responses.push(res.clone());
-            }
+    let dexter_router_query = RouterQueryMsg::SimulateMultihopSwap { 
+        multiswap_request: hop_swap_requests, 
+        swap_type: dexter::vault::SwapType::GiveOut {}, 
+        amount: asset_out.amount()
+    };
 
-            Ok((
-                Asset::new(
-                    deps.api,
-                    &operation.denom_in,
-                    res.offer_amount.checked_add(Uint128::one())?,
-                ),
-                responses,
-            ))
-        },
+    let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps.querier.query_wasm_smart(
+        DEXTER_ROUTER_ADDRESS,
+        &dexter_router_query,
     )?;
 
-    Ok((asset_in, responses))
+    if let ResponseType::Success {} = dexter_router_response.response {
+        // Get the asset out
+        let first_response = dexter_router_response.swap_operations.first().unwrap();
+
+        let asset_in = Asset::Native(Coin {
+            denom: first_response.asset_in.to_string(),
+            amount: first_response.offered_amount,
+        });
+
+        // Return the asset out and optionally the simulation responses
+        return Ok(asset_in);
+    } else {
+        // TODO: Fix this
+        return Err(ContractError::SwapOperationsEmpty);
+    }
 }
 
-// Calculate the spot price using simulation responses
-fn calculate_spot_price_from_simulation_responses(
+// find spot prices for all the pools in the swap operations
+fn calculate_spot_price(
     deps: Deps,
-    asset_in: Asset,
-    swap_operations: Vec<SwapOperation>,
-    simulation_responses: Vec<SimulationResponse>,
+    swap_operations: Vec<SwapOperation>
 ) -> ContractResult<Decimal> {
-    let (_, spot_price) = swap_operations.iter().zip(simulation_responses).try_fold(
-        (asset_in, Decimal::one()),
-        |(asset_out, curr_spot_price), (op, res)| -> Result<_, ContractError> {
-            // Calculate the amount out without slippage
-            let amount_out_without_slippage = res
-                .return_amount
-                .checked_add(res.spread_amount)?
-                .checked_add(res.commission_amount)?;
 
-            Ok((
-                Asset::new(deps.api, &op.denom_out, res.return_amount),
-                curr_spot_price.checked_mul(Decimal::from_ratio(
-                    amount_out_without_slippage,
-                    asset_out.amount(),
-                ))?,
-            ))
-        },
-    )?;
+    let mut final_price = Decimal::one();
+    for operation in &swap_operations {
+        let pool_id: u64 = operation.pool.parse().unwrap();
+        let pool_id_u128 = Uint128::from(pool_id);
 
-    Ok(spot_price)
-}
-
-// Calculates the spot price using reverse simulaation responses
-fn calculate_spot_price_from_reverse_simulation_responses(
-    deps: Deps,
-    asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
-    reverse_simulation_responses: Vec<ReverseSimulationResponse>,
-) -> ContractResult<Decimal> {
-    let (_, spot_price) = swap_operations
-        .iter()
-        .rev()
-        .zip(reverse_simulation_responses)
-        .try_fold(
-            (asset_out, Decimal::one()),
-            |(asset_in_needed, curr_spot_price), (op, res)| -> Result<_, ContractError> {
-                let amount_out_without_slippage = asset_in_needed
-                    .amount()
-                    .checked_add(res.spread_amount)?
-                    .checked_add(res.commission_amount)?;
-
-                Ok((
-                    Asset::new(
-                        deps.api,
-                        &op.denom_in,
-                        res.offer_amount.checked_add(Uint128::one())?,
-                    ),
-                    curr_spot_price.checked_mul(Decimal::from_ratio(
-                        amount_out_without_slippage,
-                        res.offer_amount,
-                    ))?,
-                ))
-            },
+        let pool_info: PoolInfoResponse =  deps.querier.query_wasm_smart(
+            DEXTER_VAULT_ADDRESS,
+            &VaultQueryMsg::GetPoolById { pool_id: pool_id_u128 },
         )?;
 
-    Ok(spot_price)
+        let spot_price: SpotPrice = deps.querier.query_wasm_smart(
+            pool_info.pool_addr,
+            &pool::QueryMsg::SpotPrice { 
+                offer_asset: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+                ask_asset: dexter::asset::AssetInfo::native_token(operation.denom_out.clone())
+            }
+        )?;
+
+        final_price = final_price.checked_mul(Decimal::from_str(&spot_price.price_including_fee.to_string()).unwrap()).unwrap();
+    }
+
+    Ok(final_price)
 }

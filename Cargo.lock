@@ -420,9 +420,9 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fe817d840ade14e63d64617f24523243614908b6e840afda8a034c297f284ca"
+checksum = "d9f38b0dc629470b735cdff460ed1286a76200fc910d4780682662290194e745"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
