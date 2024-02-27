@@ -35,4 +35,7 @@ pub enum ContractError {
 
     #[error("Contract has no balance of offer asset")]
     NoOfferAssetAmount,
+
+    #[error("Pool ID cannot be parsed from the given string")]
+    PoolIdParseError,
 }

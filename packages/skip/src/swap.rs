@@ -29,7 +29,14 @@ pub struct MigrateMsg {
 // Osmosis Poolmanager and Astroport swap adapter contracts.
 #[cw_serde]
 pub struct InstantiateMsg {
+    pub entry_point_contract_address: String
+}
+
+#[cw_serde]
+pub struct DexterAdapterInstantiateMsg {
     pub entry_point_contract_address: String,
+    pub dexter_vault_contract_address: String,
+    pub dexter_router_contract_address: String,
 }
 
 #[cw_serde]

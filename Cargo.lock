@@ -1531,7 +1531,7 @@ dependencies = [
  "osmosis-std-derive",
  "prost 0.11.9",
  "prost-types 0.11.9",
- "protobuf",
+ "protobuf 3.3.0",
  "schemars",
  "serde",
  "uint",
