@@ -1,8 +1,8 @@
-# Neutron Astroport Swap Adapter Contract
+# Dexter Swap Adapter Contract
 
-The Neutron Astroport swap adapter contract is responsible for:
-1. Taking the standardized entry point swap operations message format and converting it to Astroport pool swaps message format.
-2. Swapping by dispatching swaps to Astroport pool contracts.
+The Dexter swap adapter contract is responsible for:
+1. Taking the standardized entry point swap operations message format and converting it to Dexter Router's swap operations.
+2. Swapping by dispatching the multi-hop swap operations to the Dexter Router contract.
 3. Providing query methods that can be called by the entry point contract (generally, to any external actor) to simulate multi-hop swaps that either specify an exact amount in (estimating how much would be received from the swap) or an exact amount out (estimating how much is required to get the specified amount out).
 
 Note: Swap adapter contracts expect to be called by an entry point contract that provides basic validation and minimum amount out safety guarantees for the caller. There are no slippage guarantees provided by swap adapter contracts.
@@ -11,11 +11,13 @@ WARNING: Do not send funds directly to the contract without calling one of its f
 
 ## InstantiateMsg
 
-Instantiates a new Neutron Astroport swap adapter contract using the Entrypoint contract address provided in the instantiation message.
+Instantiates a new Dexter swap adapter contract using the Entrypoint contract address provided in the instantiation message.
 
 ``` json
 {
-    "entry_point_contract_address": "neutron..."
+    "entry_point_contract_address": "persistence1....",
+    "dexter_vault_address": "persistence1....",
+    "dexter_router_address": "persistence1...."
 }
 ```
 
@@ -30,14 +32,14 @@ Swaps the coin sent using the operations provided.
     "swap": {
         "operations": [
             {
-                "pool": "neutron...",
-                "denom_in": "uatom",
-                "denom_out": "untrn"
+                "pool": "persistence...",
+                "denom_in": "uxprt",
+                "denom_out": "stk/uxprt"
             },
             {
-                "pool": "neutron...",
-                "denom_in": "untrn",
-                "denom_out": "uosmo"
+                "pool": "persistence...",
+                "denom_in": "stk/uxprt",
+                "denom_out": "stk/uatom"
             }
         ]
     }
@@ -53,7 +55,7 @@ Note: This function can be called by anyone as the contract is assumed to have n
 ``` json
 {
     "transfer_funds_back": {
-        "caller": "neutron..."
+        "caller": "persistence..."
     }
 }
 ```
@@ -69,14 +71,14 @@ Query:
 {
     "simulate_swap_exact_coin_out": {
         "coin_out": {
-            "denom": "untrn",
+            "denom": "uxprt",
             "amount": "200000"
         },
         "swap_operations": [
             {
-                "pool": "neutron...",
-                "denom_in": "uatom",
-                "denom_out": "untrn"
+                "pool": "persistence...",
+                "denom_in": "stk/uxprt",
+                "denom_out": "uxprt"
             }
         ]
     }
@@ -86,8 +88,8 @@ Query:
 Response:
 ``` json
 {
-    "denom": "uatom",
-    "amount": "100"
+    "denom": "stk/uxprt",
+    "amount": "190000"
 }
 ```
 
@@ -100,14 +102,14 @@ Query:
 {
     "simulate_swap_exact_coin_in": {
         "coin_in": {
-            "denom": "uatom",
-            "amount": "100"
+            "denom": "uxprt",
+            "amount": "2000000"
         },
         "swap_operations": [
             {
-                "pool": "neutron...",
-                "denom_in": "uatom",
-                "denom_out": "untrn"
+                "pool": "persistence...",
+                "denom_in": "uxprt",
+                "denom_out": "stk/uxprt"
             }
         ]
     }
@@ -117,7 +119,7 @@ Query:
 Response:
 ``` json
 {
-    "denom": "untrn",
-    "amount": "100000"
+    "denom": "stk/uxprt",
+    "amount": "1900000"
 }
 ```
