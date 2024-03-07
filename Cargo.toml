@@ -21,7 +21,12 @@ keywords      = ["cosmwasm"]
 
 [workspace.dependencies]
 astroport        = "2.9"
-dexter           = "1.2.0"
+dexter           = "1.3.0"
+dexter-vault     = "1.0.0"
+dexter-stable-pool   = "1.1.0"
+dexter-weighted-pool = "1.1.0"
+dexter-lp-token  = "1.0.0"
+dexter-router    = "1.0.0"
 cosmwasm-schema  = "1.5.0"
 cosmwasm-std     = { version = "1.5", features = ["stargate"] }
 cosmos-sdk-proto = { version = "0.19", default-features = false }
@@ -29,6 +34,7 @@ cw2              = "1.1"
 cw20             = "1.1"
 cw-storage-plus  = "1"
 cw-utils         = "1.0.3"
+cw-multi-test    = "0.20.0"
 ibc-proto        = { version = "0.32.1", default-features = false }
 lido-satellite   = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = ["library"] }
 neutron-proto    = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }

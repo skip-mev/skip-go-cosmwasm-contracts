@@ -375,7 +375,7 @@ fn simulate_swap_exact_asset_in(
     swap_operations: Vec<SwapOperation>
 ) -> ContractResult<Asset> {
 
-    let dexter_vault_address = DEXTER_VAULT_ADDRESS.load(deps.storage)?;
+    let dexter_router_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
 
     let mut  hop_swap_requests: Vec<HopSwapRequest> = vec![];
     for operation in &swap_operations {
@@ -399,7 +399,7 @@ fn simulate_swap_exact_asset_in(
     };
 
     let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps.querier.query_wasm_smart(
-        dexter_vault_address,
+        dexter_router_address,
         &dexter_router_query,
     )?;
 
