@@ -263,7 +263,6 @@ pub fn execute_transfer_funds_back(
     if info.sender != env.contract.address {
         return Err(SkipError::Unauthorized);
     }
-
     // Create the transfer funds back message
     let transfer_funds_back_msg: CosmosMsg = match deps.api.addr_validate(&return_denom) {
         Ok(contract_addr) => Asset::new(
