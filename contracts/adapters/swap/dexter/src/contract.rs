@@ -93,7 +93,8 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, operations),
+
+        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info,sent_asset.amount(), operations),
     }
 }
 
@@ -111,8 +112,13 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Swap { operations } => {
-            one_coin(&info)?;
-            execute_swap(deps, env, info, operations)
+            let coin = one_coin(&info)?;
+            // validate that the one coin is the same as the first swap operation's denom in
+            if coin.denom != operations.first().unwrap().denom_in {
+                return Err(ContractError::CoinInDenomMismatch);
+            }
+
+            execute_swap(deps, env, info, coin.amount, operations)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -134,6 +140,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    amount_in: Uint128,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
@@ -145,13 +152,11 @@ fn execute_swap(
         return Err(ContractError::Unauthorized);
     }
 
-    let coin_in = one_coin(&info)?;
-
     // Create a response object to return
     let response: Response = Response::new().add_attribute("action", "execute_swap");
 
     let mut hop_swap_requests = vec![];
-    // Add an astroport pool swap message to the response for each swap operation
+  
     for operation in &operations {
 
         let pool_id: u64 = operation.pool.parse()
@@ -171,15 +176,17 @@ fn execute_swap(
     let dexter_router_msg = RouterExecuteMsg::ExecuteMultihopSwap {
         requests: hop_swap_requests,
         recipient: None,
-        offer_amount: coin_in.amount,
+        offer_amount: amount_in,
         // doing this since we would validate it anyway in the entrypoint contract from where swap adapter is called
         minimum_receive: None,
     };
 
+    let denom_in = operations.first().unwrap().denom_in.clone();
+
     let dexter_router_wasm_msg = WasmMsg::Execute {
         contract_addr: dexter_router_contract_address.to_string(),
         msg: to_json_binary(&dexter_router_msg)?,
-        funds: vec![coin_in],
+        funds: vec![Coin { denom: denom_in, amount: amount_in }],
     };
 
     let return_denom = match operations.last() {
@@ -246,7 +253,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     .map_err(From::from)
 }
 
-// Queries the astroport pool contracts to simulate a swap exact amount in
+// Queries the dexter pool contracts to simulate a swap exact amount in
 fn query_simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
@@ -268,7 +275,7 @@ fn query_simulate_swap_exact_asset_in(
     Ok(asset_out)
 }
 
-// Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
+// Queries the dexter pool contracts to simulate a multi-hop swap exact amount out
 fn query_simulate_swap_exact_asset_out(
     deps: Deps,
     asset_out: Asset,
@@ -290,7 +297,7 @@ fn query_simulate_swap_exact_asset_out(
     Ok(asset_in)
 }
 
-// Queries the astroport pool contracts to simulate a swap exact amount in with metadata
+// Queries the dexter pool contracts to simulate a swap exact amount in with metadata
 fn query_simulate_swap_exact_asset_in_with_metadata(
     deps: Deps,
     asset_in: Asset,
@@ -329,7 +336,7 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     Ok(response)
 }
 
-// Queries the astroport pool contracts to simulate a multi-hop swap exact amount out with metadata
+// Queries the dexter pool contracts to simulate a multi-hop swap exact amount out with metadata
 fn query_simulate_swap_exact_asset_out_with_metadata(
     deps: Deps,
     asset_out: Asset,
