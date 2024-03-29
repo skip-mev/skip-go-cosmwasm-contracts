@@ -29,7 +29,7 @@ pub struct MigrateMsg {
 // Osmosis Poolmanager and Astroport swap adapter contracts.
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub entry_point_contract_address: String
+    pub entry_point_contract_address: String,
 }
 
 #[cw_serde]

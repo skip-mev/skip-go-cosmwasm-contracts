@@ -5,15 +5,13 @@ use cw_multi_test::addons::{MockAddressGenerator, MockApiBech32};
 use cw_multi_test::{App, AppBuilder, BankKeeper, ContractWrapper, Executor, WasmKeeper};
 
 use dexter::vault::{
-    ExecuteMsg as VaultExecuteMsg, FeeInfo, InstantiateMsg as VaultInstantiateMsg,
-    PauseInfo, PoolCreationFee, PoolInfo, PoolType, PoolTypeConfig,
-    QueryMsg as VaultQueryMsg
+    ExecuteMsg as VaultExecuteMsg, FeeInfo, InstantiateMsg as VaultInstantiateMsg, PauseInfo,
+    PoolCreationFee, PoolInfo, PoolType, PoolTypeConfig, QueryMsg as VaultQueryMsg,
 };
 
 use skip::swap::DexterAdapterInstantiateMsg;
 
 pub const EPOCH_START: u64 = 1_000_000;
-
 
 pub fn mock_app(owner: Addr, coins: Vec<Coin>) -> App<BankKeeper, MockApiBech32> {
     let mut env = mock_env();
@@ -28,7 +26,6 @@ pub fn mock_app(owner: Addr, coins: Vec<Coin>) -> App<BankKeeper, MockApiBech32>
         });
 
     // let mut app = App::new
-
 
     app.set_block(env.block);
     app
@@ -91,14 +88,12 @@ pub fn store_dexter_swap_adapter_code(app: &mut App<BankKeeper, MockApiBech32>) 
     app.store_code(dexter_swap_adapter_contract)
 }
 
-
 pub struct DexterInstantiateResponse {
     pub dexter_vault_addr: Addr,
     pub dexter_router_addr: Addr,
     // expected that the order of the pool_info is the same as the order of the pool_instantiate_msgs
-    pub pool_info: Vec<PoolInfo>
+    pub pool_info: Vec<PoolInfo>,
 }
-
 
 pub fn instantiate_dexter_swap_adapter_contract(
     app: &mut App<BankKeeper, MockApiBech32>,
@@ -107,7 +102,6 @@ pub fn instantiate_dexter_swap_adapter_contract(
     dexter_vault_addr: &Addr,
     dexter_router_addr: &Addr,
 ) -> Addr {
-    
     let dexter_swap_adapter_code_id = store_dexter_swap_adapter_code(app);
 
     let dexter_swap_adapter_init_msg = DexterAdapterInstantiateMsg {
@@ -123,16 +117,16 @@ pub fn instantiate_dexter_swap_adapter_contract(
         &[],
         "skip_swap_adapter:dexter",
         None,
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 pub fn instantiate_dexter_contracts_and_pools(
     app: &mut App<BankKeeper, MockApiBech32>,
     owner: &Addr,
     fee_info: FeeInfo,
-    pool_instantiate_msgs: Vec<VaultExecuteMsg>
+    pool_instantiate_msgs: Vec<VaultExecuteMsg>,
 ) -> DexterInstantiateResponse {
-
     let stable5pool_code_id = store_stable_pool_code(app);
     let weighted_pool_code_id = store_weighted_pool_code(app);
     let vault_code_id = store_vault_code(app);
@@ -153,7 +147,7 @@ pub fn instantiate_dexter_contracts_and_pools(
             default_fee_info: fee_info.clone(),
             allow_instantiation: dexter::vault::AllowPoolInstantiation::Everyone,
             paused: PauseInfo::default(),
-        }
+        },
     ];
 
     let vault_init_msg = VaultInstantiateMsg {
@@ -181,8 +175,8 @@ pub fn instantiate_dexter_contracts_and_pools(
         dexter_vault: vault_instance.to_string(),
     };
 
-    let dexter_router_instance = app.
-        instantiate_contract(
+    let dexter_router_instance = app
+        .instantiate_contract(
             router_code_id,
             owner.to_owned(),
             &router_instantiate_msg,
@@ -192,17 +186,23 @@ pub fn instantiate_dexter_contracts_and_pools(
         )
         .unwrap();
 
-    
     let mut pool_infos = vec![];
     for msg in pool_instantiate_msgs {
         let res = app
             .execute_contract(owner.clone(), vault_instance.clone(), &msg, &[])
             .unwrap();
 
-
         // get event by type
-        let event = res.events.iter().find(|e| e.ty == "wasm-dexter-vault::reply::pool_init").unwrap();
-        let attribute = event.attributes.iter().find(|a| a.key == "pool_id").unwrap();
+        let event = res
+            .events
+            .iter()
+            .find(|e| e.ty == "wasm-dexter-vault::reply::pool_init")
+            .unwrap();
+        let attribute = event
+            .attributes
+            .iter()
+            .find(|a| a.key == "pool_id")
+            .unwrap();
 
         // get pool id from the event
         let pool_id = attribute.value.parse::<u64>().unwrap();
@@ -223,6 +223,6 @@ pub fn instantiate_dexter_contracts_and_pools(
     DexterInstantiateResponse {
         dexter_vault_addr: vault_instance,
         dexter_router_addr: dexter_router_instance,
-        pool_info: pool_infos
+        pool_info: pool_infos,
     }
 }

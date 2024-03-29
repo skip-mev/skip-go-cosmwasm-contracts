@@ -1,14 +1,18 @@
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env, mock_info}, to_json_binary, Addr, Coin, ReplyOn::Never, SubMsg, Uint128, WasmMsg
+    testing::{mock_dependencies, mock_env, mock_info},
+    to_json_binary, Addr, Coin,
+    ReplyOn::Never,
+    SubMsg, Uint128, WasmMsg,
 };
 use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_api_swap_adapter_dexter::{
-    error::ContractResult, state::{DEXTER_ROUTER_ADDRESS, DEXTER_VAULT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
+    error::ContractResult,
+    state::{DEXTER_ROUTER_ADDRESS, DEXTER_VAULT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 
 use cosmwasm_std::Decimal;
-use std::str::FromStr;
 use dexter::asset::AssetInfo as DexterAssetInfo;
+use std::str::FromStr;
 
 use dexter::router::{ExecuteMsg as DexterRouterExecuteMsg, HopSwapRequest};
 use test_case::test_case;
@@ -55,18 +59,18 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "dexter_router".to_string(),
-                    msg: to_json_binary(& DexterRouterExecuteMsg::ExecuteMultihopSwap { 
+                    msg: to_json_binary(& DexterRouterExecuteMsg::ExecuteMultihopSwap {
                         requests: vec![
-                           HopSwapRequest { 
+                           HopSwapRequest {
                                 pool_id: Uint128::from(1u128),
-                                asset_in: DexterAssetInfo::NativeToken { 
+                                asset_in: DexterAssetInfo::NativeToken {
                                         denom: "uxprt".to_string()
                                 },
-                                asset_out: DexterAssetInfo::NativeToken { 
+                                asset_out: DexterAssetInfo::NativeToken {
                                         denom: "stk/uxprt".to_string()
                                 },
                                 max_spread: Some(Decimal::from_str("0.05").unwrap()),
-                                belief_price: None 
+                                belief_price: None
                             }
                         ],
                         offer_amount: Uint128::from(100u128),
@@ -120,29 +124,29 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "dexter_router".to_string(),
-                    msg: to_json_binary(& DexterRouterExecuteMsg::ExecuteMultihopSwap { 
+                    msg: to_json_binary(& DexterRouterExecuteMsg::ExecuteMultihopSwap {
                         requests: vec![
-                           HopSwapRequest { 
+                           HopSwapRequest {
                                 pool_id: Uint128::from(1u128),
-                                asset_in: DexterAssetInfo::NativeToken { 
+                                asset_in: DexterAssetInfo::NativeToken {
                                         denom: "os".to_string()
                                 },
-                                asset_out: DexterAssetInfo::NativeToken { 
+                                asset_out: DexterAssetInfo::NativeToken {
                                         denom: "uatom".to_string()
                                 },
                                 max_spread: Some(Decimal::from_str("0.05").unwrap()),
-                                belief_price: None 
+                                belief_price: None
                             },
-                            HopSwapRequest { 
+                            HopSwapRequest {
                                 pool_id: Uint128::from(2u128),
-                                asset_in: DexterAssetInfo::NativeToken { 
+                                asset_in: DexterAssetInfo::NativeToken {
                                         denom: "uatom".to_string()
                                 },
-                                asset_out: DexterAssetInfo::NativeToken { 
+                                asset_out: DexterAssetInfo::NativeToken {
                                         denom: "untrn".to_string()
                                 },
                                 max_spread: Some(Decimal::from_str("0.05").unwrap()),
-                                belief_price: None 
+                                belief_price: None
                             }
                         ],
                         offer_amount: Uint128::from(100u128),
