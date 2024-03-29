@@ -365,7 +365,7 @@ pub fn test_swap() {
     app.send_tokens(
         app.api().addr_make("owner"),
         entrypoint_dummy.clone(),
-        &vec![Coin::new(2_000_000u128, "uxprt")]
+        &[Coin::new(2_000_000u128, "uxprt")]
     ).unwrap();
 
     // execute the swap without funds

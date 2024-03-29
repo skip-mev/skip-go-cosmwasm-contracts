@@ -420,10 +420,11 @@ fn simulate_swap_exact_asset_in(
         });
 
         // Return the asset out and optionally the simulation responses
-        return Ok(asset_out);
+        Ok(asset_out)
     } else {
         // TODO: Fix this
-        return Err(ContractError::SwapOperationsEmpty);
+        // @NotJeremyLiu: Look into the above todo left by the original author
+        Err(ContractError::SwapOperationsEmpty)
     }
 }
 
@@ -472,10 +473,11 @@ fn simulate_swap_exact_asset_out(
         });
 
         // Return the asset out and optionally the simulation responses
-        return Ok(asset_in);
+        Ok(asset_in)
     } else {
         // TODO: Fix this
-        return Err(ContractError::SwapOperationsEmpty);
+        // @NotJeremyLiu: Look into the above todo left by the original author
+        Err(ContractError::SwapOperationsEmpty)
     }
 }
 
