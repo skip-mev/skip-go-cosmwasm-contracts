@@ -112,7 +112,13 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Swap { operations } => {
+            // validate that there's at least one swap operation
+            if operations.is_empty() {
+                return Err(ContractError::SwapOperationsEmpty);
+            }
+
             let coin = one_coin(&info)?;
+
             // validate that the one coin is the same as the first swap operation's denom in
             if coin.denom != operations.first().unwrap().denom_in {
                 return Err(ContractError::CoinInDenomMismatch);
@@ -167,9 +173,7 @@ fn execute_swap(
         hop_swap_requests.push(HopSwapRequest {
             pool_id: pool_id_u128,
             asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-            max_spread: Some(Decimal::from_ratio(Uint128::from(5u64), Uint128::from(100u64))),
-            belief_price: None
+            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone())
         });
     }
 
@@ -393,9 +397,7 @@ fn simulate_swap_exact_asset_in(
         hop_swap_requests.push(HopSwapRequest {
             pool_id: pool_id_u128,
             asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-            max_spread: Some(Decimal::from_ratio(Uint128::from(5u64), Uint128::from(100u64))),
-            belief_price: None
+            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone())
         });
     }
 
@@ -445,9 +447,7 @@ fn simulate_swap_exact_asset_out(
         hop_swap_requests.push(HopSwapRequest {
             pool_id: pool_id_u128,
             asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-            max_spread: Some(Decimal::from_ratio(Uint128::from(5u64), Uint128::from(100u64))),
-            belief_price: None
+            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone())
         });
     }
 

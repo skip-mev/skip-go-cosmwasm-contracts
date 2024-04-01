@@ -6,8 +6,6 @@ use skip_api_swap_adapter_dexter::{
     error::ContractResult, state::{DEXTER_ROUTER_ADDRESS, DEXTER_VAULT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 
-use cosmwasm_std::Decimal;
-use std::str::FromStr;
 use dexter::asset::AssetInfo as DexterAssetInfo;
 
 use dexter::router::{ExecuteMsg as DexterRouterExecuteMsg, HopSwapRequest};
@@ -65,8 +63,6 @@ struct Params {
                                 asset_out: DexterAssetInfo::NativeToken { 
                                         denom: "stk/uxprt".to_string()
                                 },
-                                max_spread: Some(Decimal::from_str("0.05").unwrap()),
-                                belief_price: None 
                             }
                         ],
                         offer_amount: Uint128::from(100u128),
@@ -130,8 +126,6 @@ struct Params {
                                 asset_out: DexterAssetInfo::NativeToken { 
                                         denom: "uatom".to_string()
                                 },
-                                max_spread: Some(Decimal::from_str("0.05").unwrap()),
-                                belief_price: None 
                             },
                             HopSwapRequest { 
                                 pool_id: Uint128::from(2u128),
@@ -141,8 +135,6 @@ struct Params {
                                 asset_out: DexterAssetInfo::NativeToken { 
                                         denom: "untrn".to_string()
                                 },
-                                max_spread: Some(Decimal::from_str("0.05").unwrap()),
-                                belief_price: None 
                             }
                         ],
                         offer_amount: Uint128::from(100u128),
@@ -265,10 +257,16 @@ struct Params {
     Params {
         caller: "random".to_string(),
         info_funds: vec![
-            Coin::new(100, "untrn"),
+            Coin::new(100, "uxprt"),
             // Coin::new(100, "os"),
         ],
-        swap_operations: vec![],
+        swap_operations: vec![
+            SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "uxprt".to_string(),
+                denom_out: "stk/uxprt".to_string(),
+            }
+        ],
         expected_messages: vec![],
         expected_error_string: "Unauthorized".to_string(),
     };

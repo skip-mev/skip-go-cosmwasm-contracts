@@ -460,9 +460,9 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "1.3.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85ec759bf161c27452460c0de79d88d58ce49d8025614224621850d9d3092964"
+checksum = "a27ebda8ed00010da0d68688fff006ca6a7df9c1e1313ef570ac71015288dde4"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -494,9 +494,9 @@ dependencies = [
 
 [[package]]
 name = "dexter-router"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "598e2252ef7d987f9056cc4982e97b5653266fcbd9b75d10e0a10e5555d6094b"
+checksum = "479e68c1739b01b7d4baa05b0406f91e6b146b82f840d9101b0bf54e58a69382"
 dependencies = [
  "const_format",
  "cosmwasm-schema",
@@ -514,9 +514,9 @@ dependencies = [
 
 [[package]]
 name = "dexter-stable-pool"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5508080d8c60629cafe71889b257cb36a5f37ad723918f2ab2b7269467add93f"
+checksum = "2161888b4ea26f670bee45487f9f7dbb73ea2081537d0dfec7ee75a9a2c9cc44"
 dependencies = [
  "const_format",
  "cosmwasm-schema",
@@ -536,9 +536,9 @@ dependencies = [
 
 [[package]]
 name = "dexter-vault"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d01e5e3553bf5ed4b7dff1b18939b92d42a842d025c8f3e44c19b9e203b32f84"
+checksum = "0a47906dd22d8baf86129c269e75029954baf950a8b1a7ab32f7d614ae6a8597"
 dependencies = [
  "const_format",
  "cosmwasm-schema",
@@ -557,9 +557,9 @@ dependencies = [
 
 [[package]]
 name = "dexter-weighted-pool"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a44bff7210409767a9cd7d905c24dd901fc20fa96bfe4e7ba1e038012fe45736"
+checksum = "ef54b4987392026a78bf5204c4d5bb9a8767aefb5fa988ce3809cbf01ddea525"
 dependencies = [
  "const_format",
  "cosmwasm-schema",

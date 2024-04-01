@@ -56,7 +56,6 @@ pub fn setup() -> SetupResponse {
             init_params: Some(to_json_binary(
                 &StablePoolParams { 
                     amp: 50, 
-                    max_allowed_spread: Decimal::from_str("0.2").unwrap(), 
                     supports_scaling_factors_update: false,
                     scaling_factors: vec![
                         AssetScalingFactor {

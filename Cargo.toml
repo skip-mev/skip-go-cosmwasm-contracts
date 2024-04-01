@@ -21,12 +21,12 @@ keywords      = ["cosmwasm"]
 
 [workspace.dependencies]
 astroport        = "2.9"
-dexter           = "1.3.0"
-dexter-vault     = "1.0.0"
-dexter-stable-pool   = "1.1.0"
-dexter-weighted-pool = "1.1.0"
+dexter           = "1.4.0"
+dexter-vault     = "1.1.0"
+dexter-stable-pool   = "1.1.1"
+dexter-weighted-pool = "1.1.1"
 dexter-lp-token  = "1.0.0"
-dexter-router    = "1.0.0"
+dexter-router    = "1.1.0"
 cosmwasm-schema  = "1.5.0"
 cosmwasm-std     = { version = "1.5", features = ["stargate"] }
 cosmos-sdk-proto = { version = "0.19", default-features = false }
