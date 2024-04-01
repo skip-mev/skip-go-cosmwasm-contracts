@@ -38,4 +38,7 @@ pub enum ContractError {
 
     #[error("Pool ID cannot be parsed from the given string")]
     PoolIdParseError,
+
+    #[error("Error in simulation")]
+    SimulationError,
 }
