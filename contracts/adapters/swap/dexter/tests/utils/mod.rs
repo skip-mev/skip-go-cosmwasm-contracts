@@ -108,18 +108,15 @@ pub fn instantiate_dexter_swap_adapter_contract(
         dexter_router_contract_address: dexter_router_addr.to_string(),
     };
 
-    let address = app
-        .instantiate_contract(
-            dexter_swap_adapter_code_id,
-            owner.to_owned(),
-            &dexter_swap_adapter_init_msg,
-            &[],
-            "skip_swap_adapter:dexter",
-            None,
-        )
-        .unwrap();
-
-    address
+    app.instantiate_contract(
+        dexter_swap_adapter_code_id,
+        owner.to_owned(),
+        &dexter_swap_adapter_init_msg,
+        &[],
+        "skip_swap_adapter:dexter",
+        None,
+    )
+    .unwrap()
 }
 
 pub fn instantiate_dexter_contracts_and_pools(
