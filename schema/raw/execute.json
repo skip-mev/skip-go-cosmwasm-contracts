@@ -532,6 +532,16 @@
         "denom_out": {
           "type": "string"
         },
+        "interface": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Binary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "pool": {
           "type": "string"
         }
