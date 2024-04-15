@@ -54,6 +54,7 @@ struct Params {
                 pool: "pool_1".to_string(),
                 denom_in: "neutron123".to_string(),
                 denom_out: "ua".to_string(),
+                interface: None,
             }
         ],
         expected_messages: vec![
@@ -66,6 +67,7 @@ struct Params {
                             pool: "pool_1".to_string(),
                             denom_in: "neutron123".to_string(),
                             denom_out: "ua".to_string(),
+                            interface: None,
                         }
                     })?,
                     funds: vec![],
@@ -104,6 +106,7 @@ struct Params {
                 pool: "pool_1".to_string(),
                 denom_in: "neutron123".to_string(),
                 denom_out: "neutron987".to_string(),
+                interface: None,
             }
         ],
         expected_messages: vec![
@@ -116,6 +119,7 @@ struct Params {
                             pool: "pool_1".to_string(),
                             denom_in: "neutron123".to_string(),
                             denom_out: "neutron987".to_string(),
+                            interface: None,
                         }
                     })?,
                     funds: vec![],
