@@ -248,7 +248,7 @@ struct Params {
                                             denom_out: "os".to_string(),
                                             interface: None,
                                         }
-                                    ],                                    
+                                    ],
                                 }
                             ]
                         }).unwrap(),
@@ -323,7 +323,7 @@ struct Params {
                                     interface: None,
                                 }
                             ],
-                          }  
+                          }
                         ],
                     }).unwrap(),
                     funds: vec![Coin::new(1_000_000, "un")], 
@@ -372,7 +372,7 @@ struct Params {
                                 denom_out: "os".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ]
             }
@@ -494,7 +494,7 @@ struct Params {
                                 denom_out: "os".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -534,7 +534,7 @@ struct Params {
                                         denom_out: "os".to_string(),
                                         interface: None,
                                     }
-                                ],                                
+                                ],
                             }
                         ]
                     }).unwrap(),
@@ -577,7 +577,7 @@ struct Params {
                                 denom_out: "neutron987".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -720,7 +720,7 @@ struct Params {
                                         denom_out: "os".to_string(),
                                         interface: None,
                                     }
-                                ],                                
+                                ],
                             }
                         ]
                     }).unwrap(),
@@ -770,7 +770,7 @@ struct Params {
                                 denom_out: "os".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -840,7 +840,7 @@ struct Params {
                                 denom_out: "os".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -923,7 +923,7 @@ struct Params {
                                 denom_out: "os".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ]
             },
@@ -1110,7 +1110,7 @@ struct Params {
                                 denom_out: "os".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),

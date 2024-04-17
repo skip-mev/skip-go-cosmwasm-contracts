@@ -440,7 +440,7 @@ struct Params {
                                                 denom_out: "osmo".to_string(),
                                                 interface: None,
                                             }
-                                        ],                                        
+                                        ],
                                     }
                                 ]
                             }
@@ -504,7 +504,7 @@ struct Params {
                                 denom_out: "uatom".to_string(),
                                 interface: None,
                             }
-                        ],                        
+                        ],
                     }
                 ]
             },
@@ -537,7 +537,7 @@ struct Params {
                                     denom_out: "untrn".to_string(),
                                     interface: None,
                                 }
-                            ],                            
+                            ],
                         }
                     ],
                     refund_address: None,
