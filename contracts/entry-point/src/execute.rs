@@ -17,6 +17,7 @@ use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
+    error::SkipError,
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
@@ -323,7 +324,13 @@ pub fn execute_user_swap(
     match swap {
         Swap::SwapExactAssetIn(swap) => {
             // Validate swap operations
-            validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
+            for route in swap.routes.iter() {
+                validate_swap_operations(
+                    &route.operations,
+                    remaining_asset.denom(),
+                    min_asset.denom(),
+                )?;
+            }
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
@@ -344,7 +351,13 @@ pub fn execute_user_swap(
         }
         Swap::SwapExactAssetOut(swap) => {
             // Validate swap operations
-            validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
+            for route in swap.routes.iter() {
+                validate_swap_operations(
+                    &route.operations,
+                    remaining_asset.denom(),
+                    min_asset.denom(),
+                )?;
+            }
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
@@ -551,11 +564,17 @@ fn verify_and_create_fee_swap_msg(
     ibc_fee_coin: &Coin,
 ) -> ContractResult<WasmMsg> {
     // Validate swap operations
-    validate_swap_operations(
-        &fee_swap.operations,
-        remaining_asset.denom(),
-        &ibc_fee_coin.denom,
-    )?;
+    if fee_swap.routes.is_empty() {
+        return Err(ContractError::Skip(SkipError::SwapOperationsEmpty));
+    }
+
+    for route in &fee_swap.routes {
+        validate_swap_operations(
+            &route.operations,
+            remaining_asset.denom(),
+            &ibc_fee_coin.denom,
+        )?;
+    }
 
     // Get swap adapter contract address from venue name
     let fee_swap_adapter_contract_address =
@@ -627,7 +646,7 @@ fn query_swap_asset_in(
         swap_adapter_contract_address,
         &SwapQueryMsg::SimulateSwapExactAssetOut {
             asset_out: swap_asset_out.clone(),
-            swap_operations: swap.operations.clone(),
+            swap_operations: swap.routes.first().unwrap().operations.clone(),
         },
     )?;
 

@@ -15,8 +15,8 @@ use skip::{
     asset::Asset,
     swap::{
         execute_transfer_funds_back, ExecuteMsg, LidoSatelliteInstantiateMsg as InstantiateMsg,
-        MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
-        SwapOperation,
+        MigrateMsg, QueryMsg, Route, SimulateSwapExactAssetInResponse,
+        SimulateSwapExactAssetOutResponse,
     },
 };
 
@@ -95,7 +95,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
+        ExecuteMsg::Swap { routes } => execute_swap(deps, env, info, routes),
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,
@@ -116,7 +116,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    _operations: Vec<SwapOperation>,
+    _routes: Vec<Route>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;

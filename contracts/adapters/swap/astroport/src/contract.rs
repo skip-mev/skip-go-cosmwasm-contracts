@@ -17,7 +17,7 @@ use skip::{
     asset::{get_current_asset_available, Asset},
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
-        SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
+        Route, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 
@@ -101,7 +101,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, operations),
+        Cw20HookMsg::Swap { routes } => execute_swap(deps, env, info, routes),
     }
 }
 
@@ -118,9 +118,9 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
-        ExecuteMsg::Swap { operations } => {
+        ExecuteMsg::Swap { routes } => {
             one_coin(&info)?;
-            execute_swap(deps, env, info, operations)
+            execute_swap(deps, env, info, routes)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -145,7 +145,8 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
+    // operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -158,20 +159,25 @@ fn execute_swap(
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    // Add an astroport pool swap message to the response for each swap operation
-    for operation in &operations {
-        let swap_msg = WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
-                operation: operation.clone(),
-            })?,
-            funds: vec![],
-        };
-        response = response.add_message(swap_msg);
+    for route in &routes {
+        // Add an astroport pool swap message to the response for each swap operation
+        for operation in &route.operations {
+            let swap_msg = WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                    operation: operation.clone(),
+                })?,
+                funds: vec![],
+            };
+            response = response.add_message(swap_msg);
+        }
     }
 
-    let return_denom = match operations.last() {
-        Some(last_op) => last_op.denom_out.clone(),
+    let return_denom = match routes.last() {
+        Some(last_route) => match last_route.operations.last() {
+            Some(last_op) => last_op.denom_out.clone(),
+            None => return Err(ContractError::SwapOperationsEmpty),
+        },
         None => return Err(ContractError::SwapOperationsEmpty),
     };
 

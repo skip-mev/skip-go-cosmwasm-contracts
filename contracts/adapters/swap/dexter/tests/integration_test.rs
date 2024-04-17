@@ -7,7 +7,10 @@ use dexter::{
     vault::{self, FeeInfo, NativeAssetPrecisionInfo},
 };
 use dexter_stable_pool::state::{AssetScalingFactor, StablePoolParams};
-use skip::{asset::Asset, swap::SwapOperation};
+use skip::{
+    asset::Asset,
+    swap::{Route, SwapOperation},
+};
 use utils::{
     instantiate_dexter_contracts_and_pools, instantiate_dexter_swap_adapter_contract,
     DexterInstantiateResponse,
@@ -391,11 +394,17 @@ pub fn test_swap() {
 
     // simulate swap of 1 uxprt to stk/uxprt via 1 pool
     let swap_msg = skip::swap::ExecuteMsg::Swap {
-        operations: vec![SwapOperation {
-            pool: "1".to_string(),
-            denom_in: "uxprt".to_string(),
-            denom_out: "stk/uxprt".to_string(),
-            interface: None,
+        routes: vec![Route {
+            offer_asset: Asset::Native(Coin {
+                denom: "uxprt".to_string(),
+                amount: Uint128::from(1_000_000u128),
+            }),
+            operations: vec![SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "uxprt".to_string(),
+                denom_out: "stk/uxprt".to_string(),
+                interface: None,
+            }],
         }],
     };
 
@@ -439,20 +448,26 @@ pub fn test_swap() {
 
     // perform a swap with multiple pools
     let swap_msg = skip::swap::ExecuteMsg::Swap {
-        operations: vec![
-            SwapOperation {
-                pool: "1".to_string(),
-                denom_in: "uxprt".to_string(),
-                denom_out: "stk/uxprt".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "2".to_string(),
-                denom_in: "stk/uxprt".to_string(),
-                denom_out: "stk/uatom".to_string(),
-                interface: None,
-            },
-        ],
+        routes: vec![Route {
+            offer_asset: Asset::Native(Coin {
+                denom: "uxprt".to_string(),
+                amount: Uint128::from(1_000_000u128),
+            }),
+            operations: vec![
+                SwapOperation {
+                    pool: "1".to_string(),
+                    denom_in: "uxprt".to_string(),
+                    denom_out: "stk/uxprt".to_string(),
+                    interface: None,
+                },
+                SwapOperation {
+                    pool: "2".to_string(),
+                    denom_in: "stk/uxprt".to_string(),
+                    denom_out: "stk/uatom".to_string(),
+                    interface: None,
+                },
+            ],
+        }],
     };
 
     // execute the swap
