@@ -491,6 +491,25 @@
         },
         "additionalProperties": false
       },
+      "Route": {
+        "type": "object",
+        "required": [
+          "offer_asset",
+          "operations"
+        ],
+        "properties": {
+          "offer_asset": {
+            "$ref": "#/definitions/Asset"
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/SwapOperation"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "Swap": {
         "oneOf": [
           {
@@ -522,14 +541,14 @@
       "SwapExactAssetIn": {
         "type": "object",
         "required": [
-          "operations",
+          "routes",
           "swap_venue_name"
         ],
         "properties": {
-          "operations": {
+          "routes": {
             "type": "array",
             "items": {
-              "$ref": "#/definitions/SwapOperation"
+              "$ref": "#/definitions/Route"
             }
           },
           "swap_venue_name": {
@@ -541,21 +560,21 @@
       "SwapExactAssetOut": {
         "type": "object",
         "required": [
-          "operations",
+          "routes",
           "swap_venue_name"
         ],
         "properties": {
-          "operations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/SwapOperation"
-            }
-          },
           "refund_address": {
             "type": [
               "string",
               "null"
             ]
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Route"
+            }
           },
           "swap_venue_name": {
             "type": "string"
