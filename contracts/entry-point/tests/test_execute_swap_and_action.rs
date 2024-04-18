@@ -11,8 +11,8 @@ use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        IbcFeesNotOneCoin, InvalidCw20Coin, Overflow, Payment, SwapOperationsAssetInDenomMismatch,
-        SwapOperationsAssetOutDenomMismatch, SwapOperationsEmpty,
+        IbcFeesNotOneCoin, InvalidCw20Coin, MustBeSingleRoute, Overflow, Payment,
+        SwapOperationsAssetInDenomMismatch, SwapOperationsAssetOutDenomMismatch,
     },
     ibc::{IbcFee, IbcInfo},
     swap::{
@@ -1900,7 +1900,7 @@ struct Params {
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
+        expected_error: Some(ContractError::Skip(MustBeSingleRoute)),
     };
     "Empty Fee Swap Operations - Expect Error")]
 #[test_case(
