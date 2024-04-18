@@ -6,7 +6,7 @@ use cw20::Cw20Coin;
 use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
-    swap::{Swap, SwapExactAssetIn, SwapOperation},
+    swap::{Route, Swap, SwapExactAssetIn, SwapOperation},
 };
 use skip_api_entry_point::{error::ContractError, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
@@ -49,12 +49,17 @@ struct Params {
         sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![SwapOperation {
-                pool: "pool".to_string(),
-                denom_in: "untrn".to_string(),
-                denom_out: "osmo".to_string(),
-                interface: None,
-            }],
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
+                    }],
+                }
+            ],
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
@@ -71,12 +76,17 @@ struct Params {
                     sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
-                        operations: vec![SwapOperation {
-                            pool: "pool".to_string(),
-                            denom_in: "untrn".to_string(),
-                            denom_out: "osmo".to_string(),
-                            interface: None,
-                        }],
+                        routes: vec![
+                            Route {
+                                offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                                operations: vec![SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "untrn".to_string(),
+                                    denom_out: "osmo".to_string(),
+                                    interface: None,
+                                }],
+                            }
+                        ]
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
@@ -100,12 +110,17 @@ struct Params {
         sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![SwapOperation {
-                pool: "pool".to_string(),
-                denom_in: "untrn".to_string(),
-                denom_out: "osmo".to_string(),
-                interface: None,
-            }],
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
+                    }],
+                }
+            ]
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
@@ -122,12 +137,17 @@ struct Params {
                     sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
-                        operations: vec![SwapOperation {
-                            pool: "pool".to_string(),
-                            denom_in: "untrn".to_string(),
-                            denom_out: "osmo".to_string(),
-                            interface: None,
-                        }],
+                        routes: vec![
+                            Route {
+                                offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                                operations: vec![SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "untrn".to_string(),
+                                    denom_out: "osmo".to_string(),
+                                    interface: None,
+                                }],
+                            }
+                        ]
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
@@ -154,12 +174,20 @@ struct Params {
         })),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![SwapOperation {
-                pool: "pool".to_string(),
-                denom_in: "neutron123".to_string(),
-                denom_out: "osmo".to_string(),
-                interface: None,
-            }],
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Cw20(Cw20Coin{
+                        address: "neutron123".to_string(),
+                        amount: Uint128::from(1_000_000u128),
+                    }),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
+                    }],
+                }
+            ]
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
@@ -182,12 +210,20 @@ struct Params {
                     })),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
-                        operations: vec![SwapOperation {
-                            pool: "pool".to_string(),
-                            denom_in: "neutron123".to_string(),
-                            denom_out: "osmo".to_string(),
-                            interface: None,
-                        }],
+                        routes: vec![
+                            Route {
+                                offer_asset: Asset::Cw20(Cw20Coin{
+                                    address: "neutron123".to_string(),
+                                    amount: Uint128::from(1_000_000u128),
+                                }),
+                                operations: vec![SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "neutron123".to_string(),
+                                    denom_out: "osmo".to_string(),
+                                    interface: None,
+                                }],
+                            }
+                        ]
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
@@ -211,12 +247,17 @@ struct Params {
         sent_asset: None,
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![SwapOperation {
-                pool: "pool".to_string(),
-                denom_in: "untrn".to_string(),
-                denom_out: "osmo".to_string(),
-                interface: None,
-            }],
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
+                    }],
+                }
+            ]
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
@@ -233,12 +274,17 @@ struct Params {
                     sent_asset: None,
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
-                        operations: vec![SwapOperation {
-                            pool: "pool".to_string(),
-                            denom_in: "untrn".to_string(),
-                            denom_out: "osmo".to_string(),
-                            interface: None,
-                        }],
+                        routes: vec![
+                            Route {
+                                offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                                operations: vec![SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "untrn".to_string(),
+                                    denom_out: "osmo".to_string(),
+                                    interface: None,
+                                }],
+                            }
+                        ]
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
@@ -262,12 +308,17 @@ struct Params {
         sent_asset: None,
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![SwapOperation {
-                pool: "pool".to_string(),
-                denom_in: "untrn".to_string(),
-                denom_out: "osmo".to_string(),
-                interface: None,
-            }],
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
+                    }],
+                }
+            ]
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
@@ -284,12 +335,17 @@ struct Params {
                     sent_asset: None,
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
-                        operations: vec![SwapOperation {
-                            pool: "pool".to_string(),
-                            denom_in: "untrn".to_string(),
-                            denom_out: "osmo".to_string(),
-                            interface: None,
-                        }],
+                        routes: vec![
+                            Route {
+                                offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                                operations: vec![SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "untrn".to_string(),
+                                    denom_out: "osmo".to_string(),
+                                    interface: None,
+                                }],
+                            }
+                        ]
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,
@@ -316,12 +372,20 @@ struct Params {
         })),
         user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
             swap_venue_name: "swap_venue_name".to_string(),
-            operations: vec![SwapOperation {
-                pool: "pool".to_string(),
-                denom_in: "untrn".to_string(),
-                denom_out: "osmo".to_string(),
-                interface: None,
-            }],
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Cw20(Cw20Coin{
+                        address: "neutron123".to_string(),
+                        amount: Uint128::from(1_000_000u128),
+                    }),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
+                    }],
+                }
+            ]
         }),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
         timeout_timestamp: 101,
@@ -344,12 +408,20 @@ struct Params {
                     })),
                     user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn {
                         swap_venue_name: "swap_venue_name".to_string(),
-                        operations: vec![SwapOperation {
-                            pool: "pool".to_string(),
-                            denom_in: "untrn".to_string(),
-                            denom_out: "osmo".to_string(),
-                            interface: None,
-                        }],
+                        routes: vec![
+                            Route {
+                                offer_asset: Asset::Cw20(Cw20Coin{
+                                    address: "neutron123".to_string(),
+                                    amount: Uint128::from(1_000_000u128),
+                                }),
+                                operations: vec![SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "untrn".to_string(),
+                                    denom_out: "osmo".to_string(),
+                                    interface: None,
+                                }],
+                            }
+                        ]
                     }),
                     min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
                     timeout_timestamp: 101,

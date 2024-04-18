@@ -55,7 +55,7 @@ pub struct LidoSatelliteInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    Swap { operations: Vec<SwapOperation> },
+    Swap { routes: Vec<Route> },
     TransferFundsBack { swapper: Addr, return_denom: String },
     AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
     WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
@@ -63,7 +63,7 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub enum Cw20HookMsg {
-    Swap { operations: Vec<SwapOperation> },
+    Swap { routes: Vec<Route> },
 }
 
 /////////////////////////
@@ -127,6 +127,12 @@ pub struct SimulateSwapExactAssetOutResponse {
 pub struct SwapVenue {
     pub name: String,
     pub adapter_contract_address: String,
+}
+
+#[cw_serde]
+pub struct Route {
+    pub offer_asset: Asset,
+    pub operations: Vec<SwapOperation>,
 }
 
 // Standard swap operation type that contains the pool, denom in, and denom out
@@ -206,12 +212,11 @@ where
 {
     swap_operations.into_iter().map(T::try_from).collect()
 }
-
 // Swap object to get the exact amount of a given asset with the given vector of swap operations
 #[cw_serde]
 pub struct SwapExactAssetOut {
     pub swap_venue_name: String,
-    pub operations: Vec<SwapOperation>,
+    pub routes: Vec<Route>,
     pub refund_address: Option<String>,
 }
 
@@ -220,7 +225,7 @@ pub struct SwapExactAssetOut {
 #[cw_serde]
 pub struct SwapExactAssetIn {
     pub swap_venue_name: String,
-    pub operations: Vec<SwapOperation>,
+    pub routes: Vec<Route>,
 }
 
 // Converts a SwapExactAssetOut used in the entry point contract
@@ -228,7 +233,7 @@ pub struct SwapExactAssetIn {
 impl From<SwapExactAssetOut> for ExecuteMsg {
     fn from(swap: SwapExactAssetOut) -> Self {
         ExecuteMsg::Swap {
-            operations: swap.operations,
+            routes: swap.routes,
         }
     }
 }
@@ -238,7 +243,7 @@ impl From<SwapExactAssetOut> for ExecuteMsg {
 impl From<SwapExactAssetIn> for ExecuteMsg {
     fn from(swap: SwapExactAssetIn) -> Self {
         ExecuteMsg::Swap {
-            operations: swap.operations,
+            routes: swap.routes,
         }
     }
 }
