@@ -14,11 +14,12 @@ use osmosis_std::types::osmosis::poolmanager::v1beta1::{
 };
 use skip::{
     asset::Asset,
+    error::SkipError,
     proto_coin::ProtoCoin,
     swap::{
         convert_swap_operations, execute_transfer_funds_back, ExecuteMsg, InstantiateMsg,
-        MigrateMsg, QueryMsg, Route, SimulateSwapExactAssetInResponse,
-        SimulateSwapExactAssetOutResponse, SwapOperation,
+        MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 use std::str::FromStr;
@@ -77,7 +78,15 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { routes } => execute_swap(deps, env, info, routes),
+        ExecuteMsg::Swap { routes } => {
+            if routes.len() != 1 {
+                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
+            }
+
+            let operations = routes.first().unwrap().operations.clone();
+
+            execute_swap(deps, env, info, operations)
+        }
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,
@@ -99,7 +108,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    routes: Vec<Route>,
+    operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -112,22 +121,13 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
-    let mut response: Response = Response::new();
-
-    for route in &routes {
-        // Create the osmosis poolmanager swap exact amount in message
-        let swap_msg = create_osmosis_swap_msg(&env, coin_in.clone(), route.operations.clone())?;
-
-        response = response.add_message(swap_msg);
-    }
-
-    let return_denom = match routes.last() {
-        Some(last_rote) => match last_rote.operations.last() {
-            Some(last_op) => last_op.denom_out.clone(),
-            None => return Err(ContractError::SwapOperationsEmpty),
-        },
+    let return_denom = match operations.last() {
+        Some(last_op) => last_op.denom_out.clone(),
         None => return Err(ContractError::SwapOperationsEmpty),
     };
+
+    // Create the osmosis poolmanager swap exact amount in message
+    let swap_msg = create_osmosis_swap_msg(&env, coin_in, operations)?;
 
     // Create the transfer funds back message
     let transfer_funds_back_msg = WasmMsg::Execute {
@@ -139,10 +139,10 @@ fn execute_swap(
         funds: vec![],
     };
 
-    // Add the transfer funds back message to the response
-    response = response.add_message(transfer_funds_back_msg);
-
-    Ok(response.add_attribute("action", "dispatch_swap_and_transfer_back"))
+    Ok(Response::new()
+        .add_message(swap_msg)
+        .add_message(transfer_funds_back_msg)
+        .add_attribute("action", "dispatch_swap_and_transfer_back"))
 }
 
 ////////////////////////

@@ -11,9 +11,10 @@ use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
+    error::SkipError,
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
-        Route, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
+        SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 use white_whale_std::pool_network::{
@@ -89,7 +90,15 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { routes } => execute_swap(deps, env, info, routes),
+        Cw20HookMsg::Swap { routes } => {
+            if routes.len() != 1 {
+                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
+            }
+
+            let operations = routes.first().unwrap().operations.clone();
+
+            execute_swap(deps, env, info, operations)
+        }
     }
 }
 
@@ -108,7 +117,14 @@ pub fn execute(
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Swap { routes } => {
             one_coin(&info)?;
-            execute_swap(deps, env, info, routes)
+
+            if routes.len() != 1 {
+                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
+            }
+
+            let operations = routes.first().unwrap().operations.clone();
+
+            execute_swap(deps, env, info, operations)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -133,7 +149,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    routes: Vec<Route>,
+    operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -146,25 +162,20 @@ fn execute_swap(
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    for route in &routes {
-        // Add a white whale pool swap message to the response for each swap operation
-        for operation in &route.operations {
-            let swap_msg = WasmMsg::Execute {
-                contract_addr: env.contract.address.to_string(),
-                msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
-                    operation: operation.clone(),
-                })?,
-                funds: vec![],
-            };
-            response = response.add_message(swap_msg);
-        }
+    // Add a white whale pool swap message to the response for each swap operation
+    for operation in &operations {
+        let swap_msg = WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
+                operation: operation.clone(),
+            })?,
+            funds: vec![],
+        };
+        response = response.add_message(swap_msg);
     }
 
-    let return_denom = match routes.last() {
-        Some(last_route) => match last_route.operations.last() {
-            Some(last_op) => last_op.denom_out.clone(),
-            None => return Err(ContractError::SwapOperationsEmpty),
-        },
+    let return_denom = match operations.last() {
+        Some(last_op) => last_op.denom_out.clone(),
         None => return Err(ContractError::SwapOperationsEmpty),
     };
 

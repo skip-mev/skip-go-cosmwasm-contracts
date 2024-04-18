@@ -13,10 +13,11 @@ use cw2::set_contract_version;
 use cw_utils::one_coin;
 use skip::{
     asset::Asset,
+    error::SkipError,
     swap::{
         execute_transfer_funds_back, ExecuteMsg, LidoSatelliteInstantiateMsg as InstantiateMsg,
-        MigrateMsg, QueryMsg, Route, SimulateSwapExactAssetInResponse,
-        SimulateSwapExactAssetOutResponse,
+        MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 
@@ -95,7 +96,15 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { routes } => execute_swap(deps, env, info, routes),
+        ExecuteMsg::Swap { routes } => {
+            if routes.len() != 1 {
+                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
+            }
+
+            let operations = routes.first().unwrap().operations.clone();
+
+            execute_swap(deps, env, info, operations)
+        }
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,
@@ -116,7 +125,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    _routes: Vec<Route>,
+    _operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;

@@ -324,13 +324,13 @@ pub fn execute_user_swap(
     match swap {
         Swap::SwapExactAssetIn(swap) => {
             // Validate swap operations
-            for route in swap.routes.iter() {
-                validate_swap_operations(
-                    &route.operations,
-                    remaining_asset.denom(),
-                    min_asset.denom(),
-                )?;
+            if swap.routes.len() != 1 {
+                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
             }
+
+            let operations = swap.routes.first().unwrap().operations.clone();
+
+            validate_swap_operations(&operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
@@ -351,13 +351,13 @@ pub fn execute_user_swap(
         }
         Swap::SwapExactAssetOut(swap) => {
             // Validate swap operations
-            for route in swap.routes.iter() {
-                validate_swap_operations(
-                    &route.operations,
-                    remaining_asset.denom(),
-                    min_asset.denom(),
-                )?;
+            if swap.routes.len() != 1 {
+                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
             }
+
+            let operations = swap.routes.first().unwrap().operations.clone();
+
+            validate_swap_operations(&operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
