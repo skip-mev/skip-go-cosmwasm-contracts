@@ -568,14 +568,13 @@ fn verify_and_create_fee_swap_msg(
         return Err(ContractError::Skip(SkipError::SwapOperationsEmpty));
     }
 
-    for route in &fee_swap.routes {
-        validate_swap_operations(
-            &route.operations,
-            remaining_asset.denom(),
-            &ibc_fee_coin.denom,
-        )?;
+    if fee_swap.routes.len() != 1 {
+        return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
     }
 
+    let operations = fee_swap.routes.first().unwrap().operations.clone();
+
+    validate_swap_operations(&operations, remaining_asset.denom(), &ibc_fee_coin.denom)?;
     // Get swap adapter contract address from venue name
     let fee_swap_adapter_contract_address =
         SWAP_VENUE_MAP.load(deps.storage, &fee_swap.swap_venue_name)?;
