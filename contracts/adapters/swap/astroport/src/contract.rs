@@ -15,10 +15,9 @@ use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
-    error::SkipError,
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
-        SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
+        Route, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 
@@ -102,15 +101,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
-            execute_swap(deps, env, info, operations)
-        }
+        Cw20HookMsg::Swap { routes } => execute_swap(deps, env, info, routes),
     }
 }
 
@@ -130,13 +121,7 @@ pub fn execute(
         ExecuteMsg::Swap { routes } => {
             one_coin(&info)?;
 
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
-            execute_swap(deps, env, info, operations)
+            execute_swap(deps, env, info, routes)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -148,9 +133,10 @@ pub fn execute(
             swapper,
             return_denom,
         )?),
-        ExecuteMsg::AstroportPoolSwap { operation } => {
-            execute_astroport_pool_swap(deps, env, info, operation)
-        }
+        ExecuteMsg::AstroportPoolSwap {
+            operation,
+            offer_asset,
+        } => execute_astroport_pool_swap(deps, env, info, operation, offer_asset),
         _ => {
             unimplemented!()
         }
@@ -161,7 +147,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -174,20 +160,36 @@ fn execute_swap(
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    // Add an astroport pool swap message to the response for each swap operation
-    for operation in &operations {
-        let swap_msg = WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
-                operation: operation.clone(),
-            })?,
-            funds: vec![],
-        };
-        response = response.add_message(swap_msg);
+    // Add an astroport pool swap message to the response for each swap operation in each route
+    for route in &routes {
+        let mut idx = 0;
+        for operation in &route.operations {
+            let swap_msg = WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                    operation: operation.clone(),
+                    offer_asset: if idx == 0 {
+                        // if first operation in a route, set swap amount in based on the offer asset amount
+                        Some(route.offer_asset.clone())
+                    } else {
+                        // otherwise, the swap amount will be determined by the contracts balance
+                        None
+                    },
+                })?,
+                funds: vec![],
+            };
+
+            response = response.add_message(swap_msg);
+
+            idx += 1;
+        }
     }
 
-    let return_denom = match operations.last() {
-        Some(last_op) => last_op.denom_out.clone(),
+    let return_denom = match routes.last() {
+        Some(last_op) => match last_op.operations.last() {
+            Some(last_op) => last_op.denom_out.clone(),
+            None => return Err(ContractError::SwapOperationsEmpty),
+        },
         None => return Err(ContractError::SwapOperationsEmpty),
     };
 
@@ -211,6 +213,7 @@ fn execute_astroport_pool_swap(
     env: Env,
     info: MessageInfo,
     operation: SwapOperation,
+    offer_asset: Option<Asset>,
 ) -> ContractResult<Response> {
     // Ensure the caller is the contract itself
     if info.sender != env.contract.address {
@@ -218,7 +221,10 @@ fn execute_astroport_pool_swap(
     }
 
     // Get the current asset available on contract to swap in
-    let offer_asset = get_current_asset_available(&deps, &env, &operation.denom_in)?;
+    let offer_asset = match offer_asset {
+        Some(offer_asset) => offer_asset,
+        None => get_current_asset_available(&deps, &env, &operation.denom_in)?,
+    };
 
     // Error if the offer asset amount is zero
     if offer_asset.amount().is_zero() {

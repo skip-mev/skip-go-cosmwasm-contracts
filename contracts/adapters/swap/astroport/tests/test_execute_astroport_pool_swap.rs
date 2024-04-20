@@ -8,8 +8,11 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{BalanceResponse, Cw20ExecuteMsg};
-use skip::swap::{ExecuteMsg, SwapOperation};
+use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg};
+use skip::{
+    asset::Asset,
+    swap::{ExecuteMsg, SwapOperation},
+};
 use skip_api_swap_adapter_astroport::error::{ContractError, ContractResult};
 use test_case::test_case;
 
@@ -31,6 +34,7 @@ Expect Error
 struct Params {
     caller: String,
     contract_balance: Vec<Coin>,
+    offer_asset: Option<Asset>,
     swap_operation: SwapOperation,
     expected_message: Option<SubMsg>,
     expected_error: Option<ContractError>,
@@ -41,6 +45,7 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![Coin::new(100, "os")],
+        offer_asset: Some(Asset::Native(Coin::new(100, "os"))),
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "os".to_string(),
@@ -76,6 +81,10 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
+        offer_asset: Some(Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(100u128),
+        })),
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "neutron123".to_string(),
@@ -108,6 +117,7 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
+        offer_asset: None,
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "os".to_string(),
@@ -122,6 +132,7 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
+        offer_asset: None,
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "randomcw20".to_string(),
@@ -138,6 +149,7 @@ struct Params {
         contract_balance: vec![
             Coin::new(100, "un"),
         ],
+        offer_asset: Some(Asset::Native(Coin::new(100, "un"))),
         swap_operation: SwapOperation{
             pool: "".to_string(),
             denom_in: "".to_string(),
@@ -197,6 +209,7 @@ fn test_execute_astroport_pool_swap(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::AstroportPoolSwap {
+            offer_asset: params.offer_asset,
             operation: params.swap_operation,
         },
     );
