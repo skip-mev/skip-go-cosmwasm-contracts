@@ -162,8 +162,13 @@ fn execute_swap(
 
     // Add an astroport pool swap message to the response for each swap operation in each route
     for route in &routes {
-        let mut idx = 0;
-        for operation in &route.operations {
+        let enumerated_operations = route
+            .operations
+            .iter()
+            .enumerate()
+            .collect::<Vec<(usize, &SwapOperation)>>();
+
+        for (idx, operation) in enumerated_operations {
             let swap_msg = WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
                 msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
@@ -180,8 +185,6 @@ fn execute_swap(
             };
 
             response = response.add_message(swap_msg);
-
-            idx += 1;
         }
     }
 
