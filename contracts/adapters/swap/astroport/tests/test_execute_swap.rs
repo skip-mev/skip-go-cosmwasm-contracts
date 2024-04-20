@@ -171,7 +171,7 @@ struct Params {
         expected_error: None,
     };
     "Multiple Swap Operations")]
-    #[test_case(
+#[test_case(
         Params {
             caller: "entry_point".to_string(),
             info_funds: vec![Coin::new(100, "os")],
@@ -203,7 +203,7 @@ struct Params {
                             interface: None,
                         },
                     ],
-                }                
+                }
             ],
             expected_messages: vec![
                 SubMsg {
@@ -259,7 +259,7 @@ struct Params {
                     }.into(),
                     gas_limit: None,
                     reply_on: Never,
-                },                
+                },
                 SubMsg {
                     id: 0,
                     msg: WasmMsg::Execute {
@@ -277,7 +277,7 @@ struct Params {
             ],
             expected_error: None,
         };
-        "Multiple Routes")]    
+        "Multiple Routes")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
