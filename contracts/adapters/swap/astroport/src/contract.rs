@@ -162,24 +162,20 @@ fn execute_swap(
 
     // Add an astroport pool swap message to the response for each swap operation in each route
     for route in &routes {
-        let enumerated_operations = route
-            .operations
-            .iter()
-            .enumerate()
-            .collect::<Vec<(usize, &SwapOperation)>>();
+        for (idx, operation) in route.operations.iter().enumerate() {
+            // if first operation in a route, set offer asset to the route's offer asset
+            // otherwise, the offer asset will be determined by the contracts balance
+            let offer_asset = if idx == 0 {
+                Some(route.offer_asset.clone())
+            } else {
+                None
+            };
 
-        for (idx, operation) in enumerated_operations {
             let swap_msg = WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
                 msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
                     operation: operation.clone(),
-                    offer_asset: if idx == 0 {
-                        // if first operation in a route, set swap amount in based on the offer asset amount
-                        Some(route.offer_asset.clone())
-                    } else {
-                        // otherwise, the swap amount will be determined by the contracts balance
-                        None
-                    },
+                    offer_asset: offer_asset,
                 })?,
                 funds: vec![],
             };
@@ -188,11 +184,11 @@ fn execute_swap(
         }
     }
 
-    let return_denom = match routes.last() {
-        Some(last_op) => match last_op.operations.last() {
-            Some(last_op) => last_op.denom_out.clone(),
-            None => return Err(ContractError::SwapOperationsEmpty),
-        },
+    let return_denom = match routes
+        .last()
+        .and_then(|last_route| last_route.operations.last())
+    {
+        Some(last_op) => last_op.denom_out.clone(),
         None => return Err(ContractError::SwapOperationsEmpty),
     };
 
