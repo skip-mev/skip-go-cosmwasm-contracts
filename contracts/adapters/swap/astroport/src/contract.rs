@@ -175,7 +175,7 @@ fn execute_swap(
                 contract_addr: env.contract.address.to_string(),
                 msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
                     operation: operation.clone(),
-                    offer_asset: offer_asset,
+                    offer_asset,
                 })?,
                 funds: vec![],
             };
