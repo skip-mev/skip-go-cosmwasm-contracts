@@ -10,8 +10,9 @@ use skip::{
     asset::Asset,
     entry_point::{Affiliate, ExecuteMsg},
     error::SkipError::{
-        Overflow, SwapOperationsAssetInDenomMismatch, SwapOperationsAssetOutDenomMismatch,
-        SwapOperationsEmpty, MustBeSingleRoute, RoutesAssetInAmountMismatch
+        MustBeSingleRoute, Overflow, RoutesAssetInAmountMismatch,
+        SwapOperationsAssetInDenomMismatch, SwapOperationsAssetOutDenomMismatch,
+        SwapOperationsEmpty,
     },
     swap::{
         ExecuteMsg as SwapExecuteMsg, Route, Swap, SwapExactAssetIn, SwapExactAssetOut,
@@ -915,9 +916,9 @@ struct Params {
                                 denom_in: "ua".to_string(),
                                 denom_out: "os".to_string(),
                                 interface: None,
-                            }                            
+                            }
                         ],
-                    }                    
+                    }
                 ],
             }
         ),
@@ -956,9 +957,9 @@ struct Params {
                                         denom_in: "ua".to_string(),
                                         denom_out: "os".to_string(),
                                         interface: None,
-                                    }                            
+                                    }
                                 ],
-                            }                    
+                            }
                         ],
                     }).unwrap(),
                     funds: vec![Coin::new(1_000_000, "un")],
@@ -1306,9 +1307,9 @@ struct Params {
                                 denom_in: "ua".to_string(),
                                 denom_out: "os".to_string(),
                                 interface: None,
-                            },                   
+                            },
                         ],
-                    }                    
+                    }
                 ],
             }
         ),
@@ -1346,9 +1347,9 @@ struct Params {
                                 denom_in: "un".to_string(),
                                 denom_out: "ua".to_string(),
                                 interface: None,
-                            },                   
+                            },
                         ],
-                    }                    
+                    }
                 ],
             }
         ),
@@ -1392,9 +1393,9 @@ struct Params {
                                 denom_in: "ua".to_string(),
                                 denom_out: "os".to_string(),
                                 interface: None,
-                            }                            
+                            }
                         ],
-                    }                    
+                    }
                 ],
             }
         ),
@@ -1434,7 +1435,7 @@ struct Params {
                                 interface: None,
                             }
                         ],
-                    }                    
+                    }
                 ],
                 refund_address: Some("refund_address".to_string()),
             }
