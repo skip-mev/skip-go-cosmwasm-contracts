@@ -18,8 +18,8 @@ use skip::{
     error::SkipError,
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
-        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactAssetOut,
+        validate_routes, validate_swap_operations, ExecuteMsg as SwapExecuteMsg,
+        QueryMsg as SwapQueryMsg, Swap, SwapExactAssetOut,
     },
 };
 
@@ -321,14 +321,8 @@ pub fn execute_user_swap(
     // Create the user swap message
     match swap {
         Swap::SwapExactAssetIn(swap) => {
-            // Validate swap operations
-            if swap.routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = swap.routes.first().unwrap().operations.clone();
-
-            validate_swap_operations(&operations, remaining_asset.denom(), min_asset.denom())?;
+            // Validate routes
+            validate_routes(&swap.routes, &remaining_asset, min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
