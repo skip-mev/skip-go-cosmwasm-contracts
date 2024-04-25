@@ -62,13 +62,15 @@ pub enum ExecuteMsg {
         swapper: Addr,
         return_denom: String,
     },
+    // Only used for the astroport swap adapter contract
     AstroportPoolSwap {
         operation: SwapOperation,
         offer_asset: Option<Asset>,
-    }, // Only used for the astroport swap adapter contract
+    },
+    // Only used for the white whale swap adapter contract
     WhiteWhalePoolSwap {
         operation: SwapOperation,
-    }, // Only used for the white whale swap adapter contract
+    },
 }
 
 #[cw_serde]
