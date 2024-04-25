@@ -46,6 +46,12 @@ pub struct LidoSatelliteInstantiateMsg {
     pub lido_satellite_contract_address: String,
 }
 
+#[cw_serde]
+pub struct HallswapInstantiateMsg {
+    pub entry_point_contract_address: String,
+    pub hallswap_contract_address: String,
+}
+
 /////////////////////////
 ///      EXECUTE      ///
 /////////////////////////
