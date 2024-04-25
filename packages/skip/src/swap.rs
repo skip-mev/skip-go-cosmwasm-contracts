@@ -57,10 +57,22 @@ pub struct LidoSatelliteInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    Swap { routes: Vec<Route> },
-    TransferFundsBack { swapper: Addr, return_denom: String },
-    AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
-    WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
+    Swap {
+        routes: Vec<Route>,
+    },
+    TransferFundsBack {
+        swapper: Addr,
+        return_denom: String,
+    },
+    // Only used for the astroport swap adapter contract
+    AstroportPoolSwap {
+        operation: SwapOperation,
+    },
+    // Only used for the white whale swap adapter contract
+    WhiteWhalePoolSwap {
+        operation: SwapOperation,
+        offer_asset: Option<Asset>,
+    },
 }
 
 #[cw_serde]
