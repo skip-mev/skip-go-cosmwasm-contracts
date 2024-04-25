@@ -9,7 +9,9 @@ use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, Decimal, DepsMut, Env, Message
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
-    SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
+    SwapAmountInRoute as OsmosisSwapAmountInRoute,
+    SwapAmountInSplitRoute as OsmosisSwapAmountInSplitRoute,
+    SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
 
 ///////////////
@@ -174,6 +176,19 @@ impl SwapOperation {
 
 // OSMOSIS CONVERSIONS
 
+impl TryFrom<Route> for OsmosisSwapAmountInSplitRoute {
+    type Error = ParseIntError;
+
+    fn try_from(route: Route) -> Result<Self, Self::Error> {
+        let pools: Vec<OsmosisSwapAmountInRoute> = convert_swap_operations(route.operations)?;
+
+        Ok(OsmosisSwapAmountInSplitRoute {
+            pools,
+            token_in_amount: route.offer_asset.amount().to_string(),
+        })
+    }
+}
+
 // Converts a skip swap operation to an osmosis swap amount in route
 // Error if the given String for pool in the swap operation is not a valid u64.
 impl TryFrom<SwapOperation> for OsmosisSwapAmountInRoute {
@@ -212,6 +227,16 @@ where
 {
     swap_operations.into_iter().map(T::try_from).collect()
 }
+
+// Converts a vector of skip routes to vector of osmosis split routes,
+// returning an error if any of the routes fail to convert.
+pub fn convert_routes<T>(routes: Vec<Route>) -> Result<Vec<T>, ParseIntError>
+where
+    T: TryFrom<Route, Error = ParseIntError>,
+{
+    routes.into_iter().map(T::try_from).collect()
+}
+
 // Swap object to get the exact amount of a given asset with the given vector of swap operations
 #[cw_serde]
 pub struct SwapExactAssetOut {
