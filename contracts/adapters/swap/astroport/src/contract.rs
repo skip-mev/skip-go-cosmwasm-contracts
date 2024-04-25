@@ -157,6 +157,9 @@ fn execute_swap(
         return Err(ContractError::Unauthorized);
     }
 
+    // reset the pre swap out asset amount
+    PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &Uint128::new(0))?;
+
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
