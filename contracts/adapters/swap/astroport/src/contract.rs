@@ -1,6 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::ENTRY_POINT_CONTRACT_ADDRESS,
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT},
 };
 use astroport::pair::{
     Cw20HookMsg as PairCw20HookMsg, ExecuteMsg as PairExecuteMsg, QueryMsg as PairQueryMsg,
@@ -222,13 +222,28 @@ fn execute_astroport_pool_swap(
     // Get the current asset available on contract to swap in
     let offer_asset = match offer_asset {
         Some(offer_asset) => offer_asset,
-        None => get_current_asset_available(&deps, &env, &operation.denom_in)?,
+        None => {
+            let pre_swap_out_asset_amount = PRE_SWAP_OUT_ASSET_AMOUNT
+                .load(deps.storage)
+                .unwrap_or(Uint128::zero());
+
+            let mut current_balance =
+                get_current_asset_available(&deps, &env, &operation.denom_in)?;
+
+            current_balance.sub(pre_swap_out_asset_amount)?;
+
+            current_balance
+        }
     };
 
     // Error if the offer asset amount is zero
     if offer_asset.amount().is_zero() {
         return Err(ContractError::NoOfferAssetAmount);
     }
+
+    let pre_swap_out_asset_amount =
+        get_current_asset_available(&deps, &env, operation.denom_out.as_str())?.amount();
+    PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &pre_swap_out_asset_amount)?;
 
     // Create the astroport pool swap msg depending on the offer asset type
     let msg = match offer_asset {
