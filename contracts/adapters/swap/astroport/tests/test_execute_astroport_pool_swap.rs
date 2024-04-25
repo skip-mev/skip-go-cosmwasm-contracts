@@ -129,7 +129,7 @@ struct Params {
             pool: "pool_1".to_string(),
             denom_in: "os".to_string(),
             denom_out: "ua".to_string(),
-            interface: None, 
+            interface: None,
         },
         expected_message: Some(SubMsg {
             id: 0,
