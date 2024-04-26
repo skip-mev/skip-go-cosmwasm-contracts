@@ -34,9 +34,7 @@ pub enum HallswapInterface {
 #[derive(QueryResponses)]
 pub enum HallswapQueryMsg {
     #[returns(HallswapQuerySimulationResult)]
-    Simulation {
-        routes: Vec<HallswapRouteInfo>,
-    },
+    Simulation { routes: Vec<HallswapRouteInfo> },
 }
 
 #[cw_serde]

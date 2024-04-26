@@ -272,11 +272,10 @@ fn get_hallswap_routes_from_skip_routes(
                         return_asset: Asset::new(deps.api, &op.denom_out, Uint128::zero())
                             .into_astroport_asset(deps.api)?
                             .info,
-                        interface: if let Some(interface) = &op.interface {
-                            Some(HallswapInterface::Binary(interface.clone()))
-                        } else {
-                            None
-                        },
+                        interface: op
+                            .interface
+                            .as_ref()
+                            .map(|interface| HallswapInterface::Binary(interface.clone())),
                     })
                 })
                 .collect::<Result<Vec<HallswapSwapOperation>, SkipError>>()?;
