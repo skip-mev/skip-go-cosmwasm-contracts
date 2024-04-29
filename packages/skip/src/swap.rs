@@ -82,10 +82,7 @@ pub enum QueryMsg {
     },
     // SimulateSwapExactAssetIn returns the asset out received from the specified asset in
     #[returns(Asset)]
-    SimulateSwapExactAssetIn {
-        asset_in: Asset,
-        swap_operations: Vec<SwapOperation>,
-    },
+    SimulateSwapExactAssetIn { asset_in: Asset, routes: Vec<Route> },
     // SimulateSwapExactAssetOutWithSpotPrice returns the asset in necessary to receive the specified asset out with metadata
     #[returns(SimulateSwapExactAssetOutResponse)]
     SimulateSwapExactAssetOutWithMetadata {
@@ -97,7 +94,7 @@ pub enum QueryMsg {
     #[returns(SimulateSwapExactAssetInResponse)]
     SimulateSwapExactAssetInWithMetadata {
         asset_in: Asset,
-        swap_operations: Vec<SwapOperation>,
+        routes: Vec<Route>,
         include_spot_price: bool,
     },
 }

@@ -18,8 +18,8 @@ use skip::{
     proto_coin::ProtoCoin,
     swap::{
         convert_swap_operations, execute_transfer_funds_back, ExecuteMsg, InstantiateMsg,
-        MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
-        SwapOperation,
+        MigrateMsg, QueryMsg, Route, SimulateSwapExactAssetInResponse,
+        SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 use std::str::FromStr;
@@ -184,13 +184,9 @@ fn create_osmosis_swap_msg(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
         QueryMsg::SimulateSwapExactAssetIn {
-            asset_in,
-            swap_operations,
-        } => to_json_binary(&query_simulate_swap_exact_asset_in(
-            deps,
-            asset_in,
-            swap_operations,
-        )?),
+            asset_in: _,
+            routes,
+        } => to_json_binary(&query_simulate_routes_swap_exact_asset_in(deps, routes)?),
         QueryMsg::SimulateSwapExactAssetOut {
             asset_out,
             swap_operations,
@@ -201,12 +197,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         )?),
         QueryMsg::SimulateSwapExactAssetInWithMetadata {
             asset_in,
-            swap_operations,
+            routes,
             include_spot_price,
         } => to_json_binary(&query_simulate_swap_exact_asset_in_with_metadata(
             deps,
             asset_in,
-            swap_operations,
+            routes,
             include_spot_price,
         )?),
         QueryMsg::SimulateSwapExactAssetOutWithMetadata {
@@ -224,6 +220,29 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 }
 
 // Queries the osmosis poolmanager module to simulate a swap exact amount in
+fn query_simulate_routes_swap_exact_asset_in(
+    deps: Deps,
+    routes: Vec<Route>,
+) -> ContractResult<Asset> {
+    let mut return_amount = Uint128::zero();
+
+    for route in &routes {
+        let asset_out = query_simulate_swap_exact_asset_in(
+            deps,
+            route.offer_asset.clone(),
+            route.operations.clone(),
+        )?;
+
+        return_amount += asset_out.amount();
+    }
+
+    Ok(Asset::new(
+        deps.api,
+        &routes.last().unwrap().operations.last().unwrap().denom_out,
+        return_amount,
+    ))
+}
+
 fn query_simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
@@ -323,19 +342,20 @@ fn query_simulate_swap_exact_asset_out(
 fn query_simulate_swap_exact_asset_in_with_metadata(
     deps: Deps,
     asset_in: Asset,
-    swap_operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
     let mut response = SimulateSwapExactAssetInResponse {
-        asset_out: query_simulate_swap_exact_asset_in(deps, asset_in, swap_operations.clone())?,
+        asset_out: query_simulate_routes_swap_exact_asset_in(deps, routes.clone())?,
         spot_price: None,
     };
 
     if include_spot_price {
-        response.spot_price = Some(calculate_spot_price(
+        response.spot_price = Some(calculate_weighted_spot_price(
             &PoolmanagerQuerier::new(&deps.querier),
-            swap_operations,
-        )?)
+            asset_in,
+            routes,
+        )?);
     }
 
     Ok(response)
@@ -364,6 +384,25 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
 }
 
 // Calculates the spot price for a given vector of swap operations
+fn calculate_weighted_spot_price(
+    querier: &PoolmanagerQuerier<Empty>,
+    asset_in: Asset,
+    routes: Vec<Route>,
+) -> ContractResult<Decimal> {
+    let spot_price = routes.into_iter().try_fold(
+        Decimal::zero(),
+        |curr_spot_price, route| -> ContractResult<Decimal> {
+            let route_spot_price = calculate_spot_price(querier, route.operations)?;
+
+            let weight = Decimal::from_ratio(route.offer_asset.amount(), asset_in.amount());
+
+            Ok(curr_spot_price + (route_spot_price * weight))
+        },
+    )?;
+
+    Ok(spot_price)
+}
+
 fn calculate_spot_price(
     querier: &PoolmanagerQuerier<Empty>,
     swap_operations: Vec<SwapOperation>,

@@ -202,11 +202,17 @@ pub fn test_swap_simulation() {
             denom: "uxprt".to_string(),
             amount: Uint128::from(1_000_000u128),
         }),
-        swap_operations: vec![SwapOperation {
-            pool: "1".to_string(),
-            denom_in: "uxprt".to_string(),
-            denom_out: "stk/uxprt".to_string(),
-            interface: None,
+        routes: vec![Route {
+            offer_asset: skip::asset::Asset::Native(Coin {
+                denom: "uxprt".to_string(),
+                amount: Uint128::from(1_000_000u128),
+            }),
+            operations: vec![SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "uxprt".to_string(),
+                denom_out: "stk/uxprt".to_string(),
+                interface: None,
+            }],
         }],
         include_spot_price: true,
     };
@@ -237,20 +243,26 @@ pub fn test_swap_simulation() {
             denom: "uxprt".to_string(),
             amount: Uint128::from(1_000_000u128),
         }),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "1".to_string(),
-                denom_in: "uxprt".to_string(),
-                denom_out: "stk/uxprt".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "2".to_string(),
-                denom_in: "stk/uxprt".to_string(),
-                denom_out: "stk/uatom".to_string(),
-                interface: None,
-            },
-        ],
+        routes: vec![Route {
+            offer_asset: skip::asset::Asset::Native(Coin {
+                denom: "uxprt".to_string(),
+                amount: Uint128::from(1_000_000u128),
+            }),
+            operations: vec![
+                SwapOperation {
+                    pool: "1".to_string(),
+                    denom_in: "uxprt".to_string(),
+                    denom_out: "stk/uxprt".to_string(),
+                    interface: None,
+                },
+                SwapOperation {
+                    pool: "2".to_string(),
+                    denom_in: "stk/uxprt".to_string(),
+                    denom_out: "stk/uatom".to_string(),
+                    interface: None,
+                },
+            ],
+        }],
         include_spot_price: true,
     };
 
@@ -323,20 +335,26 @@ pub fn test_swap_simulation() {
             denom: "uxprt".to_string(),
             amount: Uint128::from(1_000_000u128),
         }),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "1".to_string(),
-                denom_in: "uxprt".to_string(),
-                denom_out: "stk/uxprt".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "2".to_string(),
-                denom_in: "stk/uxprt".to_string(),
-                denom_out: "uatom".to_string(),
-                interface: None,
-            },
-        ],
+        routes: vec![Route {
+            offer_asset: skip::asset::Asset::Native(Coin {
+                denom: "uxprt".to_string(),
+                amount: Uint128::from(1_000_000u128),
+            }),
+            operations: vec![
+                SwapOperation {
+                    pool: "1".to_string(),
+                    denom_in: "uxprt".to_string(),
+                    denom_out: "stk/uxprt".to_string(),
+                    interface: None,
+                },
+                SwapOperation {
+                    pool: "2".to_string(),
+                    denom_in: "stk/uxprt".to_string(),
+                    denom_out: "uatom".to_string(),
+                    interface: None,
+                },
+            ],
+        }],
         include_spot_price: true,
     };
 
@@ -353,26 +371,32 @@ pub fn test_swap_simulation() {
             denom: "uxprt".to_string(),
             amount: Uint128::from(1_000_000u128),
         }),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "1".to_string(),
-                denom_in: "uxprt".to_string(),
-                denom_out: "stk/uxprt".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "2".to_string(),
-                denom_in: "stk/uxprt".to_string(),
-                denom_out: "stk/uatom".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "3".to_string(),
-                denom_in: "stk/uatom".to_string(),
-                denom_out: "uatom".to_string(),
-                interface: None,
-            },
-        ],
+        routes: vec![Route {
+            offer_asset: skip::asset::Asset::Native(Coin {
+                denom: "uxprt".to_string(),
+                amount: Uint128::from(1_000_000u128),
+            }),
+            operations: vec![
+                SwapOperation {
+                    pool: "1".to_string(),
+                    denom_in: "uxprt".to_string(),
+                    denom_out: "stk/uxprt".to_string(),
+                    interface: None,
+                },
+                SwapOperation {
+                    pool: "2".to_string(),
+                    denom_in: "stk/uxprt".to_string(),
+                    denom_out: "stk/uatom".to_string(),
+                    interface: None,
+                },
+                SwapOperation {
+                    pool: "3".to_string(),
+                    denom_in: "stk/uatom".to_string(),
+                    denom_out: "uatom".to_string(),
+                    interface: None,
+                },
+            ],
+        }],
         include_spot_price: true,
     };
 
