@@ -118,6 +118,9 @@ async def main() -> None:
     }
     
     for venue in SWAP_VENUES:
+        args = {"entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS}
+        if "hallswap_contract_address" in venue:
+            args["hallswap_contract_address"] = venue["hallswap_contract_address"]
         swap_adapter_contract_address = await instantiate_contract(
             client, 
             composer, 
@@ -125,7 +128,7 @@ async def main() -> None:
             pub_key, 
             address,
             code_id=venue["code_id"],
-            args={"entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS},
+            args=args,
             label=f"Skip Swap Swap Adapter {venue['name']}",
             name=f"swap_adapter_{venue['name']}"
         )        
