@@ -550,7 +550,7 @@ fn calculate_spot_price_for_routes_from_simulation_responses(
     simulation_responses: Vec<Vec<SimulationResponse>>,
 ) -> ContractResult<Decimal> {
     let weighted_spot_price = routes.iter().zip(simulation_responses).try_fold(
-        Decimal::one(),
+        Decimal::zero(),
         |curr_spot_price, (route, res)| -> Result<_, ContractError> {
             let spot_price = calculate_spot_price_from_simulation_responses(
                 deps,
