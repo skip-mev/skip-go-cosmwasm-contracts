@@ -194,8 +194,6 @@ def main():
             }
             if "lido_satellite_contract_address" in venue:
                 swap_adapter_instantiate_args["lido_satellite_contract_address"] = venue["lido_satellite_contract_address"]
-            if "hallswap_contract_address" in venue:
-                swap_adapter_instantiate_args["hallswap_contract_address"] = venue["hallswap_contract_address"]
             
             swap_adapter_contract_address = instantiate_contract(
                 client, 
@@ -305,16 +303,12 @@ def main():
                 f"swap_adapter_{venue['name']}", 
                 PERMISSIONED_UPLOADER_ADDRESS
             )
-            args = {"entry_point_contract_address": entry_point_contract_address}
-            if "hallswap_contract_address" in venue:
-                args["hallswap_contract_address"] = venue["hallswap_contract_address"]
-                
             swap_adapter_contract_address = migrate_contract(
                 client, 
                 wallet, 
                 entry_point_instantiate_args["swap_venues"][i]["adapter_contract_address"],
                 swap_adapter_contract_code_id, 
-                args, 
+                {"entry_point_contract_address": entry_point_contract_address}, 
                 f"swap_adapter_{venue['name']}"
             )
             update_admin(
