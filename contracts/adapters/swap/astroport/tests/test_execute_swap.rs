@@ -33,8 +33,7 @@ Expect Error
 struct Params {
     caller: String,
     info_funds: Vec<Coin>,
-    offer_asset: Asset,
-    swap_operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
 }
@@ -43,14 +42,18 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         info_funds: vec![Coin::new(100, "os")],
-        swap_operations: vec![
-            SwapOperation {
-                pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "ua".to_string(),
-                interface: None,
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "ua".to_string(),
+                        interface: None,
+                    }
+                ],
             }
         ],
         expected_messages: vec![
@@ -59,6 +62,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                        offer_asset: Some(Asset::Native(Coin::new(100, "os"))),
                         operation: SwapOperation {
                             pool: "pool_1".to_string(),
                             denom_in: "os".to_string(),
@@ -93,19 +97,23 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "ua".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "pool_2".to_string(),
-                denom_in: "ua".to_string(),
-                denom_out: "un".to_string(),
-                interface: None,
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "ua".to_string(),
+                        interface: None,
+                    },
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "ua".to_string(),
+                        denom_out: "un".to_string(),
+                        interface: None,
+                    }
+                ],
             }
         ],
         expected_messages: vec![
@@ -114,6 +122,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                        offer_asset: Some(Asset::Native(Coin::new(100, "os"))),
                         operation: SwapOperation {
                             pool: "pool_1".to_string(),
                             denom_in: "os".to_string(),
@@ -131,6 +140,7 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                        offer_asset: None,
                         operation: SwapOperation {
                             pool: "pool_2".to_string(),
                             denom_in: "ua".to_string(),
@@ -162,11 +172,122 @@ struct Params {
     };
     "Multiple Swap Operations")]
 #[test_case(
+        Params {
+            caller: "entry_point".to_string(),
+            info_funds: vec![Coin::new(100, "os")],
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Native(Coin::new(25, "os")),
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool_1".to_string(),
+                            denom_in: "os".to_string(),
+                            denom_out: "ua".to_string(),
+                            interface: None,
+                        },
+                        SwapOperation {
+                            pool: "pool_2".to_string(),
+                            denom_in: "ua".to_string(),
+                            denom_out: "un".to_string(),
+                            interface: None,
+                        }
+                    ],
+                },
+                Route {
+                    offer_asset: Asset::Native(Coin::new(75, "os")),
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool_3".to_string(),
+                            denom_in: "os".to_string(),
+                            denom_out: "un".to_string(),
+                            interface: None,
+                        },
+                    ],
+                }
+            ],
+            expected_messages: vec![
+                SubMsg {
+                    id: 0,
+                    msg: WasmMsg::Execute {
+                        contract_addr: "swap_contract_address".to_string(),
+                        msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                            offer_asset: Some(Asset::Native(Coin::new(25, "os"))),
+                            operation: SwapOperation {
+                                pool: "pool_1".to_string(),
+                                denom_in: "os".to_string(),
+                                denom_out: "ua".to_string(),
+                                interface: None,
+                            }
+                        })?,
+                        funds: vec![],
+                    }.into(),
+                    gas_limit: None,
+                    reply_on: Never,
+                },
+                SubMsg {
+                    id: 0,
+                    msg: WasmMsg::Execute {
+                        contract_addr: "swap_contract_address".to_string(),
+                        msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                            offer_asset: None,
+                            operation: SwapOperation {
+                                pool: "pool_2".to_string(),
+                                denom_in: "ua".to_string(),
+                                denom_out: "un".to_string(),
+                                interface: None,
+                            }
+                        })?,
+                        funds: vec![],
+                    }.into(),
+                    gas_limit: None,
+                    reply_on: Never,
+                },
+                SubMsg {
+                    id: 0,
+                    msg: WasmMsg::Execute {
+                        contract_addr: "swap_contract_address".to_string(),
+                        msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
+                            offer_asset: Some(Asset::Native(Coin::new(75, "os"))),
+                            operation: SwapOperation {
+                                pool: "pool_3".to_string(),
+                                denom_in: "os".to_string(),
+                                denom_out: "un".to_string(),
+                                interface: None,
+                            }
+                        })?,
+                        funds: vec![],
+                    }.into(),
+                    gas_limit: None,
+                    reply_on: Never,
+                },
+                SubMsg {
+                    id: 0,
+                    msg: WasmMsg::Execute {
+                        contract_addr: "swap_contract_address".to_string(),
+                        msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
+                            return_denom: "un".to_string(),
+                            swapper: Addr::unchecked("entry_point"),
+                        })?,
+                        funds: vec![],
+                    }
+                    .into(),
+                    gas_limit: None,
+                    reply_on: Never,
+                },
+            ],
+            expected_error: None,
+        };
+        "Multiple Routes")]
+#[test_case(
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![],
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![],
+            }
+        ],
         expected_messages: vec![],
         expected_error: Some(ContractError::SwapOperationsEmpty),
     };
@@ -175,8 +296,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![],
+        routes: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Payment(cw_utils::PaymentError::NoFunds{})),
     };
@@ -188,8 +308,7 @@ struct Params {
             Coin::new(100, "un"),
             Coin::new(100, "os"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![],
+        routes: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Payment(cw_utils::PaymentError::MultipleDenoms{})),
     };
@@ -200,8 +319,12 @@ struct Params {
         info_funds: vec![
             Coin::new(100, "un"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "un")),
-        swap_operations: vec![],
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "un")),
+                operations: vec![],
+            }
+        ],
         expected_messages: vec![],
         expected_error: Some(ContractError::Unauthorized),
     };
@@ -229,11 +352,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::Swap {
-            // operations: params.swap_operations.clone(),
-            routes: vec![Route {
-                offer_asset: params.offer_asset,
-                operations: params.swap_operations,
-            }],
+            routes: params.routes,
         },
     );
 
