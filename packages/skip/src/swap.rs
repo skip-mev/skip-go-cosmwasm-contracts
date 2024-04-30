@@ -4,8 +4,8 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
 use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Binary, Uint128};
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
@@ -67,6 +67,7 @@ pub enum ExecuteMsg {
     // Only used for the astroport swap adapter contract
     AstroportPoolSwap {
         operation: SwapOperation,
+        offer_asset: Option<Asset>,
     },
     // Only used for the white whale swap adapter contract
     WhiteWhalePoolSwap {
@@ -345,6 +346,34 @@ pub fn validate_swap_operations(
     // Verify the last swap operation denom out is the same as the asset out denom
     if last_op.denom_out != asset_out_denom {
         return Err(SkipError::SwapOperationsAssetOutDenomMismatch);
+    }
+
+    Ok(())
+}
+
+// Validates routes
+pub fn validate_routes(
+    routes: &[Route],
+    asset_in: &Asset,
+    asset_out_denom: &str,
+) -> Result<(), SkipError> {
+    // Verify the routes are not empty
+    if routes.is_empty() {
+        return Err(SkipError::RoutesEmpty);
+    }
+
+    let mut amount_in = Uint128::zero();
+
+    for route in routes {
+        // Verify the swap operations are not empty, and all operations have the same denom in and out
+        validate_swap_operations(&route.operations, asset_in.denom(), asset_out_denom)?;
+
+        amount_in += route.offer_asset.amount();
+    }
+
+    // Verify the total offer_asset amount is equal to the asset_in amount
+    if amount_in != asset_in.amount() {
+        return Err(SkipError::RoutesAssetInAmountMismatch);
     }
 
     Ok(())

@@ -182,8 +182,6 @@ fn execute_swap(
             minimum_receive: None,
         };
 
-        // let denom_in = route.operations.first().unwrap().denom_in.clone();
-
         let dexter_router_wasm_msg = WasmMsg::Execute {
             contract_addr: dexter_router_contract_address.to_string(),
             msg: to_json_binary(&dexter_router_msg)?,
