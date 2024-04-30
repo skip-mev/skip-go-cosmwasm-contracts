@@ -326,7 +326,7 @@ struct Params {
                                 swap_venue_name: "swap_venue_name".to_string(),
                                 routes: vec![
                                     Route{
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
+                                        offer_asset: Asset::Native(Coin::new(800_000, "untrn")),
                                         operations: vec![
                                             SwapOperation {
                                                 pool: "pool".to_string(),
@@ -591,7 +591,7 @@ struct Params {
                                 swap_venue_name: "swap_venue_name".to_string(),
                                 routes: vec![
                                     Route {
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                                        offer_asset: Asset::Native(Coin::new(800_000, "osmo")),
                                         operations: vec![
                                             SwapOperation {
                                                 pool: "pool_2".to_string(),
@@ -970,7 +970,7 @@ struct Params {
                                     Route {
                                         offer_asset: Asset::Cw20(Cw20Coin {
                                             address: "neutron123".to_string(),
-                                            amount: Uint128::from(1_000_000u128),
+                                            amount: Uint128::from(800_000u128),
                                         }),
                                         operations: vec![
                                             SwapOperation {
