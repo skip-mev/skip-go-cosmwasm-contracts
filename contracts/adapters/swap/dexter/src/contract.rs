@@ -18,7 +18,6 @@ use dexter::{
 };
 use skip::{
     asset::Asset,
-    error::SkipError,
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, DexterAdapterInstantiateMsg, ExecuteMsg,
         MigrateMsg, QueryMsg, Route, SimulateSwapExactAssetInResponse,
@@ -102,15 +101,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
-            execute_swap(deps, env, info, sent_asset.amount(), operations)
-        }
+        Cw20HookMsg::Swap { routes } => execute_swap(deps, env, info, routes),
     }
 }
 
@@ -128,25 +119,9 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
+            one_coin(&info)?;
 
-            let operations = routes.first().unwrap().operations.clone();
-
-            // validate that there's at least one swap operation
-            if operations.is_empty() {
-                return Err(ContractError::SwapOperationsEmpty);
-            }
-
-            let coin = one_coin(&info)?;
-
-            // validate that the one coin is the same as the first swap operation's denom in
-            if coin.denom != operations.first().unwrap().denom_in {
-                return Err(ContractError::CoinInDenomMismatch);
-            }
-
-            execute_swap(deps, env, info, coin.amount, operations)
+            execute_swap(deps, env, info, routes)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -168,8 +143,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    amount_in: Uint128,
-    operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -181,44 +155,49 @@ fn execute_swap(
     }
 
     // Create a response object to return
-    let response: Response = Response::new().add_attribute("action", "execute_swap");
+    let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    let mut hop_swap_requests = vec![];
+    for route in &routes {
+        let mut hop_swap_requests = vec![];
 
-    for operation in &operations {
-        let pool_id: u64 = operation
-            .pool
-            .parse()
-            .map_err(|_| ContractError::PoolIdParseError)?;
-        let pool_id_u128 = Uint128::from(pool_id);
+        for operation in &route.operations {
+            let pool_id: u64 = operation
+                .pool
+                .parse()
+                .map_err(|_| ContractError::PoolIdParseError)?;
+            let pool_id_u128 = Uint128::from(pool_id);
 
-        hop_swap_requests.push(HopSwapRequest {
-            pool_id: pool_id_u128,
-            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-        });
+            hop_swap_requests.push(HopSwapRequest {
+                pool_id: pool_id_u128,
+                asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+                asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
+            });
+        }
+
+        let dexter_router_msg = RouterExecuteMsg::ExecuteMultihopSwap {
+            requests: hop_swap_requests,
+            recipient: None,
+            offer_amount: route.offer_asset.amount(),
+            // doing this since we would validate it anyway in the entrypoint contract from where swap adapter is called
+            minimum_receive: None,
+        };
+
+        let dexter_router_wasm_msg = WasmMsg::Execute {
+            contract_addr: dexter_router_contract_address.to_string(),
+            msg: to_json_binary(&dexter_router_msg)?,
+            funds: vec![Coin {
+                denom: route.offer_asset.denom().to_string(),
+                amount: route.offer_asset.amount(),
+            }],
+        };
+
+        response = response.add_message(dexter_router_wasm_msg);
     }
 
-    let dexter_router_msg = RouterExecuteMsg::ExecuteMultihopSwap {
-        requests: hop_swap_requests,
-        recipient: None,
-        offer_amount: amount_in,
-        // doing this since we would validate it anyway in the entrypoint contract from where swap adapter is called
-        minimum_receive: None,
-    };
-
-    let denom_in = operations.first().unwrap().denom_in.clone();
-
-    let dexter_router_wasm_msg = WasmMsg::Execute {
-        contract_addr: dexter_router_contract_address.to_string(),
-        msg: to_json_binary(&dexter_router_msg)?,
-        funds: vec![Coin {
-            denom: denom_in,
-            amount: amount_in,
-        }],
-    };
-
-    let return_denom = match operations.last() {
+    let return_denom = match routes
+        .last()
+        .and_then(|last_route| last_route.operations.last())
+    {
         Some(last_op) => last_op.denom_out.clone(),
         None => return Err(ContractError::SwapOperationsEmpty),
     };
@@ -234,7 +213,6 @@ fn execute_swap(
     };
 
     Ok(response
-        .add_message(dexter_router_wasm_msg)
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swaps_and_transfer_back"))
 }

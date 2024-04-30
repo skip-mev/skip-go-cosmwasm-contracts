@@ -18,8 +18,8 @@ use skip::{
     error::SkipError,
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
-        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactAssetOut,
+        validate_routes, validate_swap_operations, ExecuteMsg as SwapExecuteMsg,
+        QueryMsg as SwapQueryMsg, Route, Swap, SwapExactAssetOut,
     },
 };
 
@@ -92,7 +92,7 @@ pub fn execute_swap_and_action(
     env: Env,
     info: MessageInfo,
     sent_asset: Option<Asset>,
-    user_swap: Swap,
+    mut user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
@@ -139,12 +139,35 @@ pub fn execute_swap_and_action(
                 .ok_or(ContractError::FeeSwapWithoutIbcFees)?;
 
             // NOTE: this call mutates remaining_asset by deducting ibc_fee_coin's amount from it
-            let fee_swap_msg = verify_and_create_fee_swap_msg(
+            let (fee_swap_msg, fee_swap_asset_in) = verify_and_create_fee_swap_msg(
                 &deps,
                 fee_swap,
                 &mut remaining_asset,
                 &ibc_fee_coin,
             )?;
+
+            // Update the user swap to deduct the ibc fee amount from the route
+            // with the largest input amount
+            user_swap = match user_swap.clone() {
+                Swap::SwapExactAssetIn(mut swap) => {
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
+
+                    swap.routes[largest_route_idx]
+                        .offer_asset
+                        .sub(fee_swap_asset_in.amount())?;
+
+                    Swap::SwapExactAssetIn(swap)
+                }
+                Swap::SwapExactAssetOut(mut swap) => {
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
+
+                    swap.routes[largest_route_idx]
+                        .offer_asset
+                        .sub(fee_swap_asset_in.amount())?;
+
+                    Swap::SwapExactAssetOut(swap)
+                }
+            };
 
             // Add the fee swap message to the response
             response = response
@@ -157,6 +180,29 @@ pub fn execute_swap_and_action(
 
             // Deduct the ibc_fee_coin amount from the remaining asset amount
             remaining_asset.sub(ibc_fee_coin.amount)?;
+
+            // Update the user swap to deduct the ibc fee amount from the route
+            // with the largest input amount
+            user_swap = match user_swap.clone() {
+                Swap::SwapExactAssetIn(mut swap) => {
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
+
+                    swap.routes[largest_route_idx]
+                        .offer_asset
+                        .sub(ibc_fee_coin.amount)?;
+
+                    Swap::SwapExactAssetIn(swap)
+                }
+                Swap::SwapExactAssetOut(mut swap) => {
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
+
+                    swap.routes[largest_route_idx]
+                        .offer_asset
+                        .sub(ibc_fee_coin.amount)?;
+
+                    Swap::SwapExactAssetOut(swap)
+                }
+            };
         }
 
         // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
@@ -321,14 +367,8 @@ pub fn execute_user_swap(
     // Create the user swap message
     match swap {
         Swap::SwapExactAssetIn(swap) => {
-            // Validate swap operations
-            if swap.routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = swap.routes.first().unwrap().operations.clone();
-
-            validate_swap_operations(&operations, remaining_asset.denom(), min_asset.denom())?;
+            // Validate routes
+            validate_routes(&swap.routes, &remaining_asset, min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
@@ -560,7 +600,7 @@ fn verify_and_create_fee_swap_msg(
     fee_swap: &SwapExactAssetOut,
     remaining_asset: &mut Asset,
     ibc_fee_coin: &Coin,
-) -> ContractResult<WasmMsg> {
+) -> ContractResult<(WasmMsg, Asset)> {
     // Validate swap operations
     if fee_swap.routes.len() != 1 {
         return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
@@ -595,12 +635,12 @@ fn verify_and_create_fee_swap_msg(
     let fee_swap_msg_args: SwapExecuteMsg = fee_swap.clone().into();
 
     // Create the fee swap message
-    let fee_swap_msg = fee_swap_asset_in.into_wasm_msg(
+    let fee_swap_msg = fee_swap_asset_in.clone().into_wasm_msg(
         fee_swap_adapter_contract_address.to_string(),
         to_json_binary(&fee_swap_msg_args)?,
     )?;
 
-    Ok(fee_swap_msg)
+    Ok((fee_swap_msg, fee_swap_asset_in))
 }
 
 // AFFILIATE FEE HELPER FUNCTIONS
@@ -645,4 +685,12 @@ fn query_swap_asset_in(
     )?;
 
     Ok(fee_swap_asset_in)
+}
+
+fn get_largest_route_idx(routes: &[Route]) -> Option<usize> {
+    routes
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, route)| route.offer_asset.amount())
+        .map(|(idx, _)| idx)
 }

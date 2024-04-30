@@ -4,12 +4,14 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
 use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Binary, Uint128};
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
-    SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
+    SwapAmountInRoute as OsmosisSwapAmountInRoute,
+    SwapAmountInSplitRoute as OsmosisSwapAmountInSplitRoute,
+    SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
 
 ///////////////
@@ -55,10 +57,23 @@ pub struct LidoSatelliteInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    Swap { routes: Vec<Route> },
-    TransferFundsBack { swapper: Addr, return_denom: String },
-    AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
-    WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
+    Swap {
+        routes: Vec<Route>,
+    },
+    TransferFundsBack {
+        swapper: Addr,
+        return_denom: String,
+    },
+    // Only used for the astroport swap adapter contract
+    AstroportPoolSwap {
+        operation: SwapOperation,
+        offer_asset: Option<Asset>,
+    },
+    // Only used for the white whale swap adapter contract
+    WhiteWhalePoolSwap {
+        operation: SwapOperation,
+        offer_asset: Option<Asset>,
+    },
 }
 
 #[cw_serde]
@@ -171,6 +186,19 @@ impl SwapOperation {
 
 // OSMOSIS CONVERSIONS
 
+impl TryFrom<Route> for OsmosisSwapAmountInSplitRoute {
+    type Error = ParseIntError;
+
+    fn try_from(route: Route) -> Result<Self, Self::Error> {
+        let pools: Vec<OsmosisSwapAmountInRoute> = convert_swap_operations(route.operations)?;
+
+        Ok(OsmosisSwapAmountInSplitRoute {
+            pools,
+            token_in_amount: route.offer_asset.amount().to_string(),
+        })
+    }
+}
+
 // Converts a skip swap operation to an osmosis swap amount in route
 // Error if the given String for pool in the swap operation is not a valid u64.
 impl TryFrom<SwapOperation> for OsmosisSwapAmountInRoute {
@@ -209,6 +237,16 @@ where
 {
     swap_operations.into_iter().map(T::try_from).collect()
 }
+
+// Converts a vector of skip routes to vector of osmosis split routes,
+// returning an error if any of the routes fail to convert.
+pub fn convert_routes<T>(routes: Vec<Route>) -> Result<Vec<T>, ParseIntError>
+where
+    T: TryFrom<Route, Error = ParseIntError>,
+{
+    routes.into_iter().map(T::try_from).collect()
+}
+
 // Swap object to get the exact amount of a given asset with the given vector of swap operations
 #[cw_serde]
 pub struct SwapExactAssetOut {
@@ -305,6 +343,34 @@ pub fn validate_swap_operations(
     // Verify the last swap operation denom out is the same as the asset out denom
     if last_op.denom_out != asset_out_denom {
         return Err(SkipError::SwapOperationsAssetOutDenomMismatch);
+    }
+
+    Ok(())
+}
+
+// Validates routes
+pub fn validate_routes(
+    routes: &[Route],
+    asset_in: &Asset,
+    asset_out_denom: &str,
+) -> Result<(), SkipError> {
+    // Verify the routes are not empty
+    if routes.is_empty() {
+        return Err(SkipError::RoutesEmpty);
+    }
+
+    let mut amount_in = Uint128::zero();
+
+    for route in routes {
+        // Verify the swap operations are not empty, and all operations have the same denom in and out
+        validate_swap_operations(&route.operations, asset_in.denom(), asset_out_denom)?;
+
+        amount_in += route.offer_asset.amount();
+    }
+
+    // Verify the total offer_asset amount is equal to the asset_in amount
+    if amount_in != asset_in.amount() {
+        return Err(SkipError::RoutesAssetInAmountMismatch);
     }
 
     Ok(())
