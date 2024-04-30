@@ -150,7 +150,7 @@ pub fn execute_swap_and_action(
             // with the largest input amount
             user_swap = match user_swap.clone() {
                 Swap::SwapExactAssetIn(mut swap) => {
-                    let largest_route_idx = get_largest_route_idx(&swap.routes);
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
 
                     swap.routes[largest_route_idx]
                         .offer_asset
@@ -159,7 +159,7 @@ pub fn execute_swap_and_action(
                     Swap::SwapExactAssetIn(swap)
                 }
                 Swap::SwapExactAssetOut(mut swap) => {
-                    let largest_route_idx = get_largest_route_idx(&swap.routes);
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
 
                     swap.routes[largest_route_idx]
                         .offer_asset
@@ -185,7 +185,7 @@ pub fn execute_swap_and_action(
             // with the largest input amount
             user_swap = match user_swap.clone() {
                 Swap::SwapExactAssetIn(mut swap) => {
-                    let largest_route_idx = get_largest_route_idx(&swap.routes);
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
 
                     swap.routes[largest_route_idx]
                         .offer_asset
@@ -194,7 +194,7 @@ pub fn execute_swap_and_action(
                     Swap::SwapExactAssetIn(swap)
                 }
                 Swap::SwapExactAssetOut(mut swap) => {
-                    let largest_route_idx = get_largest_route_idx(&swap.routes);
+                    let largest_route_idx = get_largest_route_idx(&swap.routes).unwrap_or(0);
 
                     swap.routes[largest_route_idx]
                         .offer_asset
@@ -687,25 +687,10 @@ fn query_swap_asset_in(
     Ok(fee_swap_asset_in)
 }
 
-// fn get_largest_route_idx(routes: Vec<Route>) -> usize {
-//     let mut largest_route_idx = 0;
-//     let mut largest_amount = routes[0].offer_asset.amount();
-
-//     routes.into_iter().enumerate().for_each(|(idx, route)| {
-//         if route.offer_asset.amount() > largest_amount {
-//             largest_route_idx = idx;
-//             largest_amount = route.offer_asset.amount();
-//         }
-//     });
-
-//     largest_route_idx
-// }
-
-fn get_largest_route_idx(routes: &[Route]) -> usize {
+fn get_largest_route_idx(routes: &[Route]) -> Option<usize> {
     routes
         .iter()
         .enumerate()
         .max_by_key(|(_, route)| route.offer_asset.amount())
         .map(|(idx, _)| idx)
-        .unwrap()
 }
