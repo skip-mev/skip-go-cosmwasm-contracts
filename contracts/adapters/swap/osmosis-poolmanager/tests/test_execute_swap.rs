@@ -4,8 +4,11 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
-use osmosis_std::types::cosmos::base::v1beta1::Coin as OsmosisStdCoin;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{MsgSwapExactAmountIn, SwapAmountInRoute};
+use osmosis_std::types::{
+    cosmos::base::v1beta1::Coin as OsmosisStdCoin,
+    osmosis::poolmanager::v1beta1::{MsgSplitRouteSwapExactAmountIn, SwapAmountInSplitRoute},
+};
 use skip::{
     asset::Asset,
     swap::{ExecuteMsg, Route, SwapOperation},
@@ -21,6 +24,7 @@ Test Cases:
 Expect Success
     - One Swap Operation
     - Multiple Swap Operations
+    - Multiple Routes
     - No Swap Operations (This is prevented in the entry point contract; and will fail on Osmosis module if attempted)
 
 Expect Error
@@ -35,8 +39,7 @@ Expect Error
 struct Params {
     caller: String,
     info_funds: Vec<Coin>,
-    offer_asset: Asset,
-    swap_operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
     expected_messages: Vec<SubMsg>,
     expected_error_string: String,
 }
@@ -46,13 +49,17 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "uatom".to_string(),
-                interface: None,
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
+                    }
+                ],
             }
         ],
         expected_messages: vec![
@@ -100,19 +107,23 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "uatom".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "2".to_string(),
-                denom_in: "uatom".to_string(),
-                denom_out: "untrn".to_string(),
-                interface: None,
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
+                    },
+                    SwapOperation {
+                        pool: "2".to_string(),
+                        denom_in: "uatom".to_string(),
+                        denom_out: "untrn".to_string(),
+                        interface: None,
+                    }
+                ],
             }
         ],
         expected_messages: vec![
@@ -164,8 +175,95 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![],
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(50, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
+                    }
+                ],
+            },
+            Route {
+                offer_asset: Asset::Native(Coin::new(50, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "2".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "untrn".to_string(),
+                        interface: None,
+                    },
+                    SwapOperation {
+                        pool: "3".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
+                    }
+                ],
+            }
+        ],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: MsgSplitRouteSwapExactAmountIn {
+                    sender: "swap_contract_address".to_string(),
+                    routes: vec![
+                        SwapAmountInSplitRoute {
+                            pools: vec![
+                                SwapAmountInRoute {
+                                    pool_id: 1,
+                                    token_out_denom: "uatom".to_string(),
+                                }
+                            ],
+                            token_in_amount: "50".to_string(),
+                        },
+                        SwapAmountInSplitRoute {
+                            pools: vec![
+                                SwapAmountInRoute {
+                                    pool_id: 2,
+                                    token_out_denom: "untrn".to_string(),
+                                },
+                                SwapAmountInRoute {
+                                    pool_id: 3,
+                                    token_out_denom: "uatom".to_string(),
+                                }
+                            ],
+                            token_in_amount: "50".to_string(),
+                        },
+                    ],
+                    token_in_denom: "os".to_string(),
+                    token_out_min_amount: "1".to_string(),
+                }.into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_contract_address".to_string(),
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
+                        return_denom: "uatom".to_string(),
+                        swapper: Addr::unchecked("entry_point"),
+                    })?,
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error_string: "".to_string(),
+    };
+    "Multiple Routes"
+)]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        info_funds: vec![Coin::new(100, "os")],
+        routes: vec![],
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -206,13 +304,17 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "uatom".to_string(),
-                interface: None,
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
+                    }
+                ],
             }
         ],
         expected_messages: vec![],
@@ -226,13 +328,17 @@ struct Params {
             Coin::new(100, "os"),
             Coin::new(100, "uatom"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "uatom".to_string(),
-                interface: None,
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
+                    }
+                ],
             }
         ],
         expected_messages: vec![],
@@ -243,13 +349,17 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![
-            SwapOperation {
-                pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "uatom".to_string(),
-                interface: None,
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(100, "os")),
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_1".to_string(),
+                        denom_in: "os".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
+                    }
+                ],
             }
         ],
         expected_messages: vec![],
@@ -263,8 +373,7 @@ struct Params {
             Coin::new(100, "untrn"),
             Coin::new(100, "os"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
-        swap_operations: vec![],
+        routes: vec![],
         expected_messages: vec![],
         expected_error_string: "Unauthorized".to_string(),
     };
@@ -292,10 +401,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::Swap {
-            routes: vec![Route {
-                offer_asset: params.offer_asset,
-                operations: params.swap_operations,
-            }],
+            routes: params.routes,
         },
     );
 

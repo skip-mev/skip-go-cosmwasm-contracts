@@ -39,7 +39,7 @@ ibc-proto        = { version = "0.32.1", default-features = false }
 lido-satellite   = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = ["library"] }
 neutron-proto    = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
 neutron-sdk      = "0.8"
-osmosis-std      = "0.15.3"
+osmosis-std      = "0.24.0"
 prost            = "0.11"
 serde-cw-value   = "0.7.0"
 serde-json-wasm  = "0.5.1"
