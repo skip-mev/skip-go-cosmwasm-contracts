@@ -494,7 +494,7 @@ fn simulate_swap_exact_asset_in(
             include_responses,
         )?;
 
-        return_amount = asset_out.amount();
+        return_amount += asset_out.amount();
         responses.push(route_responses);
     }
 

@@ -400,7 +400,7 @@ fn simulate_swap_exact_asset_in(
             route.operations.clone(),
         )?;
 
-        return_amount = asset_out.amount();
+        return_amount += asset_out.amount();
     }
 
     Ok(Asset::new(
