@@ -11,6 +11,7 @@ use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
+    error::SkipError,
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
         Route, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
@@ -269,14 +270,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::SimulateSwapExactAssetIn { asset_in, routes } => {
             to_json_binary(&query_simulate_swap_exact_asset_in(deps, asset_in, routes)?)
         }
-        QueryMsg::SimulateSwapExactAssetOut {
-            asset_out,
-            swap_operations,
-        } => to_json_binary(&query_simulate_swap_exact_asset_out(
-            deps,
-            asset_out,
-            swap_operations,
-        )?),
+        QueryMsg::SimulateSwapExactAssetOut { asset_out, routes } => to_json_binary(
+            &query_simulate_swap_exact_asset_out(deps, asset_out, routes)?,
+        ),
         QueryMsg::SimulateSwapExactAssetInWithMetadata {
             asset_in,
             routes,
@@ -289,12 +285,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         )?),
         QueryMsg::SimulateSwapExactAssetOutWithMetadata {
             asset_out,
-            swap_operations,
+            routes,
             include_spot_price,
         } => to_json_binary(&query_simulate_swap_exact_asset_out_with_metadata(
             deps,
             asset_out,
-            swap_operations,
+            routes,
             include_spot_price,
         )?),
     }
@@ -331,8 +327,14 @@ fn query_simulate_swap_exact_asset_in(
 fn query_simulate_swap_exact_asset_out(
     deps: Deps,
     asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
 ) -> ContractResult<Asset> {
+    if routes.len() != 1 {
+        return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
+    }
+
+    let swap_operations = routes.first().unwrap().operations.clone();
+
     // Error if swap operations is empty
     let Some(last_op) = swap_operations.last() else {
         return Err(ContractError::SwapOperationsEmpty);
@@ -400,9 +402,15 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
 fn query_simulate_swap_exact_asset_out_with_metadata(
     deps: Deps,
     asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
+    routes: Vec<Route>,
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetOutResponse> {
+    if routes.len() != 1 {
+        return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
+    }
+
+    let swap_operations = routes.first().unwrap().operations.clone();
+
     // Error if swap operations is empty
     let Some(last_op) = swap_operations.last() else {
         return Err(ContractError::SwapOperationsEmpty);

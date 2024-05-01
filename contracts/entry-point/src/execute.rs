@@ -680,7 +680,7 @@ fn query_swap_asset_in(
         swap_adapter_contract_address,
         &SwapQueryMsg::SimulateSwapExactAssetOut {
             asset_out: swap_asset_out.clone(),
-            swap_operations: swap.routes.first().unwrap().operations.clone(),
+            routes: swap.routes.clone(),
         },
     )?;
 
