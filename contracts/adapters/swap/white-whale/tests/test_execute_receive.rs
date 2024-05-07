@@ -63,10 +63,6 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
-                        offer_asset: Some(Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(100u128)
-                        })),
                         operation: SwapOperation {
                             pool: "pool_1".to_string(),
                             denom_in: "neutron123".to_string(),
@@ -119,10 +115,6 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
-                        offer_asset: Some(Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(100u128)
-                        })),
                         operation: SwapOperation {
                             pool: "pool_1".to_string(),
                             denom_in: "neutron123".to_string(),

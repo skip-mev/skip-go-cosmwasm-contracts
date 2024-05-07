@@ -4,15 +4,9 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg};
-use skip::{
-    asset::Asset,
-    swap::{ExecuteMsg, SwapOperation},
-};
-use skip_api_swap_adapter_white_whale::{
-    error::{ContractError, ContractResult},
-    state::PRE_SWAP_OUT_ASSET_AMOUNT,
-};
+use cw20::{BalanceResponse, Cw20ExecuteMsg};
+use skip::swap::{ExecuteMsg, SwapOperation};
+use skip_api_swap_adapter_white_whale::error::{ContractError, ContractResult};
 use test_case::test_case;
 use white_whale_std::pool_network::{
     asset::{Asset as WhiteWhaleAsset, AssetInfo},
@@ -37,8 +31,6 @@ Expect Error
 struct Params {
     caller: String,
     contract_balance: Vec<Coin>,
-    pre_swap_out_asset_amount: Uint128,
-    offer_asset: Option<Asset>,
     swap_operation: SwapOperation,
     expected_message: Option<SubMsg>,
     expected_error: Option<ContractError>,
@@ -49,8 +41,6 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![Coin::new(100, "os")],
-        pre_swap_out_asset_amount: Uint128::new(0),
-        offer_asset: Some(Asset::Native(Coin::new(100, "os"))),
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "os".to_string(),
@@ -85,11 +75,6 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
-        pre_swap_out_asset_amount: Uint128::new(0),
-        offer_asset: Some(Asset::Cw20(Cw20Coin {
-            address: "neutron123".to_string(),
-            amount: Uint128::from(100u128),
-        })),
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "neutron123".to_string(),
@@ -118,48 +103,9 @@ struct Params {
     };
     "Cw20 Swap Operation")]
 #[test_case(
-        Params {
-            caller: "swap_contract_address".to_string(),
-            contract_balance: vec![Coin::new(100, "os")],
-            pre_swap_out_asset_amount: Uint128::new(50),
-            offer_asset: None,
-            swap_operation: SwapOperation {
-                pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "ua".to_string(),
-                interface: None,
-            },
-            expected_message: Some(SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "pool_1".to_string(),
-                    msg: to_json_binary(&WhiteWhalePairExecuteMsg::Swap {
-                        offer_asset: WhiteWhaleAsset {
-                            info: AssetInfo::NativeToken {
-                                denom: "os".to_string(),
-                            },
-                            amount: Uint128::new(50),
-                        },
-                        belief_price: None,
-                        max_spread: Some(Decimal::percent(50)),
-                        to: None,
-                    })?,
-                    funds: vec![Coin::new(50, "os")],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never
-            }),
-            expected_error: None,
-        };
-        "Deducts pre swap out asset amount from contract balance before swap"
-    )]
-#[test_case(
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
-        pre_swap_out_asset_amount: Uint128::new(0),
-        offer_asset: None,
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "os".to_string(),
@@ -174,8 +120,6 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
-        pre_swap_out_asset_amount: Uint128::new(0),
-        offer_asset: None,
         swap_operation: SwapOperation {
                 pool: "pool_1".to_string(),
                 denom_in: "randomcw20".to_string(),
@@ -192,8 +136,6 @@ struct Params {
         contract_balance: vec![
             Coin::new(100, "un"),
         ],
-        pre_swap_out_asset_amount: Uint128::new(0),
-        offer_asset: None,
         swap_operation: SwapOperation{
             pool: "".to_string(),
             denom_in: "".to_string(),
@@ -244,8 +186,6 @@ fn test_execute_white_whale_pool_swap(params: Params) -> ContractResult<()> {
     let mut env = mock_env();
     env.contract.address = Addr::unchecked("swap_contract_address");
 
-    PRE_SWAP_OUT_ASSET_AMOUNT.save(&mut deps.storage, &params.pre_swap_out_asset_amount)?;
-
     // Create mock info
     let info = mock_info(&params.caller, &[]);
 
@@ -256,7 +196,6 @@ fn test_execute_white_whale_pool_swap(params: Params) -> ContractResult<()> {
         info,
         ExecuteMsg::WhiteWhalePoolSwap {
             operation: params.swap_operation,
-            offer_asset: params.offer_asset,
         },
     );
 

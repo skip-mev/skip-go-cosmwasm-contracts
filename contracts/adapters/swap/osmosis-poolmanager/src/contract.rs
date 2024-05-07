@@ -9,17 +9,17 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_utils::one_coin;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
-    EstimateSwapExactAmountInResponse, EstimateSwapExactAmountOutResponse,
-    MsgSplitRouteSwapExactAmountIn, MsgSwapExactAmountIn, PoolmanagerQuerier, SpotPriceResponse,
-    SwapAmountInRoute, SwapAmountInSplitRoute, SwapAmountOutRoute,
+    EstimateSwapExactAmountInResponse, EstimateSwapExactAmountOutResponse, MsgSwapExactAmountIn,
+    PoolmanagerQuerier, SpotPriceResponse, SwapAmountInRoute, SwapAmountOutRoute,
 };
 use skip::{
     asset::Asset,
+    error::SkipError,
     proto_coin::ProtoCoin,
     swap::{
-        convert_routes, convert_swap_operations, execute_transfer_funds_back, ExecuteMsg,
-        InstantiateMsg, MigrateMsg, QueryMsg, Route, SimulateSwapExactAssetInResponse,
-        SimulateSwapExactAssetOutResponse, SwapOperation,
+        convert_swap_operations, execute_transfer_funds_back, ExecuteMsg, InstantiateMsg,
+        MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 use std::str::FromStr;
@@ -78,7 +78,15 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { routes } => execute_swap(deps, env, info, routes),
+        ExecuteMsg::Swap { routes } => {
+            if routes.len() != 1 {
+                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
+            }
+
+            let operations = routes.first().unwrap().operations.clone();
+
+            execute_swap(deps, env, info, operations)
+        }
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,
@@ -100,7 +108,7 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    routes: Vec<Route>,
+    operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -113,16 +121,13 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
-    let return_denom = match routes
-        .last()
-        .and_then(|last_route| last_route.operations.last())
-    {
+    let return_denom = match operations.last() {
         Some(last_op) => last_op.denom_out.clone(),
         None => return Err(ContractError::SwapOperationsEmpty),
     };
 
     // Create the osmosis poolmanager swap exact amount in message
-    let swap_msg = create_osmosis_swap_msg(&env, coin_in, routes)?;
+    let swap_msg = create_osmosis_swap_msg(&env, coin_in, operations)?;
 
     // Create the transfer funds back message
     let transfer_funds_back_msg = WasmMsg::Execute {
@@ -148,45 +153,22 @@ fn execute_swap(
 fn create_osmosis_swap_msg(
     env: &Env,
     coin_in: Coin,
-    routes: Vec<Route>,
+    swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<CosmosMsg> {
-    if routes.len() == 1 {
-        let swap_operations = routes.first().unwrap().operations.clone();
-
-        // Convert the swap operations to osmosis swap amount in routes
-        // Return an error if there was an error converting the swap
-        // operations to osmosis swap amount in routes.
-        let osmosis_swap_amount_in_routes: Vec<SwapAmountInRoute> =
-            convert_swap_operations(swap_operations).map_err(ContractError::ParseIntPoolID)?;
-
-        // Create the osmosis poolmanager swap exact amount in message
-        // The token out min amount is set to 1 because we are not concerned
-        // with the minimum amount in this contract, that gets verified in the
-        // entry point contract.
-        let swap_msg: CosmosMsg = MsgSwapExactAmountIn {
-            sender: env.contract.address.to_string(),
-            routes: osmosis_swap_amount_in_routes,
-            token_in: Some(ProtoCoin(coin_in).into()),
-            token_out_min_amount: "1".to_string(),
-        }
-        .into();
-
-        return Ok(swap_msg);
-    }
-
-    // Convert the swap operations to osmosis swap amount in split routes
+    // Convert the swap operations to osmosis swap amount in routes
     // Return an error if there was an error converting the swap
-    // operations to osmosis swap amount in split routes.
-    let osmosis_swap_amount_in_split_routes: Vec<SwapAmountInSplitRoute> = convert_routes(routes)?;
+    // operations to osmosis swap amount in routes.
+    let osmosis_swap_amount_in_routes: Vec<SwapAmountInRoute> =
+        convert_swap_operations(swap_operations).map_err(ContractError::ParseIntPoolID)?;
 
-    // Create the osmosis poolmanager split route swap exact amount in message
+    // Create the osmosis poolmanager swap exact amount in message
     // The token out min amount is set to 1 because we are not concerned
     // with the minimum amount in this contract, that gets verified in the
     // entry point contract.
-    let swap_msg: CosmosMsg = MsgSplitRouteSwapExactAmountIn {
+    let swap_msg: CosmosMsg = MsgSwapExactAmountIn {
         sender: env.contract.address.to_string(),
-        routes: osmosis_swap_amount_in_split_routes,
-        token_in_denom: coin_in.denom,
+        routes: osmosis_swap_amount_in_routes,
+        token_in: Some(ProtoCoin(coin_in).into()),
         token_out_min_amount: "1".to_string(),
     }
     .into();
