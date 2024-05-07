@@ -102,7 +102,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             }
@@ -127,7 +126,6 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "untrn".to_string(),
                                         denom_out: "osmo".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -178,7 +176,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -204,7 +201,6 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "untrn".to_string(),
                                         denom_out: "osmo".to_string(),
-                                        interface: None,
                                     }
                                 ],
                                 refund_address: Some("refund_address".to_string()),
@@ -256,7 +252,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -303,7 +298,6 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "untrn".to_string(),
                                         denom_out: "osmo".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -366,7 +360,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -399,7 +392,6 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "untrn".to_string(),
                                         denom_out: "osmo".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -458,7 +450,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "uatom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -486,7 +477,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "osmo".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -505,7 +495,6 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "osmo".to_string(),
                                 denom_out: "untrn".to_string(),
-                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -538,7 +527,6 @@ struct Params {
                                         pool: "pool_2".to_string(),
                                         denom_in: "osmo".to_string(),
                                         denom_out: "uatom".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -581,7 +569,6 @@ struct Params {
                                             pool: "pool".to_string(),
                                             denom_in: "osmo".to_string(),
                                             denom_out: "untrn".to_string(),
-                                            interface: None,
                                         }
                                     ],
                                     refund_address: None,
@@ -614,7 +601,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             }
@@ -639,7 +625,6 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "untrn".to_string(),
                                         denom_out: "osmo".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -691,7 +676,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             }
@@ -716,7 +700,6 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "neutron123".to_string(),
                                         denom_out: "osmo".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -771,7 +754,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "uatom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -799,7 +781,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "neutron123".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -821,7 +802,6 @@ struct Params {
                                     pool: "pool".to_string(),
                                     denom_in: "neutron123".to_string(),
                                     denom_out: "untrn".to_string(),
-                                    interface: None,
                                 }
                             ],
                         }).unwrap(),
@@ -855,7 +835,6 @@ struct Params {
                                         pool: "pool_2".to_string(),
                                         denom_in: "neutron123".to_string(),
                                         denom_out: "uatom".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -901,7 +880,6 @@ struct Params {
                                             pool: "pool".to_string(),
                                             denom_in: "neutron123".to_string(),
                                             denom_out: "untrn".to_string(),
-                                            interface: None,
                                         }
                                     ],
                                     refund_address: None,
@@ -934,7 +912,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             }
@@ -962,7 +939,6 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "untrn".to_string(),
                                         denom_out: "osmo".to_string(),
-                                        interface: None,
                                     }
                                 ],
                             }
@@ -1019,7 +995,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "uatom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1047,7 +1022,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "osmo".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1077,7 +1051,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "uatom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1105,7 +1078,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "uatom".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1131,7 +1103,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "uatom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1159,7 +1130,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "uatom".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1185,7 +1155,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "uatom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1213,7 +1182,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "osmo".to_string(),
                             denom_out: "osmo".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1239,7 +1207,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1280,7 +1247,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "atom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1304,7 +1270,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "osmo".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1330,7 +1295,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "atom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1358,7 +1322,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "osmo".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1384,7 +1347,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "atom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1412,7 +1374,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "osmo".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1438,7 +1399,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "atom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1466,7 +1426,6 @@ struct Params {
                             pool: "pool".to_string(),
                             denom_in: "osmo".to_string(),
                             denom_out: "untrn".to_string(),
-                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1490,7 +1449,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1520,7 +1478,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1550,7 +1507,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1580,7 +1536,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1609,7 +1564,6 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "osmo".to_string(),
                         denom_out: "uatom".to_string(),
-                        interface: None,
                     }
                 ],
             },
@@ -1676,7 +1630,6 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "untrn".to_string(),
                         denom_out: "osmo".to_string(),
-                        interface: None,
                     }
                 ],
             }

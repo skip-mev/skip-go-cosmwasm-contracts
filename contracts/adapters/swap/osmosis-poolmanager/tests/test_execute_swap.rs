@@ -47,7 +47,6 @@ struct Params {
                 pool: "1".to_string(),
                 denom_in: "os".to_string(),
                 denom_out: "uatom".to_string(),
-                interface: None,
             }
         ],
         expected_messages: vec![
@@ -100,13 +99,11 @@ struct Params {
                 pool: "1".to_string(),
                 denom_in: "os".to_string(),
                 denom_out: "uatom".to_string(),
-                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "untrn".to_string(),
-                interface: None,
             }
         ],
         expected_messages: vec![
@@ -204,7 +201,6 @@ struct Params {
                 pool: "pool_1".to_string(),
                 denom_in: "os".to_string(),
                 denom_out: "uatom".to_string(),
-                interface: None,
             }
         ],
         expected_messages: vec![],
@@ -223,7 +219,6 @@ struct Params {
                 pool: "pool_1".to_string(),
                 denom_in: "os".to_string(),
                 denom_out: "uatom".to_string(),
-                interface: None,
             }
         ],
         expected_messages: vec![],
@@ -239,7 +234,6 @@ struct Params {
                 pool: "pool_1".to_string(),
                 denom_in: "os".to_string(),
                 denom_out: "uatom".to_string(),
-                interface: None,
             }
         ],
         expected_messages: vec![],
