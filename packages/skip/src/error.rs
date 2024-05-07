@@ -32,18 +32,8 @@ pub enum SkipError {
     #[error("Last Swap Operations' Denom Out Differs From Swap Asset Out Denom")]
     SwapOperationsAssetOutDenomMismatch,
 
-    //////////////
-    /// ROUTE ///
-    ////////////
-
     #[error("Routes Must Be Single Route, Multiple Routes Not Supported Yet")]
     MustBeSingleRoute,
-
-    #[error("Routes Empty")]
-    RoutesEmpty,
-
-    #[error("Total Routes Asset In Amount Differs From Swap Asset In Amount")]
-    RoutesAssetInAmountMismatch,
 
     ///////////
     /// IBC ///
