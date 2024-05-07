@@ -1,3 +1,5 @@
+use std::vec;
+
 use astroport::{
     asset::{Asset as AstroportAsset, AssetInfo},
     pair::{Cw20HookMsg as AstroportPairCw20HookMsg, ExecuteMsg as AstroportPairExecuteMsg},

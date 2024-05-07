@@ -18,7 +18,6 @@ use dexter::{
 };
 use skip::{
     asset::Asset,
-    error::SkipError,
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, DexterAdapterInstantiateMsg, ExecuteMsg,
         MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
@@ -102,13 +101,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
+        Cw20HookMsg::Swap { operations } => {
             execute_swap(deps, env, info, sent_asset.amount(), operations)
         }
     }
@@ -127,13 +120,7 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
-        ExecuteMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
+        ExecuteMsg::Swap { operations } => {
             // validate that there's at least one swap operation
             if operations.is_empty() {
                 return Err(ContractError::SwapOperationsEmpty);

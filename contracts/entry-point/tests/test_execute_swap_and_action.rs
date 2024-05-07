@@ -11,13 +11,13 @@ use skip::{
     asset::Asset,
     entry_point::{Action, Affiliate, ExecuteMsg},
     error::SkipError::{
-        IbcFeesNotOneCoin, InvalidCw20Coin, MustBeSingleRoute, Overflow, Payment,
-        SwapOperationsAssetInDenomMismatch, SwapOperationsAssetOutDenomMismatch,
+        IbcFeesNotOneCoin, InvalidCw20Coin, Overflow, Payment, SwapOperationsAssetInDenomMismatch,
+        SwapOperationsAssetOutDenomMismatch, SwapOperationsEmpty,
     },
     ibc::{IbcFee, IbcInfo},
     swap::{
-        ExecuteMsg as SwapExecuteMsg, Route, Swap, SwapExactAssetIn, SwapExactAssetOut,
-        SwapOperation,
+        ExecuteMsg as SwapExecuteMsg, Route, SmartSwapExactAssetIn, Swap, SwapExactAssetIn,
+        SwapExactAssetOut, SwapOperation,
     },
 };
 use skip_api_entry_point::{
@@ -98,19 +98,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             }
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -128,19 +123,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route {
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "untrn".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
@@ -184,17 +174,12 @@ struct Params {
         user_swap: Swap::SwapExactAssetOut (
             SwapExactAssetOut{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -215,17 +200,12 @@ struct Params {
                         swap: Swap::SwapExactAssetOut (
                             SwapExactAssetOut{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route{
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "untrn".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
                                 ],
                                 refund_address: Some("refund_address".to_string()),
@@ -272,19 +252,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(800_000, "osmo")),
@@ -324,19 +299,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route{
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "untrn".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Native(Coin::new(800_000, "untrn")),
@@ -392,19 +362,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route{
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -430,19 +395,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route {
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "untrn".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
@@ -494,19 +454,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "uatom")),
@@ -527,17 +482,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route{
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "osmo".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -551,17 +501,12 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_venue_adapter".to_string(), 
                     msg: to_json_binary(&SwapExecuteMsg::Swap {
-                        routes: vec![
-                            Route {
-                                offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                                operations: vec![
-                                    SwapOperation {
-                                        pool: "pool".to_string(),
-                                        denom_in: "osmo".to_string(),
-                                        denom_out: "untrn".to_string(),
-                                        interface: None,
-                                    }
-                                ],
+                        operations: vec![
+                            SwapOperation {
+                                pool: "pool".to_string(),
+                                denom_in: "osmo".to_string(),
+                                denom_out: "untrn".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -589,19 +534,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route {
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool_2".to_string(),
-                                                denom_in: "osmo".to_string(),
-                                                denom_out: "uatom".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool_2".to_string(),
+                                        denom_in: "osmo".to_string(),
+                                        denom_out: "uatom".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Native(Coin::new(800_000, "osmo")),
@@ -636,18 +576,13 @@ struct Params {
                             },
                             fee_swap: Some(
                                 SwapExactAssetOut {
-                                    swap_venue_name: "swap_venue_name".to_string(),                                 
-                                    routes: vec![
-                                        Route {
-                                            offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                                            operations: vec![
-                                                SwapOperation {
-                                                    pool: "pool".to_string(),
-                                                    denom_in: "osmo".to_string(),
-                                                    denom_out: "untrn".to_string(),
-                                                    interface: None,
-                                                }
-                                            ],
+                                    swap_venue_name: "swap_venue_name".to_string(), 
+                                    operations: vec![
+                                        SwapOperation {
+                                            pool: "pool".to_string(),
+                                            denom_in: "osmo".to_string(),
+                                            denom_out: "untrn".to_string(),
+                                            interface: None,
                                         }
                                     ],
                                     refund_address: None,
@@ -675,19 +610,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             }
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -705,19 +635,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route {
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "untrn".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
@@ -762,22 +687,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(1_000_000u128),
-                        }),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "neutron123".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             }
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -795,22 +712,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route {
-                                        offer_asset: Asset::Cw20(Cw20Coin {
-                                            address: "neutron123".to_string(),
-                                            amount: Uint128::from(1_000_000u128),
-                                        }),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "neutron123".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "neutron123".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Cw20(Cw20Coin {
@@ -858,22 +767,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(1_000_000u128),
-                        }),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "neutron123".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "neutron123".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "uatom")),
@@ -894,20 +795,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name_2".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Cw20(Cw20Coin {
-                                address: "neutron123".to_string(),
-                                amount: Uint128::from(1_000_000u128),
-                            }),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "neutron123".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "neutron123".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -924,20 +817,12 @@ struct Params {
                         contract: "swap_venue_adapter_2".to_string(), 
                         amount: Uint128::from(200_000u128),
                         msg: to_json_binary(&SwapExecuteMsg::Swap {
-                            routes: vec![
-                                Route {
-                                    offer_asset: Asset::Cw20(Cw20Coin {
-                                        address: "neutron123".to_string(),
-                                        amount: Uint128::from(1_000_000u128),
-                                    }),
-                                    operations: vec![
-                                        SwapOperation {
-                                            pool: "pool".to_string(),
-                                            denom_in: "neutron123".to_string(),
-                                            denom_out: "untrn".to_string(),
-                                            interface: None,
-                                        }
-                                    ],
+                            operations: vec![
+                                SwapOperation {
+                                    pool: "pool".to_string(),
+                                    denom_in: "neutron123".to_string(),
+                                    denom_out: "untrn".to_string(),
+                                    interface: None,
                                 }
                             ],
                         }).unwrap(),
@@ -966,22 +851,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route {
-                                        offer_asset: Asset::Cw20(Cw20Coin {
-                                            address: "neutron123".to_string(),
-                                            amount: Uint128::from(1_000_000u128),
-                                        }),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "neutron123".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool_2".to_string(),
+                                        denom_in: "neutron123".to_string(),
+                                        denom_out: "uatom".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Cw20(Cw20Coin {
@@ -1020,20 +897,12 @@ struct Params {
                             fee_swap: Some(
                                 SwapExactAssetOut {
                                     swap_venue_name: "swap_venue_name_2".to_string(), 
-                                    routes: vec![
-                                        Route {
-                                            offer_asset: Asset::Cw20(Cw20Coin {
-                                                address: "neutron123".to_string(),
-                                                amount: Uint128::from(1_000_000u128),
-                                            }),
-                                            operations: vec![
-                                                SwapOperation {
-                                                    pool: "pool".to_string(),
-                                                    denom_in: "neutron123".to_string(),
-                                                    denom_out: "untrn".to_string(),
-                                                    interface: None,
-                                                }
-                                            ],
+                                    operations: vec![
+                                        SwapOperation {
+                                            pool: "pool".to_string(),
+                                            denom_in: "neutron123".to_string(),
+                                            denom_out: "untrn".to_string(),
+                                            interface: None,
                                         }
                                     ],
                                     refund_address: None,
@@ -1061,19 +930,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             }
         ),
         min_asset: Asset::Cw20(Cw20Coin {
@@ -1094,19 +958,14 @@ struct Params {
                         swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
-                                routes: vec![
-                                    Route {
-                                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                                        operations: vec![
-                                            SwapOperation {
-                                                pool: "pool".to_string(),
-                                                denom_in: "untrn".to_string(),
-                                                denom_out: "osmo".to_string(),
-                                                interface: None,
-                                            }
-                                        ],
+                                operations: vec![
+                                    SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
-                                ]
+                                ],
                             }
                         ),
                         remaining_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
@@ -1156,19 +1015,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(100_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "uatom")),
@@ -1189,17 +1043,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(100_000, "osmo")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "osmo".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1224,19 +1073,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "uatom")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "uatom".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "uatom")),
@@ -1257,17 +1101,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "uatom")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "uatom".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "uatom".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1288,19 +1127,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "uatom")),
@@ -1321,17 +1155,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "uatom")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "uatom".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "uatom".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1352,19 +1181,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "uatom")),
@@ -1385,17 +1209,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "osmo".to_string(),
-                                    denom_out: "osmo".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "osmo".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1416,19 +1235,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(800_000, "osmo")),
@@ -1462,19 +1276,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "atom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "atom")),
@@ -1491,17 +1300,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "osmo".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1522,19 +1326,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "atom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "atom")),
@@ -1555,17 +1354,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "osmo".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1586,19 +1380,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "atom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "atom")),
@@ -1619,17 +1408,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "osmo".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1650,19 +1434,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool_2".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "atom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "atom")),
@@ -1683,17 +1462,12 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![
-                        Route {
-                            offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                            operations: vec![
-                                SwapOperation {
-                                    pool: "pool".to_string(),
-                                    denom_in: "osmo".to_string(),
-                                    denom_out: "untrn".to_string(),
-                                    interface: None,
-                                }
-                            ],
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool".to_string(),
+                            denom_in: "osmo".to_string(),
+                            denom_out: "untrn".to_string(),
+                            interface: None,
                         }
                     ],
                     refund_address: None,
@@ -1712,19 +1486,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "osmo".to_string(),
-                                denom_out: "uatom".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -1747,19 +1516,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "untrn")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -1782,22 +1546,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(2_000_000u128),
-                        }),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "neutron123".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -1820,22 +1576,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(1_000_000u128),
-                        }),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "neutron123".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -1857,22 +1605,14 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(1_000_000u128),
-                        }),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "neutron123".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool_2".to_string(),
+                        denom_in: "osmo".to_string(),
+                        denom_out: "uatom".to_string(),
+                        interface: None,
                     }
-                ]
+                ],
             },
         ),
         min_asset: Asset::Native(Coin::new(100_000, "uatom")),
@@ -1893,14 +1633,14 @@ struct Params {
             fee_swap: Some(
                 SwapExactAssetOut {
                     swap_venue_name: "swap_venue_name".to_string(), 
-                    routes: vec![],
+                    operations: vec![],
                     refund_address: None,
                 }
             ),
         },
         affiliates: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Skip(MustBeSingleRoute)),
+        expected_error: Some(ContractError::Skip(SwapOperationsEmpty)),
     };
     "Empty Fee Swap Operations - Expect Error")]
 #[test_case(
@@ -1912,7 +1652,7 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![],
+                operations: vec![],
             },
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
@@ -1932,17 +1672,12 @@ struct Params {
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
-                routes: vec![
-                    Route {
-                        offer_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-                        operations: vec![
-                            SwapOperation {
-                                pool: "pool".to_string(),
-                                denom_in: "untrn".to_string(),
-                                denom_out: "osmo".to_string(),
-                                interface: None,
-                            }
-                        ],
+                operations: vec![
+                    SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -1957,6 +1692,150 @@ struct Params {
         expected_error: Some(ContractError::Payment(NoFunds{})),
     };
     "Sent Asset Not Given with Invalid One Coin")]
+#[test_case(
+    Params {
+        info_funds: vec![Coin::new(1_000_000, "untrn")],
+        sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
+        user_swap: Swap::SmartSwapExactAssetIn(SmartSwapExactAssetIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Native(Coin::new(250_000, "untrn")),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                        interface: None,
+                    }],
+                },
+                Route {
+                    offer_asset: Asset::Native(Coin::new(750_000, "untrn")),
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool_2".to_string(),
+                            denom_in: "untrn".to_string(),
+                            denom_out: "neutron123".to_string(),
+                            interface: None,
+                        },
+                        SwapOperation {
+                            pool: "pool_3".to_string(),
+                            denom_in: "neutron123".to_string(),
+                            denom_out: "osmo".to_string(),
+                            interface: None,
+                        },
+                    ],
+                },
+            ],
+        }),
+        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+            },
+            fee_swap: None,
+        },
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "ibc_transfer_adapter".to_string(),
+                    amount: vec![Coin::new(200_000, "untrn")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_json_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SmartSwapExactAssetIn(SmartSwapExactAssetIn {
+                            swap_venue_name: "swap_venue_name".to_string(),
+                            routes: vec![
+                                Route {
+                                    offer_asset: Asset::Native(Coin::new(250_000, "untrn")),
+                                    operations: vec![SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                        interface: None,
+                                    }],
+                                },
+                                Route {
+                                    offer_asset: Asset::Native(Coin::new(550_000, "untrn")),
+                                    operations: vec![
+                                        SwapOperation {
+                                            pool: "pool_2".to_string(),
+                                            denom_in: "untrn".to_string(),
+                                            denom_out: "neutron123".to_string(),
+                                            interface: None,
+                                        },
+                                        SwapOperation {
+                                            pool: "pool_3".to_string(),
+                                            denom_in: "neutron123".to_string(),
+                                            denom_out: "osmo".to_string(),
+                                            interface: None,
+                                        },
+                                    ],
+                                },
+                            ],
+                        }),
+                        remaining_asset: Asset::Native(Coin::new(800_000, "untrn")),
+                        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_json_binary(&ExecuteMsg::PostSwapAction {
+                        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::IbcTransfer {
+                            ibc_info: IbcInfo {
+                                source_channel: "channel-0".to_string(),
+                                receiver: "receiver".to_string(),
+                                memo: "".to_string(),
+                                fee: Some(IbcFee {
+                                    recv_fee: vec![],
+                                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                                }),
+                                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                                    .to_string(),
+                            },
+                            fee_swap: None,
+                        },
+                        exact_out: false,
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error: None,
+    };
+    "Adjusts SmartSwapExactAssetIn route offer_assets sum to match remaining_asset"
+)]
 fn test_execute_swap_and_action(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(

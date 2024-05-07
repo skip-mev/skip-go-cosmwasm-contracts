@@ -465,6 +465,25 @@
       },
       "additionalProperties": false
     },
+    "SmartSwapExactAssetIn": {
+      "type": "object",
+      "required": [
+        "routes",
+        "swap_venue_name"
+      ],
+      "properties": {
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Route"
+          }
+        },
+        "swap_venue_name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "Swap": {
       "oneOf": [
         {
@@ -490,20 +509,32 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "smart_swap_exact_asset_in"
+          ],
+          "properties": {
+            "smart_swap_exact_asset_in": {
+              "$ref": "#/definitions/SmartSwapExactAssetIn"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
     "SwapExactAssetIn": {
       "type": "object",
       "required": [
-        "routes",
+        "operations",
         "swap_venue_name"
       ],
       "properties": {
-        "routes": {
+        "operations": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Route"
+            "$ref": "#/definitions/SwapOperation"
           }
         },
         "swap_venue_name": {
@@ -515,21 +546,21 @@
     "SwapExactAssetOut": {
       "type": "object",
       "required": [
-        "routes",
+        "operations",
         "swap_venue_name"
       ],
       "properties": {
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SwapOperation"
+          }
+        },
         "refund_address": {
           "type": [
             "string",
             "null"
           ]
-        },
-        "routes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Route"
-          }
         },
         "swap_venue_name": {
           "type": "string"

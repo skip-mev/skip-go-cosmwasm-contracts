@@ -4,10 +4,7 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, Uint128, WasmMsg,
 };
-use skip::{
-    asset::Asset,
-    swap::{ExecuteMsg, Route, SwapOperation},
-};
+use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_api_swap_adapter_dexter::{
     error::ContractResult,
     state::{DEXTER_ROUTER_ADDRESS, DEXTER_VAULT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
@@ -38,7 +35,6 @@ Expect Error
 struct Params {
     caller: String,
     info_funds: Vec<Coin>,
-    offer_asset: Asset,
     swap_operations: Vec<SwapOperation>,
     expected_messages: Vec<SubMsg>,
     expected_error_string: String,
@@ -49,7 +45,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "uxprt")],
-        offer_asset: Asset::Native(Coin::new(100, "uxprt")),
         swap_operations: vec![
             SwapOperation {
                 pool: "1".to_string(),
@@ -109,7 +104,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![
             SwapOperation {
                 pool: "1".to_string(),
@@ -184,7 +178,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![],
         expected_messages: vec![
             SubMsg {
@@ -223,7 +216,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![
             SwapOperation {
                 pool: "1".to_string(),
@@ -243,7 +235,6 @@ struct Params {
             Coin::new(100, "os"),
             Coin::new(100, "uatom"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![
             SwapOperation {
                 pool: "1".to_string(),
@@ -260,7 +251,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![
             SwapOperation {
                 pool: "pool_1".to_string(),
@@ -280,7 +270,6 @@ struct Params {
             Coin::new(100, "uxprt"),
             // Coin::new(100, "os"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "uxprt")),
         swap_operations: vec![
             SwapOperation {
                 pool: "1".to_string(),
@@ -318,10 +307,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::Swap {
-            routes: vec![Route {
-                offer_asset: params.offer_asset,
-                operations: params.swap_operations.clone(),
-            }],
+            operations: params.swap_operations.clone(),
         },
     );
 

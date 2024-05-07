@@ -11,7 +11,6 @@ use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
-    error::SkipError,
     swap::{
         execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
@@ -90,15 +89,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
-            execute_swap(deps, env, info, operations)
-        }
+        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, operations),
     }
 }
 
@@ -115,15 +106,8 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
-        ExecuteMsg::Swap { routes } => {
+        ExecuteMsg::Swap { operations } => {
             one_coin(&info)?;
-
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
             execute_swap(deps, env, info, operations)
         }
         ExecuteMsg::TransferFundsBack {

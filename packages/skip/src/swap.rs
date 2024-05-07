@@ -4,8 +4,9 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
-use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{
+    Addr, Api, BankMsg, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
+};
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
@@ -218,6 +219,7 @@ where
 {
     swap_operations.into_iter().map(T::try_from).collect()
 }
+
 // Swap object to get the exact amount of a given asset with the given vector of swap operations
 #[cw_serde]
 pub struct SwapExactAssetOut {
@@ -232,6 +234,31 @@ pub struct SwapExactAssetOut {
 pub struct SwapExactAssetIn {
     pub swap_venue_name: String,
     pub operations: Vec<SwapOperation>,
+}
+
+// Swap object that swaps the remaining asset recevied
+// over multiple routes from the contract call minus fee swap (if present)
+#[cw_serde]
+pub struct SmartSwapExactAssetIn {
+    pub swap_venue_name: String,
+    pub routes: Vec<Route>,
+}
+
+impl SmartSwapExactAssetIn {
+    pub fn amount(&self) -> Uint128 {
+        self.routes
+            .iter()
+            .map(|route| route.offer_asset.amount())
+            .sum()
+    }
+
+    pub fn largest_route_index(&self) -> Option<usize> {
+        self.routes
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, route)| route.offer_asset.amount())
+            .map(|(index, _)| index)
+    }
 }
 
 // Converts a SwapExactAssetOut used in the entry point contract
@@ -258,6 +285,7 @@ impl From<SwapExactAssetIn> for ExecuteMsg {
 pub enum Swap {
     SwapExactAssetIn(SwapExactAssetIn),
     SwapExactAssetOut(SwapExactAssetOut),
+    SmartSwapExactAssetIn(SmartSwapExactAssetIn),
 }
 
 ////////////////////////

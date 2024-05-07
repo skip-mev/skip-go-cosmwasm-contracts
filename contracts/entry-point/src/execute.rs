@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::{
     error::{ContractError, ContractResult},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
@@ -15,7 +17,6 @@ use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
-    error::SkipError,
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
@@ -92,7 +93,7 @@ pub fn execute_swap_and_action(
     env: Env,
     info: MessageInfo,
     sent_asset: Option<Asset>,
-    user_swap: Swap,
+    mut user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
@@ -181,7 +182,22 @@ pub fn execute_swap_and_action(
     let exact_out = match &user_swap {
         Swap::SwapExactAssetIn(_) => false,
         Swap::SwapExactAssetOut(_) => true,
+        Swap::SmartSwapExactAssetIn(_) => false,
     };
+
+    if let Swap::SmartSwapExactAssetIn(mut swap) = user_swap.clone() {
+        let diff = swap.amount().checked_sub(remaining_asset.amount())?;
+
+        // If the total swap in amount is greater than remaining asset,
+        // adjust the routes to match the remaining asset amount
+        if diff > Uint128::zero() {
+            let largest_route_idx = swap.largest_route_index().unwrap_or(0);
+
+            swap.routes[largest_route_idx].offer_asset.sub(diff)?;
+        }
+
+        user_swap = Swap::SmartSwapExactAssetIn(swap.clone());
+    }
 
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
@@ -322,13 +338,7 @@ pub fn execute_user_swap(
     match swap {
         Swap::SwapExactAssetIn(swap) => {
             // Validate swap operations
-            if swap.routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = swap.routes.first().unwrap().operations.clone();
-
-            validate_swap_operations(&operations, remaining_asset.denom(), min_asset.denom())?;
+            validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
@@ -349,13 +359,7 @@ pub fn execute_user_swap(
         }
         Swap::SwapExactAssetOut(swap) => {
             // Validate swap operations
-            if swap.routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = swap.routes.first().unwrap().operations.clone();
-
-            validate_swap_operations(&operations, remaining_asset.denom(), min_asset.denom())?;
+            validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
             let user_swap_adapter_contract_address =
@@ -417,6 +421,35 @@ pub fn execute_user_swap(
             response = response
                 .add_message(user_swap_msg)
                 .add_attribute("action", "dispatch_user_swap_exact_asset_out");
+        }
+        Swap::SmartSwapExactAssetIn(swap) => {
+            for route in swap.routes {
+                // Validate swap operations
+                validate_swap_operations(
+                    &route.operations,
+                    remaining_asset.denom(),
+                    min_asset.denom(),
+                )?;
+
+                // Get swap adapter contract address from venue name
+                let user_swap_adapter_contract_address =
+                    SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
+
+                // Create the user swap message args
+                let user_swap_msg_args = SwapExecuteMsg::Swap {
+                    operations: route.operations,
+                };
+
+                // Create the user swap message
+                let user_swap_msg = route.offer_asset.into_wasm_msg(
+                    user_swap_adapter_contract_address.to_string(),
+                    to_json_binary(&user_swap_msg_args)?,
+                )?;
+
+                response = response
+                    .add_message(user_swap_msg)
+                    .add_attribute("action", "dispatch_user_swap_exact_asset_in");
+            }
         }
     }
 
@@ -562,13 +595,11 @@ fn verify_and_create_fee_swap_msg(
     ibc_fee_coin: &Coin,
 ) -> ContractResult<WasmMsg> {
     // Validate swap operations
-    if fee_swap.routes.len() != 1 {
-        return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-    }
-
-    let operations = fee_swap.routes.first().unwrap().operations.clone();
-
-    validate_swap_operations(&operations, remaining_asset.denom(), &ibc_fee_coin.denom)?;
+    validate_swap_operations(
+        &fee_swap.operations,
+        remaining_asset.denom(),
+        &ibc_fee_coin.denom,
+    )?;
 
     // Get swap adapter contract address from venue name
     let fee_swap_adapter_contract_address =
@@ -640,7 +671,7 @@ fn query_swap_asset_in(
         swap_adapter_contract_address,
         &SwapQueryMsg::SimulateSwapExactAssetOut {
             asset_out: swap_asset_out.clone(),
-            swap_operations: swap.routes.first().unwrap().operations.clone(),
+            swap_operations: swap.operations.clone(),
         },
     )?;
 

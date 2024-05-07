@@ -1,3 +1,5 @@
+use std::vec;
+
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
     to_json_binary, Addr, Coin, Decimal, QuerierResult,
