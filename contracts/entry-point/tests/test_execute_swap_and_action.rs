@@ -16,7 +16,8 @@ use skip::{
     },
     ibc::{IbcFee, IbcInfo},
     swap::{
-        ExecuteMsg as SwapExecuteMsg, Swap, SwapExactAssetIn, SwapExactAssetOut, SwapOperation,
+        ExecuteMsg as SwapExecuteMsg, Route, SmartSwapExactAssetIn, Swap, SwapExactAssetIn,
+        SwapExactAssetOut, SwapOperation,
     },
 };
 use skip_api_entry_point::{
@@ -1644,6 +1645,144 @@ struct Params {
         expected_error: Some(ContractError::Payment(NoFunds{})),
     };
     "Sent Asset Not Given with Invalid One Coin")]
+#[test_case(
+    Params {
+        info_funds: vec![Coin::new(1_000_000, "untrn")],
+        sent_asset: Some(Asset::Native(Coin::new(1_000_000, "untrn"))),
+        user_swap: Swap::SmartSwapExactAssetIn(SmartSwapExactAssetIn {
+            swap_venue_name: "swap_venue_name".to_string(),
+            routes: vec![
+                Route {
+                    offer_asset: Asset::Native(Coin::new(250_000, "untrn")),
+                    operations: vec![SwapOperation {
+                        pool: "pool".to_string(),
+                        denom_in: "untrn".to_string(),
+                        denom_out: "osmo".to_string(),
+                    }],
+                },
+                Route {
+                    offer_asset: Asset::Native(Coin::new(750_000, "untrn")),
+                    operations: vec![
+                        SwapOperation {
+                            pool: "pool_2".to_string(),
+                            denom_in: "untrn".to_string(),
+                            denom_out: "neutron123".to_string(),
+                        },
+                        SwapOperation {
+                            pool: "pool_3".to_string(),
+                            denom_in: "neutron123".to_string(),
+                            denom_out: "osmo".to_string(),
+                        },
+                    ],
+                },
+            ],
+        }),
+        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
+        timeout_timestamp: 101,
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: Some(IbcFee {
+                    recv_fee: vec![],
+                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                }),
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+            },
+            fee_swap: None,
+        },
+        affiliates: vec![],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: BankMsg::Send {
+                    to_address: "ibc_transfer_adapter".to_string(),
+                    amount: vec![Coin::new(200_000, "untrn")],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_json_binary(&ExecuteMsg::UserSwap {
+                        swap: Swap::SmartSwapExactAssetIn(SmartSwapExactAssetIn {
+                            swap_venue_name: "swap_venue_name".to_string(),
+                            routes: vec![
+                                Route {
+                                    offer_asset: Asset::Native(Coin::new(250_000, "untrn")),
+                                    operations: vec![SwapOperation {
+                                        pool: "pool".to_string(),
+                                        denom_in: "untrn".to_string(),
+                                        denom_out: "osmo".to_string(),
+                                    }],
+                                },
+                                Route {
+                                    offer_asset: Asset::Native(Coin::new(550_000, "untrn")),
+                                    operations: vec![
+                                        SwapOperation {
+                                            pool: "pool_2".to_string(),
+                                            denom_in: "untrn".to_string(),
+                                            denom_out: "neutron123".to_string(),
+                                        },
+                                        SwapOperation {
+                                            pool: "pool_3".to_string(),
+                                            denom_in: "neutron123".to_string(),
+                                            denom_out: "osmo".to_string(),
+                                        },
+                                    ],
+                                },
+                            ],
+                        }),
+                        remaining_asset: Asset::Native(Coin::new(800_000, "untrn")),
+                        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
+                        affiliates: vec![],
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "entry_point".to_string(), 
+                    msg: to_json_binary(&ExecuteMsg::PostSwapAction {
+                        min_asset: Asset::Native(Coin::new(800_000, "osmo")),
+                        timeout_timestamp: 101,
+                        post_swap_action: Action::IbcTransfer {
+                            ibc_info: IbcInfo {
+                                source_channel: "channel-0".to_string(),
+                                receiver: "receiver".to_string(),
+                                memo: "".to_string(),
+                                fee: Some(IbcFee {
+                                    recv_fee: vec![],
+                                    ack_fee: vec![Coin::new(100_000, "untrn")],
+                                    timeout_fee: vec![Coin::new(100_000, "untrn")],
+                                }),
+                                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                                    .to_string(),
+                            },
+                            fee_swap: None,
+                        },
+                        exact_out: false,
+                    }).unwrap(),
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },            
+        ],
+        expected_error: None,        
+    };
+    "Adjusts SmartSwapExactAssetIn route offer_assets sum to match remaining_asset"
+)]
 fn test_execute_swap_and_action(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(
