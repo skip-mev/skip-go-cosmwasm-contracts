@@ -186,14 +186,25 @@ pub fn execute_swap_and_action(
     };
 
     if let Swap::SmartSwapExactAssetIn(smart_swap) = &mut user_swap {
-        let diff = smart_swap.amount().checked_sub(remaining_asset.amount())?;
+        if smart_swap.routes.is_empty() {
+            return Err(ContractError::Skip(skip::error::SkipError::RoutesEmpty));
+        }
 
-        // If the total swap in amount is greater than remaining asset,
-        // adjust the routes to match the remaining asset amount
-        if diff > Uint128::zero() {
-            let largest_route_idx = smart_swap.largest_route_index().unwrap_or(0);
+        if smart_swap.amount() > remaining_asset.amount() {
+            let diff = smart_swap.amount().checked_sub(remaining_asset.amount())?;
+            // If the total swap in amount is greater than remaining asset,
+            // adjust the routes to match the remaining asset amount
+            let largest_route_idx = smart_swap.largest_route_index().unwrap();
 
             smart_swap.routes[largest_route_idx].offer_asset.sub(diff)?;
+        } else if smart_swap.amount() < remaining_asset.amount() {
+            let diff = remaining_asset.amount().checked_sub(smart_swap.amount())?;
+
+            // If the total swap in amount is less than remaining asset,
+            // adjust the routes to match the remaining asset amount
+            let largest_route_idx = smart_swap.largest_route_index().unwrap();
+
+            smart_swap.routes[largest_route_idx].offer_asset.add(diff)?;
         }
     }
 
