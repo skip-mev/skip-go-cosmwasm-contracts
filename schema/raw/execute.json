@@ -446,7 +446,6 @@
       },
       "additionalProperties": false
     },
-<<<<<<< HEAD
     "Route": {
       "type": "object",
       "required": [
@@ -485,8 +484,6 @@
       },
       "additionalProperties": false
     },
-=======
->>>>>>> main
     "Swap": {
       "oneOf": [
         {
