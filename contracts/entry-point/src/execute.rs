@@ -190,21 +190,25 @@ pub fn execute_swap_and_action(
             return Err(ContractError::Skip(skip::error::SkipError::RoutesEmpty));
         }
 
-        if smart_swap.amount() > remaining_asset.amount() {
-            let diff = smart_swap.amount().checked_sub(remaining_asset.amount())?;
-            // If the total swap in amount is greater than remaining asset,
-            // adjust the routes to match the remaining asset amount
-            let largest_route_idx = smart_swap.largest_route_index().unwrap();
+        match smart_swap.amount().cmp(&remaining_asset.amount()) {
+            std::cmp::Ordering::Equal => {}
+            std::cmp::Ordering::Less => {
+                let diff = smart_swap.amount().checked_sub(remaining_asset.amount())?;
+                // If the total swap in amount is greater than remaining asset,
+                // adjust the routes to match the remaining asset amount
+                let largest_route_idx = smart_swap.largest_route_index().unwrap();
 
-            smart_swap.routes[largest_route_idx].offer_asset.sub(diff)?;
-        } else if smart_swap.amount() < remaining_asset.amount() {
-            let diff = remaining_asset.amount().checked_sub(smart_swap.amount())?;
+                smart_swap.routes[largest_route_idx].offer_asset.sub(diff)?;
+            }
+            std::cmp::Ordering::Greater => {
+                let diff = remaining_asset.amount().checked_sub(smart_swap.amount())?;
 
-            // If the total swap in amount is less than remaining asset,
-            // adjust the routes to match the remaining asset amount
-            let largest_route_idx = smart_swap.largest_route_index().unwrap();
+                // If the total swap in amount is less than remaining asset,
+                // adjust the routes to match the remaining asset amount
+                let largest_route_idx = smart_swap.largest_route_index().unwrap();
 
-            smart_swap.routes[largest_route_idx].offer_asset.add(diff)?;
+                smart_swap.routes[largest_route_idx].offer_asset.add(diff)?;
+            }
         }
     }
 
