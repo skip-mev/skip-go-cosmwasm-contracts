@@ -10,7 +10,7 @@ use cw_utils::PaymentError::NonPayable;
 use skip::{
     asset::Asset,
     error::SkipError::Payment,
-    swap::{ExecuteMsg, Route, SwapOperation},
+    swap::{ExecuteMsg, SwapOperation},
 };
 use skip_api_swap_adapter_astroport::{
     error::{ContractError, ContractResult},
@@ -54,7 +54,6 @@ struct Params {
                 pool: "pool_1".to_string(),
                 denom_in: "neutron123".to_string(),
                 denom_out: "ua".to_string(),
-                interface: None,
             }
         ],
         expected_messages: vec![
@@ -63,15 +62,10 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
-                        offer_asset: Some(Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(100u128),
-                        })),
                         operation: SwapOperation {
                             pool: "pool_1".to_string(),
                             denom_in: "neutron123".to_string(),
                             denom_out: "ua".to_string(),
-                            interface: None,
                         }
                     })?,
                     funds: vec![],
@@ -110,7 +104,6 @@ struct Params {
                 pool: "pool_1".to_string(),
                 denom_in: "neutron123".to_string(),
                 denom_out: "neutron987".to_string(),
-                interface: None,
             }
         ],
         expected_messages: vec![
@@ -119,15 +112,10 @@ struct Params {
                 msg: WasmMsg::Execute {
                     contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::AstroportPoolSwap {
-                        offer_asset: Some(Asset::Cw20(Cw20Coin {
-                            address: "neutron123".to_string(),
-                            amount: Uint128::from(100u128),
-                        })),
                         operation: SwapOperation {
                             pool: "pool_1".to_string(),
                             denom_in: "neutron123".to_string(),
                             denom_out: "neutron987".to_string(),
-                            interface: None,
                         }
                     })?,
                     funds: vec![],
@@ -216,10 +204,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
             sender: params.caller,
             amount: params.sent_asset.amount(),
             msg: to_json_binary(&ExecuteMsg::Swap {
-                routes: vec![Route {
-                    offer_asset: params.sent_asset,
-                    operations: params.swap_operations,
-                }],
+                operations: params.swap_operations,
             })
             .unwrap(),
         }),

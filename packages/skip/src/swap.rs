@@ -5,13 +5,10 @@ use std::{convert::TryFrom, num::ParseIntError};
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Api, BankMsg, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response};
-use cosmwasm_std::{Binary, Uint128};
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
-    SwapAmountInRoute as OsmosisSwapAmountInRoute,
-    SwapAmountInSplitRoute as OsmosisSwapAmountInSplitRoute,
-    SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
+    SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
 
 ///////////////
@@ -57,28 +54,15 @@ pub struct LidoSatelliteInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    Swap {
-        routes: Vec<Route>,
-    },
-    TransferFundsBack {
-        swapper: Addr,
-        return_denom: String,
-    },
-    // Only used for the astroport swap adapter contract
-    AstroportPoolSwap {
-        operation: SwapOperation,
-        offer_asset: Option<Asset>,
-    },
-    // Only used for the white whale swap adapter contract
-    WhiteWhalePoolSwap {
-        operation: SwapOperation,
-        offer_asset: Option<Asset>,
-    },
+    Swap { operations: Vec<SwapOperation> },
+    TransferFundsBack { swapper: Addr, return_denom: String },
+    AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
+    WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
 }
 
 #[cw_serde]
 pub enum Cw20HookMsg {
-    Swap { routes: Vec<Route> },
+    Swap { operations: Vec<SwapOperation> },
 }
 
 /////////////////////////
@@ -144,12 +128,6 @@ pub struct SwapVenue {
     pub adapter_contract_address: String,
 }
 
-#[cw_serde]
-pub struct Route {
-    pub offer_asset: Asset,
-    pub operations: Vec<SwapOperation>,
-}
-
 // Standard swap operation type that contains the pool, denom in, and denom out
 // for the swap operation. The type is converted into the respective swap venues
 // expected format in each adapter contract.
@@ -158,7 +136,6 @@ pub struct SwapOperation {
     pub pool: String,
     pub denom_in: String,
     pub denom_out: String,
-    pub interface: Option<Binary>,
 }
 
 // ASTROPORT CONVERSION
@@ -188,19 +165,6 @@ impl SwapOperation {
 }
 
 // OSMOSIS CONVERSIONS
-
-impl TryFrom<Route> for OsmosisSwapAmountInSplitRoute {
-    type Error = ParseIntError;
-
-    fn try_from(route: Route) -> Result<Self, Self::Error> {
-        let pools: Vec<OsmosisSwapAmountInRoute> = convert_swap_operations(route.operations)?;
-
-        Ok(OsmosisSwapAmountInSplitRoute {
-            pools,
-            token_in_amount: route.offer_asset.amount().to_string(),
-        })
-    }
-}
 
 // Converts a skip swap operation to an osmosis swap amount in route
 // Error if the given String for pool in the swap operation is not a valid u64.
@@ -241,20 +205,11 @@ where
     swap_operations.into_iter().map(T::try_from).collect()
 }
 
-// Converts a vector of skip routes to vector of osmosis split routes,
-// returning an error if any of the routes fail to convert.
-pub fn convert_routes<T>(routes: Vec<Route>) -> Result<Vec<T>, ParseIntError>
-where
-    T: TryFrom<Route, Error = ParseIntError>,
-{
-    routes.into_iter().map(T::try_from).collect()
-}
-
 // Swap object to get the exact amount of a given asset with the given vector of swap operations
 #[cw_serde]
 pub struct SwapExactAssetOut {
     pub swap_venue_name: String,
-    pub routes: Vec<Route>,
+    pub operations: Vec<SwapOperation>,
     pub refund_address: Option<String>,
 }
 
@@ -263,7 +218,7 @@ pub struct SwapExactAssetOut {
 #[cw_serde]
 pub struct SwapExactAssetIn {
     pub swap_venue_name: String,
-    pub routes: Vec<Route>,
+    pub operations: Vec<SwapOperation>,
 }
 
 // Converts a SwapExactAssetOut used in the entry point contract
@@ -271,7 +226,7 @@ pub struct SwapExactAssetIn {
 impl From<SwapExactAssetOut> for ExecuteMsg {
     fn from(swap: SwapExactAssetOut) -> Self {
         ExecuteMsg::Swap {
-            routes: swap.routes,
+            operations: swap.operations,
         }
     }
 }
@@ -281,7 +236,7 @@ impl From<SwapExactAssetOut> for ExecuteMsg {
 impl From<SwapExactAssetIn> for ExecuteMsg {
     fn from(swap: SwapExactAssetIn) -> Self {
         ExecuteMsg::Swap {
-            routes: swap.routes,
+            operations: swap.operations,
         }
     }
 }
@@ -351,34 +306,6 @@ pub fn validate_swap_operations(
     Ok(())
 }
 
-// Validates routes
-pub fn validate_routes(
-    routes: &[Route],
-    asset_in: &Asset,
-    asset_out_denom: &str,
-) -> Result<(), SkipError> {
-    // Verify the routes are not empty
-    if routes.is_empty() {
-        return Err(SkipError::RoutesEmpty);
-    }
-
-    let mut amount_in = Uint128::zero();
-
-    for route in routes {
-        // Verify the swap operations are not empty, and all operations have the same denom in and out
-        validate_swap_operations(&route.operations, asset_in.denom(), asset_out_denom)?;
-
-        amount_in += route.offer_asset.amount();
-    }
-
-    // Verify the total offer_asset amount is equal to the asset_in amount
-    if amount_in != asset_in.amount() {
-        return Err(SkipError::RoutesAssetInAmountMismatch);
-    }
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -392,7 +319,6 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "ua".to_string(),
             denom_out: "uo".to_string(),
-            interface: None,
         };
 
         let deps = mock_dependencies();
@@ -417,7 +343,6 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "cwabc".to_string(),
             denom_out: "cw123".to_string(),
-            interface: None,
         };
 
         let deps = mock_dependencies();
@@ -445,7 +370,6 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
-            interface: None,
         };
 
         let osmosis_swap_amount_in_route: OsmosisSwapAmountInRoute =
@@ -464,7 +388,6 @@ mod tests {
             pool: "invalid".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
-            interface: None,
         };
 
         let result: Result<OsmosisSwapAmountInRoute, ParseIntError> = swap_operation.try_into();
@@ -483,7 +406,6 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
-            interface: None,
         };
 
         let osmosis_swap_amount_out_route: OsmosisSwapAmountOutRoute =
@@ -502,7 +424,6 @@ mod tests {
             pool: "invalid".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
-            interface: None,
         };
 
         let result: Result<OsmosisSwapAmountOutRoute, ParseIntError> = swap_operation.try_into();
@@ -522,13 +443,11 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
-                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "untrn".to_string(),
-                interface: None,
             },
         ];
 
@@ -574,13 +493,11 @@ mod tests {
                 pool: "invalid".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
-                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "untrn".to_string(),
-                interface: None,
             },
         ];
 
@@ -611,13 +528,11 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
-                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "untrn".to_string(),
-                interface: None,
             },
         ];
 
@@ -645,13 +560,11 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "uatom".to_string(),
-                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "untrn".to_string(),
-                interface: None,
             },
         ];
 
@@ -672,13 +585,11 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
-                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "uatom".to_string(),
-                interface: None,
             },
         ];
 
