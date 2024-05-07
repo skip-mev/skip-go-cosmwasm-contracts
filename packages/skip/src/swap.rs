@@ -61,7 +61,7 @@ pub struct HallswapInstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    Swap { routes: Vec<Route> },
+    Swap { operations: Vec<SwapOperation> },
     TransferFundsBack { swapper: Addr, return_denom: String },
     AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
     WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
@@ -69,7 +69,7 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub enum Cw20HookMsg {
-    Swap { routes: Vec<Route> },
+    Swap { operations: Vec<SwapOperation> },
 }
 
 /////////////////////////
@@ -222,7 +222,7 @@ where
 #[cw_serde]
 pub struct SwapExactAssetOut {
     pub swap_venue_name: String,
-    pub routes: Vec<Route>,
+    pub operations: Vec<SwapOperation>,
     pub refund_address: Option<String>,
 }
 
@@ -231,7 +231,7 @@ pub struct SwapExactAssetOut {
 #[cw_serde]
 pub struct SwapExactAssetIn {
     pub swap_venue_name: String,
-    pub routes: Vec<Route>,
+    pub operations: Vec<SwapOperation>,
 }
 
 // Converts a SwapExactAssetOut used in the entry point contract
@@ -239,7 +239,7 @@ pub struct SwapExactAssetIn {
 impl From<SwapExactAssetOut> for ExecuteMsg {
     fn from(swap: SwapExactAssetOut) -> Self {
         ExecuteMsg::Swap {
-            routes: swap.routes,
+            operations: swap.operations,
         }
     }
 }
@@ -249,7 +249,7 @@ impl From<SwapExactAssetOut> for ExecuteMsg {
 impl From<SwapExactAssetIn> for ExecuteMsg {
     fn from(swap: SwapExactAssetIn) -> Self {
         ExecuteMsg::Swap {
-            routes: swap.routes,
+            operations: swap.operations,
         }
     }
 }

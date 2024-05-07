@@ -108,7 +108,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { routes } => execute_swap(deps, env, info, routes, sent_asset),
+        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, operations, sent_asset),
     }
 }
 
@@ -125,9 +125,9 @@ pub fn execute(
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
-        ExecuteMsg::Swap { routes } => {
+        ExecuteMsg::Swap { operations } => {
             let coin = one_coin(&info)?;
-            execute_swap(deps, env, info, routes, Asset::Native(coin))
+            execute_swap(deps, env, info, operations, Asset::Native(coin))
         }
         _ => {
             unimplemented!()
@@ -139,7 +139,7 @@ fn execute_swap(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    routes: Vec<Route>,
+    operations: Vec<SwapOperation>,
     asset: Asset,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
@@ -157,7 +157,9 @@ fn execute_swap(
     let hallswap_contract_address = HALLSWAP_CONTRACT_ADDRESS.load(deps.storage)?;
 
     // Create hallswap swap message
-    let hallswap_routes = get_hallswap_routes_from_skip_routes(deps.as_ref(), routes)?;
+    let hallswap_routes =
+        get_hallswap_routes_from_skip_operations(deps.as_ref(), asset.amount(), operations)?;
+
     let hallswap_execute_msg = HallswapExecuteMsg::ExecuteRoutesV2 {
         routes: hallswap_routes,
         minimum_receive: Uint128::zero(),
@@ -286,4 +288,34 @@ fn get_hallswap_routes_from_skip_routes(
             })
         })
         .collect()
+}
+
+fn get_hallswap_routes_from_skip_operations(
+    deps: Deps,
+    offer_amount: Uint128,
+    operations: Vec<SwapOperation>,
+) -> Result<Vec<HallswapRouteInfo>, SkipError> {
+    let route = operations
+        .iter()
+        .map(|op| {
+            Ok(HallswapSwapOperation {
+                contract_addr: deps.api.addr_validate(&op.pool)?,
+                offer_asset: Asset::new(deps.api, &op.denom_in, Uint128::zero())
+                    .into_astroport_asset(deps.api)?
+                    .info,
+                return_asset: Asset::new(deps.api, &op.denom_out, Uint128::zero())
+                    .into_astroport_asset(deps.api)?
+                    .info,
+                interface: op
+                    .interface
+                    .as_ref()
+                    .map(|interface| HallswapInterface::Binary(interface.clone())),
+            })
+        })
+        .collect::<Result<Vec<HallswapSwapOperation>, SkipError>>()?;
+
+    Ok(vec![HallswapRouteInfo {
+        route,
+        offer_amount,
+    }])
 }
