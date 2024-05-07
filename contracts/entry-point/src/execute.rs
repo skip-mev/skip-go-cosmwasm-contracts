@@ -185,18 +185,16 @@ pub fn execute_swap_and_action(
         Swap::SmartSwapExactAssetIn(_) => false,
     };
 
-    if let Swap::SmartSwapExactAssetIn(mut swap) = user_swap.clone() {
-        let diff = swap.amount().checked_sub(remaining_asset.amount())?;
+    if let Swap::SmartSwapExactAssetIn(smart_swap) = &mut user_swap {
+        let diff = smart_swap.amount().checked_sub(remaining_asset.amount())?;
 
         // If the total swap in amount is greater than remaining asset,
         // adjust the routes to match the remaining asset amount
         if diff > Uint128::zero() {
-            let largest_route_idx = swap.largest_route_index().unwrap_or(0);
+            let largest_route_idx = smart_swap.largest_route_index().unwrap_or(0);
 
-            swap.routes[largest_route_idx].offer_asset.sub(diff)?;
+            smart_swap.routes[largest_route_idx].offer_asset.sub(diff)?;
         }
-
-        user_swap = Swap::SmartSwapExactAssetIn(swap.clone());
     }
 
     let user_swap_msg = WasmMsg::Execute {
