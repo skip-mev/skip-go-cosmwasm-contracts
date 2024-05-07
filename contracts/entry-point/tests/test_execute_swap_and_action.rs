@@ -1777,9 +1777,9 @@ struct Params {
                 .into(),
                 gas_limit: None,
                 reply_on: Never,
-            },            
+            },
         ],
-        expected_error: None,        
+        expected_error: None,
     };
     "Adjusts SmartSwapExactAssetIn route offer_assets sum to match remaining_asset"
 )]
