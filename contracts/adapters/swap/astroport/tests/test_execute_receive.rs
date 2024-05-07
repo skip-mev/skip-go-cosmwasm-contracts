@@ -10,7 +10,7 @@ use cw_utils::PaymentError::NonPayable;
 use skip::{
     asset::Asset,
     error::SkipError::Payment,
-    swap::{ExecuteMsg, Route, SwapOperation},
+    swap::{ExecuteMsg, SwapOperation},
 };
 use skip_api_swap_adapter_astroport::{
     error::{ContractError, ContractResult},
@@ -208,10 +208,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
             sender: params.caller,
             amount: params.sent_asset.amount(),
             msg: to_json_binary(&ExecuteMsg::Swap {
-                routes: vec![Route {
-                    offer_asset: params.sent_asset,
-                    operations: params.swap_operations,
-                }],
+                operations: params.swap_operations,
             })
             .unwrap(),
         }),

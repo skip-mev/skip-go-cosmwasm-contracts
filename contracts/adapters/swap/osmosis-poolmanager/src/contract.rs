@@ -14,7 +14,6 @@ use osmosis_std::types::osmosis::poolmanager::v1beta1::{
 };
 use skip::{
     asset::Asset,
-    error::SkipError,
     proto_coin::ProtoCoin,
     swap::{
         convert_swap_operations, execute_transfer_funds_back, ExecuteMsg, InstantiateMsg,
@@ -78,15 +77,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            let operations = routes.first().unwrap().operations.clone();
-
-            execute_swap(deps, env, info, operations)
-        }
+        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,

@@ -4,10 +4,7 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
-use skip::{
-    asset::Asset,
-    swap::{ExecuteMsg, Route, SwapOperation},
-};
+use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_api_swap_adapter_astroport::{
     error::{ContractError, ContractResult},
     state::ENTRY_POINT_CONTRACT_ADDRESS,
@@ -33,7 +30,6 @@ Expect Error
 struct Params {
     caller: String,
     info_funds: Vec<Coin>,
-    offer_asset: Asset,
     swap_operations: Vec<SwapOperation>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
@@ -43,7 +39,6 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         info_funds: vec![Coin::new(100, "os")],
         swap_operations: vec![
             SwapOperation {
@@ -93,7 +88,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![
             SwapOperation {
                 pool: "pool_1".to_string(),
@@ -165,7 +159,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::SwapOperationsEmpty),
@@ -175,7 +168,6 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Payment(cw_utils::PaymentError::NoFunds{})),
@@ -188,7 +180,6 @@ struct Params {
             Coin::new(100, "un"),
             Coin::new(100, "os"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "os")),
         swap_operations: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Payment(cw_utils::PaymentError::MultipleDenoms{})),
@@ -200,7 +191,6 @@ struct Params {
         info_funds: vec![
             Coin::new(100, "un"),
         ],
-        offer_asset: Asset::Native(Coin::new(100, "un")),
         swap_operations: vec![],
         expected_messages: vec![],
         expected_error: Some(ContractError::Unauthorized),
@@ -229,11 +219,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         env,
         info,
         ExecuteMsg::Swap {
-            // operations: params.swap_operations.clone(),
-            routes: vec![Route {
-                offer_asset: params.offer_asset,
-                operations: params.swap_operations,
-            }],
+            operations: params.swap_operations.clone(),
         },
     );
 
