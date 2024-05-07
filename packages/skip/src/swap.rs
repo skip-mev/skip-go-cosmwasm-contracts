@@ -5,7 +5,7 @@ use std::{convert::TryFrom, num::ParseIntError};
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{
-    Addr, Api, BankMsg, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
+    Addr, Api, BankMsg, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
 };
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
@@ -144,6 +144,7 @@ pub struct SwapOperation {
     pub pool: String,
     pub denom_in: String,
     pub denom_out: String,
+    pub interface: Option<Binary>,
 }
 
 // ASTROPORT CONVERSION
@@ -353,6 +354,7 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "ua".to_string(),
             denom_out: "uo".to_string(),
+            interface: None,
         };
 
         let deps = mock_dependencies();
@@ -377,6 +379,7 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "cwabc".to_string(),
             denom_out: "cw123".to_string(),
+            interface: None,
         };
 
         let deps = mock_dependencies();
@@ -404,6 +407,7 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
+            interface: None,
         };
 
         let osmosis_swap_amount_in_route: OsmosisSwapAmountInRoute =
@@ -422,6 +426,7 @@ mod tests {
             pool: "invalid".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
+            interface: None,
         };
 
         let result: Result<OsmosisSwapAmountInRoute, ParseIntError> = swap_operation.try_into();
@@ -440,6 +445,7 @@ mod tests {
             pool: "1".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
+            interface: None,
         };
 
         let osmosis_swap_amount_out_route: OsmosisSwapAmountOutRoute =
@@ -458,6 +464,7 @@ mod tests {
             pool: "invalid".to_string(),
             denom_in: "uatom".to_string(),
             denom_out: "uosmo".to_string(),
+            interface: None,
         };
 
         let result: Result<OsmosisSwapAmountOutRoute, ParseIntError> = swap_operation.try_into();
@@ -477,11 +484,13 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
+                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "untrn".to_string(),
+                interface: None,
             },
         ];
 
@@ -527,11 +536,13 @@ mod tests {
                 pool: "invalid".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
+                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "untrn".to_string(),
+                interface: None,
             },
         ];
 
@@ -562,11 +573,13 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
+                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "untrn".to_string(),
+                interface: None,
             },
         ];
 
@@ -594,11 +607,13 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "uatom".to_string(),
+                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "untrn".to_string(),
+                interface: None,
             },
         ];
 
@@ -619,11 +634,13 @@ mod tests {
                 pool: "1".to_string(),
                 denom_in: "uatom".to_string(),
                 denom_out: "uosmo".to_string(),
+                interface: None,
             },
             SwapOperation {
                 pool: "2".to_string(),
                 denom_in: "uosmo".to_string(),
                 denom_out: "uatom".to_string(),
+                interface: None,
             },
         ];
 
