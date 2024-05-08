@@ -93,7 +93,7 @@ pub fn execute_swap_and_action(
     env: Env,
     info: MessageInfo,
     sent_asset: Option<Asset>,
-    user_swap: Swap,
+    mut user_swap: Swap,
     min_asset: Asset,
     timeout_timestamp: u64,
     post_swap_action: Action,
@@ -182,7 +182,36 @@ pub fn execute_swap_and_action(
     let exact_out = match &user_swap {
         Swap::SwapExactAssetIn(_) => false,
         Swap::SwapExactAssetOut(_) => true,
+        Swap::SmartSwapExactAssetIn(_) => false,
     };
+
+    if let Swap::SmartSwapExactAssetIn(smart_swap) = &mut user_swap {
+        if smart_swap.routes.is_empty() {
+            return Err(ContractError::Skip(skip::error::SkipError::RoutesEmpty));
+        }
+
+        match smart_swap.amount().cmp(&remaining_asset.amount()) {
+            std::cmp::Ordering::Equal => {}
+            std::cmp::Ordering::Less => {
+                let diff = remaining_asset.amount().checked_sub(smart_swap.amount())?;
+
+                // If the total swap in amount is less than remaining asset,
+                // adjust the routes to match the remaining asset amount
+                let largest_route_idx = smart_swap.largest_route_index()?;
+
+                smart_swap.routes[largest_route_idx].offer_asset.add(diff)?;
+            }
+            std::cmp::Ordering::Greater => {
+                let diff = smart_swap.amount().checked_sub(remaining_asset.amount())?;
+
+                // If the total swap in amount is greater than remaining asset,
+                // adjust the routes to match the remaining asset amount
+                let largest_route_idx = smart_swap.largest_route_index()?;
+
+                smart_swap.routes[largest_route_idx].offer_asset.sub(diff)?;
+            }
+        }
+    }
 
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
@@ -406,6 +435,35 @@ pub fn execute_user_swap(
             response = response
                 .add_message(user_swap_msg)
                 .add_attribute("action", "dispatch_user_swap_exact_asset_out");
+        }
+        Swap::SmartSwapExactAssetIn(swap) => {
+            for route in swap.routes {
+                // Validate swap operations
+                validate_swap_operations(
+                    &route.operations,
+                    remaining_asset.denom(),
+                    min_asset.denom(),
+                )?;
+
+                // Get swap adapter contract address from venue name
+                let user_swap_adapter_contract_address =
+                    SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
+
+                // Create the user swap message args
+                let user_swap_msg_args = SwapExecuteMsg::Swap {
+                    operations: route.operations,
+                };
+
+                // Create the user swap message
+                let user_swap_msg = route.offer_asset.into_wasm_msg(
+                    user_swap_adapter_contract_address.to_string(),
+                    to_json_binary(&user_swap_msg_args)?,
+                )?;
+
+                response = response
+                    .add_message(user_swap_msg)
+                    .add_attribute("action", "dispatch_user_swap_exact_asset_in");
+            }
         }
     }
 

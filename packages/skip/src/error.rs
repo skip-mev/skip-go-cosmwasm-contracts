@@ -32,6 +32,9 @@ pub enum SkipError {
     #[error("Last Swap Operations' Denom Out Differs From Swap Asset Out Denom")]
     SwapOperationsAssetOutDenomMismatch,
 
+    #[error("Routes Empty")]
+    RoutesEmpty,
+
     ///////////
     /// IBC ///
     ///////////

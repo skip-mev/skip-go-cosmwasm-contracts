@@ -491,6 +491,44 @@
         },
         "additionalProperties": false
       },
+      "Route": {
+        "type": "object",
+        "required": [
+          "offer_asset",
+          "operations"
+        ],
+        "properties": {
+          "offer_asset": {
+            "$ref": "#/definitions/Asset"
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/SwapOperation"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmartSwapExactAssetIn": {
+        "type": "object",
+        "required": [
+          "routes",
+          "swap_venue_name"
+        ],
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Route"
+            }
+          },
+          "swap_venue_name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "Swap": {
         "oneOf": [
           {
@@ -513,6 +551,18 @@
             "properties": {
               "swap_exact_asset_out": {
                 "$ref": "#/definitions/SwapExactAssetOut"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "smart_swap_exact_asset_in"
+            ],
+            "properties": {
+              "smart_swap_exact_asset_in": {
+                "$ref": "#/definitions/SmartSwapExactAssetIn"
               }
             },
             "additionalProperties": false
@@ -576,6 +626,16 @@
           },
           "denom_out": {
             "type": "string"
+          },
+          "interface": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Binary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "pool": {
             "type": "string"

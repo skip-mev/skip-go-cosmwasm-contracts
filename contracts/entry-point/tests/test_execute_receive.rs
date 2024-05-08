@@ -52,6 +52,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "osmo".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -77,6 +78,7 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "neutron123".to_string(),
                                         denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
                                 ],
                             }
@@ -125,6 +127,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "osmo".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -151,6 +154,7 @@ struct Params {
                                         pool: "pool".to_string(),
                                         denom_in: "neutron123".to_string(),
                                         denom_out: "osmo".to_string(),
+                                        interface: None,
                                     }
                                 ],
                             }
