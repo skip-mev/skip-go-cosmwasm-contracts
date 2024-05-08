@@ -16,9 +16,7 @@ use cw_utils::one_coin;
 use skip::{
     asset::Asset,
     error::SkipError,
-    swap::{
-        Cw20HookMsg, ExecuteMsg, HallswapInstantiateMsg, MigrateMsg, QueryMsg, Route, SwapOperation,
-    },
+    swap::{Cw20HookMsg, ExecuteMsg, HallswapInstantiateMsg, MigrateMsg, QueryMsg, SwapOperation},
 };
 
 // Contract name and version used for migration.
@@ -232,12 +230,10 @@ fn query_simulate_swap_exact_asset_in(
     let res: HallswapQuerySimulationResult = deps.querier.query_wasm_smart(
         hallswap_contract_address,
         &HallswapQueryMsg::Simulation {
-            routes: get_hallswap_routes_from_skip_routes(
+            routes: get_hallswap_routes_from_skip_operations(
                 deps,
-                vec![Route {
-                    offer_asset: asset_in,
-                    operations: swap_operations,
-                }],
+                asset_in.amount(),
+                swap_operations,
             )?,
         },
     )?;
@@ -253,41 +249,6 @@ fn query_simulate_swap_exact_asset_in(
             Ok(Asset::Native(Coin::new(return_asset.amount.into(), denom)))
         }
     }
-}
-
-fn get_hallswap_routes_from_skip_routes(
-    deps: Deps,
-    routes: Vec<Route>,
-) -> Result<Vec<HallswapRouteInfo>, SkipError> {
-    routes
-        .iter()
-        .map(|route| {
-            let hallswap_operations = route
-                .operations
-                .iter()
-                .map(|op| {
-                    Ok(HallswapSwapOperation {
-                        contract_addr: deps.api.addr_validate(&op.pool)?,
-                        offer_asset: Asset::new(deps.api, &op.denom_in, Uint128::zero())
-                            .into_astroport_asset(deps.api)?
-                            .info,
-                        return_asset: Asset::new(deps.api, &op.denom_out, Uint128::zero())
-                            .into_astroport_asset(deps.api)?
-                            .info,
-                        interface: op
-                            .interface
-                            .as_ref()
-                            .map(|interface| HallswapInterface::Binary(interface.clone())),
-                    })
-                })
-                .collect::<Result<Vec<HallswapSwapOperation>, SkipError>>()?;
-
-            Ok(HallswapRouteInfo {
-                route: hallswap_operations,
-                offer_amount: route.offer_asset.amount(),
-            })
-        })
-        .collect()
 }
 
 fn get_hallswap_routes_from_skip_operations(
