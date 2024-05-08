@@ -83,6 +83,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -101,6 +102,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -125,6 +127,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -146,6 +149,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -180,6 +184,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -207,6 +212,7 @@ struct Params {
                                     pool: "pool".to_string(),
                                     denom_in: "neutron123".to_string(),
                                     denom_out: "os".to_string(),
+                                    interface: None,
                                 }
                             ],
                         }).unwrap(),
@@ -242,6 +248,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -269,6 +276,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -313,6 +321,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
             }
@@ -334,6 +343,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -358,6 +368,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -387,6 +398,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -411,6 +423,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -445,6 +458,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -479,6 +493,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "neutron987".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -524,6 +539,7 @@ struct Params {
                                     pool: "pool".to_string(),
                                     denom_in: "neutron123".to_string(),
                                     denom_out: "neutron987".to_string(),
+                                    interface: None,
                                 }
                             ],
                         }).unwrap(),
@@ -563,6 +579,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -601,6 +618,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -645,6 +663,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -679,6 +698,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -703,6 +723,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -722,6 +743,7 @@ struct Params {
                                 pool: "pool".to_string(),
                                 denom_in: "un".to_string(),
                                 denom_out: "os".to_string(),
+                                interface: None,
                             }
                         ],
                     }).unwrap(),
@@ -746,6 +768,7 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "ua".to_string(),
+                        interface: None,
                     }
                 ],
             },
@@ -768,6 +791,7 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "uo".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
             },
@@ -806,6 +830,7 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "ua".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -829,6 +854,7 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "os".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -869,6 +895,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: None,
@@ -892,6 +919,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "ua".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -915,6 +943,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -942,6 +971,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }
                 ],
                 refund_address: Some("refund_address".to_string()),
@@ -988,6 +1018,7 @@ struct Params {
                     pool: "pool".to_string(),
                     denom_in: "un".to_string(),
                     denom_out: "os".to_string(),
+                    interface: None,
                 }],
             },
             Route {
@@ -997,11 +1028,13 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "neutron123".to_string(),
+                        interface: None,
                     },
                     SwapOperation {
                         pool: "pool_3".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     },
                 ],
             },
@@ -1020,6 +1053,7 @@ struct Params {
                         pool: "pool".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     }],
                 })
                 .unwrap(),
@@ -1039,11 +1073,13 @@ struct Params {
                             pool: "pool_2".to_string(),
                             denom_in: "un".to_string(),
                             denom_out: "neutron123".to_string(),
+                            interface: None,
                         },
                         SwapOperation {
                             pool: "pool_3".to_string(),
                             denom_in: "neutron123".to_string(),
                             denom_out: "os".to_string(),
+                            interface: None,
                         },
                     ],
                 })
@@ -1068,6 +1104,7 @@ struct Params {
                     pool: "pool".to_string(),
                     denom_in: "un".to_string(),
                     denom_out: "os".to_string(),
+                    interface: None,
                 }],
             },
             Route {
@@ -1077,11 +1114,13 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "un".to_string(),
+                        interface: None,
                     },
                     SwapOperation {
                         pool: "pool_3".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "os".to_string(),
+                        interface: None,
                     },
                 ],
             },
@@ -1104,6 +1143,7 @@ struct Params {
                     pool: "pool".to_string(),
                     denom_in: "un".to_string(),
                     denom_out: "os".to_string(),
+                    interface: None,
                 }],
             },
             Route {
@@ -1113,11 +1153,13 @@ struct Params {
                         pool: "pool_2".to_string(),
                         denom_in: "un".to_string(),
                         denom_out: "neutron123".to_string(),
+                        interface: None,
                     },
                     SwapOperation {
                         pool: "pool_3".to_string(),
                         denom_in: "neutron123".to_string(),
                         denom_out: "oa".to_string(),
+                        interface: None,
                     },
                 ],
             },
