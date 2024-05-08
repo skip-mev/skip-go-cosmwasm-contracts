@@ -197,7 +197,7 @@ pub fn execute_swap_and_action(
 
                 // If the total swap in amount is less than remaining asset,
                 // adjust the routes to match the remaining asset amount
-                let largest_route_idx = smart_swap.largest_route_index().unwrap();
+                let largest_route_idx = smart_swap.largest_route_index()?;
 
                 smart_swap.routes[largest_route_idx].offer_asset.add(diff)?;
             }
@@ -206,7 +206,7 @@ pub fn execute_swap_and_action(
 
                 // If the total swap in amount is greater than remaining asset,
                 // adjust the routes to match the remaining asset amount
-                let largest_route_idx = smart_swap.largest_route_index().unwrap();
+                let largest_route_idx = smart_swap.largest_route_index()?;
 
                 smart_swap.routes[largest_route_idx].offer_asset.sub(diff)?;
             }

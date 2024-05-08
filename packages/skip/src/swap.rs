@@ -246,12 +246,17 @@ impl SmartSwapExactAssetIn {
             .sum()
     }
 
-    pub fn largest_route_index(&self) -> Option<usize> {
-        self.routes
+    pub fn largest_route_index(&self) -> Result<usize, SkipError> {
+        match self
+            .routes
             .iter()
             .enumerate()
             .max_by_key(|(_, route)| route.offer_asset.amount())
             .map(|(index, _)| index)
+        {
+            Some(idx) => Ok(idx),
+            None => Err(SkipError::RoutesEmpty),
+        }
     }
 }
 
