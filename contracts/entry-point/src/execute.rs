@@ -525,8 +525,11 @@ pub fn execute_post_swap_action(
     };
 
     response = response
-        .add_attribute("amount_out", transfer_out_asset.amount().to_string())
-        .add_attribute("denom_out", transfer_out_asset.denom());
+        .add_attribute(
+            "post_swap_action_amount_out",
+            transfer_out_asset.amount().to_string(),
+        )
+        .add_attribute("post_swap_action_denom_out", transfer_out_asset.denom());
 
     match post_swap_action {
         Action::Transfer { to_address } => {
