@@ -16,7 +16,10 @@ use cw_utils::one_coin;
 use skip::{
     asset::Asset,
     error::SkipError,
-    swap::{Cw20HookMsg, ExecuteMsg, HallswapInstantiateMsg, MigrateMsg, QueryMsg, SwapOperation},
+    swap::{
+        Cw20HookMsg, ExecuteMsg, HallswapInstantiateMsg, MigrateMsg, QueryMsg,
+        SimulateSwapExactAssetInResponse, SwapOperation,
+    },
 };
 
 // Contract name and version used for migration.
@@ -200,6 +203,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_in,
             swap_operations,
         )?),
+        QueryMsg::SimulateSwapExactAssetInWithMetadata {
+            asset_in,
+            swap_operations,
+            include_spot_price: _,
+        } => to_json_binary(&query_simulate_swap_exact_asset_in_with_metadata(
+            deps,
+            asset_in,
+            swap_operations,
+        )?),
         _ => {
             unimplemented!()
         }
@@ -223,7 +235,41 @@ fn query_simulate_swap_exact_asset_in(
         return Err(ContractError::CoinInDenomMismatch);
     }
 
-    // Get hallswap contract address
+    simulate_swap_exact_asset_in(deps, asset_in, swap_operations)
+}
+
+fn query_simulate_swap_exact_asset_in_with_metadata(
+    deps: Deps,
+    asset_in: Asset,
+    swap_operations: Vec<SwapOperation>,
+) -> ContractResult<SimulateSwapExactAssetInResponse> {
+    // Error if swap operations is empty
+    let Some(first_op) = swap_operations.first() else {
+        return Err(ContractError::SwapOperationsEmpty);
+    };
+
+    // Ensure asset_in's denom is the same as the first swap operation's denom in
+    if asset_in.denom() != first_op.denom_in {
+        return Err(ContractError::CoinInDenomMismatch);
+    }
+
+    // // Simulate the swap exact amount in
+    let asset_out = simulate_swap_exact_asset_in(deps, asset_in.clone(), swap_operations.clone())?;
+
+    // Create the response
+    let response = SimulateSwapExactAssetInResponse {
+        asset_out: asset_out.clone(),
+        spot_price: None,
+    };
+
+    Ok(response)
+}
+
+fn simulate_swap_exact_asset_in(
+    deps: Deps,
+    asset_in: Asset,
+    swap_operations: Vec<SwapOperation>,
+) -> ContractResult<Asset> {
     let hallswap_contract_address = HALLSWAP_CONTRACT_ADDRESS.load(deps.storage)?;
 
     // Query hallswap contract to get simulation results
