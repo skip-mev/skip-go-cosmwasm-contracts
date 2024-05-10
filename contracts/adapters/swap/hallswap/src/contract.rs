@@ -7,7 +7,7 @@ use crate::{
     state::{ENTRY_POINT_CONTRACT_ADDRESS, HALLSWAP_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo,
+    entry_point, from_json, to_json_binary, Binary, Coin, Deps, DepsMut, Env, MessageInfo,
     Response, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
@@ -206,12 +206,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         QueryMsg::SimulateSwapExactAssetInWithMetadata {
             asset_in,
             swap_operations,
-            include_spot_price,
+            include_spot_price: _,
         } => to_json_binary(&query_simulate_swap_exact_asset_in_with_metadata(
             deps,
             asset_in,
             swap_operations,
-            include_spot_price,
         )?),
         _ => {
             unimplemented!()
@@ -243,7 +242,6 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     deps: Deps,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
-    include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
     // Error if swap operations is empty
     let Some(first_op) = swap_operations.first() else {
@@ -259,15 +257,10 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     let asset_out = simulate_swap_exact_asset_in(deps, asset_in.clone(), swap_operations.clone())?;
 
     // Create the response
-    let mut response = SimulateSwapExactAssetInResponse {
+    let response = SimulateSwapExactAssetInResponse {
         asset_out: asset_out.clone(),
         spot_price: None,
     };
-
-    // Include the spot price in the response if requested
-    if include_spot_price {
-        response.spot_price = Some(Decimal::from_ratio(asset_out.amount(), asset_in.amount()));
-    }
 
     Ok(response)
 }
