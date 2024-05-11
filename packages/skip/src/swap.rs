@@ -107,6 +107,16 @@ pub enum QueryMsg {
         swap_operations: Vec<SwapOperation>,
         include_spot_price: bool,
     },
+    // SimulateSmartSwapExactAssetIn returns the asset out received from the specified asset in over multiple routes
+    #[returns(Asset)]
+    SimulateSmartSwapExactAssetIn { asset_in: Asset, routes: Vec<Route> },
+    // SimulateSmartSwapExactAssetInWithMetadata returns the asset out received from the specified asset in over multiple routes with metadata
+    #[returns(SimulateSmartSwapExactAssetInResponse)]
+    SimulateSmartSwapExactAssetInWithMetadata {
+        asset_in: Asset,
+        routes: Vec<Route>,
+        include_spot_price: bool,
+    },
 }
 
 // The SimulateSwapExactAssetInResponse struct defines the response for the
@@ -125,6 +135,14 @@ pub struct SimulateSwapExactAssetOutResponse {
     pub spot_price: Option<Decimal>,
 }
 
+// The SimulateSmartSwapExactAssetInResponse struct defines the response for the
+// SimulateSmartSwapExactAssetIn query.
+#[cw_serde]
+pub struct SimulateSmartSwapExactAssetInResponse {
+    pub asset_out: Asset,
+    pub spot_price: Option<Decimal>,
+}
+
 ////////////////////
 /// COMMON TYPES ///
 ////////////////////
@@ -140,6 +158,22 @@ pub struct SwapVenue {
 pub struct Route {
     pub offer_asset: Asset,
     pub operations: Vec<SwapOperation>,
+}
+
+impl Route {
+    pub fn ask_denom(&self) -> Result<String, SkipError> {
+        match self.operations.last() {
+            Some(op) => Ok(op.denom_out.clone()),
+            None => Err(SkipError::SwapOperationsEmpty),
+        }
+    }
+}
+
+pub fn get_ask_denom_for_routes(routes: &Vec<Route>) -> Result<String, SkipError> {
+    match routes.last() {
+        Some(route) => route.ask_denom(),
+        None => Err(SkipError::RoutesEmpty),
+    }
 }
 
 // Standard swap operation type that contains the pool, denom in, and denom out
@@ -250,6 +284,13 @@ impl SmartSwapExactAssetIn {
             .iter()
             .map(|route| route.offer_asset.amount())
             .sum()
+    }
+
+    pub fn ask_denom(&self) -> Result<String, SkipError> {
+        match self.routes.last() {
+            Some(route) => route.ask_denom(),
+            None => Err(SkipError::RoutesEmpty),
+        }
     }
 
     pub fn largest_route_index(&self) -> Result<usize, SkipError> {

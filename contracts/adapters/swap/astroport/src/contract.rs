@@ -277,6 +277,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             swap_operations,
             include_spot_price,
         )?),
+        _ => {
+            unimplemented!()
+        }
     }
     .map_err(From::from)
 }
