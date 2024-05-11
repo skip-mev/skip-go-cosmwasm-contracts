@@ -169,7 +169,7 @@ impl Route {
     }
 }
 
-pub fn get_ask_denom_for_routes(routes: &Vec<Route>) -> Result<String, SkipError> {
+pub fn get_ask_denom_for_routes(routes: &[Route]) -> Result<String, SkipError> {
     match routes.last() {
         Some(route) => route.ask_denom(),
         None => Err(SkipError::RoutesEmpty),
