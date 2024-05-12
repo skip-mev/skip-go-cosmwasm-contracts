@@ -801,7 +801,7 @@ checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 [[package]]
 name = "drop-factory"
 version = "1.0.0"
-source = "git+ssh://git@github.com/hadronlabs-org/drop-contracts.git?branch=main#927bd406639ae45ad0b21dbc652870469dcdbc18"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -819,7 +819,7 @@ dependencies = [
 [[package]]
 name = "drop-helpers"
 version = "1.0.0"
-source = "git+ssh://git@github.com/hadronlabs-org/drop-contracts.git?branch=main#927bd406639ae45ad0b21dbc652870469dcdbc18"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -833,7 +833,7 @@ dependencies = [
 [[package]]
 name = "drop-macros"
 version = "1.0.0"
-source = "git+ssh://git@github.com/hadronlabs-org/drop-contracts.git?branch=main#927bd406639ae45ad0b21dbc652870469dcdbc18"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -845,7 +845,7 @@ dependencies = [
 [[package]]
 name = "drop-puppeteer-base"
 version = "1.0.0"
-source = "git+ssh://git@github.com/hadronlabs-org/drop-contracts.git?branch=main#927bd406639ae45ad0b21dbc652870469dcdbc18"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
 dependencies = [
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
@@ -865,7 +865,7 @@ dependencies = [
 [[package]]
 name = "drop-staking-base"
 version = "1.0.0"
-source = "git+ssh://git@github.com/hadronlabs-org/drop-contracts.git?branch=main#927bd406639ae45ad0b21dbc652870469dcdbc18"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
 dependencies = [
  "astroport 3.12.2",
  "cosmos-sdk-proto 0.20.0",

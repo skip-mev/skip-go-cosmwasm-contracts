@@ -37,8 +37,8 @@ cw-utils         = "1.0.3"
 cw-multi-test    = "0.20.0"
 ibc-proto        = { version = "0.32.1", default-features = false }
 lido-satellite   = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = ["library"] }
-drop-factory     = { git = "ssh://git@github.com/hadronlabs-org/drop-contracts.git", branch = "main", features = ["library"] }
-drop-staking-base = { git = "ssh://git@github.com/hadronlabs-org/drop-contracts.git", branch = "main", features = ["library"] }
+drop-factory     = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "main", features = ["library"] }
+drop-staking-base = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "main", features = ["library"] }
 neutron-proto    = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
 neutron-sdk      = "0.10.0"
 osmosis-std      = "0.15.3"
