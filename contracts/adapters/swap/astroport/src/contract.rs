@@ -16,7 +16,8 @@ use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
     swap::{
-        execute_transfer_funds_back, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
+        execute_transfer_funds_back, get_ask_denom_for_routes, Cw20HookMsg, ExecuteMsg,
+        InstantiateMsg, MigrateMsg, QueryMsg, Route, SimulateSmartSwapExactAssetInResponse,
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
@@ -277,6 +278,28 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             swap_operations,
             include_spot_price,
         )?),
+        QueryMsg::SimulateSmartSwapExactAssetIn { routes, .. } => {
+            let ask_denom = get_ask_denom_for_routes(&routes)?;
+
+            to_json_binary(&query_simulate_smart_swap_exact_asset_in(
+                deps, ask_denom, routes,
+            )?)
+        }
+        QueryMsg::SimulateSmartSwapExactAssetInWithMetadata {
+            asset_in,
+            routes,
+            include_spot_price,
+        } => {
+            let ask_denom = get_ask_denom_for_routes(&routes)?;
+
+            to_json_binary(&query_simulate_smart_swap_exact_asset_in_with_metadata(
+                deps,
+                asset_in,
+                ask_denom,
+                routes,
+                include_spot_price,
+            )?)
+        }
     }
     .map_err(From::from)
 }
@@ -323,6 +346,16 @@ fn query_simulate_swap_exact_asset_out(
 
     // Return the asset in needed
     Ok(asset_in)
+}
+
+fn query_simulate_smart_swap_exact_asset_in(
+    deps: Deps,
+    ask_denom: String,
+    routes: Vec<Route>,
+) -> ContractResult<Asset> {
+    let (asset_out, _) = simulate_smart_swap_exact_asset_in(deps, ask_denom, routes, false)?;
+
+    Ok(asset_out)
 }
 
 // Queries the astroport pool contracts to simulate a swap exact amount in with metadata
@@ -425,6 +458,33 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
     Ok(response)
 }
 
+fn query_simulate_smart_swap_exact_asset_in_with_metadata(
+    deps: Deps,
+    asset_in: Asset,
+    ask_denom: String,
+    routes: Vec<Route>,
+    include_spot_price: bool,
+) -> ContractResult<SimulateSmartSwapExactAssetInResponse> {
+    let (asset_out, simulation_responses) =
+        simulate_smart_swap_exact_asset_in(deps, ask_denom, routes.clone(), include_spot_price)?;
+
+    let mut response = SimulateSmartSwapExactAssetInResponse {
+        asset_out,
+        spot_price: None,
+    };
+
+    if include_spot_price {
+        response.spot_price = Some(calculate_weighted_spot_price_from_simulation_responses(
+            deps,
+            asset_in,
+            routes,
+            simulation_responses,
+        )?)
+    }
+
+    Ok(response)
+}
+
 fn assert_max_spread(return_amount: Uint128, spread_amount: Uint128) -> ContractResult<()> {
     let max_spread = MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?;
     if Decimal::from_ratio(spread_amount, return_amount + spread_amount) > max_spread {
@@ -513,6 +573,58 @@ fn simulate_swap_exact_asset_out(
     )?;
 
     Ok((asset_in, responses))
+}
+
+fn simulate_smart_swap_exact_asset_in(
+    deps: Deps,
+    ask_denom: String,
+    routes: Vec<Route>,
+    include_responses: bool,
+) -> ContractResult<(Asset, Vec<Vec<SimulationResponse>>)> {
+    let mut asset_out = Asset::new(deps.api, &ask_denom, Uint128::zero());
+    let mut simulation_responses = Vec::new();
+
+    for route in &routes {
+        let (route_asset_out, route_simulation_responses) = simulate_swap_exact_asset_in(
+            deps,
+            route.offer_asset.clone(),
+            route.operations.clone(),
+            include_responses,
+        )?;
+
+        asset_out.add(route_asset_out.amount())?;
+
+        if include_responses {
+            simulation_responses.push(route_simulation_responses);
+        }
+    }
+
+    Ok((asset_out, simulation_responses))
+}
+
+fn calculate_weighted_spot_price_from_simulation_responses(
+    deps: Deps,
+    asset_in: Asset,
+    routes: Vec<Route>,
+    simulation_responses: Vec<Vec<SimulationResponse>>,
+) -> ContractResult<Decimal> {
+    let spot_price = routes.into_iter().zip(simulation_responses).try_fold(
+        Decimal::zero(),
+        |curr_spot_price, (route, res)| -> ContractResult<Decimal> {
+            let route_spot_price = calculate_spot_price_from_simulation_responses(
+                deps,
+                asset_in.clone(),
+                route.operations,
+                res,
+            )?;
+
+            let weight = Decimal::from_ratio(route.offer_asset.amount(), asset_in.amount());
+
+            Ok(curr_spot_price + (route_spot_price * weight))
+        },
+    )?;
+
+    Ok(spot_price)
 }
 
 // Calculate the spot price using simulation responses

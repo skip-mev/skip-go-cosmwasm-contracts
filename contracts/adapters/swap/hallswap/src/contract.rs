@@ -17,8 +17,9 @@ use skip::{
     asset::Asset,
     error::SkipError,
     swap::{
-        Cw20HookMsg, ExecuteMsg, HallswapInstantiateMsg, MigrateMsg, QueryMsg,
-        SimulateSwapExactAssetInResponse, SwapOperation,
+        get_ask_denom_for_routes, Cw20HookMsg, ExecuteMsg, HallswapInstantiateMsg, MigrateMsg,
+        QueryMsg, Route, SimulateSmartSwapExactAssetInResponse, SimulateSwapExactAssetInResponse,
+        SwapOperation,
     },
 };
 
@@ -212,6 +213,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_in,
             swap_operations,
         )?),
+        QueryMsg::SimulateSmartSwapExactAssetIn { routes, .. } => {
+            let ask_denom = get_ask_denom_for_routes(&routes)?;
+
+            to_json_binary(&query_simulate_smart_swap_exact_asset_in(
+                deps, ask_denom, routes,
+            )?)
+        }
+        QueryMsg::SimulateSmartSwapExactAssetInWithMetadata { routes, .. } => {
+            let ask_denom = get_ask_denom_for_routes(&routes)?;
+
+            to_json_binary(&query_simulate_smart_swap_exact_asset_in_with_metadata(
+                deps, ask_denom, routes,
+            )?)
+        }
         _ => {
             unimplemented!()
         }
@@ -225,16 +240,6 @@ fn query_simulate_swap_exact_asset_in(
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
-    // Error if swap operations is empty
-    let Some(first_op) = swap_operations.first() else {
-        return Err(ContractError::SwapOperationsEmpty);
-    };
-
-    // Ensure asset_in's denom is the same as the first swap operation's denom in
-    if asset_in.denom() != first_op.denom_in {
-        return Err(ContractError::CoinInDenomMismatch);
-    }
-
     simulate_swap_exact_asset_in(deps, asset_in, swap_operations)
 }
 
@@ -243,17 +248,7 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
-    // Error if swap operations is empty
-    let Some(first_op) = swap_operations.first() else {
-        return Err(ContractError::SwapOperationsEmpty);
-    };
-
-    // Ensure asset_in's denom is the same as the first swap operation's denom in
-    if asset_in.denom() != first_op.denom_in {
-        return Err(ContractError::CoinInDenomMismatch);
-    }
-
-    // // Simulate the swap exact amount in
+    // Simulate the swap exact amount in
     let asset_out = simulate_swap_exact_asset_in(deps, asset_in.clone(), swap_operations.clone())?;
 
     // Create the response
@@ -270,6 +265,16 @@ fn simulate_swap_exact_asset_in(
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
+    // Error if swap operations is empty
+    let Some(first_op) = swap_operations.first() else {
+        return Err(ContractError::SwapOperationsEmpty);
+    };
+
+    // Ensure asset_in's denom is the same as the first swap operation's denom in
+    if asset_in.denom() != first_op.denom_in {
+        return Err(ContractError::CoinInDenomMismatch);
+    }
+
     let hallswap_contract_address = HALLSWAP_CONTRACT_ADDRESS.load(deps.storage)?;
 
     // Query hallswap contract to get simulation results
@@ -295,6 +300,49 @@ fn simulate_swap_exact_asset_in(
             Ok(Asset::Native(Coin::new(return_asset.amount.into(), denom)))
         }
     }
+}
+
+fn query_simulate_smart_swap_exact_asset_in(
+    deps: Deps,
+    ask_denom: String,
+    routes: Vec<Route>,
+) -> ContractResult<Asset> {
+    simulate_smart_swap_exact_asset_in(deps, ask_denom, routes)
+}
+
+fn query_simulate_smart_swap_exact_asset_in_with_metadata(
+    deps: Deps,
+    ask_denom: String,
+    routes: Vec<Route>,
+) -> ContractResult<SimulateSmartSwapExactAssetInResponse> {
+    let asset_out = simulate_smart_swap_exact_asset_in(deps, ask_denom, routes)?;
+
+    let response = SimulateSmartSwapExactAssetInResponse {
+        asset_out,
+        spot_price: None,
+    };
+
+    Ok(response)
+}
+
+fn simulate_smart_swap_exact_asset_in(
+    deps: Deps,
+    ask_denom: String,
+    routes: Vec<Route>,
+) -> ContractResult<Asset> {
+    let mut asset_out = Asset::new(deps.api, &ask_denom, Uint128::zero());
+
+    for route in &routes {
+        let route_asset_out = simulate_swap_exact_asset_in(
+            deps,
+            route.offer_asset.clone(),
+            route.operations.clone(),
+        )?;
+
+        asset_out.add(route_asset_out.amount())?;
+    }
+
+    Ok(asset_out)
 }
 
 fn get_hallswap_routes_from_skip_operations(
