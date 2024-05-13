@@ -156,12 +156,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         deps.as_mut(),
         env,
         info,
-        ExecuteMsg::Swap {
-            routes: vec![Route {
-                offer_asset: params.offer_asset,
-                operations: params.swap_operations.clone(),
-            }],
-        },
+        ExecuteMsg::Swap { operations: vec![] },
     );
 
     // Assert the behavior is correct

@@ -12,10 +12,10 @@ use cw2::set_contract_version;
 use cw_utils::one_coin;
 use skip::{
     asset::Asset,
-    error::SkipError,
     swap::{
         execute_transfer_funds_back, DropBondInstantiateMsg as InstantiateMsg, ExecuteMsg,
         MigrateMsg, QueryMsg, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+        SwapOperation,
     },
 };
 
@@ -110,13 +110,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
-        ExecuteMsg::Swap { routes } => {
-            if routes.len() != 1 {
-                return Err(ContractError::Skip(SkipError::MustBeSingleRoute));
-            }
-
-            execute_swap(deps, env, info)
-        }
+        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
         ExecuteMsg::TransferFundsBack {
             swapper,
             return_denom,
@@ -133,7 +127,12 @@ pub fn execute(
     }
 }
 
-fn execute_swap(deps: DepsMut, env: Env, info: MessageInfo) -> ContractResult<Response> {
+fn execute_swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    _operations: Vec<SwapOperation>,
+) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
 
