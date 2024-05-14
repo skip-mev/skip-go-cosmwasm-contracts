@@ -1,0 +1,36 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+# Admin address to execute migrations from
+ADMIN_ADDRESS = "<ADMIN ADDRESS HERE>"
+
+MAINNET_REST_URL = "https://orai-api.polkachu.com" 
+MAINNET_RPC_URL = "https://orai-rpc.polkachu.com"
+MAINNET_CHAIN_ID = "Oraichain"
+
+# Currently No Testnet Support - Not In Registry
+# TESTNET_REST_URL = ""
+# TESTNET_RPC_URL = ""
+# TESTNET_CHAIN_ID = ""
+
+ADDRESS_PREFIX = "orai"
+DENOM = "orai"
+GAS_PRICE = 0.003
+
+# Contract Paths
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_api_entry_point-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_api_ibc_adapter_ibc_hooks-aarch64.wasm"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+[[swap_venues]]
+name = "orai-hallswap"
+hallswap_contract_address = "orai1wl3kn5lx6mf67pqmlefus7ge9wj57e3jyp39mzrhwa4hs00q6e9sp3044z"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_hallswap-aarch64.wasm"

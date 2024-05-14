@@ -33,6 +33,11 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 name = "injective-astroport"
 code_id = "<ASTROPORT SWAP ADAPTER CODE ID AS INT>"
 
+[[swap_venues]]
+name = "injective-hallswap"
+hallswap_contract_address = "inj16lkekzp36vj6a9zjl778a2s5nd9f6ft67w2e90"
+code_id = "<HALLSWAP ADAPTER CODE ID AS INT>"
+
 # [[testnet_swap_venues]]
 # name = "testnet-injective-astroport"
 # code_id = "<ASTROPORT SWAP ADAPTER CODE ID AS INT>"
