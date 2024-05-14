@@ -1,31 +1,36 @@
 [info]
 chain_id = "injective-1"
 network = "mainnet"
-deploy_date = "15/02/2024 10:36:24"
-commit_hash = "d4209d40b8facecc98d3c278d98c2efcb0950815"
-salt = "2"
+deploy_date = "13/05/2024 15:56:04"
+commit_hash = "<COMMIT HASH HERE>"
+salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "d18102654c30479b008162010a50a1706f78c1d90914262f135d2507763e5121"
-"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "18f6840c4a121babb2080e2db40d001e0578657d4a3bd55a9db88aaac26f79d9"
-"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "e46f2dc24a2b48ac0dfa9780e131a507ca6dc1230cfc9bba613a76fcb07c1ce2"
-"skip_api_placeholder-aarch64.wasm" = "b8a6cca4e12d1d854ac000082b8d3e6494b6b33e4484bdeeef2ee288adfe71c5"
-"skip_api_swap_adapter_astroport-aarch64.wasm" = "ce9039ec7792d71fb9a72ff7c21bbdd7807f5ca2501e9baf3b0954333288bee3"
-"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "b533260f328631fb73754efb5f7a5469b3f1a462c04fb06f610d7768f1f15820"
-"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "677671365aeda46aca42d137b68a850752c5730c81bcea4ca18045e24f591276"
-"skip_api_swap_adapter_white_whale-aarch64.wasm" = "5a88094929f1027fa5287cdbb467040804f02a71773ea12d7f6c8c2f6284b565"
+"skip_api_entry_point-aarch64.wasm" = "ef26b607e187ca7ad16e87af15d379dce7e044ca93a212024dc398acf4a27f36"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "cd76939e60d7ff36647cfba24cb5b3dad3aa22ace7423f7ee08286dbe0e01e4b"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "536aeca3ad484aeabaa2bc9fe12cf921394d7b3028f652bcc4ddfed1a446a2cc"
+"skip_api_placeholder-aarch64.wasm" = "41d68796f6d266e86b0013496774065ac1bcefb31d71ba535c1276235cd105f1"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "10095c4d38c47412c125a83a4755ff31461262afac04a2f38911a2f6bfa21d1c"
+"skip_api_swap_adapter_dexter-aarch64.wasm" = "aa121df44fba4adc92d2b1d06f3ac84d549fc34f1ff58e7a8d4e901d358faf42"
+"skip_api_swap_adapter_hallswap-aarch64.wasm" = "49361b771f199ac80fadf9e205969814f14e60160125ba50bebeef2f8021c54e"
+"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "d18fc2187908c0538c616b291a64852d3a9e96667c1044f40d52ee766505efb4"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "aaaa6f1693338b8ad9c971463f4fe9d784cd16908f74aa09c04a499797f91c43"
+"skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = 348
-swap_adapter_injective-astroport_contract_code_id = 463
-entry_point_contract_code_id = 347
+ibc_transfer_adapter_contract_code_id = "851"
+swap_adapter_injective-astroport_contract_code_id = "852"
+swap_adapter_injective-hallswap_contract_code_id = "853"
+entry_point_contract_code_id = "850"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "inj1v0kh2p4gek9j2c9urgnrjxqeeypj2ymr48yd9l"
-swap_adapter_injective-astroport_contract_address = "inj10uzeh6dv9pr7nvkw6wmn62rz9hz74zerj5fsur"
-entry_point_contract_address = "inj1e5z2u7jk5xsm6sw3pkm7ljywcpjx7ny3278uq2"
+ibc_transfer_adapter_contract_address = "inj1p642tuf37e24rhwzqeksl0yqsnyh4gj4ea0wuf"
+swap_adapter_injective-astroport_contract_address = "inj164ph2exy67gpf6ea28e8e6834fkp28ah3ex0a7"
+swap_adapter_injective-hallswap_contract_address = "inj17vxt3kk8e797vqudk36k96pa05xl66y6aca238"
+entry_point_contract_address = "inj1ah6wxxhsrue08vdadutcdfnwv29aszxn3643a5"
 
 [tx-hashes]
-instantiate_ibc_transfer_adapter_tx_hash = "073732AFF138B4B89E646C5C1D0A25C1EF71DF79D606EF7996FEACD37D5B4808"
-instantiate_swap_adapter_injective-astroport_tx_hash = "A4E8BB1B61E7DAF08117F2E4F2B8391E260C732709D051BB7108319395AE5E0B"
-instantiate_entry_point_tx_hash = "22ACB117E1693BF10061D8E3BDE1D8F7DA1A9603A763BD973E3EAA683E406B1F"
+instantiate_ibc_transfer_adapter_tx_hash = "8FC7C2C9AD2574E991A19F9A97E3BBD4E0B6F12B6D949F7A54928E1CDB9512C5"
+instantiate_swap_adapter_injective-astroport_tx_hash = "5B562EB38BF9A9EC6EFE7C1CBFDBF27158CBD53E21A99A48078103F46E49B9DE"
+instantiate_swap_adapter_injective-hallswap_tx_hash = "01D511A8C881593991017E644E7F7DCA65DDAB5D444A97B548F997081FD8D670"
+instantiate_entry_point_tx_hash = "094590481F7C085C7FF986B3F4EC14E665182A885285B535A5CE786D470071D0"

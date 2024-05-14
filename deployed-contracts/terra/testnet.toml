@@ -1,19 +1,21 @@
 [info]
 chain_id = "pisco-1"
 network = "testnet"
-deploy_date = "14/02/2024 22:22:34"
-commit_hash = "d4209d40b8facecc98d3c278d98c2efcb0950815"
+deploy_date = "13/05/2024 09:39:37"
+commit_hash = "<COMMIT HASH HERE>"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "d18102654c30479b008162010a50a1706f78c1d90914262f135d2507763e5121"
-"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "18f6840c4a121babb2080e2db40d001e0578657d4a3bd55a9db88aaac26f79d9"
-"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "e46f2dc24a2b48ac0dfa9780e131a507ca6dc1230cfc9bba613a76fcb07c1ce2"
-"skip_api_placeholder-aarch64.wasm" = "b8a6cca4e12d1d854ac000082b8d3e6494b6b33e4484bdeeef2ee288adfe71c5"
-"skip_api_swap_adapter_astroport-aarch64.wasm" = "ce9039ec7792d71fb9a72ff7c21bbdd7807f5ca2501e9baf3b0954333288bee3"
-"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "b533260f328631fb73754efb5f7a5469b3f1a462c04fb06f610d7768f1f15820"
-"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "677671365aeda46aca42d137b68a850752c5730c81bcea4ca18045e24f591276"
-"skip_api_swap_adapter_white_whale-aarch64.wasm" = "5a88094929f1027fa5287cdbb467040804f02a71773ea12d7f6c8c2f6284b565"
+"skip_api_entry_point-aarch64.wasm" = "ef26b607e187ca7ad16e87af15d379dce7e044ca93a212024dc398acf4a27f36"
+"skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "cd76939e60d7ff36647cfba24cb5b3dad3aa22ace7423f7ee08286dbe0e01e4b"
+"skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "536aeca3ad484aeabaa2bc9fe12cf921394d7b3028f652bcc4ddfed1a446a2cc"
+"skip_api_placeholder-aarch64.wasm" = "41d68796f6d266e86b0013496774065ac1bcefb31d71ba535c1276235cd105f1"
+"skip_api_swap_adapter_astroport-aarch64.wasm" = "10095c4d38c47412c125a83a4755ff31461262afac04a2f38911a2f6bfa21d1c"
+"skip_api_swap_adapter_dexter-aarch64.wasm" = "aa121df44fba4adc92d2b1d06f3ac84d549fc34f1ff58e7a8d4e901d358faf42"
+"skip_api_swap_adapter_hallswap-aarch64.wasm" = "49361b771f199ac80fadf9e205969814f14e60160125ba50bebeef2f8021c54e"
+"skip_api_swap_adapter_lido_satellite-aarch64.wasm" = "d18fc2187908c0538c616b291a64852d3a9e96667c1044f40d52ee766505efb4"
+"skip_api_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "aaaa6f1693338b8ad9c971463f4fe9d784cd16908f74aa09c04a499797f91c43"
+"skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
 ibc_transfer_adapter_contract_code_id = "12994"

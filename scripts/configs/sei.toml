@@ -38,6 +38,11 @@ NO_INSTANTIATE2 = true
 name = "sei-astroport"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
 
+[[swap_venues]]
+name = "sei-hallswap"
+hallswap_contract_address = "sei1w5t009q9zr8ky8v84sx9n4r9m6ss9ge7xfkuc6xrh479fjg4qmysrqk4lq"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_hallswap-aarch64.wasm"
+
 [[testnet_swap_venues]]
 name = "testnet-sei-astroport"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"

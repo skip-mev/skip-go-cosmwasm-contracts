@@ -1,7 +1,7 @@
 [info]
-chain_id = "osmo-test-5"
-network = "testnet"
-deploy_date = "13/05/2024 16:05:29"
+chain_id = "archway-1"
+network = "mainnet"
+deploy_date = "13/05/2024 11:32:32"
 commit_hash = "<COMMIT HASH HERE>"
 salt = "1"
 
@@ -18,19 +18,19 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "8351"
-swap_adapter_testnet-osmosis-poolmanager_contract_code_id = "8352"
-entry_point_contract_code_id = "8353"
+ibc_transfer_adapter_contract_code_id = "486"
+swap_adapter_archway-hallswap_contract_code_id = "487"
+entry_point_contract_code_id = "488"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "osmo1sqsxn3g0m27wwhwvegdxy38xa58n47qe7naj9jj2vgchkrmehxgqdpkaca"
-swap_adapter_testnet-osmosis-poolmanager_contract_address = "osmo1jm5wjl0e8wuzluacgca934fcyzz7ekvkehhn5p7w9wsdgypc8rdqs596dz"
-entry_point_contract_address = "osmo1emhzj4a8c0423mcgkmrkfuu6xxa2xt9ndmhaq0l3heef35m7jfwq7378lu"
+ibc_transfer_adapter_contract_address = "archway1jhek4eez9hazw0xlfj4fvtyd7gnhrv740c25jsyw3gnls6j6r8jqz6lh5w"
+swap_adapter_archway-hallswap_contract_address = "archway143ymcl64xhv37xrpa4d5d6shj2mu3n5ktd5v0yq7q9wuu6mku9hq06syzu"
+entry_point_contract_address = "archway1emhzj4a8c0423mcgkmrkfuu6xxa2xt9ndmhaq0l3heef35m7jfwq6uf3a9"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "b8b8678217858e253282f4667da0dbc0a28bcedd8737f4d1ed1b6b4862beac66"
-instantiate_ibc_transfer_adapter_tx_hash = "3308655f103773398496141f6f5f3c6f05972b70469079497fe5f275b2fdb36c"
-store_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "66a0a08d7aa77f3be22b69d84ac4a9f52a2268be5a6d40824532b73e7c618262"
-instantiate_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "649147105e96b5520132ee9ecc4bf22b63ad818da850a19f58b5450dade55c16"
-store_entry_point_tx_hash = "8c88b820a40e02d6e77bc27c9a669d9e795054c37416b0c5c36fc9f5322d1c68"
-instantiate_entry_point_tx_hash = "95a78d5f0507dac69f7a0382d0a8c35d6097674a1c523331e9572543d2bda929"
+store_ibc_transfer_adapter_tx_hash = "59c96205dabde68a6cbd38d8b202107f157c777289cb918fb782fab738591ed9"
+instantiate_ibc_transfer_adapter_tx_hash = "6aaceb0cabeeaf34da63ebd6eeb9c3ce6031dde5e65c6630c06e570389673e77"
+store_swap_adapter_archway-hallswap_tx_hash = "192d6a59e4df241efbbd73eb78219f70221c2673652f1fd7b0b02ad5405869aa"
+instantiate_swap_adapter_archway-hallswap_tx_hash = "aa946f6461c7a4c298766e308bd7302fefcbfdc20f0064480212cc79bc12bb93"
+store_entry_point_tx_hash = "7003304cde5f0fd3e45e7eefa81958b3a78cdde3993609c671aa3268cb4a6a3e"
+instantiate_entry_point_tx_hash = "02157aa5615153e83bf40fed7344ea78876e28c7470a404ab9f3d4a7241c1211"
