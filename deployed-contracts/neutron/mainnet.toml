@@ -18,16 +18,16 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "710"
-swap_adapter_neutron-astroport_contract_code_id = "711"
-swap_adapter_neutron-lido-satellite_contract_code_id = "712"
-entry_point_contract_code_id = "713"
+ibc_transfer_adapter_contract_code_id = "1241"
+swap_adapter_neutron-astroport_contract_code_id = "1242"
+swap_adapter_neutron-lido-satellite_contract_code_id = "1243"
+entry_point_contract_code_id = "1244"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "neutron15m02lgpakv9paewse3x7cdv5qxhsvsfjsw8j09d7leyx3t65m3ssyrlyr5"
-swap_adapter_neutron-astroport_contract_address = "neutron12sga4v7vu79wzpxwt2fccuu7tf6dlz3y2s87g0h7t8a5ln68997q6sgh0x"
-swap_adapter_neutron-lido-satellite_contract_address = "neutron1fm3mf8c4xcmtuvphv2le7mld4tdv25dn85e7ms8rq5u9wumrskxsrkazxt"
-entry_point_contract_address = "neutron18jgzyha8r25ltxn6u5ng9zajwflhnwzzunlnfunyktjfpextuqfqyjre7j"
+ibc_transfer_adapter_contract_address = "neutron108uutg2z4jyu7xugxxtpjms6vtrw8kqzgyw6wh3vdygc87lzx5fs8hr5zm"
+swap_adapter_neutron-astroport_contract_address = "neutron1sy90zy7z44nrlwtmjwyex5kt5rvfjkah8894hdlnngz5ns02epzswayuke"
+swap_adapter_neutron-lido-satellite_contract_address = "neutron1zsc02jymds007awljn32grsln2e8jfkpaedu3k5er6kv60z0f2lqz5xmv6"
+entry_point_contract_address = "neutron1emhzj4a8c0423mcgkmrkfuu6xxa2xt9ndmhaq0l3heef35m7jfwq2rhmke"
 
 [tx-hashes]
 store_ibc_transfer_adapter_tx_hash = "f89ad8a510e53dd407279b4176968442e1bbdd8e04747a48286ee29c25ca7c6d"
