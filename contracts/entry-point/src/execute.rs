@@ -315,7 +315,10 @@ pub fn execute_user_swap(
     }
 
     // Create a response object to return
-    let mut response: Response = Response::new().add_attribute("action", "execute_user_swap");
+    let mut response: Response = Response::new()
+        .add_attribute("action", "execute_user_swap")
+        .add_attribute("denom_in", remaining_asset.denom())
+        .add_attribute("denom_out", min_asset.denom());
 
     // Create affiliate response and total affiliate fee amount
     let mut affiliate_response: Response = Response::new();
