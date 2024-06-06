@@ -196,6 +196,10 @@ def main():
                 swap_adapter_instantiate_args["lido_satellite_contract_address"] = venue["lido_satellite_contract_address"]
             if "hallswap_contract_address" in venue:
                 swap_adapter_instantiate_args["hallswap_contract_address"] = venue["hallswap_contract_address"]
+            if "dexter_vault_contract_address" in venue:
+                swap_adapter_instantiate_args["dexter_vault_contract_address"] = venue["dexter_vault_contract_address"]
+            if "dexter_router_contract_address" in venue:
+                swap_adapter_instantiate_args["dexter_router_contract_address"] = venue["dexter_router_contract_address"]
             
             swap_adapter_contract_address = instantiate_contract(
                 client, 
