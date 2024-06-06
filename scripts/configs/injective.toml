@@ -11,9 +11,10 @@ MAINNET_REST_URL = "https://sentry.lcd.injective.network:443"
 MAINNET_RPC_URL = "	https://sentry.tm.injective.network:443/"
 MAINNET_CHAIN_ID = "injective-1"
 
-TESTNET_REST_URL = "https://testnet.sentry.lcd.injective.network:443"
-TESTNET_RPC_URL = "https://testnet.sentry.tm.injective.network:443/"
-TESTNET_CHAIN_ID = "injective-888"
+# Currently No Testnet Support For This Swap Chain
+# TESTNET_REST_URL = "https://testnet.sentry.lcd.injective.network:443"
+# TESTNET_RPC_URL = "https://testnet.sentry.tm.injective.network:443/"
+# TESTNET_CHAIN_ID = "injective-888"
 
 ADDRESS_PREFIX = "inj"
 DENOM = "inj"
@@ -37,7 +38,3 @@ code_id = "<ASTROPORT SWAP ADAPTER CODE ID AS INT>"
 name = "injective-hallswap"
 hallswap_contract_address = "inj16lkekzp36vj6a9zjl778a2s5nd9f6ft67w2e90"
 code_id = "<HALLSWAP ADAPTER CODE ID AS INT>"
-
-# [[testnet_swap_venues]]
-# name = "testnet-injective-astroport"
-# code_id = "<ASTROPORT SWAP ADAPTER CODE ID AS INT>"
