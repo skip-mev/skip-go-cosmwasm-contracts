@@ -1,12 +1,12 @@
 [info]
 chain_id = "Oraichain"
 network = "mainnet"
-deploy_date = "13/05/2024 11:38:55"
-commit_hash = "<COMMIT HASH HERE>"
+deploy_date = "06/06/2024 17:21:43"
+commit_hash = "85c2781a667fc20a165d6916c4641cda9bbb2e0d"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "ef26b607e187ca7ad16e87af15d379dce7e044ca93a212024dc398acf4a27f36"
+"skip_api_entry_point-aarch64.wasm" = "0f03ab75e66b33b27285e83897d534070b73fd89287569db99b4c40c1af24f61"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "cd76939e60d7ff36647cfba24cb5b3dad3aa22ace7423f7ee08286dbe0e01e4b"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "536aeca3ad484aeabaa2bc9fe12cf921394d7b3028f652bcc4ddfed1a446a2cc"
 "skip_api_placeholder-aarch64.wasm" = "41d68796f6d266e86b0013496774065ac1bcefb31d71ba535c1276235cd105f1"
@@ -18,19 +18,19 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "2022"
-swap_adapter_orai-hallswap_contract_code_id = "2023"
-entry_point_contract_code_id = "2024"
+ibc_transfer_adapter_contract_code_id = "2135"
+swap_adapter_orai-hallswap_contract_code_id = "2136"
+entry_point_contract_code_id = "2137"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "orai198wmzfmf024tg0660lcyrwu0dk64x2072t44assazudcsmrszjqskjx3v0"
-swap_adapter_orai-hallswap_contract_address = "orai1flecun4vtlrnv3ykpnj4jdxrlx875xjj3z5nph0tuxxq2mt3xn5qucllus"
-entry_point_contract_address = "orai1emhzj4a8c0423mcgkmrkfuu6xxa2xt9ndmhaq0l3heef35m7jfwqrhdsnh"
+ibc_transfer_adapter_contract_address = "orai1j895qjz664s4wez0ahgg5lsyjyk5ewrwyjj9vdtdusl22yvvv6kqnn0vjd"
+swap_adapter_orai-hallswap_contract_address = "orai13z4le8mpgx4crzkxuvspsj5leztratvqc44fsqqf85c8fd0wz8zq7ejf55"
+entry_point_contract_address = "orai1vkdakqqg5htq5c3wy2kj2geq536q665xdexrtjuwqckpads2c2ns33y0g8"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "16890efef2d683f9bbb5ce7c7e560ae23daf8d6d55592641db02fae2b30f342b"
-instantiate_ibc_transfer_adapter_tx_hash = "2e4dd183ef8c65645e3f510f3d5709550b22a15bd7e12bf5355c8d31de8d454c"
-store_swap_adapter_orai-hallswap_tx_hash = "3587c96620ea35fd8e490944b2e7bc653275a105839f58aceb035eb2c352eb42"
-instantiate_swap_adapter_orai-hallswap_tx_hash = "255dc3e9c10d980f23cd398920849c146f9b7e4725c2cc7fe13242c420318233"
-store_entry_point_tx_hash = "c0ae1f62636048b10a0d81e634b6741e4a997ce68edc5eb97dbc9e9cfed0a7e1"
-instantiate_entry_point_tx_hash = "880f6485c5275f5b382fa7de9359b3224b1cfa81efcc4a0ae8aae964d57bdb5d"
+store_ibc_transfer_adapter_tx_hash = "4014c04f5916b1d127b5790fe170410b63a757c58574fb5c425d3e994c7eb2e9"
+instantiate_ibc_transfer_adapter_tx_hash = "3e6217942357adb84febc2f09a4db9ba12d95943a393de59e43654d7e00d92c5"
+store_swap_adapter_orai-hallswap_tx_hash = "72f1bf008ece4839947197a9e6c5f78431f2da8aa598cf57f1ea7f86fc0befac"
+instantiate_swap_adapter_orai-hallswap_tx_hash = "8ede0a8325721b7b3bdb8eae11d20101a00e40f8d300404f1a03510ed1d3e949"
+store_entry_point_tx_hash = "1289c8e3df243dc81b3ad8333fc1ecedf08feab22da6ebec52688a9e6ab1d2a2"
+instantiate_entry_point_tx_hash = "e2a2d1008d53a73cd799bc923da11202535713a174200c69e9484cac5745995d"
