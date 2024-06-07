@@ -591,7 +591,12 @@ def broadcast_tx(tx) -> httpx.Response:
 
 
 def get_attribute_value(resp, event_type, attr_key):
-    for event in resp.json()['tx_response']['logs'][0]['events']:
+    if resp.json()['tx_response']['logs'] != []:
+        events = resp.json()['tx_response']['logs'][0]['events']
+    else:
+        events = resp.json()['tx_response']['events']
+        
+    for event in events:
         if event['type'] == event_type:
             for attr in event['attributes']:
                 if attr['key'] == attr_key:
