@@ -1,12 +1,12 @@
 [info]
 chain_id = "injective-1"
 network = "mainnet"
-deploy_date = "13/05/2024 15:56:04"
-commit_hash = "<COMMIT HASH HERE>"
+deploy_date = "06/06/2024 17:35:40"
+commit_hash = "85c2781a667fc20a165d6916c4641cda9bbb2e0d"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "ef26b607e187ca7ad16e87af15d379dce7e044ca93a212024dc398acf4a27f36"
+"skip_api_entry_point-aarch64.wasm" = "0f03ab75e66b33b27285e83897d534070b73fd89287569db99b4c40c1af24f61"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "cd76939e60d7ff36647cfba24cb5b3dad3aa22ace7423f7ee08286dbe0e01e4b"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "536aeca3ad484aeabaa2bc9fe12cf921394d7b3028f652bcc4ddfed1a446a2cc"
 "skip_api_placeholder-aarch64.wasm" = "41d68796f6d266e86b0013496774065ac1bcefb31d71ba535c1276235cd105f1"
@@ -18,19 +18,19 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "851"
-swap_adapter_injective-astroport_contract_code_id = "852"
-swap_adapter_injective-hallswap_contract_code_id = "853"
-entry_point_contract_code_id = "850"
+ibc_transfer_adapter_contract_code_id = 851
+swap_adapter_injective-astroport_contract_code_id = 852
+swap_adapter_injective-hallswap_contract_code_id = 853
+entry_point_contract_code_id = 980
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "inj1p642tuf37e24rhwzqeksl0yqsnyh4gj4ea0wuf"
-swap_adapter_injective-astroport_contract_address = "inj164ph2exy67gpf6ea28e8e6834fkp28ah3ex0a7"
-swap_adapter_injective-hallswap_contract_address = "inj17vxt3kk8e797vqudk36k96pa05xl66y6aca238"
-entry_point_contract_address = "inj1ah6wxxhsrue08vdadutcdfnwv29aszxn3643a5"
+ibc_transfer_adapter_contract_address = "inj1j2n2hlr66ktyyakklyfs4dshx898mdy4jzuawe"
+swap_adapter_injective-astroport_contract_address = "inj1w07xa3u222j6xe73qy8tddmymwpp23nsywx0mm"
+swap_adapter_injective-hallswap_contract_address = "inj1vuqxmhdj38leznxzt2h9wdl2djuql825mvy7zl"
+entry_point_contract_address = "inj1avq0qwqzvxvrqgahw0uk2kmsqmtx28v0yz9945"
 
 [tx-hashes]
-instantiate_ibc_transfer_adapter_tx_hash = "8FC7C2C9AD2574E991A19F9A97E3BBD4E0B6F12B6D949F7A54928E1CDB9512C5"
-instantiate_swap_adapter_injective-astroport_tx_hash = "5B562EB38BF9A9EC6EFE7C1CBFDBF27158CBD53E21A99A48078103F46E49B9DE"
-instantiate_swap_adapter_injective-hallswap_tx_hash = "01D511A8C881593991017E644E7F7DCA65DDAB5D444A97B548F997081FD8D670"
-instantiate_entry_point_tx_hash = "094590481F7C085C7FF986B3F4EC14E665182A885285B535A5CE786D470071D0"
+instantiate_ibc_transfer_adapter_tx_hash = "F1BC79CD231D2940B4563E17EA215668A19D6E60077208EF4CA7A8387C8D72E6"
+instantiate_swap_adapter_injective-astroport_tx_hash = "294AC63B2EAB135022D85D86A9701BB90D3AF77C101ECAD17BDE95E283604BA5"
+instantiate_swap_adapter_injective-hallswap_tx_hash = "05308DC17673BECF0204E6857E63E2E08FC51F490E1DC3C2B88AAB7C549E0367"
+instantiate_entry_point_tx_hash = "150012E113B0881ED829DCCBBF83E061738DBAED3304AA91423C322E4B5A7163"
