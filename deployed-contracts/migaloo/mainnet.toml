@@ -1,12 +1,12 @@
 [info]
 chain_id = "migaloo-1"
 network = "mainnet"
-deploy_date = "13/05/2024 11:32:32"
-commit_hash = "d4209d40b8facecc98d3c278d98c2efcb0950815"
+deploy_date = "06/06/2024 17:16:45"
+commit_hash = "85c2781a667fc20a165d6916c4641cda9bbb2e0d"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "ef26b607e187ca7ad16e87af15d379dce7e044ca93a212024dc398acf4a27f36"
+"skip_api_entry_point-aarch64.wasm" = "0f03ab75e66b33b27285e83897d534070b73fd89287569db99b4c40c1af24f61"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "cd76939e60d7ff36647cfba24cb5b3dad3aa22ace7423f7ee08286dbe0e01e4b"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "536aeca3ad484aeabaa2bc9fe12cf921394d7b3028f652bcc4ddfed1a446a2cc"
 "skip_api_placeholder-aarch64.wasm" = "41d68796f6d266e86b0013496774065ac1bcefb31d71ba535c1276235cd105f1"
@@ -18,19 +18,23 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "617"
-swap_adapter_migaloo-white-whale_contract_code_id = "618"
-entry_point_contract_code_id = "619"
+ibc_transfer_adapter_contract_code_id = "627"
+swap_adapter_migaloo-white-whale_contract_code_id = "628"
+swap_adapter_migaloo-hallswap_contract_code_id = "629"
+entry_point_contract_code_id = "630"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "migaloo1k9dsk3wcyurpya3lf3renxujwvdydmtzleq8hy6ssh8l2fmmx4ss0482sp"
-swap_adapter_migaloo-white-whale_contract_address = "migaloo1qgq47yg94zc3p29h30aenpwncpukwt78qldz9ad3qlf9p37fs38s7rlch8"
-entry_point_contract_address = "migaloo1emhzj4a8c0423mcgkmrkfuu6xxa2xt9ndmhaq0l3heef35m7jfwq2u3hsm"
+ibc_transfer_adapter_contract_address = "migaloo1zmd3gzqgdwugrnr0t0t6krsm96l0025ld9fp44sepk9jl6nh9zqs2xq37p"
+swap_adapter_migaloo-white-whale_contract_address = "migaloo14k8wxgqh4p2xwj59k3cv4anl90k8yrfqn3qewz8gnljc2kdt2h5qg5kquc"
+swap_adapter_migaloo-hallswap_contract_address = "migaloo1zy8ulw5kr86s756vdg40wlg63yxj2ug62vcqyjhfmgn85usymyps2u03q2"
+entry_point_contract_address = "migaloo1vkdakqqg5htq5c3wy2kj2geq536q665xdexrtjuwqckpads2c2nsc6cgtt"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "6a803bb3a0bff0e0536be3c6b1bbe4a67ccee484d5228fd95ad8cc34d8375482"
-instantiate_ibc_transfer_adapter_tx_hash = "05d540f93b4bb19b9006b4c655a0c159c2e364ed3eaf49ab4f1f014c5db580cd"
-store_swap_adapter_migaloo-white-whale_tx_hash = "f6a54afda4b36e12a55cc51f1a0a12e0a556f1f14612ad0bb30b30a1924995f7"
-instantiate_swap_adapter_migaloo-white-whale_tx_hash = "2b771ae639fbf461426b2f9a79a6cd18a2255130af02d8b5e7b87614def0302c"
-store_entry_point_tx_hash = "056274f7abc9452bcae36aabfba5f4fb86f29d0dc0d126a882bd6d6947514544"
-instantiate_entry_point_tx_hash = "4abfb6260572baffc26af23288dee5f79f4ad4c21919f09d26f4d1b81c7d817c"
+store_ibc_transfer_adapter_tx_hash = "4fef47e7193607dbb028962ec42df47485da8af354f9ecc49f166f049341858f"
+instantiate_ibc_transfer_adapter_tx_hash = "b641d5917bf81874b7c7c2c0ed524e8e0a25f6646cc0d5db3e3b0a647d333b9f"
+store_swap_adapter_migaloo-white-whale_tx_hash = "a978f8a71d17218f44304f476d871834dd7a5ba6f20007d54662a23963d68c4f"
+instantiate_swap_adapter_migaloo-white-whale_tx_hash = "5dbfb42049320a22da211af83a18fd71b29af69c6ab3fd89b8d23d51a846e4ed"
+store_swap_adapter_migaloo-hallswap_tx_hash = "63efa357152c9724c8e225ffff8ed9e15a4d9e944ddce403878657a9de47e678"
+instantiate_swap_adapter_migaloo-hallswap_tx_hash = "9e5b3c20096600aaf1289204aba3a875fa84d17e0f8503108b4267fdc2e2c916"
+store_entry_point_tx_hash = "4f3313d27b3ee2241b0e001a8657bf3f88d0f9169d580af504cd2dbfb1676e72"
+instantiate_entry_point_tx_hash = "4e4b7baf5feccb026e18da75341ab3f68e5c5c67e787a04e87650475719b1cd6"
