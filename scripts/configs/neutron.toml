@@ -40,8 +40,8 @@ swap_adapter_path = "../artifacts/skip_api_swap_adapter_lido_satellite-aarch64.w
 
 [[swap_venues]]
 name = "neutron-hallswap"
-hallswap_contract_address = "<FILL WITH HALLSWAP CONTRACT ADDRESS>"
-swap_adapter_path = "<FILL WITH PATH LIKE OTHERS>"
+hallswap_contract_address = "neutron12k4hr2ecm3c8mjjsn6dc9c043xv8p7v4795qt9g2dwp4nmmlgxdqvz2ujp"
+swap_adapter_path = "../artifacts/skip_api_swap_adapter_hallswap-aarch64.wasm"
 
 [[testnet_swap_venues]]
 name = "testnet-neutron-astroport"

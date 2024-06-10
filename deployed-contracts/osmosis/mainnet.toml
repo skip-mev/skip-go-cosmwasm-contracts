@@ -1,12 +1,12 @@
 [info]
 chain_id = "osmosis-1"
 network = "mainnet"
-deploy_date = "13/05/2024 10:14:10"
-commit_hash = "<COMMIT HASH HERE>"
+deploy_date = "06/06/2024 17:02:08"
+commit_hash = "85c2781a667fc20a165d6916c4641cda9bbb2e0d"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "ef26b607e187ca7ad16e87af15d379dce7e044ca93a212024dc398acf4a27f36"
+"skip_api_entry_point-aarch64.wasm" = "0f03ab75e66b33b27285e83897d534070b73fd89287569db99b4c40c1af24f61"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "cd76939e60d7ff36647cfba24cb5b3dad3aa22ace7423f7ee08286dbe0e01e4b"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "536aeca3ad484aeabaa2bc9fe12cf921394d7b3028f652bcc4ddfed1a446a2cc"
 "skip_api_placeholder-aarch64.wasm" = "41d68796f6d266e86b0013496774065ac1bcefb31d71ba535c1276235cd105f1"
@@ -18,19 +18,19 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "806"
-swap_adapter_osmosis-poolmanager_contract_code_id = "807"
-entry_point_contract_code_id = "808"
+ibc_transfer_adapter_contract_code_id = "831"
+swap_adapter_osmosis-poolmanager_contract_code_id = "832"
+entry_point_contract_code_id = "833"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "osmo1jhl4e4y5z8w544ptl5gfaxty73d062gck5gnd7m8n64zel7fq0us69fmpj"
-swap_adapter_osmosis-poolmanager_contract_address = "osmo1us8swgfj0um4qv9txg3zdwthgt80zmc5u83ema86c884y0j5ecvqenf665"
-entry_point_contract_address = "osmo1emhzj4a8c0423mcgkmrkfuu6xxa2xt9ndmhaq0l3heef35m7jfwq7378lu"
+ibc_transfer_adapter_contract_address = "osmo1z24llw8lyafczgpza7qzdpmx273c4zxwjgl6qpu8ly34g3g9jd2q6vnd3t"
+swap_adapter_osmosis-poolmanager_contract_address = "osmo1asyc9xsyz4202tz75un3h2xufmtcnq79l0m7w8gk6eukn3m37fzsftkpsm"
+entry_point_contract_address = "osmo1vkdakqqg5htq5c3wy2kj2geq536q665xdexrtjuwqckpads2c2nsvhhcyv"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "e1798317b0734585ede34fa8865b2ea36ce641c8293e035e2b339da9771291c3"
-instantiate_ibc_transfer_adapter_tx_hash = "e8e4c52c3d93aaf4d6862097edd9f8e58e5ad94822432e9252ea7d67fbe17695"
-store_swap_adapter_osmosis-poolmanager_tx_hash = "a98e8d7fe05cc56ad8173335bbb79e1e9caec17c0fbf76b9ec6a58f5c9f5e778"
-instantiate_swap_adapter_osmosis-poolmanager_tx_hash = "9172eebe94c82f9fa5ef59539d2a0f913e2a612128265882bfc1deded4a4ac4d"
-store_entry_point_tx_hash = "3015002e65ba2c884077989e7a25d7bf44a03b0c0595a58bb1e286e064132d9b"
-instantiate_entry_point_tx_hash = "c5752b0a3c7899aa660552dc25c3a72e32f2a46fc16e3cf54e3482bdf1adb3af"
+store_ibc_transfer_adapter_tx_hash = "e14b26a7a955c3e89f157c084aa14a7ad6c0660aaa6299f4580ae72815bec3ef"
+instantiate_ibc_transfer_adapter_tx_hash = "1b591fb1be2df8626ec23e6ff0618750a9b3656881b05bfcd32f686e0f083490"
+store_swap_adapter_osmosis-poolmanager_tx_hash = "62802f26cbbbc82b16c516ff75218f6363ffcc3b1b09efcc96103c238d385dd1"
+instantiate_swap_adapter_osmosis-poolmanager_tx_hash = "a8e4d46b460d8714462ad0f3056cc57b12c50a397a623d4379f9459fc6ded837"
+store_entry_point_tx_hash = "9a1544ceaae82b1cfbd085a263193d9e7d2a5753bff9e2274e2fdd34ff1cdd78"
+instantiate_entry_point_tx_hash = "df1bd873fed10efad806311767874b889c67c11c2cbb5c7cd7c5c026823c4cb9"

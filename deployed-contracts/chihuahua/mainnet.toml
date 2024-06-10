@@ -1,12 +1,12 @@
 [info]
 chain_id = "chihuahua-1"
 network = "mainnet"
-deploy_date = "13/05/2024 11:32:32"
-commit_hash = "d4209d40b8facecc98d3c278d98c2efcb0950815"
+deploy_date = "06/06/2024 17:09:29"
+commit_hash = "85c2781a667fc20a165d6916c4641cda9bbb2e0d"
 salt = "1"
 
 [checksums]
-"skip_api_entry_point-aarch64.wasm" = "ef26b607e187ca7ad16e87af15d379dce7e044ca93a212024dc398acf4a27f36"
+"skip_api_entry_point-aarch64.wasm" = "0f03ab75e66b33b27285e83897d534070b73fd89287569db99b4c40c1af24f61"
 "skip_api_ibc_adapter_ibc_hooks-aarch64.wasm" = "cd76939e60d7ff36647cfba24cb5b3dad3aa22ace7423f7ee08286dbe0e01e4b"
 "skip_api_ibc_adapter_neutron_transfer-aarch64.wasm" = "536aeca3ad484aeabaa2bc9fe12cf921394d7b3028f652bcc4ddfed1a446a2cc"
 "skip_api_placeholder-aarch64.wasm" = "41d68796f6d266e86b0013496774065ac1bcefb31d71ba535c1276235cd105f1"
@@ -18,19 +18,23 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "579"
-swap_adapter_chihuahua-white-whale_contract_code_id = "580"
-entry_point_contract_code_id = "581"
+ibc_transfer_adapter_contract_code_id = "587"
+swap_adapter_chihuahua-white-whale_contract_code_id = "588"
+swap_adapter_chihuahua-hallswap_contract_code_id = "589"
+entry_point_contract_code_id = "590"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "chihuahua1nj53fu8a6suwuhdsdttetp94yej3px0j5tdhz88ylwcf95du36aqnr3xmn"
-swap_adapter_chihuahua-white-whale_contract_address = "chihuahua1fr3enzl2lm0a72dmdjpfp72mmgv39jqyje7p77shnzmqu7x5emfqq9g65r"
-entry_point_contract_address = "chihuahua1emhzj4a8c0423mcgkmrkfuu6xxa2xt9ndmhaq0l3heef35m7jfwqgxl3fa"
+ibc_transfer_adapter_contract_address = "chihuahua1p90em5gdjjpjjd6u6l4e5jkhz38uh2qq5qugz5r325udd2y50shqqgwdvx"
+swap_adapter_chihuahua-white-whale_contract_address = "chihuahua1c8m5mhqpyetxlznkw7lhzeaxnj79m0p5ms0s00t07v6wr58yrwzq2turqm"
+swap_adapter_chihuahua-hallswap_contract_address = "chihuahua1d4x9las5hsh4umhdlr8vwxun7c2s8pk6qtuan5a6lgq4ds4wchhs98aj3z"
+entry_point_contract_address = "chihuahua1vkdakqqg5htq5c3wy2kj2geq536q665xdexrtjuwqckpads2c2ns6qkwjd"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "2d407b9bd354827fe4a220b1edbff20793d274073fa1cc009d94d7cf77ed8a57"
-instantiate_ibc_transfer_adapter_tx_hash = "e86da56f55a61ff930abd298d27d4a4db7493855fefd5442444e904931fafbe7"
-store_swap_adapter_chihuahua-white-whale_tx_hash = "140217631ca2004570ca7d148f5342928f6329294f8264a381bfdf39bd60f141"
-instantiate_swap_adapter_chihuahua-white-whale_tx_hash = "a4a8d627c4cbc5794a9ec347403e16ca0772a840d30aa8006dd45c26e6cb7a0d"
-store_entry_point_tx_hash = "a7dcd77224162112fe791e8568c068fe537843e215c6e67da46d9fe4ba32f62d"
-instantiate_entry_point_tx_hash = "817ba82814f87c4446b4315c674803edbf7934040626ddc31352cec9338a8287"
+store_ibc_transfer_adapter_tx_hash = "ced8a20bc7fc7dc8d58db9294c55d0e56032ff3741e313cacc0347248f490dad"
+instantiate_ibc_transfer_adapter_tx_hash = "26614b51d6eed4628685316c02d7f11ce5c48c6463b13ba347da4cce1b1d815e"
+store_swap_adapter_chihuahua-white-whale_tx_hash = "c3687f1f8c0bfff9a4451418404d3f69b857ab579878515617a5c2e814a24b88"
+instantiate_swap_adapter_chihuahua-white-whale_tx_hash = "92899ea4388186f10be5a0cf3737d7ea7aefba8d1ec55b8c70ecd24fbd6407e2"
+store_swap_adapter_chihuahua-hallswap_tx_hash = "b590cad5cd7267e498d9b9c1c4228cbf1aca8b1313b171818599692f139c4acb"
+instantiate_swap_adapter_chihuahua-hallswap_tx_hash = "309f3326c0cb4c088fef66f468653e2b48a3773172e6e1e7d386568e52ebf8d5"
+store_entry_point_tx_hash = "dbbdb50c4aa80c32eefd14d03fe8a60e49711d18f55636755e4c7d5f8d6b71ca"
+instantiate_entry_point_tx_hash = "9a8c95128400d16065d1aa539f3ae9b843668825183425fece34e83c0cb2305f"

@@ -11,10 +11,10 @@ MAINNET_REST_URL = "https://archway-api.polkachu.com"
 MAINNET_RPC_URL = "https://archway-rpc.polkachu.com"
 MAINNET_CHAIN_ID = "archway-1"
 
-# Currently No Testnet Support - Not In Registry
-# TESTNET_REST_URL = ""
-# TESTNET_RPC_URL = ""
-# TESTNET_CHAIN_ID = ""
+# Currently No Testnet Support For This Swap Chain
+# TESTNET_REST_URL = "https://api.constantine.archway.io"
+# TESTNET_RPC_URL = "https://rpc.constantine.archway.io"
+# TESTNET_CHAIN_ID = "constantine-3"
 
 ADDRESS_PREFIX = "archway"
 DENOM = "aarch"

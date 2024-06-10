@@ -11,9 +11,10 @@ MAINNET_REST_URL = "https://lcd-terra.tfl.foundation"
 MAINNET_RPC_URL = "https://terra-rpc.polkachu.com/"
 MAINNET_CHAIN_ID = "phoenix-1"
 
-TESTNET_REST_URL = "https://pisco-lcd.terra.dev"
-TESTNET_RPC_URL = "https://terra-testnet-rpc.polkachu.com/"
-TESTNET_CHAIN_ID = "pisco-1"
+# Currently No Testnet Support For This Swap Chain
+# TESTNET_REST_URL = "https://pisco-lcd.terra.dev"
+# TESTNET_RPC_URL = "https://terra-testnet-rpc.polkachu.com/"
+# TESTNET_CHAIN_ID = "pisco-1"
 
 ADDRESS_PREFIX = "terra"
 DENOM = "uluna"
@@ -42,10 +43,10 @@ name = "terra-hallswap"
 hallswap_contract_address = "terra1e3nqr8vwu32pzgasraud9avpwdd8phmqgre5kpwlytgedj2emkkq3l67hy"
 swap_adapter_path = "../artifacts/skip_api_swap_adapter_hallswap-aarch64.wasm"
 
-[[testnet_swap_venues]]
-name = "testnet-terra-astroport"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
+# [[testnet_swap_venues]]
+# name = "testnet-terra-astroport"
+# swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
 
-[[testnet_swap_venues]]
-name = "testnet-terra-white-whale"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_white_whale-aarch64.wasm"
+# [[testnet_swap_venues]]
+# name = "testnet-terra-white-whale"
+# swap_adapter_path = "../artifacts/skip_api_swap_adapter_white_whale-aarch64.wasm"

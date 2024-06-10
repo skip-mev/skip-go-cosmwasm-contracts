@@ -1,7 +1,7 @@
 [info]
-chain_id = "osmo-test-5"
+chain_id = "test-core-2"
 network = "testnet"
-deploy_date = "06/06/2024 16:58:24"
+deploy_date = "02/06/2024 15:16:57"
 commit_hash = "85c2781a667fc20a165d6916c4641cda9bbb2e0d"
 salt = "1"
 
@@ -18,19 +18,19 @@ salt = "1"
 "skip_api_swap_adapter_white_whale-aarch64.wasm" = "46da262862d471f89c94d46bc231335bf9fffd82b468a792e19935438ad22b26"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "9038"
-swap_adapter_testnet-osmosis-poolmanager_contract_code_id = "9039"
-entry_point_contract_code_id = "9040"
+ibc_transfer_adapter_contract_code_id = "98"
+swap_adapter_testnet-persistence-dexter_contract_code_id = "99"
+entry_point_contract_code_id = "100"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "osmo1cn3sdrlf4mja4gq32a3857p5qqy0e76vt8vg7e0ca7ucdlqjjl8q38rhtd"
-swap_adapter_testnet-osmosis-poolmanager_contract_address = "osmo1vqcknn2nvplee0x8fk40dwqx6vsy6wxxsmw8de8cc93vhr0q0zpsczu2f5"
-entry_point_contract_address = "osmo1vkdakqqg5htq5c3wy2kj2geq536q665xdexrtjuwqckpads2c2nsvhhcyv"
+ibc_transfer_adapter_contract_address = "persistence15axtaedvmj524kd4ek0tnk8rgd4ru9a226jr6qex7lcyy36jge4slgdeje"
+swap_adapter_testnet-persistence-dexter_contract_address = "persistence1xsun7p7nm3gps3r6zzsvetkg3gjmnypeyarda60enae3zgt3fxsssxygxk"
+entry_point_contract_address = "persistence1vkdakqqg5htq5c3wy2kj2geq536q665xdexrtjuwqckpads2c2ns73kg9l"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "3447e00a9fab8a683f54dee1d1f041005911d90a719c4dc5e96fd1a03fbcb2c2"
-instantiate_ibc_transfer_adapter_tx_hash = "78be456a6a4b3ea2dc0c9212800d715a1fdebd2615cce3ecf2be2081423858bc"
-store_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "9f899f38d54d875ecd165417b3ec5cd9b688527737d634a94b3d595cc67bd75b"
-instantiate_swap_adapter_testnet-osmosis-poolmanager_tx_hash = "80c7e330a848f4e6490056db9c3523f1dcf86b46d7fcb08ee106b07172086cfc"
-store_entry_point_tx_hash = "5ca1ffedd6edc9725152ad66ec2e5cd6310f0f97f0436a7201ad484f719c9b57"
-instantiate_entry_point_tx_hash = "c1410e250ed9eaa235d24e80c746276c5ad3482ca25781542f3a399b98172570"
+store_ibc_transfer_adapter_tx_hash = "15e3c255b769b97f872f86d114234a6ea6728e146b9c847053a6de45dc7140c2"
+instantiate_ibc_transfer_adapter_tx_hash = "6ce8e8d98fa76bbf42a45afc76eee69333665e6229d81863b8d76cb1894a5430"
+store_swap_adapter_testnet-persistence-dexter_tx_hash = "73ff475d362a7186ce2bec8f4314caaf99f87346eddd9fd11407dea3d3d5790e"
+instantiate_swap_adapter_testnet-persistence-dexter_tx_hash = "314b89949d014428cf229defcb76a7ac31a54a50dcd5ea3bd838490d3769032a"
+store_entry_point_tx_hash = "b4e265aacb433178b7f1dcbb29eb5e850d22a5affbde791b58a4cb9ad754e615"
+instantiate_entry_point_tx_hash = "6e5b24e8fcbb457ede77afa96a2ad33faa4eeec8bd5b9284402027cf7c2d733a"
