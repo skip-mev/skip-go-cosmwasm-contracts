@@ -261,6 +261,41 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
                 spot_price,
             })
         }
+        QueryMsg::SimulateSmartSwapExactAssetIn { asset_in, .. } => {
+            let asset_out_denom =
+                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+
+            let exchange_rate = get_exchange_rate(deps)?;
+
+            to_json_binary(&Asset::Native(Coin::new(
+                (exchange_rate * asset_in.amount()).into(),
+                asset_out_denom,
+            )))
+        }
+        QueryMsg::SimulateSmartSwapExactAssetInWithMetadata {
+            asset_in,
+            include_spot_price,
+            ..
+        } => {
+            let asset_out_denom =
+                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+
+            let exchange_rate = get_exchange_rate(deps)?;
+
+            let spot_price = if include_spot_price {
+                Some(exchange_rate)
+            } else {
+                None
+            };
+
+            to_json_binary(&SimulateSwapExactAssetInResponse {
+                asset_out: Asset::Native(Coin::new(
+                    (exchange_rate * asset_in.amount()).into(),
+                    asset_out_denom,
+                )),
+                spot_price,
+            })
+        }
     }
     .map_err(From::from)
 }
