@@ -144,7 +144,7 @@ fn test_queries(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
 
-    let exchange_rate = params.exchange_rate.clone();
+    let exchange_rate = params.exchange_rate;
 
     // Create mock wasm handler to handle the swap adapter contract query
     let wasm_handler = move |query: &WasmQuery| -> QuerierResult {
