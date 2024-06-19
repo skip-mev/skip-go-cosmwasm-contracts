@@ -149,7 +149,8 @@ def main():
             ibc_transfer_adapter_contract_code_id, 
             {"entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS}, 
             "Skip Swap IBC Transfer Adapter", 
-            "ibc_transfer_adapter"
+            "ibc_transfer_adapter",
+            PERMISSIONED_UPLOADER_ADDRESS
         )
     else:
         if CHAIN != "sei":
@@ -208,7 +209,8 @@ def main():
                 swap_adapter_contract_code_id, 
                 swap_adapter_instantiate_args, 
                 f"Skip Swap Swap Adapter {venue['name']}", 
-                f"swap_adapter_{venue['name']}"
+                f"swap_adapter_{venue['name']}",
+                PERMISSIONED_UPLOADER_ADDRESS
             )
             
             entry_point_instantiate_args["swap_venues"].append(
@@ -233,7 +235,8 @@ def main():
                 swap_placeholder_contract_code_id, 
                 {}, 
                 f"Skip Swap Swap Adapter {venue['name']}", 
-                f"swap_adapter_{venue['name']}"
+                f"swap_adapter_{venue['name']}",
+                PERMISSIONED_UPLOADER_ADDRESS
             )
             # Add swap adapter contract address to entry point instantiate args
             entry_point_instantiate_args["swap_venues"].append(
@@ -260,7 +263,8 @@ def main():
             args=entry_point_instantiate_args,
             label="Skip Swap Entry Point",
             name="entry_point",
-            pre_gen_address=ENTRY_POINT_PRE_GENERATED_ADDRESS
+            pre_gen_address=ENTRY_POINT_PRE_GENERATED_ADDRESS,
+            permissioned_uploader_address=PERMISSIONED_UPLOADER_ADDRESS
         )
     else:
         entry_point_contract_address = instantiate_contract(
@@ -270,7 +274,8 @@ def main():
             entry_point_contract_code_id, 
             entry_point_instantiate_args, 
             "Skip Swap Entry Point", 
-            "entry_point"
+            "entry_point",
+            PERMISSIONED_UPLOADER_ADDRESS
         )
         
         # Store IBC transfer adapter contract
@@ -329,12 +334,13 @@ def main():
             )
     
     
-def create_tx(msg,
-              client, 
-              wallet, 
-              gas_limit: int, 
-              fee: str,
-              ) -> tuple[bytes, str]:
+def create_tx(
+    msg,
+    client, 
+    wallet, 
+    gas_limit: int, 
+    fee: str,
+) -> tuple[bytes, str]:        
     time.sleep(5)
     tx = Transaction()
     tx.add_message(msg)
@@ -403,12 +409,12 @@ def store_contract(
         gas_limit = 5000000
         
     if permissioned_uploader_address is not None:
-        msg_store_code = MsgStoreCode(
+        msg = MsgStoreCode(
             sender=permissioned_uploader_address,
             wasm_byte_code=open(file_path, "rb").read(),
             instantiate_permission=None
         )
-        msg = create_exec_msg(msg=msg_store_code, grantee_address=str(wallet.address()))
+        msg = create_exec_msg(msg=msg, grantee_address=str(wallet.address()))
     else:
         msg = MsgStoreCode(
             sender=str(wallet.address()),
@@ -434,18 +440,39 @@ def store_contract(
     return int(contract_code_id)
 
 
-def instantiate_contract(client, wallet, admin, code_id, args, label, name) -> str:
+def instantiate_contract(
+    client, 
+    wallet, 
+    admin, 
+    code_id, 
+    args, 
+    label, 
+    name,
+    permissioned_uploader_address
+) -> str:
     if CHAIN == "osmosis":
         gas_limit = 600000
     else:
         gas_limit = 300000
-    msg = MsgInstantiateContract(
-        sender=str(wallet.address()),
-        admin=admin,
-        code_id=code_id,
-        msg=json_encode(args).encode("UTF8"),
-        label=label,
-    )
+        
+    if permissioned_uploader_address is not None:
+        msg = MsgInstantiateContract(
+            sender=permissioned_uploader_address,
+            admin=admin,
+            code_id=code_id,
+            msg=json_encode(args).encode("UTF8"),
+            label=label,
+        )
+        msg = create_exec_msg(msg=msg, grantee_address=str(wallet.address()))
+    else:
+        msg = MsgInstantiateContract(
+            sender=str(wallet.address()),
+            admin=admin,
+            code_id=code_id,
+            msg=json_encode(args).encode("UTF8"),
+            label=label,
+        )
+        
     instantiate_tx = create_tx(
         msg=msg, 
         client=client, 
@@ -524,21 +551,36 @@ def instantiate2_contract(
     args, 
     label, 
     name, 
-    pre_gen_address
+    pre_gen_address,
+    permissioned_uploader_address
 ) -> str:
     if CHAIN == "osmosis":
         gas_limit = 600000
     else:
         gas_limit = 300000
-    msg = MsgInstantiateContract2(
-        sender=str(wallet.address()),
-        admin=ADMIN_ADDRESS,
-        code_id=code_id,
-        msg=json_encode(args).encode("UTF8"),
-        label=label,
-        salt=SALT,
-        fix_msg=False,
-    )
+
+    if permissioned_uploader_address is not None:
+        msg = MsgInstantiateContract2(
+            sender=permissioned_uploader_address,
+            admin=ADMIN_ADDRESS,
+            code_id=code_id,
+            msg=json_encode(args).encode("UTF8"),
+            label=label,
+            salt=SALT,
+            fix_msg=False,
+        )
+        msg = create_exec_msg(msg=msg, grantee_address=str(wallet.address()))
+    else:
+        msg = MsgInstantiateContract2(
+            sender=str(wallet.address()),
+            admin=ADMIN_ADDRESS,
+            code_id=code_id,
+            msg=json_encode(args).encode("UTF8"),
+            label=label,
+            salt=SALT,
+            fix_msg=False,
+        )
+
     instantiate_2_tx = create_tx(
         msg=msg, 
         client=client, 
