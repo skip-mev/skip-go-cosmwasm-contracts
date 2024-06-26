@@ -8,6 +8,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
+use neutron_sdk::{bindings::dex::{types::{MultiHopRoute, PrecDec}, msg::DexMsg::MultiHopSwap}};
 use skip::{
     asset::Asset,
     swap::{
@@ -16,7 +17,6 @@ use skip::{
         SwapOperation,
     },
 };
-use neutron_std::types::neutron::dex::{MsgPlaceLimitOrder, MsgMultiHopSwap};
 use std::str::FromStr;
 
 ///////////////
@@ -114,7 +114,6 @@ fn execute_swap(
     };
 
     //build duality Swap message
-
     let swap_msg = create_duality_swap_msg(&env, coin_in,  operations)?;
 
     // Create the transfer funds back message
@@ -139,17 +138,19 @@ fn create_duality_swap_msg(
     coin_in: Coin,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<CosmosMsg> {
-    // Convert the swap operations into a Duality multi hop swap
-    let multi_hop_route: String =
-        get_route_from_swap_operations(swap_operations)?;
+
+    // Convert the swap operations into a Duality multi hop swap route.
+    let route = match get_route_from_swap_operations(swap_operations) {
+        Ok(route) => route,
+        Err(e) => return Err(e),
+    };
 
     // Create the duality multi hop swap message
-    let swap_msg: CosmosMsg = MsgMultiHopSwap {
-        creator: env.contract.address.to_string(),
+    let swap_msg: CosmosMsg = MultiHopSwap {
         receiver: env.contract.address.to_string(),
-        routes: multi_hop_route,
-        amount_in: coin_in.amount,
-        exit_limit_price: "1".to_string(),
+        routes: vec![route],
+        amount_in: coin_in.amount.into(),
+        exit_limit_price: PrecDec{i: "0.00000001".to_string()},
         pick_best_route: true,
     }
     .into();
@@ -157,9 +158,30 @@ fn create_duality_swap_msg(
     Ok(swap_msg)
 }
 
-pub fn get_route_from_swap_operations<T>(
-    swap_operations: Vec<SwapOperation>,
-) -> String
-{
-    
+// multi-hop-swap routes are a string array of denoms to route through 
+// with formal [tokenA,tokenB,tokenC,tokenD]
+pub fn get_route_from_swap_operations(
+    swap_operations: Vec<SwapOperation>
+) -> Result<neutron_sdk::bindings::dex::types::MultiHopRoute, String>  {
+    if swap_operations.is_empty() {
+        return Err(format!(
+            "Empty Swap Operation",
+        ));
+    }
+
+    let mut route = vec![swap_operations[0].denom_in.clone(), swap_operations[0].denom_out.clone()];
+    let mut last_denom_out = &swap_operations[0].denom_out;
+
+    for operation in swap_operations.iter().skip(1) {  
+        if &operation.denom_in != last_denom_out {
+            return Err(format!(
+                "Mismatch: denom_in {} does not match last denom_out {}",
+                operation.denom_in, last_denom_out
+            ));
+        }
+        route.push(operation.denom_out.clone());
+        last_denom_out = &operation.denom_out;
+    }
+
+    Ok(MultiHopRoute { hops: route })
 }

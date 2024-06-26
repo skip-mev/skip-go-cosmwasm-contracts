@@ -20,15 +20,14 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
+neutron-sdk = { package = "neutron-sdk", git = "https://github.com/neutron-org/neutron-sdk", branch = "main" }
 cosmwasm-schema  = { workspace = true }
 cosmwasm-std     = { workspace = true }
 cw2              = { workspace = true }
 cw20             = { workspace = true }
 cw-storage-plus  = { workspace = true }
 cw-utils         = { workspace = true }
-neutron-std      = { workspace = true }
 skip             = { workspace = true }
 thiserror        = { workspace = true }
-
 [dev-dependencies]
 test-case        = { workspace = true }
