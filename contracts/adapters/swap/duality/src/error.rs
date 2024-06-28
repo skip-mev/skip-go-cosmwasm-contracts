@@ -40,5 +40,8 @@ pub enum ContractError {
     SwapOperationDenomMismatch,
 
     #[error("failed to convert uint to int. value of coin amount as Uint128 exceeds max possible Int128 amount")]
-    ConversionError
+    ConversionError,
+
+    #[error("swap operation denom-in and denom-out are the same.")]
+    SameSwapDenoms,
 }
