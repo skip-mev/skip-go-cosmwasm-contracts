@@ -3,21 +3,26 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Empty, Env, Int128,
-    MessageInfo, QueryRequest, BankQuery, Response, BalanceResponse, StdError, StdResult, Uint128, WasmMsg, Addr
+    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg,
+    Decimal, Deps, DepsMut, Empty, Env, Int128, MessageInfo, QueryRequest, Response, StdError,
+    StdResult, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
 use neutron_sdk::bindings::dex::msg::DexMsg;
 use neutron_sdk::bindings::dex::msg::DexMsg::MultiHopSwap;
-use neutron_sdk::bindings::dex::types::{MultiHopRoute, PrecDec, LimitOrderType};
+use neutron_sdk::bindings::dex::query::DexQuery;
+use neutron_sdk::bindings::dex::types::{LimitOrderType, Liquidity, MultiHopRoute, PrecDec};
+use neutron_sdk::bindings::query::PageRequest;
 use neutron_sdk::bindings::{
     dex::query::{
-        DexQuery::{EstimateMultiHopSwap, EstimatePlaceLimitOrder},
+        AllTickLiquidityResponse,
+        DexQuery::{EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll},
         EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse,
     },
     query::NeutronQuery,
 };
+use std::str::FromStr;
 
 use skip::{
     asset::Asset,
@@ -299,24 +304,7 @@ fn query_simulate_swap_exact_asset_in(
         pick_best_route: true,
     };
 
-    // Serialize the query message
-    // let binary_msg = to_json_binary(&query_msg)?;
-
-    // let simulation_result: StdResult<EstimateMultiHopSwapResponse> = deps
-    //     .querier
-    //     .query(&QueryRequest::Stargate {
-    //         path: "/neutron.dex.Query/EstimateMultiHopSwap".to_string(),
-    //         data: binary_msg,
-    //     })
-    //     .map_err(|e| StdError::generic_err(format!("Simulation failed")));
-
     let simulation_result: EstimateMultiHopSwapResponse = deps.querier.query(&query_msg.into())?;
-
-    // // Extract the coin_out field from the response
-    // let out_coin = match simulation_result {
-    //     Ok(response) => response.coin_out,
-    //     Err(err) => return Err(ContractError::from(err)),
-    // };
 
     // Return the asset out
     Ok(Coin {
@@ -350,11 +338,11 @@ fn query_simulate_swap_exact_asset_out(
     let denom_in: String = first_op.denom_in.clone();
 
     let mut coin_in_res = coin_out.amount.clone();
-        
+
     // iterate over the swap operations from last to first using taker limit orders with maxAmountOut for swaps.
     for swap_operation in swap_operations.iter().rev() {
         // we use coin_in_res as the maxAmountOut on each querry. This will lead to the dinal iunput required to get the
-        // last output after all iterations are finished 
+        // last output after all iterations are finished
         coin_in_res = perform_duality_limit_order_query(coin_in_res, swap_operation, deps, &env)?;
     }
 
@@ -467,7 +455,7 @@ fn perform_duality_limit_order_query(
 
     // Since we are placing a fill-or-kill maker limit order and we are not price sensitive
     // we either use mintick or maxtick to place the limit order depending on swap direction.
-    // this will ensure that liimit order sees all possible liquidity as valid while still 
+    // this will ensure that liimit order sees all possible liquidity as valid while still
     // iterating over the best prices first using Duality's autoswap feature.
     let index;
     if swap_operation.denom_in > swap_operation.denom_out {
@@ -475,31 +463,34 @@ fn perform_duality_limit_order_query(
     } else if swap_operation.denom_in < swap_operation.denom_out {
         index = max_tick
     } else {
-       return Err(ContractError::SameSwapDenoms);
+        return Err(ContractError::SameSwapDenoms);
     }
 
-    // Create the bank query request for the DEX balance. We do this because simulations require 
+    // Create the bank query request for the DEX balance. We do this because simulations require
     let dex_module_address: Addr = DEX_MODULE_ADDRESS.load(deps.storage)?;
 
     let dex_balance_request = QueryRequest::Bank(BankQuery::Balance {
         address: dex_module_address.clone().into(),
         denom: swap_operation.denom_in.clone(),
-    });    
+    });
 
-    // get the DEX balance
-    let dex_balance_simulation_result: BalanceResponse = match deps.querier.query(&dex_balance_request){
-        Ok(result) => result,
-        Err(err) => return Err(ContractError::from(err)),
-    };
+    // get the DEX balance. Use the DEX as the caller in the Limit Order
+    // simulation since it will usually have the required balance
+    let dex_balance_simulation_result: BalanceResponse =
+        match deps.querier.query(&dex_balance_request) {
+            Ok(result) => result,
+            Err(err) => return Err(ContractError::from(err)),
+        };
 
     // set dex balance to be the input amount
-    let input_amount: Int128 = match uint128_to_int128(dex_balance_simulation_result.amount.amount){
+    let input_amount: Int128 = match uint128_to_int128(dex_balance_simulation_result.amount.amount)
+    {
         Ok(amount) => amount,
         Err(e) => return Err(e),
     };
 
     // set dex balance to be the input amount
-    let max_out: Int128 = match uint128_to_int128(amount_out){
+    let max_out: Int128 = match uint128_to_int128(amount_out) {
         Ok(amount) => amount,
         Err(e) => return Err(e),
     };
@@ -519,12 +510,73 @@ fn perform_duality_limit_order_query(
     };
 
     // Get the result of the simulation
-    let simulation_result: EstimatePlaceLimitOrderResponse = match deps.querier.query(&query_msg.into()) {
-        Ok(result) => result,
-        Err(err) => return Err(ContractError::from(err)),
-    };
+    let simulation_result: EstimatePlaceLimitOrderResponse =
+        match deps.querier.query(&query_msg.into()) {
+            Ok(result) => result,
+            Err(err) => return Err(ContractError::from(err)),
+        };
 
     // Return the amount in needed for the given amount out.
     Ok(simulation_result.swap_in_coin.amount)
+}
+
+fn calculate_spot_price(
+    deps: Deps<NeutronQuery>,
+    swap_operations: Vec<SwapOperation>,
+) -> ContractResult<Decimal> {
+    swap_operations.into_iter().try_fold(
+        Decimal::one(),
+        |curr_spot_price, swap_op| -> ContractResult<Decimal> {
+            let msg = DexQuery::TickLiquidityAll {
+                pair_id: new_pair_id_str(swap_op.denom_out.clone(), swap_op.denom_out),
+                token_in: swap_op.denom_in,
+                pagination: Some(PageRequest {
+                    key: Binary::from(Vec::new()),
+                    limit: 1,
+                    reverse: false,
+                    count_total: false,
+                    offset: 0,
+                }),
+            };
+            let tick_liq_resp: AllTickLiquidityResponse = deps.querier.query(&msg.into())?;
+
+            let liq = &tick_liq_resp.tick_liquidity[0];
+
+            // Handle empty case
+            let spot_price: String;
+            match &liq.liquidity {
+                Liquidity::PoolReserves(reserves) => {
+                    spot_price = reserves.price_taker_to_maker.i.clone();
+                }
+                Liquidity::LimitOrderTranche(tranche) => {
+                    spot_price = tranche.price_taker_to_maker.i.clone();
+                }
+            }
     
+            // Convert spot_price to Decimal using its string representation
+            let spot_price_decimal = Decimal::from_str(&spot_price).map_err(|e| {
+                StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
+            })?;
+
+            let division_result = Decimal::one().checked_div(spot_price_decimal).map_err(|e| {
+                StdError::generic_err(format!("Failed to perform price division: {}", e))
+            })?;
+
+            // Perform the checked multiplication
+            let result = curr_spot_price.checked_mul(division_result).map_err(|e| {
+                StdError::generic_err(format!("Failed to perform price multiplication: {}", e))
+            })?;
+
+            // Return the result
+            Ok(result)
+        },
+    )
+}
+
+fn new_pair_id_str(token0: String, token1: String) -> String {
+    let tokens = vec![token0.clone(), token1.clone()];
+    if token1 < token0 {
+        tokens.iter().rev();
+    }
+    return tokens.join("<>");
 }
