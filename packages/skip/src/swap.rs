@@ -48,6 +48,12 @@ pub struct LidoSatelliteInstantiateMsg {
 }
 
 #[cw_serde]
+pub struct DualityInstatiateMsg {
+    pub entry_point_contract_address: String,
+    pub dex_module_address: String,
+}
+
+#[cw_serde]
 pub struct HallswapInstantiateMsg {
     pub entry_point_contract_address: String,
     pub hallswap_contract_address: String,

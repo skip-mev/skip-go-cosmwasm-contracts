@@ -29,7 +29,7 @@ use skip::{
     swap::{
         execute_transfer_funds_back, get_ask_denom_for_routes,
         DualityInstatiateMsg as InstantiateMsg, ExecuteMsg, MigrateMsg, QueryMsg, Route,
-        SwapOperation,
+        SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 
@@ -213,6 +213,7 @@ pub fn query(deps: Deps<NeutronQuery>, _env: Env, msg: QueryMsg) -> ContractResu
             include_spot_price,
         } => to_json_binary(&query_simulate_swap_exact_asset_in_with_metadata(
             deps,
+            _env,
             asset_in,
             swap_operations,
             include_spot_price,
@@ -223,6 +224,7 @@ pub fn query(deps: Deps<NeutronQuery>, _env: Env, msg: QueryMsg) -> ContractResu
             include_spot_price,
         } => to_json_binary(&query_simulate_swap_exact_asset_out_with_metadata(
             deps,
+            _env,
             asset_out,
             swap_operations,
             include_spot_price,
@@ -355,6 +357,62 @@ fn query_simulate_swap_exact_asset_out(
     // convert the swap route to a
 }
 
+
+fn query_simulate_swap_exact_asset_in_with_metadata(
+    deps: Deps<NeutronQuery>,
+    env: Env,
+    asset_in: Asset,
+    swap_operations: Vec<SwapOperation>,
+    include_spot_price: bool,
+) -> ContractResult<SimulateSwapExactAssetInResponse> {
+    let mut response = SimulateSwapExactAssetInResponse {
+        asset_out: query_simulate_swap_exact_asset_in(deps, env, asset_in, swap_operations.clone())?,
+        spot_price: None,
+    };
+
+    if include_spot_price {
+        response.spot_price = Some(calculate_spot_price(
+            deps,
+            swap_operations,
+        )?)
+    }
+
+    Ok(response)
+}
+
+// Queries the osmosis poolmanager module to simulate a swap exact amount out with metadata
+fn query_simulate_swap_exact_asset_out_with_metadata(
+    deps: Deps<NeutronQuery>,
+    env: Env,
+    asset_out: Asset,
+    swap_operations: Vec<SwapOperation>,
+    include_spot_price: bool,
+) -> ContractResult<SimulateSwapExactAssetOutResponse> {
+    let mut response = SimulateSwapExactAssetOutResponse {
+        asset_in: query_simulate_swap_exact_asset_out(deps, env, asset_out, swap_operations.clone())?,
+        spot_price: None,
+    };
+
+    if include_spot_price {
+        response.spot_price = Some(calculate_spot_price(
+            deps,
+            swap_operations,
+        )?)
+    }
+
+    Ok(response)
+}
+
+///////////////////
+/// UNSUPPORTED ///
+///////////////////
+fn query_simulate_smart_swap_exact_asset_in(
+    deps: Deps<NeutronQuery>,
+    ask_denom: String,
+    routes: Vec<Route>,
+) -> ContractResult<Asset> {
+    return Err(ContractError::SmartSwapUnsupported);
+}
 fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     deps: Deps<NeutronQuery>,
     asset_in: Asset,
@@ -362,34 +420,7 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     routes: Vec<Route>,
     include_spot_price: bool,
 ) -> ContractResult<EstimateMultiHopSwapResponse> {
-    unimplemented!()
-}
-
-fn query_simulate_swap_exact_asset_in_with_metadata(
-    deps: Deps<NeutronQuery>,
-    asset_in: Asset,
-    swap_operations: Vec<SwapOperation>,
-    include_spot_price: bool,
-) -> ContractResult<EstimateMultiHopSwapResponse> {
-    unimplemented!()
-}
-
-// Queries the osmosis poolmanager module to simulate a swap exact amount out with metadata
-fn query_simulate_swap_exact_asset_out_with_metadata(
-    deps: Deps<NeutronQuery>,
-    asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
-    include_spot_price: bool,
-) -> ContractResult<EstimateMultiHopSwapResponse> {
-    unimplemented!()
-}
-
-fn query_simulate_smart_swap_exact_asset_in(
-    deps: Deps<NeutronQuery>,
-    ask_denom: String,
-    routes: Vec<Route>,
-) -> ContractResult<Asset> {
-    unimplemented!()
+    return Err(ContractError::SmartSwapUnsupported);
 }
 
 ///////////////
@@ -552,15 +583,17 @@ fn calculate_spot_price(
                     spot_price = tranche.price_taker_to_maker.i.clone();
                 }
             }
-    
+
             // Convert spot_price to Decimal using its string representation
             let spot_price_decimal = Decimal::from_str(&spot_price).map_err(|e| {
                 StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
             })?;
-
-            let division_result = Decimal::one().checked_div(spot_price_decimal).map_err(|e| {
-                StdError::generic_err(format!("Failed to perform price division: {}", e))
-            })?;
+            // make sure to invert the price result since the expected output is the inverse of how Duality calculates price
+            let division_result = Decimal::one()
+                .checked_div(spot_price_decimal)
+                .map_err(|e| {
+                    StdError::generic_err(format!("Failed to perform price division: {}", e))
+                })?;
 
             // Perform the checked multiplication
             let result = curr_spot_price.checked_mul(division_result).map_err(|e| {
