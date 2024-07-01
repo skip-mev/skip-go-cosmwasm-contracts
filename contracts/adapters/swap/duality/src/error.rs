@@ -45,6 +45,9 @@ pub enum ContractError {
     #[error("swap operation denom-in and denom-out are the same.")]
     SameSwapDenoms,
 
-    #[error("Duality does not support smart swap")]
+    #[error("Route must me length 1. Smart Swap is not supported")]
     SmartSwapUnsupported,
+
+    #[error("Simulation Error. Unexpected output denom")]
+    smartSwapUnexpectedOut,
 }

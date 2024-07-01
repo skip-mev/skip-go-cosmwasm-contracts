@@ -163,7 +163,8 @@ fn create_duality_swap_msg(
         Err(e) => return Err(e),
     };
 
-    // Create the duality multi hop swap message
+    // Create the duality multi hop swap message251093
+
     let swap_msg = MultiHopSwap {
         receiver: env.contract.address.to_string(),
         routes: vec![route],
@@ -233,7 +234,7 @@ pub fn query(deps: Deps<NeutronQuery>, _env: Env, msg: QueryMsg) -> ContractResu
             let ask_denom = get_ask_denom_for_routes(&routes)?;
 
             to_json_binary(&query_simulate_smart_swap_exact_asset_in(
-                deps, ask_denom, routes,
+                deps, _env, ask_denom, routes,
             )?)
         }
         QueryMsg::SimulateSmartSwapExactAssetInWithMetadata {
@@ -245,6 +246,7 @@ pub fn query(deps: Deps<NeutronQuery>, _env: Env, msg: QueryMsg) -> ContractResu
 
             to_json_binary(&query_simulate_smart_swap_exact_asset_in_with_metadata(
                 deps,
+                _env,
                 asset_in,
                 ask_denom,
                 routes,
@@ -281,7 +283,7 @@ fn query_simulate_swap_exact_asset_in(
     // Get denom out from last swap operation  to be used as the return coin's denom
     let denom_out = last_op.denom_out.clone();
 
-    // Convert the swap operations to a duality multi hop route .
+    // Convert the swap operations to a duality multi hop route.
     // Returns error un unsucessful conversion
     let duality_multi_hop_swap_route: MultiHopRoute =
         match get_route_from_swap_operations(swap_operations) {
@@ -357,7 +359,6 @@ fn query_simulate_swap_exact_asset_out(
     // convert the swap route to a
 }
 
-
 fn query_simulate_swap_exact_asset_in_with_metadata(
     deps: Deps<NeutronQuery>,
     env: Env,
@@ -366,15 +367,17 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
     let mut response = SimulateSwapExactAssetInResponse {
-        asset_out: query_simulate_swap_exact_asset_in(deps, env, asset_in, swap_operations.clone())?,
+        asset_out: query_simulate_swap_exact_asset_in(
+            deps,
+            env,
+            asset_in,
+            swap_operations.clone(),
+        )?,
         spot_price: None,
     };
 
     if include_spot_price {
-        response.spot_price = Some(calculate_spot_price(
-            deps,
-            swap_operations,
-        )?)
+        response.spot_price = Some(calculate_spot_price(deps, swap_operations)?)
     }
 
     Ok(response)
@@ -389,15 +392,17 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetOutResponse> {
     let mut response = SimulateSwapExactAssetOutResponse {
-        asset_in: query_simulate_swap_exact_asset_out(deps, env, asset_out, swap_operations.clone())?,
+        asset_in: query_simulate_swap_exact_asset_out(
+            deps,
+            env,
+            asset_out,
+            swap_operations.clone(),
+        )?,
         spot_price: None,
     };
 
     if include_spot_price {
-        response.spot_price = Some(calculate_spot_price(
-            deps,
-            swap_operations,
-        )?)
+        response.spot_price = Some(calculate_spot_price(deps, swap_operations)?)
     }
 
     Ok(response)
@@ -408,19 +413,37 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
 ///////////////////
 fn query_simulate_smart_swap_exact_asset_in(
     deps: Deps<NeutronQuery>,
+    env: Env,
     ask_denom: String,
     routes: Vec<Route>,
 ) -> ContractResult<Asset> {
-    return Err(ContractError::SmartSwapUnsupported);
+    if routes.len() != 1 {
+        return Err(ContractError::SmartSwapUnsupported)
+    }
+    let sim_asset_out = query_simulate_swap_exact_asset_in(deps, env, routes[0].offer_asset.clone(), routes[0].operations.clone())?;
+    if sim_asset_out.denom().to_string() == ask_denom {
+        return Ok(sim_asset_out)
+    } else{
+        return Err(ContractError::smartSwapUnexpectedOut)
+    }
 }
 fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     deps: Deps<NeutronQuery>,
+    env: Env,
     asset_in: Asset,
     ask_denom: String,
     routes: Vec<Route>,
     include_spot_price: bool,
-) -> ContractResult<EstimateMultiHopSwapResponse> {
-    return Err(ContractError::SmartSwapUnsupported);
+) -> ContractResult<SimulateSwapExactAssetInResponse> {
+    if routes.len() != 1 {
+        return Err(ContractError::SmartSwapUnsupported)
+    }
+    let responce = query_simulate_swap_exact_asset_in_with_metadata(deps,env,asset_in, routes[0].operations.clone(), include_spot_price)?;
+    if responce.asset_out.denom().to_string() == ask_denom {
+        return Ok(responce)
+    } else {
+        return Err(ContractError::smartSwapUnexpectedOut)
+    }
 }
 
 ///////////////
@@ -428,7 +451,7 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
 ///////////////
 
 // multi-hop-swap routes are a string array of denoms to route through
-// with formal [tokenA,tokenB,tokenC,tokenD]
+// with format [tokenA,tokenB,tokenC,tokenD]
 pub fn get_route_from_swap_operations(
     swap_operations: Vec<SwapOperation>,
 ) -> Result<MultiHopRoute, ContractError> {
@@ -467,6 +490,7 @@ fn int128_to_uint128(i: Int128) -> Result<Uint128, ContractError> {
     }
     Ok(Uint128::from(value as u128))
 }
+
 // Implement the conversion
 pub fn convert_to_cosmos_msg(swap_msg: DexMsg) -> Result<CosmosMsg<Empty>, ContractError> {
     let msg = CosmosMsg::Custom(swap_msg.into());
@@ -484,7 +508,7 @@ fn perform_duality_limit_order_query(
     let max_tick: i64 = 559680;
     let min_tick: i64 = -559680;
 
-    // Since we are placing a fill-or-kill maker limit order and we are not price sensitive
+    // Since we are placing a fill-or-kill maker limit order and we are not price sensitive,
     // we either use mintick or maxtick to place the limit order depending on swap direction.
     // this will ensure that liimit order sees all possible liquidity as valid while still
     // iterating over the best prices first using Duality's autoswap feature.
@@ -497,7 +521,9 @@ fn perform_duality_limit_order_query(
         return Err(ContractError::SameSwapDenoms);
     }
 
-    // Create the bank query request for the DEX balance. We do this because simulations require
+    // Create the bank query request for the DEX balance. We do this because simulations require a balance
+    // and we don't have access to the sender's balance and the DEX should often have a sufficient balance.
+    // This is a workaround untill we remove balance requirements for query.
     let dex_module_address: Addr = DEX_MODULE_ADDRESS.load(deps.storage)?;
 
     let dex_balance_request = QueryRequest::Bank(BankQuery::Balance {
@@ -505,8 +531,7 @@ fn perform_duality_limit_order_query(
         denom: swap_operation.denom_in.clone(),
     });
 
-    // get the DEX balance. Use the DEX as the caller in the Limit Order
-    // simulation since it will usually have the required balance
+    // get the DEX balance.
     let dex_balance_simulation_result: BalanceResponse =
         match deps.querier.query(&dex_balance_request) {
             Ok(result) => result,
@@ -520,7 +545,7 @@ fn perform_duality_limit_order_query(
         Err(e) => return Err(e),
     };
 
-    // set dex balance to be the input amount
+    // convert amount_out to int.
     let max_out: Int128 = match uint128_to_int128(amount_out) {
         Ok(amount) => amount,
         Err(e) => return Err(e),
@@ -547,7 +572,7 @@ fn perform_duality_limit_order_query(
             Err(err) => return Err(ContractError::from(err)),
         };
 
-    // Return the amount in needed for the given amount out.
+    // Return the input amount needed to yeild the given output amount (max_out).
     Ok(simulation_result.swap_in_coin.amount)
 }
 
