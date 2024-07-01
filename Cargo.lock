@@ -1091,6 +1091,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "pryzm-std"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb936ea204bd596420d56b1a88eeead2349ea9f7640944bc474fe9cd91d9472c"
+dependencies = [
+ "chrono",
+ "cosmwasm-std",
+ "prost 0.12.3",
+ "prost-types 0.12.3",
+ "pryzm-std-derive",
+ "schemars",
+ "serde",
+ "serde-cw-value",
+]
+
+[[package]]
+name = "pryzm-std-derive"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27015d082aa4edc995247d0f2fa81b53d6b4e116ed06e3532c162cd34d3bc010"
+dependencies = [
+ "itertools 0.10.5",
+ "proc-macro2",
+ "prost-types 0.11.9",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1445,6 +1474,22 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "osmosis-std",
+ "skip",
+ "test-case",
+ "thiserror",
+]
+
+[[package]]
+name = "skip-api-swap-adapter-pryzm"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "osmosis-std",
+ "pryzm-std",
  "skip",
  "test-case",
  "thiserror",
