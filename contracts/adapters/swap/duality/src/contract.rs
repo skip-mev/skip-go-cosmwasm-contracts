@@ -7,20 +7,16 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
-use neutron_sdk::bindings::{
+use neutron_sdk::{bindings::{
     dex::{
-        msg::{DexMsg, MultiHopSwapMsg, DexMsg::MultiHopSwap},
+        msg::{DexMsg::{self, MultiHopSwap}, MultiHopSwapMsg},
         query::{
-            DexQuery, 
-            AllTickLiquidityResponse, 
-            EstimateMultiHopSwapResponse, 
-            EstimatePlaceLimitOrderResponse,
-            DexQuery::{EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll},
+            AllTickLiquidityResponse, DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll}, EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse
         },
         types::{LimitOrderType, Liquidity, MultiHopRoute, PrecDec},
     },
     query::{NeutronQuery, PageRequest},
-};
+}, stargate::dex::types::MultiHopSwapRequest};
 use std::str::FromStr;
 
 use skip::{
@@ -156,7 +152,7 @@ fn create_duality_swap_msg(
     env: &Env,
     coin_in: Coin,
     swap_operations: Vec<SwapOperation>,
-) -> ContractResult<CosmosMsg<DexMsg>> {
+) -> ContractResult<CosmosMsg> {
     // Convert the swap operations into a Duality multi hop swap route.
     let route = match get_route_from_swap_operations(swap_operations) {
         Ok(route) => route,
@@ -164,9 +160,10 @@ fn create_duality_swap_msg(
     };
 
     // Create the duality multi hop swap message
-    
-    let swap_msg: CosmosMsg = MultiHopSwapMsg {
+
+    let swap_msg: CosmosMsg = MultiHopSwapRequest {
         receiver: env.contract.address.to_string(),
+        sender: env.contract.address.to_string(),
         routes: vec![route],
         amount_in: coin_in.amount.into(),
         exit_limit_price: PrecDec {
