@@ -40,12 +40,16 @@ fn create_amm_swap_msg(
         Some(last_op) => last_op.token_out.clone(),
         None => return Err(ContractError::SwapOperationsEmpty),
     };
+    let mut swap_steps = step.swap_steps.clone();
+    if let Some(first_step) = swap_steps.get_mut(0) {
+        first_step.amount = coin_in.amount.into();
+    }
     let swap_msg: CosmosMsg = MsgBatchSwap {
         creator: address,
         swap_type: SwapType::GivenIn.into(),
         max_amounts_in: vec![ProtoCoin(coin_in).into()],
         min_amounts_out: vec![ProtoCoin(Coin::new(1, token_out)).into()],
-        steps: step.swap_steps.clone(),
+        steps: swap_steps,
     }
     .into();
 
