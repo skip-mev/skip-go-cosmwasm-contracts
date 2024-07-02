@@ -904,12 +904,13 @@ dependencies = [
 [[package]]
 name = "neutron-sdk"
 version = "0.10.0"
-source = "git+https://github.com/neutron-org/neutron-sdk?branch=main#f45c35de07f102397447d168420c49fbcb19971d"
+source = "git+https://github.com/NicholasDotSol/neutron-sdk?branch=duality-cosmos-msg-support#2ae8b383daca0fd76e3b4148e0f4a31fa8198545"
 dependencies = [
  "bech32",
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
  "cosmwasm-std",
+ "osmosis-std-derive",
  "prost 0.12.6",
  "prost-types 0.12.6",
  "protobuf 3.5.0",
@@ -1272,9 +1273,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.118"
+version = "1.0.120"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d947f6b3163d8857ea16c4fa0dd4840d52f3041039a85decd46867eb1abef2e4"
+checksum = "4e0d21c9a8cae1235ad58a00c11cb40d4b1e5c784f1ef2c537876ed6ffd8b7c5"
 dependencies = [
  "itoa",
  "ryu",
@@ -1437,7 +1438,7 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "cw20 1.1.2",
- "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=main)",
+ "neutron-sdk 0.10.0 (git+https://github.com/NicholasDotSol/neutron-sdk?branch=duality-cosmos-msg-support)",
  "skip",
  "test-case",
  "thiserror",

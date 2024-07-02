@@ -3,24 +3,23 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg,
-    Decimal, Deps, DepsMut, Empty, Env, Int128, MessageInfo, QueryRequest, Response, StdError,
-    StdResult, Uint128, WasmMsg,
+    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg, CustomMsg, Decimal, Deps, DepsMut, Empty, Env, Int128, MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
-use neutron_sdk::bindings::dex::msg::DexMsg;
-use neutron_sdk::bindings::dex::msg::DexMsg::MultiHopSwap;
-use neutron_sdk::bindings::dex::query::DexQuery;
-use neutron_sdk::bindings::dex::types::{LimitOrderType, Liquidity, MultiHopRoute, PrecDec};
-use neutron_sdk::bindings::query::PageRequest;
 use neutron_sdk::bindings::{
-    dex::query::{
-        AllTickLiquidityResponse,
-        DexQuery::{EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll},
-        EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse,
+    dex::{
+        msg::{DexMsg, MultiHopSwapMsg, DexMsg::MultiHopSwap},
+        query::{
+            DexQuery, 
+            AllTickLiquidityResponse, 
+            EstimateMultiHopSwapResponse, 
+            EstimatePlaceLimitOrderResponse,
+            DexQuery::{EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll},
+        },
+        types::{LimitOrderType, Liquidity, MultiHopRoute, PrecDec},
     },
-    query::NeutronQuery,
+    query::{NeutronQuery, PageRequest},
 };
 use std::str::FromStr;
 
@@ -133,7 +132,7 @@ fn execute_swap(
     };
 
     //build duality Swap message
-    let swap_msg: CosmosMsg<DexMsg> = create_duality_swap_msg(&env, coin_in, operations)?;
+    let swap_msg: CosmosMsg = create_duality_swap_msg(&env, coin_in, operations)?;
 
     // Create the transfer funds back message
     let transfer_funds_back_msg = WasmMsg::Execute {
@@ -146,10 +145,11 @@ fn execute_swap(
     };
 
     Ok(Response::new()
-        .add_message(swap_msg)
+        .add_message(CosmosMsg::Custom(swap_msg))
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swap_and_transfer_back"))
 }
+// Function to convert CosmosMsg<DexMsg> to CosmosMsg<Empty>
 
 // Creates the duality swap message
 fn create_duality_swap_msg(
@@ -163,9 +163,9 @@ fn create_duality_swap_msg(
         Err(e) => return Err(e),
     };
 
-    // Create the duality multi hop swap message251093
-
-    let swap_msg = MultiHopSwap {
+    // Create the duality multi hop swap message
+    
+    let swap_msg: CosmosMsg = MultiHopSwapMsg {
         receiver: env.contract.address.to_string(),
         routes: vec![route],
         amount_in: coin_in.amount.into(),
@@ -173,14 +173,9 @@ fn create_duality_swap_msg(
             i: "0.00000001".to_string(),
         },
         pick_best_route: true,
-    };
+    }.into();
 
-    let cosmos_msg = match convert_to_cosmos_msg(swap_msg) {
-        Ok(response) => response,
-        Err(err) => return Err(ContractError::from(err)),
-    };
-
-    Ok(cosmos_msg)
+    Ok(swap_msg)
 }
 
 /////////////
@@ -489,13 +484,6 @@ fn int128_to_uint128(i: Int128) -> Result<Uint128, ContractError> {
         return Err(ContractError::ConversionError);
     }
     Ok(Uint128::from(value as u128))
-}
-
-// Implement the conversion
-pub fn convert_to_cosmos_msg(swap_msg: DexMsg) -> Result<CosmosMsg<Empty>, ContractError> {
-    let msg = CosmosMsg::Custom(swap_msg.into());
-
-    Ok(msg)
 }
 
 // Mock function to represent the Duality limit order query
