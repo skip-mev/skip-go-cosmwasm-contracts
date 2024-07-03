@@ -1,38 +1,19 @@
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg, CustomMsg, Decimal, Deps, DepsMut, Empty, Env, Int128, MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg
+    entry_point, to_json_binary, Addr, Coin, Uint128, WasmMsg
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    Addr, Coin,
-    ReplyOn::Success,
     SubMsg,
 };
-use cw2::set_contract_version;
-use cw_utils::one_coin;
-use neutron_sdk::bindings::{
-    dex::{
-        msg::{DexMsg, MultiHopSwapMsg, DexMsg::MultiHopSwap},
-        query::{
-            DexQuery, 
-            AllTickLiquidityResponse, 
-            EstimateMultiHopSwapResponse, 
-            EstimatePlaceLimitOrderResponse,
-            DexQuery::{EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll},
-        },
-        types::{LimitOrderType, Liquidity, MultiHopRoute, PrecDec},
-    },
-    query::{NeutronQuery, PageRequest},
-};
-use std::str::FromStr;
+use neutron_sdk::bindings::
+    dex::types::PrecDec;
+use neutron_sdk::stargate::dex::types::MultiHopSwapRequest;
 
-use skip::{
-    asset::Asset,
+use skip::
     swap::{
-        execute_transfer_funds_back, get_ask_denom_for_routes,
-        DualityInstatiateMsg as InstantiateMsg, ExecuteMsg, MigrateMsg, QueryMsg, Route,
-        SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
-    },
-};
+        ExecuteMsg, SwapOperation,
+    };
+
 use skip_api_swap_adapter_duality::{
     error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
@@ -82,7 +63,7 @@ struct Params {
                 id: 0,
                 msg: MultiHopSwapRequest {
                     sender: "swap_contract_address".to_string(),
-                    routes: vec!["os","uatom"]],
+                    routes: vec!["os","uatom"],
                     amount_in: Uint128::new(100),
                     exit_limit_price: PrecDec {
                         i: "0.00000001".to_string(),
@@ -134,16 +115,7 @@ struct Params {
                 id: 0,
                 msg: MultiHopSwapRequest {
                     sender: "swap_contract_address".to_string(),
-                    routes: vec![
-                        SwapAmountInRoute {
-                            pool_id: 1,
-                            token_out_denom: "uatom".to_string(),
-                        },
-                        SwapAmountInRoute {
-                            pool_id: 2,
-                            token_out_denom: "untrn".to_string(),
-                        }
-                    ],
+                    routes: vec!["os","uatom","untrn"],
                     amount_in: Uint128::new(100),
                     exit_limit_price: PrecDec {
                         i: "0.00000001".to_string(),
@@ -182,7 +154,7 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                msg: MultiHopSwapMsg {
+                msg: MultiHopSwapRequest {
                     sender: "swap_contract_address".to_string(),
                     routes: vec![],
                     amount_in: Uint128::new(100),
