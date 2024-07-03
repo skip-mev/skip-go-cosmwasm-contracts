@@ -20,7 +20,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-neutron-sdk = { package = "neutron-sdk", git = "https://github.com/NicholasDotSol/neutron-sdk", branch = "duality-cosmos-msg-support" }
+neutron-sdk = { package = "neutron-sdk", git = "https://github.com/neutron-org/neutron-sdk", branch = "main" }
 
 cosmwasm-schema  = { workspace = true }
 cosmwasm-std     = { workspace = true }

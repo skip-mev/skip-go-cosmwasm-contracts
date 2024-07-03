@@ -904,13 +904,12 @@ dependencies = [
 [[package]]
 name = "neutron-sdk"
 version = "0.10.0"
-source = "git+https://github.com/NicholasDotSol/neutron-sdk?branch=duality-cosmos-msg-support#2ae8b383daca0fd76e3b4148e0f4a31fa8198545"
+source = "git+https://github.com/neutron-org/neutron-sdk?branch=main#f45c35de07f102397447d168420c49fbcb19971d"
 dependencies = [
  "bech32",
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
  "cosmwasm-std",
- "osmosis-std-derive",
  "prost 0.12.6",
  "prost-types 0.12.6",
  "protobuf 3.5.0",
@@ -1438,7 +1437,7 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "cw20 1.1.2",
- "neutron-sdk 0.10.0 (git+https://github.com/NicholasDotSol/neutron-sdk?branch=duality-cosmos-msg-support)",
+ "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=main)",
  "skip",
  "test-case",
  "thiserror",

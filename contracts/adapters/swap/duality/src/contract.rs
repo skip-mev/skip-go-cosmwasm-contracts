@@ -9,7 +9,7 @@ use cw2::set_contract_version;
 use cw_utils::one_coin;
 use neutron_sdk::{bindings::{
     dex::{
-        msg::{DexMsg::{self, MultiHopSwap}, MultiHopSwapMsg},
+        msg::DexMsg::{self, MultiHopSwap},
         query::{
             AllTickLiquidityResponse, DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll}, EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse
         },
@@ -141,7 +141,7 @@ fn execute_swap(
     };
 
     Ok(Response::new()
-        .add_message(CosmosMsg::Custom(swap_msg))
+        .add_message(swap_msg)
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swap_and_transfer_back"))
 }
@@ -161,18 +161,18 @@ fn create_duality_swap_msg(
 
     // Create the duality multi hop swap message
 
-    let swap_msg: CosmosMsg = MultiHopSwapRequest {
+    let swap_msg: DexMsg = MultiHopSwap {
         receiver: env.contract.address.to_string(),
-        sender: env.contract.address.to_string(),
         routes: vec![route],
         amount_in: coin_in.amount.into(),
         exit_limit_price: PrecDec {
             i: "0.00000001".to_string(),
         },
         pick_best_route: true,
-    }.into();
+    };
 
-    Ok(swap_msg)
+    let swap_msg_cosmos = CosmosMsg::Stargate { type_url: (String::from("neutron.dex.MsgMultiHopSwap")), value: (to_json_binary(&swap_msg))?};
+    Ok(swap_msg_cosmos)
 }
 
 /////////////
