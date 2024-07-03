@@ -49,5 +49,5 @@ pub enum ContractError {
     SmartSwapUnsupported,
 
     #[error("Simulation Error. Unexpected output denom")]
-    smartSwapUnexpectedOut,
+    SmartSwapUnexpectedOut,
 }

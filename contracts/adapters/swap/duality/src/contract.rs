@@ -3,18 +3,16 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg, CustomMsg, Decimal, Deps, DepsMut, Empty, Env, Int128, MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg
+    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Int128, MessageInfo, QueryRequest, Response, StdError, Uint128, WasmMsg
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
-use neutron_sdk::proto_types::neutron::dex::MsgMultiHopSwap;
 use neutron_sdk::proto_types::neutron::dex::MultiHopRoute;
 
 use neutron_sdk::{bindings::{
     dex::{
-        msg::DexMsg::{self, MultiHopSwap},
         query::{
-            AllTickLiquidityResponse, DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll}, EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse
+            AllTickLiquidityResponse, DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder}, EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse
         },
         types::{LimitOrderType, Liquidity, MultiHopRoute as MHRoute, PrecDec},
     },
@@ -295,7 +293,7 @@ fn query_simulate_swap_exact_asset_in(
         creator: env.contract.address.to_string(),
         receiver: env.contract.address.to_string(),
         routes: vec![duality_multi_hop_swap_route],
-        amount_in: amount_in,
+        amount_in,
         exit_limit_price: PrecDec {
             i: "0.00000001".to_string(),
         },
@@ -335,7 +333,7 @@ fn query_simulate_swap_exact_asset_out(
     }
     let denom_in: String = first_op.denom_in.clone();
 
-    let mut coin_in_res = coin_out.amount.clone();
+    let mut coin_in_res = coin_out.amount;
 
     // iterate over the swap operations from last to first using taker limit orders with maxAmountOut for swaps.
     for swap_operation in swap_operations.iter().rev() {
@@ -415,10 +413,10 @@ fn query_simulate_smart_swap_exact_asset_in(
         return Err(ContractError::SmartSwapUnsupported)
     }
     let sim_asset_out = query_simulate_swap_exact_asset_in(deps, env, routes[0].offer_asset.clone(), routes[0].operations.clone())?;
-    if sim_asset_out.denom().to_string() == ask_denom {
-        return Ok(sim_asset_out)
+    if *sim_asset_out.denom() == ask_denom {
+        Ok(sim_asset_out)
     } else{
-        return Err(ContractError::smartSwapUnexpectedOut)
+        Err(ContractError::SmartSwapUnexpectedOut)
     }
 }
 fn query_simulate_smart_swap_exact_asset_in_with_metadata(
@@ -433,10 +431,10 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
         return Err(ContractError::SmartSwapUnsupported)
     }
     let responce = query_simulate_swap_exact_asset_in_with_metadata(deps,env,asset_in, routes[0].operations.clone(), include_spot_price)?;
-    if responce.asset_out.denom().to_string() == ask_denom {
-        return Ok(responce)
+    if *responce.asset_out.denom() == ask_denom {
+        Ok(responce)
     } else {
-        return Err(ContractError::smartSwapUnexpectedOut)
+        Err(ContractError::SmartSwapUnexpectedOut)
     }
 }
 
