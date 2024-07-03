@@ -9,7 +9,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
-use neutron_sdk::proto_types::neutron::dex::MultiHopRoute;
+use neutron_sdk::{bindings::msg::NeutronMsg, proto_types::neutron::dex::{MsgMultiHopSwap, MultiHopRoute}, stargate::aux::create_stargate_msg};
 
 use neutron_sdk::{
     bindings::{
@@ -23,7 +23,6 @@ use neutron_sdk::{
         },
         query::{NeutronQuery, PageRequest},
     },
-    stargate::dex::types::MultiHopSwapRequest,
 };
 
 use std::str::FromStr;
@@ -121,6 +120,8 @@ fn execute_swap(
     info: MessageInfo,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
+
+    // TEMP: disable caller check for easier testing
     // // Get entry point contract address from storage
     // let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
 
@@ -171,20 +172,16 @@ fn create_duality_swap_msg(
 
     // Create the duality multi hop swap message
 
-    let swap_msg: MultiHopSwapRequest = MultiHopSwapRequest {
-        sender: env.contract.address.to_string(),
+    let swap_msg  =  MsgMultiHopSwap{
+        creator:env.contract.address.to_string(),
         receiver: env.contract.address.to_string(),
-        routes: vec![route.hops],
+        routes: vec![route],
         amount_in: coin_in.amount.into(),
         exit_limit_price: String::from("0.00000001"),
         pick_best_route: true,
     };
 
-    let swap_msg_cosmos = CosmosMsg::Stargate {
-        type_url: (String::from("/neutron.dex.MsgMultiHopSwap")),
-        value: (to_json_binary(&swap_msg))?,
-    };
-    Ok(swap_msg_cosmos)
+    Ok(create_stargate_msg("/neutron.dex.MsgMultiHopSwap", swap_msg))
 }
 
 /////////////
