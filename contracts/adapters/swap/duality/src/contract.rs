@@ -7,13 +7,16 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
+use neutron_sdk::proto_types::neutron::dex::MsgMultiHopSwap;
+use neutron_sdk::proto_types::neutron::dex::MultiHopRoute;
+
 use neutron_sdk::{bindings::{
     dex::{
         msg::DexMsg::{self, MultiHopSwap},
         query::{
             AllTickLiquidityResponse, DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder, TickLiquidityAll}, EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse
         },
-        types::{LimitOrderType, Liquidity, MultiHopRoute, PrecDec},
+        types::{LimitOrderType, Liquidity, MultiHopRoute as MHRoute, PrecDec},
     },
     query::{NeutronQuery, PageRequest},
 }, stargate::dex::types::MultiHopSwapRequest};
@@ -161,17 +164,16 @@ fn create_duality_swap_msg(
 
     // Create the duality multi hop swap message
 
-    let swap_msg: DexMsg = MultiHopSwap {
+    let swap_msg: MultiHopSwapRequest = MultiHopSwapRequest {
+        sender: env.contract.address.to_string(),
         receiver: env.contract.address.to_string(),
-        routes: vec![route],
+        routes: vec![route.hops],
         amount_in: coin_in.amount.into(),
-        exit_limit_price: PrecDec {
-            i: "0.00000001".to_string(),
-        },
+        exit_limit_price:String::from("0.00000001"),
         pick_best_route: true,
     };
 
-    let swap_msg_cosmos = CosmosMsg::Stargate { type_url: (String::from("neutron.dex.MsgMultiHopSwap")), value: (to_json_binary(&swap_msg))?};
+    let swap_msg_cosmos = CosmosMsg::Stargate { type_url: (String::from("/neutron.dex.MsgMultiHopSwap")), value: (to_json_binary(&swap_msg))?};
     Ok(swap_msg_cosmos)
 }
 
@@ -277,8 +279,8 @@ fn query_simulate_swap_exact_asset_in(
 
     // Convert the swap operations to a duality multi hop route.
     // Returns error un unsucessful conversion
-    let duality_multi_hop_swap_route: MultiHopRoute =
-        match get_route_from_swap_operations(swap_operations) {
+    let duality_multi_hop_swap_route: MHRoute =
+        match get_route_from_swap_operations_for_query(swap_operations) {
             Ok(route) => route,
             Err(e) => return Err(e),
         };
@@ -468,6 +470,32 @@ pub fn get_route_from_swap_operations(
     Ok(MultiHopRoute { hops: route })
 }
 
+// multi-hop-swap routes are a string array of denoms to route through
+// with format [tokenA,tokenB,tokenC,tokenD]
+pub fn get_route_from_swap_operations_for_query(
+    swap_operations: Vec<SwapOperation>,
+) -> Result<MHRoute, ContractError> {
+    if swap_operations.is_empty() {
+        return Err(ContractError::SwapOperationsEmpty);
+    }
+
+    let mut route = vec![
+        swap_operations[0].denom_in.clone(),
+        swap_operations[0].denom_out.clone(),
+    ];
+    let mut last_denom_out = &swap_operations[0].denom_out;
+
+    for operation in swap_operations.iter().skip(1) {
+        if &operation.denom_in != last_denom_out {
+            return Err(ContractError::SwapOperationDenomMismatch);
+        }
+        route.push(operation.denom_out.clone());
+        last_denom_out = &operation.denom_out;
+    }
+
+    Ok(MHRoute { hops: route })
+}
+
 fn uint128_to_int128(u: Uint128) -> Result<Int128, ContractError> {
     let value = u.u128();
     if value > i128::MAX as u128 {
@@ -617,9 +645,9 @@ fn calculate_spot_price(
 }
 
 fn new_pair_id_str(token0: String, token1: String) -> String {
-    let tokens = vec![token0.clone(), token1.clone()];
+    let tokens = [token0.clone(), token1.clone()];
     if token1 < token0 {
         tokens.iter().rev();
     }
-    return tokens.join("<>");
+    tokens.join("<>")
 }
