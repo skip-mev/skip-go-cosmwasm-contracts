@@ -45,6 +45,7 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Re
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const MAX_SLIPPAGE_BASIS_POINTS: i64 = 2000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -516,22 +517,6 @@ fn perform_duality_limit_order_query(
     deps: Deps<NeutronQuery>,
     env: &Env,
 ) -> Result<Uint128, ContractError> {
-    let max_tick: i64 = 559680;
-    let min_tick: i64 = -559680;
-
-    // Since we are placing a fill-or-kill maker limit order and we are not price sensitive,
-    // we either use mintick or maxtick to place the limit order depending on swap direction.
-    // this will ensure that liimit order sees all possible liquidity as valid while still
-    // iterating over the best prices first using Duality's autoswap feature.
-    let index;
-    if swap_operation.denom_in > swap_operation.denom_out {
-        index = min_tick
-    } else if swap_operation.denom_in < swap_operation.denom_out {
-        index = max_tick
-    } else {
-        return Err(ContractError::SameSwapDenoms);
-    }
-
     // Create the bank query request for the DEX balance. We do this because simulations require a balance
     // and we don't have access to the sender's balance and the DEX should often have a sufficient balance.
     // This is a workaround untill we remove balance requirements for query.
@@ -561,14 +546,15 @@ fn perform_duality_limit_order_query(
         Ok(amount) => amount,
         Err(e) => return Err(e),
     };
-
+    let (_, cur_tick) = get_spot_price_and_tick(deps, &swap_operation.denom_in, &swap_operation.denom_out)?;
+    let tick_index_in_to_out = cur_tick + MAX_SLIPPAGE_BASIS_POINTS;
     // create the LimitOrder Message
     let query_msg = EstimatePlaceLimitOrder {
         creator: dex_module_address.clone().to_string(),
         receiver: env.contract.address.to_string(),
         token_in: swap_operation.denom_in.clone(),
         token_out: swap_operation.denom_out.clone(),
-        tick_index_in_to_out: index,
+        tick_index_in_to_out,
         amount_in: input_amount,
         order_type: LimitOrderType::FillOrKill,
         // expiration_time is only valid if order_type == GOOD_TIL_TIME.
@@ -587,43 +573,16 @@ fn perform_duality_limit_order_query(
     Ok(simulation_result.swap_in_coin.amount)
 }
 
-fn calculate_spot_price(
+fn calculate_spot_price_multi(
     deps: Deps<NeutronQuery>,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Decimal> {
     swap_operations.into_iter().try_fold(
         Decimal::one(),
         |curr_spot_price, swap_op| -> ContractResult<Decimal> {
-            let msg = DexQuery::TickLiquidityAll {
-                pair_id: new_pair_id_str(swap_op.denom_out.clone(), swap_op.denom_out),
-                token_in: swap_op.denom_in,
-                pagination: Some(PageRequest {
-                    key: Binary::from(Vec::new()),
-                    limit: 1,
-                    reverse: false,
-                    count_total: false,
-                    offset: 0,
-                }),
-            };
-            let tick_liq_resp: AllTickLiquidityResponse = deps.querier.query(&msg.into())?;
+            let (spot_price_decimal, _) =
+                get_spot_price_and_tick(deps, &swap_op.denom_in, &swap_op.denom_out)?;
 
-            let liq = &tick_liq_resp.tick_liquidity[0];
-
-            // Handle empty case
-            let spot_price: String;
-            match &liq.liquidity {
-                Liquidity::PoolReserves(reserves) => {
-                    spot_price = reserves.price_taker_to_maker.i.clone();
-                }
-                Liquidity::LimitOrderTranche(tranche) => {
-                    spot_price = tranche.price_taker_to_maker.i.clone();
-                }
-            }
-
-            // Convert spot_price to Decimal using its string representation
-            let spot_price_decimal = Decimal::from_str(&spot_price).map_err(|e| {
-                StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
-            })?;
             // make sure to invert the price result since the expected output is the inverse of how Duality calculates price
             let division_result = Decimal::one()
                 .checked_div(spot_price_decimal)
@@ -642,10 +601,50 @@ fn calculate_spot_price(
     )
 }
 
-fn new_pair_id_str(token0: String, token1: String) -> String {
-    let tokens = [token0.clone(), token1.clone()];
+fn new_pair_id_str(token0: &String, token1: &String) -> String {
+    let mut tokens = [token0.clone(), token1.clone()];
     if token1 < token0 {
-        tokens.iter().rev();
+        tokens.reverse();
     }
     tokens.join("<>")
+}
+
+fn get_spot_price_and_tick(
+    deps: Deps<NeutronQuery>,
+    token_in: &String,
+    token_out: &String,
+) -> ContractResult<(Decimal, i64)> {
+    let msg = DexQuery::TickLiquidityAll {
+        pair_id: new_pair_id_str(token_in, token_out),
+        token_in: token_in.to_string(),
+        pagination: Some(PageRequest {
+            key: Binary::from(Vec::new()),
+            limit: 1,
+            reverse: false,
+            count_total: false,
+            offset: 0,
+        }),
+    };
+    let tick_liq_resp: AllTickLiquidityResponse = deps.querier.query(&msg.into())?;
+
+    let liq = &tick_liq_resp.tick_liquidity[0];
+    let spot_price_str: String;
+    let tick_index: i64;
+    // Handle empty case
+    match &liq.liquidity {
+        Liquidity::PoolReserves(reserves) => {
+            spot_price_str = reserves.price_taker_to_maker.i.clone();
+            tick_index = reserves.key.tick_index_taker_to_maker;
+        }
+        Liquidity::LimitOrderTranche(tranche) => {
+            spot_price_str = tranche.price_taker_to_maker.i.clone();
+            tick_index = tranche.key.tick_index_taker_to_maker;
+        }
+    }
+
+    let spot_price_decimal = Decimal::from_str(&spot_price_str).map_err(|e| {
+        StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
+    })?;
+
+    Ok((spot_price_decimal, tick_index))
 }
