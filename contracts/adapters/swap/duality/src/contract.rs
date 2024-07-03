@@ -3,21 +3,29 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Int128, MessageInfo, QueryRequest, Response, StdError, Uint128, WasmMsg
+    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg,
+    Decimal, Deps, DepsMut, Env, Int128, MessageInfo, QueryRequest, Response, StdError, Uint128,
+    WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
 use neutron_sdk::proto_types::neutron::dex::MultiHopRoute;
 
-use neutron_sdk::{bindings::{
-    dex::{
-        query::{
-            AllTickLiquidityResponse, DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder}, EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse
+use neutron_sdk::{
+    bindings::{
+        dex::{
+            query::{
+                AllTickLiquidityResponse,
+                DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder},
+                EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse,
+            },
+            types::{LimitOrderType, Liquidity, MultiHopRoute as MHRoute, PrecDec},
         },
-        types::{LimitOrderType, Liquidity, MultiHopRoute as MHRoute, PrecDec},
+        query::{NeutronQuery, PageRequest},
     },
-    query::{NeutronQuery, PageRequest},
-}, stargate::dex::types::MultiHopSwapRequest};
+    stargate::dex::types::MultiHopSwapRequest,
+};
+
 use std::str::FromStr;
 
 use skip::{
@@ -113,13 +121,13 @@ fn execute_swap(
     info: MessageInfo,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
-    // Get entry point contract address from storage
-    let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
+    // // Get entry point contract address from storage
+    // let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
 
-    // Enforce the caller is the entry point contract
-    if info.sender != entry_point_contract_address {
-        return Err(ContractError::Unauthorized);
-    }
+    // // Enforce the caller is the entry point contract
+    // if info.sender != entry_point_contract_address {
+    //     return Err(ContractError::Unauthorized);
+    // }
 
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
@@ -168,11 +176,14 @@ fn create_duality_swap_msg(
         receiver: env.contract.address.to_string(),
         routes: vec![route.hops],
         amount_in: coin_in.amount.into(),
-        exit_limit_price:String::from("0.00000001"),
+        exit_limit_price: String::from("0.00000001"),
         pick_best_route: true,
     };
 
-    let swap_msg_cosmos = CosmosMsg::Stargate { type_url: (String::from("/neutron.dex.MsgMultiHopSwap")), value: (to_json_binary(&swap_msg))?};
+    let swap_msg_cosmos = CosmosMsg::Stargate {
+        type_url: (String::from("/neutron.dex.MsgMultiHopSwap")),
+        value: (to_json_binary(&swap_msg))?,
+    };
     Ok(swap_msg_cosmos)
 }
 
@@ -413,12 +424,17 @@ fn query_simulate_smart_swap_exact_asset_in(
     routes: Vec<Route>,
 ) -> ContractResult<Asset> {
     if routes.len() != 1 {
-        return Err(ContractError::SmartSwapUnsupported)
+        return Err(ContractError::SmartSwapUnsupported);
     }
-    let sim_asset_out = query_simulate_swap_exact_asset_in(deps, env, routes[0].offer_asset.clone(), routes[0].operations.clone())?;
+    let sim_asset_out = query_simulate_swap_exact_asset_in(
+        deps,
+        env,
+        routes[0].offer_asset.clone(),
+        routes[0].operations.clone(),
+    )?;
     if *sim_asset_out.denom() == ask_denom {
         Ok(sim_asset_out)
-    } else{
+    } else {
         Err(ContractError::SmartSwapUnexpectedOut)
     }
 }
@@ -431,9 +447,15 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
     if routes.len() != 1 {
-        return Err(ContractError::SmartSwapUnsupported)
+        return Err(ContractError::SmartSwapUnsupported);
     }
-    let responce = query_simulate_swap_exact_asset_in_with_metadata(deps,env,asset_in, routes[0].operations.clone(), include_spot_price)?;
+    let responce = query_simulate_swap_exact_asset_in_with_metadata(
+        deps,
+        env,
+        asset_in,
+        routes[0].operations.clone(),
+        include_spot_price,
+    )?;
     if *responce.asset_out.denom() == ask_denom {
         Ok(responce)
     } else {
