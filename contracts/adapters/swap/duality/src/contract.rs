@@ -289,9 +289,11 @@ fn query_simulate_swap_exact_asset_in(
         Err(e) => return Err(e),
     };
 
+    let dex_module_address: Addr = DEX_MODULE_ADDRESS.load(deps.storage)?;
     // Create the duality multi hop swap message
     let query_msg: neutron_sdk::bindings::dex::query::DexQuery = EstimateMultiHopSwap {
-        creator: env.contract.address.to_string(),
+        creator: dex_module_address.to_string(),
+        // Receiver cannot be the dex, it is blocked from receiving funds
         receiver: env.contract.address.to_string(),
         routes: vec![duality_multi_hop_swap_route],
         amount_in,
@@ -370,7 +372,7 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     };
 
     if include_spot_price {
-        response.spot_price = Some(calculate_spot_price(deps, swap_operations)?)
+        response.spot_price = Some(calculate_spot_price_multi(deps, swap_operations)?)
     }
 
     Ok(response)
@@ -395,7 +397,7 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
     };
 
     if include_spot_price {
-        response.spot_price = Some(calculate_spot_price(deps, swap_operations)?)
+        response.spot_price = Some(calculate_spot_price_multi(deps, swap_operations)?)
     }
 
     Ok(response)
@@ -642,9 +644,30 @@ fn get_spot_price_and_tick(
         }
     }
 
-    let spot_price_decimal = Decimal::from_str(&spot_price_str).map_err(|e| {
+    // Decimal::from fails if we supply more than 18 fractional digits
+    let trimmed_spot_price_str = trim_fractional_digits(&spot_price_str, 18);
+    let spot_price_decimal = Decimal::from_str(&trimmed_spot_price_str).map_err(|e| {
         StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
     })?;
 
+    // This is somewhat problematic. Maybe split up the function so we only get if  we actually need the decimal
+    if spot_price_decimal.is_zero() {
+        return Err(ContractError::Std(StdError::generic_err(format!("cannot parse price {}", spot_price_str))));
+    };
+
     Ok((spot_price_decimal, tick_index))
+}
+
+
+fn trim_fractional_digits(input: &str, digits: usize) -> String {
+    if let Some((integer_part, fractional_part)) = input.split_once('.') {
+        let trimmed_fractional_part = if fractional_part.len() > digits {
+            &fractional_part[..digits]
+        } else {
+            fractional_part
+        };
+        format!("{}.{}", integer_part, trimmed_fractional_part)
+    } else {
+        input.to_string() // If there is no fractional part, return the input as is
+    }
 }
