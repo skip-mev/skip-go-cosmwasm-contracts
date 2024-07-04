@@ -6,10 +6,10 @@ use cosmwasm_std::{
     entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg,
     Decimal, Deps, DepsMut, Env, Int128, MessageInfo, QueryRequest, Response, StdError, Uint128,
     WasmMsg,
-};
+}; 
 use cw2::set_contract_version;
-use cw_utils::one_coin; 
-use neutron_sdk_main::{
+use cw_utils::one_coin;
+use neutron_sdk::{
     bindings::{
         dex::{
             query::{
