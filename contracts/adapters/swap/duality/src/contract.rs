@@ -8,10 +8,8 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use cw2::set_contract_version;
-use cw_utils::one_coin;
-use neutron_sdk::{bindings::msg::NeutronMsg, proto_types::neutron::dex::{MsgMultiHopSwap, MultiHopRoute}, stargate::aux::create_stargate_msg};
-
-use neutron_sdk::{
+use cw_utils::one_coin; 
+use neutron_sdk_main::{
     bindings::{
         dex::{
             query::{
@@ -23,6 +21,8 @@ use neutron_sdk::{
         },
         query::{NeutronQuery, PageRequest},
     },
+    proto_types::neutron::dex::{MsgMultiHopSwap, MultiHopRoute},
+    stargate::aux::create_stargate_msg,
 };
 
 use std::str::FromStr;
@@ -177,7 +177,7 @@ fn create_duality_swap_msg(
         receiver: env.contract.address.to_string(),
         routes: vec![route],
         amount_in: coin_in.amount.into(),
-        exit_limit_price: String::from("0.00000001"),
+        exit_limit_price: String::from("000000000000000000000000000"),
         pick_best_route: true,
     };
 
@@ -306,7 +306,7 @@ fn query_simulate_swap_exact_asset_in(
         routes: vec![duality_multi_hop_swap_route],
         amount_in,
         exit_limit_price: PrecDec {
-            i: "0.00000001".to_string(),
+            i: "0.00000000000000000000000000".to_string(),
         },
         pick_best_route: true,
     };
@@ -523,13 +523,13 @@ fn uint128_to_int128(u: Uint128) -> Result<Int128, ContractError> {
     }
     Ok(Int128::from(value as i128))
 }
-fn int128_to_uint128(i: Int128) -> Result<Uint128, ContractError> {
-    let value = i.i128();
-    if value < 0 {
-        return Err(ContractError::ConversionError);
-    }
-    Ok(Uint128::from(value as u128))
-}
+// fn int128_to_uint128(i: Int128) -> Result<Uint128, ContractError> {
+//     let value = i.i128();
+//     if value < 0 {
+//         return Err(ContractError::ConversionError);
+//     }
+//     Ok(Uint128::from(value as u128))
+// }
 
 // Mock function to represent the Duality limit order query
 fn perform_duality_limit_order_query(
