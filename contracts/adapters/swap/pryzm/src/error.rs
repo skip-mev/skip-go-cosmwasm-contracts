@@ -38,4 +38,7 @@ pub enum ContractError {
 
     #[error("SubMsgResponse does not contain data")]
     MissingResponseData,
+
+    #[error("InvalidState: {msg:?}")]
+    InvalidState { msg: String },
 }

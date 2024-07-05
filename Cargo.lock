@@ -1092,9 +1092,9 @@ dependencies = [
 
 [[package]]
 name = "pryzm-std"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb936ea204bd596420d56b1a88eeead2349ea9f7640944bc474fe9cd91d9472c"
+checksum = "d9f30262f6c45bc128cb866a7c26f5ff9137e090eda1a29780eec48d32a2f51d"
 dependencies = [
  "chrono",
  "cosmwasm-std",

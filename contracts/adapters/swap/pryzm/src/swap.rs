@@ -1,13 +1,10 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, coin, Coin, CosmosMsg, StdResult, Uint128};
+use cosmwasm_std::{coin, Coin, CosmosMsg, StdResult, Uint128};
 use pryzm_std::types::pryzm::{
     amm::v1::{MsgBatchSwap, SwapStep, SwapType},
     icstaking::v1::MsgStake,
 };
-
-use skip::proto_coin::ProtoCoin;
-use skip::swap::SwapOperation;
-use pryzm_std::types::cosmos;
+use pryzm_std::types::cosmos::base::v1beta1::{Coin as CosmosCoin};
 
 use crate::error::ContractError;
 
@@ -23,32 +20,45 @@ pub enum SwapExecutionStep {
 }
 
 impl SwapExecutionStep {
-    pub fn to_cosmos_msg(&self, address: String, coin_in: Coin) -> Result<CosmosMsg, Err> {
+    pub fn to_cosmos_msg(self, address: String, coin_in: Coin) -> Result<CosmosMsg, ContractError> {
         match self {
-            SwapExecutionStep::Swap => create_amm_swap_msg(self, address, coin_in),
-            SwapExecutionStep::Stake => create_icstaking_stake_msg(self, address, coin_in),
+            SwapExecutionStep::Swap {swap_steps} =>
+                create_amm_swap_msg(swap_steps, address, coin_in),
+            SwapExecutionStep::Stake {host_chain_id, transfer_channel} =>
+                create_icstaking_stake_msg(host_chain_id, transfer_channel, address, coin_in),
+        }
+    }
+
+    pub fn get_return_denom(self) -> String {
+        return match self {
+            SwapExecutionStep::Swap {swap_steps} => {
+                swap_steps.last().unwrap().token_out.clone()
+            },
+            SwapExecutionStep::Stake {host_chain_id, transfer_channel: _ } => {
+                format!("c{}", host_chain_id)
+            },
         }
     }
 }
 
 fn create_amm_swap_msg(
-    step: SwapExecutionStep::Swap,
+    swap_steps: Vec<SwapStep>,
     address: String,
     coin_in: Coin,
-) -> Result<CosmosMsg, Err> {
-    let token_out = match step.swap_steps.last() {
+) -> Result<CosmosMsg, ContractError> {
+    let token_out = match swap_steps.last() {
         Some(last_op) => last_op.token_out.clone(),
         None => return Err(ContractError::SwapOperationsEmpty),
     };
-    let mut swap_steps = step.swap_steps.clone();
+    let mut swap_steps = swap_steps.clone();
     if let Some(first_step) = swap_steps.get_mut(0) {
-        first_step.amount = coin_in.amount.into();
+        first_step.amount = coin_in.amount.to_string().into();
     }
     let swap_msg: CosmosMsg = MsgBatchSwap {
         creator: address,
         swap_type: SwapType::GivenIn.into(),
-        max_amounts_in: vec![ProtoCoin(coin_in).into()],
-        min_amounts_out: vec![ProtoCoin(Coin::new(1, token_out)).into()],
+        max_amounts_in: vec![format_coin(coin_in)],
+        min_amounts_out: vec![format_coin(Coin::new(1, token_out))],
         steps: swap_steps,
     }
     .into();
@@ -57,22 +67,30 @@ fn create_amm_swap_msg(
 }
 
 fn create_icstaking_stake_msg(
-    step: SwapExecutionStep::Stake,
+    host_chain_id: String,
+    transfer_channel: String,
     address: String,
     coin_in: Coin,
-) -> Result<CosmosMsg, Err> {
+) -> Result<CosmosMsg, ContractError> {
     let msg: CosmosMsg = MsgStake {
         creator: address,
-        host_chain: step.host_chain_id.clone(),
-        transfer_channel: step.transfer_channel.clone(),
-        amount: ProtoCoin(coin_in).into(),
+        host_chain: host_chain_id,
+        transfer_channel,
+        amount: coin_in.amount.to_string().into(),
     }
     .into();
 
     Ok(msg)
 }
 
-pub fn parse_coin(c: cosmos::base::v1beta1::Coin) -> StdResult<Coin> {
+pub fn parse_coin(c: CosmosCoin) -> StdResult<Coin> {
     let p: Uint128 = c.clone().amount.parse().unwrap();
     Ok(coin(p.u128(), c.clone().denom))
+}
+
+pub fn format_coin(c: Coin) -> CosmosCoin {
+    CosmosCoin {
+        amount: c.amount.to_string(),
+        denom: c.denom,
+    }
 }

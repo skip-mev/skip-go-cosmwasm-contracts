@@ -41,7 +41,7 @@ neutron-proto    = { version = "0.1.1", default-features = false, features = ["c
 neutron-sdk      = "0.8"
 osmosis-std      = "0.15.3"
 prost            = "0.11"
-pryzm-std        = "0.1.4"
+pryzm-std        = "0.1.7"
 serde-cw-value   = "0.7.0"
 serde-json-wasm  = "0.5.1"
 skip             = { version = "0.3.0", path = "./packages/skip" }
