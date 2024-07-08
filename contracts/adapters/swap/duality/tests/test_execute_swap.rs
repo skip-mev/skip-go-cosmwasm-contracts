@@ -1,14 +1,15 @@
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, Coin, Uint128, WasmMsg
+    entry_point, to_json_binary, ReplyOn::Never, Addr, Coin, CosmosMsg, Uint128, WasmMsg
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     SubMsg,
 };
-use neutron_sdk::bindings::
-    dex::types::PrecDec;
-use neutron_sdk::stargate::dex::types::MultiHopSwapRequest;
-
+use neutron_sdk::{
+    bindings::query::PageRequest,
+    proto_types::neutron::dex::{MsgMultiHopSwap, MultiHopRoute},
+    stargate::{aux::create_stargate_msg, dex::query::{get_estimate_multi_hop_swap, get_estimate_place_limit_order, get_tick_liquidity_all}}
+};
 use skip::
     swap::{
         ExecuteMsg, SwapOperation,
@@ -26,7 +27,7 @@ Test Cases:
 Expect Success
     - One Swap Operation
     - Multiple Swap Operations
-    - No Swap Operations (This is prevented in the entry point contract; and will fail on Osmosis module if attempted)
+    - No Swap Operations (This is prevented in the entry point contract; and will fail on Duality module if attempted)
 
 Expect Error
     - Unauthorized Caller (Only the stored entry point contract can call this function)
@@ -61,15 +62,14 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                msg: MultiHopSwapRequest {
-                    sender: "swap_contract_address".to_string(),
-                    routes: vec!["os","uatom"],
-                    amount_in: Uint128::new(100),
-                    exit_limit_price: PrecDec {
-                        i: "0.00000001".to_string(),
-                    },
+                msg: get_multi_hop_msg(MsgMultiHopSwap {
+                    creator: "swap_contract_address".to_string(),
+                    receiver: "swap_contract_address".to_string(),
+                    routes: vec![MultiHopRoute {hops: vec![String::from("os"),String::from("uatom")]}],
+                    amount_in: String::from("100"),
+                    exit_limit_price: String::from("000000000000000000000000001"),
                     pick_best_route: true,
-                }
+                })?
                 .into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -113,15 +113,14 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                msg: MultiHopSwapRequest {
-                    sender: "swap_contract_address".to_string(),
-                    routes: vec!["os","uatom","untrn"],
-                    amount_in: Uint128::new(100),
-                    exit_limit_price: PrecDec {
-                        i: "0.00000001".to_string(),
-                    },
+                msg: get_multi_hop_msg(MsgMultiHopSwap {
+                    creator: "swap_contract_address".to_string(),
+                    receiver: "swap_contract_address".to_string(),
+                    routes: vec![MultiHopRoute {hops: vec![String::from("os"),String::from("uatom"), String::from("untrn")]}],
+                    amount_in: String::from("100"),
+                    exit_limit_price: String::from("000000000000000000000000001"),
                     pick_best_route: true,
-                }
+                })?
                 .into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -154,15 +153,15 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                msg: MultiHopSwapRequest {
-                    sender: "swap_contract_address".to_string(),
-                    routes: vec![],
-                    amount_in: Uint128::new(100),
-                    exit_limit_price: PrecDec {
-                        i: "0.00000001".to_string(),
-                    },
+                msg: get_multi_hop_msg(MsgMultiHopSwap {
+                    creator: "swap_contract_address".to_string(),
+                    receiver: "swap_contract_address".to_string(),
+                    routes: vec![MultiHopRoute {hops: vec![]}],
+                    amount_in: String::from("100"),
+                    exit_limit_price: String::from("000000000000000000000000001"),
                     pick_best_route: true,
-                }.into(),
+                })?
+                .into(),
                 gas_limit: None,
                 reply_on: Never,
             },
@@ -285,4 +284,8 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     }
 
     Ok(())
+}
+
+fn get_multi_hop_msg(msg: MsgMultiHopSwap) -> ContractResult<CosmosMsg> {
+    Ok(create_stargate_msg("/neutron.dex.MsgMultiHopSwap", msg))
 }

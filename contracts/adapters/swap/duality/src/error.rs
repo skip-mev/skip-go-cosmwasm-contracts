@@ -50,4 +50,10 @@ pub enum ContractError {
 
     #[error("Simulation Error. Unexpected output denom")]
     SmartSwapUnexpectedOut,
+
+    #[error("Simulation Error. Not Enough Liquidity")]
+    NoLiquidityToParse,
+
+    #[error("Unsupported Price. Price is too small, truncating either causes zero price or too large price discrepancy")]
+    PriceTruncateError,
 }

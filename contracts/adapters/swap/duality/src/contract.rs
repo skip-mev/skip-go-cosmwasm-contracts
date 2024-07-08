@@ -6,23 +6,23 @@ use cosmwasm_std::{
     entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg,
     Decimal, Deps, DepsMut, Env, Int128, MessageInfo, QueryRequest, Response, StdError, Uint128,
     WasmMsg,
-}; 
+};
 use cw2::set_contract_version;
 use cw_utils::one_coin;
+use neutron_sdk::stargate::dex::types::{
+    AllTickLiquidityRequest, AllTickLiquidityResponse, EstimateMultiHopSwapRequest,
+    EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderRequest, EstimatePlaceLimitOrderResponse,
+    LimitOrderType, TickLiquidity::LimitOrderTranche, TickLiquidity::PoolReserves,
+};
 use neutron_sdk::{
-    bindings::{
-        dex::{
-            query::{
-                AllTickLiquidityResponse,
-                DexQuery::{self, EstimateMultiHopSwap, EstimatePlaceLimitOrder},
-                EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderResponse,
-            },
-            types::{LimitOrderType, Liquidity, MultiHopRoute as MHRoute, PrecDec},
-        },
-        query::{NeutronQuery, PageRequest},
-    },
+    bindings::query::PageRequest,
     proto_types::neutron::dex::{MsgMultiHopSwap, MultiHopRoute},
-    stargate::aux::create_stargate_msg,
+    stargate::{
+        aux::create_stargate_msg,
+        dex::query::{
+            get_estimate_multi_hop_swap, get_estimate_place_limit_order, get_tick_liquidity_all,
+        },
+    },
 };
 
 use std::str::FromStr;
@@ -120,15 +120,13 @@ fn execute_swap(
     info: MessageInfo,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
+    // Get entry point contract address from storage
+    let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
 
-    // TEMP: disable caller check for easier testing
-    // // Get entry point contract address from storage
-    // let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
-
-    // // Enforce the caller is the entry point contract
-    // if info.sender != entry_point_contract_address {
-    //     return Err(ContractError::Unauthorized);
-    // }
+    // Enforce the caller is the entry point contract
+    if info.sender != entry_point_contract_address {
+        return Err(ContractError::Unauthorized);
+    }
 
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
@@ -156,7 +154,6 @@ fn execute_swap(
         .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swap_and_transfer_back"))
 }
-// Function to convert CosmosMsg<DexMsg> to CosmosMsg<Empty>
 
 // Creates the duality swap message
 fn create_duality_swap_msg(
@@ -171,17 +168,19 @@ fn create_duality_swap_msg(
     };
 
     // Create the duality multi hop swap message
-
-    let swap_msg  =  MsgMultiHopSwap{
-        creator:env.contract.address.to_string(),
+    let swap_msg = MsgMultiHopSwap {
+        creator: env.contract.address.to_string(),
         receiver: env.contract.address.to_string(),
         routes: vec![route],
         amount_in: coin_in.amount.into(),
-        exit_limit_price: String::from("000000000000000000000000000"),
+        exit_limit_price: String::from("000000000000000000000000001"),
         pick_best_route: true,
     };
 
-    Ok(create_stargate_msg("/neutron.dex.MsgMultiHopSwap", swap_msg))
+    Ok(create_stargate_msg(
+        "/neutron.dex.MsgMultiHopSwap",
+        swap_msg,
+    ))
 }
 
 /////////////
@@ -189,7 +188,7 @@ fn create_duality_swap_msg(
 /////////////
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps<NeutronQuery>, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
         QueryMsg::SimulateSwapExactAssetIn {
             asset_in,
@@ -259,7 +258,7 @@ pub fn query(deps: Deps<NeutronQuery>, _env: Env, msg: QueryMsg) -> ContractResu
 }
 
 fn query_simulate_swap_exact_asset_in(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     env: Env,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
@@ -286,33 +285,35 @@ fn query_simulate_swap_exact_asset_in(
 
     // Convert the swap operations to a duality multi hop route.
     // Returns error un unsucessful conversion
-    let duality_multi_hop_swap_route: MHRoute =
+    let duality_multi_hop_swap_route: MultiHopRoute =
         match get_route_from_swap_operations_for_query(swap_operations) {
             Ok(route) => route,
             Err(e) => return Err(e),
         };
 
+    // unfortunate type conversion. should't be an issue for normal people amounts
     let amount_in: Int128 = match uint128_to_int128(coin_in.amount) {
         Ok(amount) => amount,
         Err(e) => return Err(e),
     };
 
     let dex_module_address: Addr = DEX_MODULE_ADDRESS.load(deps.storage)?;
-    // Create the duality multi hop swap message
-    let query_msg: neutron_sdk::bindings::dex::query::DexQuery = EstimateMultiHopSwap {
+
+    // Create the duality multi hop swap query
+    let query_msg: EstimateMultiHopSwapRequest = EstimateMultiHopSwapRequest {
+        // creator is the DEX for the query as it will usually have sufficient balance.
+        // this balance requirement will de depricated soon.
         creator: dex_module_address.to_string(),
         // Receiver cannot be the dex, it is blocked from receiving funds
         receiver: env.contract.address.to_string(),
-        routes: vec![duality_multi_hop_swap_route],
-        amount_in,
-        exit_limit_price: PrecDec {
-            i: "0.00000000000000000000000000".to_string(),
-        },
+        routes: vec![duality_multi_hop_swap_route.hops],
+        amount_in: amount_in.to_string(),
+        exit_limit_price: String::from("000000000000000000000000001"),
         pick_best_route: true,
     };
 
-    let simulation_result: EstimateMultiHopSwapResponse = deps.querier.query(&query_msg.into())?;
-
+    let simulation_result: EstimateMultiHopSwapResponse =
+        get_estimate_multi_hop_swap(deps, query_msg)?;
     // Return the asset out
     Ok(Coin {
         denom: denom_out,
@@ -322,7 +323,7 @@ fn query_simulate_swap_exact_asset_in(
 }
 
 fn query_simulate_swap_exact_asset_out(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     env: Env,
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
@@ -344,11 +345,11 @@ fn query_simulate_swap_exact_asset_out(
     }
     let denom_in: String = first_op.denom_in.clone();
 
-    let mut coin_in_res = coin_out.amount;
+    let mut coin_in_res: Uint128 = coin_out.amount;
 
     // iterate over the swap operations from last to first using taker limit orders with maxAmountOut for swaps.
     for swap_operation in swap_operations.iter().rev() {
-        // we use coin_in_res as the maxAmountOut on each querry. This will lead to the dinal iunput required to get the
+        // we use coin_in_res as the maxAmountOut on each querry. This will lead to the final iunput required to get the
         // last output after all iterations are finished
         coin_in_res = perform_duality_limit_order_query(coin_in_res, swap_operation, deps, &env)?;
     }
@@ -359,17 +360,17 @@ fn query_simulate_swap_exact_asset_out(
         amount: coin_in_res,
     }
     .into())
-    // convert the swap route to a
 }
 
+// same as query_simulate_swap_exact_asset_in but also returns a spot price if required
 fn query_simulate_swap_exact_asset_in_with_metadata(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     env: Env,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
-    let mut response = SimulateSwapExactAssetInResponse {
+    let mut response: SimulateSwapExactAssetInResponse = SimulateSwapExactAssetInResponse {
         asset_out: query_simulate_swap_exact_asset_in(
             deps,
             env,
@@ -385,16 +386,15 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
 
     Ok(response)
 }
-
-// Queries the osmosis poolmanager module to simulate a swap exact amount out with metadata
+// same as query_simulate_swap_exact_asset_out but also returns a spot price if required
 fn query_simulate_swap_exact_asset_out_with_metadata(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     env: Env,
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetOutResponse> {
-    let mut response = SimulateSwapExactAssetOutResponse {
+    let mut response: SimulateSwapExactAssetOutResponse = SimulateSwapExactAssetOutResponse {
         asset_in: query_simulate_swap_exact_asset_out(
             deps,
             env,
@@ -414,8 +414,12 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
 ///////////////////
 /// UNSUPPORTED ///
 ///////////////////
+// Smart swap is not supported since it cannot happen atomically right now.
+// These functions can be used as long as routes is of length 1.
+// This effectively makes them the same as their non-smart counterparts:
+// "query_simulate_swap_exact_asset_in" and "query_simulate_swap_exact_asset_out"
 fn query_simulate_smart_swap_exact_asset_in(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     env: Env,
     ask_denom: String,
     routes: Vec<Route>,
@@ -436,7 +440,7 @@ fn query_simulate_smart_swap_exact_asset_in(
     }
 }
 fn query_simulate_smart_swap_exact_asset_in_with_metadata(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     env: Env,
     asset_in: Asset,
     ask_denom: String,
@@ -494,7 +498,7 @@ pub fn get_route_from_swap_operations(
 // with format [tokenA,tokenB,tokenC,tokenD]
 pub fn get_route_from_swap_operations_for_query(
     swap_operations: Vec<SwapOperation>,
-) -> Result<MHRoute, ContractError> {
+) -> Result<MultiHopRoute, ContractError> {
     if swap_operations.is_empty() {
         return Err(ContractError::SwapOperationsEmpty);
     }
@@ -513,7 +517,7 @@ pub fn get_route_from_swap_operations_for_query(
         last_denom_out = &operation.denom_out;
     }
 
-    Ok(MHRoute { hops: route })
+    Ok(MultiHopRoute { hops: route })
 }
 
 fn uint128_to_int128(u: Uint128) -> Result<Int128, ContractError> {
@@ -523,24 +527,17 @@ fn uint128_to_int128(u: Uint128) -> Result<Int128, ContractError> {
     }
     Ok(Int128::from(value as i128))
 }
-// fn int128_to_uint128(i: Int128) -> Result<Uint128, ContractError> {
-//     let value = i.i128();
-//     if value < 0 {
-//         return Err(ContractError::ConversionError);
-//     }
-//     Ok(Uint128::from(value as u128))
-// }
 
 // Mock function to represent the Duality limit order query
 fn perform_duality_limit_order_query(
     amount_out: Uint128,
     swap_operation: &SwapOperation,
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     env: &Env,
 ) -> Result<Uint128, ContractError> {
     // Create the bank query request for the DEX balance. We do this because simulations require a balance
-    // and we don't have access to the sender's balance and the DEX should often have a sufficient balance.
-    // This is a workaround untill we remove balance requirements for query.
+    // and we don't have access to the sender's balance. The DEX should often have a sufficient balance.
+    // This is a temporary workaround untill we remove balance requirements for query.
     let dex_module_address: Addr = DEX_MODULE_ADDRESS.load(deps.storage)?;
 
     let dex_balance_request = QueryRequest::Bank(BankQuery::Balance {
@@ -567,42 +564,42 @@ fn perform_duality_limit_order_query(
         Ok(amount) => amount,
         Err(e) => return Err(e),
     };
-    let (_, cur_tick) = get_spot_price_and_tick(deps, &swap_operation.denom_in, &swap_operation.denom_out)?;
+
+    // get the tick index
+    let (_, cur_tick) =
+        get_spot_price_and_tick(deps, &swap_operation.denom_out, &swap_operation.denom_in)?;
+    // add some safe but arbitrary slippage to satisfy some dex internals
     let tick_index_in_to_out = cur_tick + MAX_SLIPPAGE_BASIS_POINTS;
     // create the LimitOrder Message
-    let query_msg = EstimatePlaceLimitOrder {
+    let query_msg = EstimatePlaceLimitOrderRequest {
         creator: dex_module_address.clone().to_string(),
         receiver: env.contract.address.to_string(),
         token_in: swap_operation.denom_in.clone(),
         token_out: swap_operation.denom_out.clone(),
         tick_index_in_to_out,
-        amount_in: input_amount,
+        amount_in: input_amount.to_string(),
         order_type: LimitOrderType::FillOrKill,
         // expiration_time is only valid if order_type == GOOD_TIL_TIME.
         expiration_time: None,
-        max_amount_out: Some(max_out),
+        max_amount_out: Some(max_out.to_string()),
     };
 
     // Get the result of the simulation
     let simulation_result: EstimatePlaceLimitOrderResponse =
-        match deps.querier.query(&query_msg.into()) {
-            Ok(result) => result,
-            Err(err) => return Err(ContractError::from(err)),
-        };
-
+        get_estimate_place_limit_order(deps, query_msg)?;
     // Return the input amount needed to yeild the given output amount (max_out).
     Ok(simulation_result.swap_in_coin.amount)
 }
 
 fn calculate_spot_price_multi(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Decimal> {
     swap_operations.into_iter().try_fold(
         Decimal::one(),
         |curr_spot_price, swap_op| -> ContractResult<Decimal> {
             let (spot_price_decimal, _) =
-                get_spot_price_and_tick(deps, &swap_op.denom_in, &swap_op.denom_out)?;
+                get_spot_price_and_tick(deps, &swap_op.denom_out, &swap_op.denom_in)?;
 
             // make sure to invert the price result since the expected output is the inverse of how Duality calculates price
             let division_result = Decimal::one()
@@ -631,11 +628,11 @@ fn new_pair_id_str(token0: &String, token1: &String) -> String {
 }
 
 fn get_spot_price_and_tick(
-    deps: Deps<NeutronQuery>,
+    deps: Deps,
     token_in: &String,
     token_out: &String,
 ) -> ContractResult<(Decimal, i64)> {
-    let msg = DexQuery::TickLiquidityAll {
+    let query_msg = AllTickLiquidityRequest {
         pair_id: new_pair_id_str(token_in, token_out),
         token_in: token_in.to_string(),
         pagination: Some(PageRequest {
@@ -646,47 +643,102 @@ fn get_spot_price_and_tick(
             offset: 0,
         }),
     };
-    let tick_liq_resp: AllTickLiquidityResponse = deps.querier.query(&msg.into())?;
+
+    let tick_liq_resp: AllTickLiquidityResponse = get_tick_liquidity_all(deps, query_msg.into())?;
+
+    if tick_liq_resp.tick_liquidity.len() == 0 {
+        return Err(ContractError::NoLiquidityToParse);
+    }
 
     let liq = &tick_liq_resp.tick_liquidity[0];
+
     let spot_price_str: String;
     let tick_index: i64;
     // Handle empty case
-    match &liq.liquidity {
-        Liquidity::PoolReserves(reserves) => {
-            spot_price_str = reserves.price_taker_to_maker.i.clone();
-            tick_index = reserves.key.tick_index_taker_to_maker;
+    match &liq {
+        PoolReserves(reserves) => {
+            spot_price_str = reserves.price_taker_to_maker.clone();
+            tick_index = reserves.key.tick_index_taker_to_maker.i64();
         }
-        Liquidity::LimitOrderTranche(tranche) => {
-            spot_price_str = tranche.price_taker_to_maker.i.clone();
-            tick_index = tranche.key.tick_index_taker_to_maker;
+        LimitOrderTranche(tranche) => {
+            spot_price_str = tranche.price_taker_to_maker.clone();
+            tick_index = tranche.key.tick_index_taker_to_maker.i64();
         }
     }
 
-    // Decimal::from fails if we supply more than 18 fractional digits
-    let trimmed_spot_price_str = trim_fractional_digits(&spot_price_str, 18);
-    let spot_price_decimal = Decimal::from_str(&trimmed_spot_price_str).map_err(|e| {
-        StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
-    })?;
+    // Decimal::from fails if we supply more than 18 fractional digits.
+    // Our prices can be much more persise than the 18 ddigit allowance here so a good number of
+    // prices will not be supported.
+    let spot_price_decimal: Decimal = parse_and_validate_decimal(&spot_price_str)?;
 
-    // This is somewhat problematic. Maybe split up the function so we only get if  we actually need the decimal
+    // This is somewhat problematic. Maybe split up the function so we only get if we actually need the decimal
     if spot_price_decimal.is_zero() {
-        return Err(ContractError::Std(StdError::generic_err(format!("cannot parse price {}", spot_price_str))));
+        return Err(ContractError::PriceTruncateError);
     };
 
     Ok((spot_price_decimal, tick_index))
 }
 
+fn parse_and_validate_decimal(input: &str) -> ContractResult<Decimal> {
+    // find position of decinal point
+    if let Some(pos) = input.find('.') {
+        // get only fractional and integer parts
+        let fractional_part_full = &input[pos + 1..];
+        let integer_part = &input[..pos];
+        // only perform this logic if there are more than 18 trailling decimals points
+        if fractional_part_full.len() > 18 {
+            // if the 19th digit is > 5 round up.
+            let round_up = fractional_part_full
+                .chars()
+                .nth(18)
+                .unwrap()
+                .to_digit(10)
+                .unwrap()
+                >= 5;
 
-fn trim_fractional_digits(input: &str, digits: usize) -> String {
-    if let Some((integer_part, fractional_part)) = input.split_once('.') {
-        let trimmed_fractional_part = if fractional_part.len() > digits {
-            &fractional_part[..digits]
-        } else {
-            fractional_part
-        };
-        format!("{}.{}", integer_part, trimmed_fractional_part)
-    } else {
-        input.to_string() // If there is no fractional part, return the input as is
+            // Create a string with 18 decimal places from input
+            let fractional_part_truncated = format!("{}", &fractional_part_full[..18]);
+            let truncated_str_full = format!("{}.{}", integer_part, &fractional_part_truncated);
+            let mut decimal = Decimal::from_str(&truncated_str_full).map_err(|e| {
+                StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
+            })?;
+
+            // if rounding up is needed add smallest decimal value
+            if round_up {
+                decimal += Decimal::from_str("0.000000000000000001").unwrap();
+            }
+
+            // we only check for deviation from original value if numerator (integer_value) is 0. Otherwise cutting least significant digits
+            // will have a negligible price impact.
+            let integer_value = Decimal::from_str(&integer_part).map_err(|e| {
+                StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
+            })?;
+            if (integer_value == Decimal::zero()) {
+                // create decimals from the decimal points trailling the 0 to compare.
+                let fractional_original =
+                    Decimal::from_str(&fractional_part_full).map_err(|e| {
+                        StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
+                    })?;
+                let fractional_truncated =
+                    Decimal::from_str(&fractional_part_truncated).map_err(|e| {
+                        StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
+                    })?;
+                // error if truncating caused more than a 1% price difference
+                let diff: Decimal = fractional_original.abs_diff(fractional_truncated);
+                let pct_diff: Decimal = diff.checked_div(fractional_original).map_err(|e| {
+                    StdError::generic_err(format!("Failed to perform price division: {}", e))
+                })?;
+                if pct_diff > Decimal::percent(1) {
+                    return Err(ContractError::PriceTruncateError);
+                }
+                return Ok(decimal);
+            }
+        }
     }
+
+    // If no rounding is needed, parse the original input
+    let spot_price = Decimal::from_str(input).map_err(|e| {
+        StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
+    })?;
+    return Ok(spot_price);
 }
