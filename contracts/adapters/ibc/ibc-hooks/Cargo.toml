@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-ibc-adapter-ibc-hooks"
+name          = "skip-go-ibc-adapter-ibc-hooks"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

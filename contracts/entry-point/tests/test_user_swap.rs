@@ -18,7 +18,7 @@ use skip::{
         SwapExactAssetOut, SwapOperation,
     },
 };
-use skip_api_entry_point::{error::ContractError, state::SWAP_VENUE_MAP};
+use skip_go_entry_point::{error::ContractError, state::SWAP_VENUE_MAP};
 use test_case::test_case;
 
 /*
@@ -1230,7 +1230,7 @@ fn test_execute_user_swap(params: Params) {
         .unwrap();
 
     // Call execute_swap_and_action with the given test case params
-    let res = skip_api_entry_point::contract::execute(
+    let res = skip_go_entry_point::contract::execute(
         deps.as_mut(),
         env,
         info,

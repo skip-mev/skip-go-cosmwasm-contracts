@@ -5,7 +5,7 @@ use cosmwasm_std::{
     SubMsg, Uint128, WasmMsg,
 };
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_api_swap_adapter_dexter::{
+use skip_go_swap_adapter_dexter::{
     error::ContractResult,
     state::{DEXTER_ROUTER_ADDRESS, DEXTER_VAULT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
@@ -302,7 +302,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     DEXTER_ROUTER_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("dexter_router"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_dexter::contract::execute(
+    let res = skip_go_swap_adapter_dexter::contract::execute(
         deps.as_mut(),
         env,
         info,

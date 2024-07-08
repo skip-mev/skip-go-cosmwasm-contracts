@@ -20,7 +20,7 @@ use skip::{
         SwapExactAssetOut, SwapOperation,
     },
 };
-use skip_api_entry_point::{
+use skip_go_entry_point::{
     error::ContractError,
     state::{IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT, SWAP_VENUE_MAP},
 };
@@ -1911,7 +1911,7 @@ fn test_execute_swap_and_action(params: Params) {
         .unwrap();
 
     // Call execute_swap_and_action with the given test case params
-    let res = skip_api_entry_point::contract::execute(
+    let res = skip_go_entry_point::contract::execute(
         deps.as_mut(),
         env,
         info,

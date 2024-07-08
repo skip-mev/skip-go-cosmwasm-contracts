@@ -8,7 +8,7 @@ use cosmwasm_std::{
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_api_swap_adapter_white_whale::error::{ContractError, ContractResult};
+use skip_go_swap_adapter_white_whale::error::{ContractError, ContractResult};
 use test_case::test_case;
 use white_whale_std::pool_network::{
     asset::{Asset as WhiteWhaleAsset, AssetInfo},
@@ -192,7 +192,7 @@ fn test_execute_white_whale_pool_swap(params: Params) -> ContractResult<()> {
     let info = mock_info(&params.caller, &[]);
 
     // Call execute_white_whale_pool_swap with the given test parameters
-    let res = skip_api_swap_adapter_white_whale::contract::execute(
+    let res = skip_go_swap_adapter_white_whale::contract::execute(
         deps.as_mut(),
         env,
         info,
