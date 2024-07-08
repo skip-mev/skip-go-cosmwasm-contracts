@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-astroport"
+name          = "skip-go-swap-adapter-astroport"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

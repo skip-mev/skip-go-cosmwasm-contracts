@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-hallswap"
+name          = "skip-go-swap-adapter-hallswap"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

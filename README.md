@@ -1,12 +1,12 @@
 ![Skip Swap Swirl](assets/skip_swirl.png "Skipping, Swapping, and Swirling")
 
-# Skip API Contracts
+# Skip Go CosmWasm Contracts
 
-The contracts in this repository are used in [Skip API](https://api-swagger.skip.money/) to enable any-to-any swaps as part of multi-chain workflows.
+The contracts in this repository are used in [Skip Go API](https://docs.skip.build) to enable any-to-any swaps as part of multi-chain workflows.
 
-Skip API is a unified REST API + SDK that helps developers create more seamless cross-chain experiences for their end users with IBC [(Inter-Blockchain Communication protocol)](https://ibcprotocol.dev/). 
+Skip Go is a unified REST API, Widget, and Core Package that helps developers create more seamless cross-chain experiences for their end users with IBC [(Inter-Blockchain Communication protocol)](https://ibcprotocol.dev/). 
 
-Skip API is designed so that even developers who are new to IBC can offer incredible cross-chain experiences, like swaps and transfers between any two IBC-enabled chains and tokens in as few transactions as possible, with reliable multi-chain relaying, packet tracking, and more.
+Skip Go API is designed so that even developers who are new to IBC can offer incredible cross-chain experiences, like swaps and transfers between any two IBC-enabled chains and tokens in as few transactions as possible, with reliable multi-chain relaying, packet tracking, and more.
 
 # Overview
 

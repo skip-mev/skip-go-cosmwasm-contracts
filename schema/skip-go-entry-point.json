@@ -1,5 +1,5 @@
 {
-  "contract_name": "skip-api-entry-point",
+  "contract_name": "skip-go-entry-point",
   "contract_version": "0.3.0",
   "idl_version": "1.0.0",
   "instantiate": {

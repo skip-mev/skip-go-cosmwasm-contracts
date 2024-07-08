@@ -93,7 +93,7 @@ jobs:
       - name: Run schema diff check
         # use nightly toolchain so that we get all the latest formatting features
         run: |
-          cargo run --package skip-api-entry-point --bin schema     
+          cargo run --package skip-go-entry-point --bin schema     
           if [[ `git status --porcelain` ]]; then
             echo "Schema is different, please run make schema"
             exit 1

@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-osmosis-poolmanager"
+name          = "skip-go-swap-adapter-osmosis-poolmanager"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

@@ -11,7 +11,7 @@ fmt:
 # contract that can be called externally.
 .PHONY: schema
 schema:
-	cargo run --package skip-api-entry-point --bin schema         
+	cargo run --package skip-go-entry-point --bin schema         
 
 test:
 	cargo test --locked --workspace
