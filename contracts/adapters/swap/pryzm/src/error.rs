@@ -21,8 +21,8 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized,
 
-    #[error("provided pool string is not a valid swap route")]
-    InvalidPool,
+    #[error("provided pool string is not a valid swap route: {msg:?}")]
+    InvalidPool { msg: String },
 
     #[error("swap_operations cannot be empty")]
     SwapOperationsEmpty,
@@ -36,8 +36,8 @@ pub enum ContractError {
     #[error("Asset Must Be Native, Pryzm Does Not Support CW20 Tokens")]
     AssetNotNative,
 
-    #[error("SubMsgResponse does not contain data")]
-    MissingResponseData,
+    #[error("Unexpected message response received")]
+    InvalidMsgResponse { msg: String },
 
     #[error("InvalidState: {msg:?}")]
     InvalidState { msg: String },

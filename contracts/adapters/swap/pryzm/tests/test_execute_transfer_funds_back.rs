@@ -1,12 +1,11 @@
 use cosmwasm_std::{
-    testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    Addr, BankMsg, Coin,
-    ReplyOn::Never,
-    SubMsg,
+    Addr,
+    Coin, SubMsg, testing::{mock_dependencies_with_balances, mock_env, mock_info},
 };
-use skip::{error::SkipError, swap::ExecuteMsg};
-use skip_api_swap_adapter_osmosis_poolmanager::error::{ContractError, ContractResult};
 use test_case::test_case;
+
+use skip::swap::ExecuteMsg;
+use skip_api_swap_adapter_pryzm::error::{ContractError, ContractResult};
 
 /*
 Test Cases:
@@ -127,7 +126,7 @@ fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
     let info = mock_info(&params.caller, &[]);
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_osmosis_poolmanager::contract::execute(
+    let res = skip_api_swap_adapter_pryzm::contract::execute(
         deps.as_mut(),
         env,
         info,

@@ -1,8 +1,9 @@
+use std::collections::VecDeque;
 use std::str::FromStr;
 
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, Binary, Coin, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Reply, Response, SubMsg, SubMsgResult, Uint128, WasmMsg, SubMsgResponse
+    Addr, Binary, Coin, Decimal, Deps, DepsMut, entry_point, Env, MessageInfo, Reply,
+    Response, SubMsg, SubMsgResponse, SubMsgResult, to_json_binary, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
@@ -17,21 +18,19 @@ use pryzm_std::types::pryzm::{
 use skip::{
     asset::Asset,
     swap::{
-        execute_transfer_funds_back, get_ask_denom_for_routes, ExecuteMsg, InstantiateMsg,
+        execute_transfer_funds_back, ExecuteMsg, get_ask_denom_for_routes, InstantiateMsg,
         MigrateMsg, QueryMsg, Route, SimulateSmartSwapExactAssetInResponse,
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 
-use crate::state::IN_PROGRESS_SWAP_SENDER;
 use crate::{
+    consts,
     error::{ContractError, ContractResult},
-    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_SWAP_OPERATIONS},
+    reply_id,
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_SWAP_OPERATIONS, IN_PROGRESS_SWAP_SENDER},
     swap::{parse_coin, SwapExecutionStep},
 };
-
-const BATCH_SWAP_REPLY_ID: u64 = 1;
-const STAKE_REPLY_ID: u64 = 2;
 
 ///////////////
 /// MIGRATE ///
@@ -122,36 +121,74 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
+    // Extract the execution steps from the provided swap operations
     let execution_steps = extract_execution_steps(operations)?;
 
+    // Execute the swap
     return execute_steps(deps, env, info.sender, coin_in, execution_steps);
 }
 
-fn extract_execution_steps(operations: Vec<SwapOperation>) -> Result<Vec<SwapExecutionStep>, ContractError> {
-    let mut execution_steps: Vec<SwapExecutionStep> = Vec::new();
+// Iterates over the swap operations and aggregates the operations into execution steps
+fn extract_execution_steps(
+    operations: Vec<SwapOperation>,
+) -> Result<VecDeque<SwapExecutionStep>, ContractError> {
+    // Return error if swap operations is empty
+    if operations.is_empty() {
+        return Err(ContractError::SwapOperationsEmpty);
+    }
+
+    // Create a vector to push the steps into
+    let mut execution_steps: VecDeque<SwapExecutionStep> = VecDeque::new();
+
+    // Create a vector to keep consecutive AMM operations in order to batch them into a single step
     let mut amm_swap_steps: Vec<SwapStep> = Vec::new();
 
+    // Iterate over the swap operations
     let mut swap_operations_iter = operations.iter();
     while let Some(swap_op) = swap_operations_iter.next() {
-        if swap_op.pool.starts_with("icstaking:") {
-            if swap_op.denom_in.starts_with("c:") || !swap_op.denom_out.starts_with("c:") {
-                return Err(ContractError::InvalidPool);
+        if swap_op.pool.starts_with(consts::ICSTAKING_POOL_PREFIX) {
+            // Validate that the icstaking operation is converting an asset to a cAsset,
+            // not a cAsset to an asset which is not supported
+            if swap_op.denom_in.starts_with(consts::C_ASSET_PREFIX)
+                || !swap_op.denom_out.starts_with(consts::C_ASSET_PREFIX)
+            {
+                return Err(ContractError::InvalidPool {
+                    msg: format!(
+                        "icstaking swap operation can only convert an asset to cAsset: cannot convert {} to {}",
+                        swap_op.denom_in, swap_op.denom_out
+                    )
+                });
             }
 
+            // If there are AMM swap steps from before, aggregate and push them into the execution steps
             if amm_swap_steps.len() != 0 {
-                execution_steps.push(SwapExecutionStep::Swap {
+                execution_steps.push_back(SwapExecutionStep::Swap {
                     swap_steps: amm_swap_steps,
                 });
                 amm_swap_steps = Vec::new();
             }
-            let mut split = swap_op.pool.split(":"); // TODO validate
-            execution_steps.push(SwapExecutionStep::Stake {
-                host_chain_id: split.nth(1).unwrap().to_string(),
-                transfer_channel: split.nth(2).unwrap().to_string(),
+
+            // split and validate the pool string
+            let split: Vec<&str> = swap_op.pool.split(":").collect();
+            if split.len() != 3 {
+                return Err(ContractError::InvalidPool {
+                    msg: format!(
+                        "icstaking pool string must be in the format \"icstaking:<host_chain_id>:<transfer_channel>\": {}",
+                        swap_op.pool
+                    )
+                });
+            }
+
+            // Push the staking operation into the execution steps
+            execution_steps.push_back(SwapExecutionStep::Stake {
+                host_chain_id: split.get(1).unwrap().to_string(),
+                transfer_channel: split.get(2).unwrap().to_string(),
             });
-        } else if swap_op.pool.starts_with("amm") {
-            let pool = swap_op.pool.replace("amm:", "").parse();
-            if let Ok(pool) = pool {
+        } else if swap_op.pool.starts_with(consts::AMM_POOL_PREFIX) {
+            // replace the pool prefix and parse the pool id
+            let pool_id = swap_op.pool.replace(consts::AMM_POOL_PREFIX, "");
+            if let Ok(pool) = pool_id.parse() {
+                // Add the operation to the amm swap steps
                 amm_swap_steps.push(SwapStep {
                     pool_id: pool,
                     token_in: swap_op.denom_in.clone(),
@@ -159,37 +196,50 @@ fn extract_execution_steps(operations: Vec<SwapOperation>) -> Result<Vec<SwapExe
                     amount: None,
                 });
             } else {
-                return Err(ContractError::InvalidPool);
+                return Err(ContractError::InvalidPool {
+                    msg: format!("invalid amm pool id {}", pool_id),
+                });
             }
         } else {
-            return Err(ContractError::InvalidPool);
+            return Err(ContractError::InvalidPool {
+                msg: format!(
+                    "pool must be started with \"amm\" or \"icstaking\": {}",
+                    swap_op.pool
+                ),
+            });
         }
     }
     Ok(execution_steps)
 }
 
+// Executes the swap of the provided coin using the provided execution steps for the swapper
 fn execute_steps(
     deps: DepsMut,
     env: Env,
     swapper: Addr,
     coin_in: Coin,
-    execution_steps: Vec<SwapExecutionStep>,
+    execution_steps: VecDeque<SwapExecutionStep>,
 ) -> ContractResult<Response> {
     // return error if execution_steps is empty
     if execution_steps.is_empty() {
         return Err(ContractError::SwapOperationsEmpty);
     }
 
-    let step = execution_steps.first().unwrap();
-    let msg = step.clone().to_cosmos_msg(env.contract.address.to_string(), coin_in)?;
+    // convert the first execution step to the appropriate cosmos message
+    let first_step = execution_steps.front().unwrap();
+    let msg = first_step
+        .clone()
+        .to_cosmos_msg(env.contract.address.to_string(), coin_in)?;
 
+    // If there is only one execution step, create the transfer funds back message since the swap is done is a single step
     if execution_steps.len() == 1 {
         // Create the transfer funds back message
+        let return_denom = first_step.clone().get_return_denom()?;
         let transfer_funds_back_msg = WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
             msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                 swapper,
-                return_denom: step.clone().get_return_denom(),
+                return_denom,
             })?,
             funds: vec![],
         };
@@ -200,11 +250,17 @@ fn execute_steps(
             .add_attribute("action", "dispatch_swap_and_transfer_back"));
     }
 
-    let sub_msg = match step {
-        SwapExecutionStep::Swap {..} => SubMsg::reply_on_success(msg.clone(), BATCH_SWAP_REPLY_ID),
-        SwapExecutionStep::Stake {..} => SubMsg::reply_on_success(msg.clone(), STAKE_REPLY_ID),
+    // if there are more than one step, create sub message for the first step
+    let sub_msg = match first_step {
+        SwapExecutionStep::Swap { .. } => {
+            SubMsg::reply_on_success(msg.clone(), reply_id::BATCH_SWAP_REPLY_ID)
+        }
+        SwapExecutionStep::Stake { .. } => {
+            SubMsg::reply_on_success(msg.clone(), reply_id::STAKE_REPLY_ID)
+        }
     };
 
+    // store the steps to continue after the current step is executed in the reply entrypoint
     IN_PROGRESS_SWAP_OPERATIONS.save(deps.storage, &execution_steps)?;
 
     Ok(Response::new()
@@ -219,41 +275,51 @@ fn execute_steps(
 // Handles the reply from the swap step execution messages
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> ContractResult<Response> {
+    // Get the sub message result from the reply
     let SubMsgResult::Ok(SubMsgResponse { data: Some(b), .. }) = reply.result else {
         return Err(ContractError::InvalidState {
-            msg: "could not get result from message".to_string(),
+            msg: "could not get sub message response from reply result".to_string(),
         });
     };
 
     let coin_in: Coin;
     match reply.id {
-        BATCH_SWAP_REPLY_ID => {
-            // Parse the response from the sub message
+        reply_id::BATCH_SWAP_REPLY_ID => {
+            // Parse the batch swap response from the sub message
             let resp: MsgBatchSwapResponse = b.try_into().map_err(ContractError::Std).unwrap();
+            if resp.amounts_out.len() != 1 {
+                return Err(ContractError::InvalidMsgResponse {
+                    msg: "unexpected amounts out length is batch swap response".to_string(),
+                });
+            }
             coin_in = parse_coin(resp.amounts_out.first().unwrap().clone())?
         }
-        STAKE_REPLY_ID => {
-            // Parse the response from the sub message
+        reply_id::STAKE_REPLY_ID => {
+            // Parse the stake response from the sub message
             let resp: MsgStakeResponse = b.try_into().map_err(ContractError::Std).unwrap();
-            coin_in = parse_coin(resp.c_amount.unwrap())?
+            if let Some(c_amount) = resp.c_amount {
+                coin_in = parse_coin(c_amount)?
+            } else {
+                return Err(ContractError::InvalidMsgResponse {
+                    msg: "expected valid c_amount in stake response, received None".to_string(),
+                });
+            }
         }
         _ => {
-            // Error if the reply id is not the same as the one used in the sub message dispatched
-            // This should never happen since we are using a constant reply id, but added in case
-            // the wasm module doesn't behave as expected.
-            unreachable!()
+            return Err(ContractError::InvalidState {
+                msg: format!("unexpected reply id {}", reply.id),
+            });
         }
     }
 
-    let in_progress_exec_steps = IN_PROGRESS_SWAP_OPERATIONS.load(deps.storage)?;
+    let mut in_progress_exec_steps = IN_PROGRESS_SWAP_OPERATIONS.load(deps.storage)?;
     IN_PROGRESS_SWAP_OPERATIONS.remove(deps.storage);
 
     let swapper = IN_PROGRESS_SWAP_SENDER.load(deps.storage)?;
     IN_PROGRESS_SWAP_SENDER.remove(deps.storage);
 
-    let mut new_steps = in_progress_exec_steps.clone();
-    new_steps.remove(0); // TODO use a reversed stack for better performance
-    execute_steps(deps, env, swapper, coin_in, new_steps)?;
+    in_progress_exec_steps.pop_front();
+    execute_steps(deps, env, swapper, coin_in, in_progress_exec_steps)?;
 
     Ok(Response::new().add_attribute("action", "sub_msg_reply_success"))
 }
@@ -409,9 +475,8 @@ fn query_simulate_swap_exact_asset_out(
     let icstaking_querier = &IcstakingQuerier::new(&deps.querier);
 
     let mut step_amount = coin_out;
-    let mut execution_steps = extract_execution_steps(swap_operations).unwrap();
-    execution_steps.reverse();
-    for step in execution_steps {
+    let execution_steps = extract_execution_steps(swap_operations).unwrap();
+    for step in execution_steps.iter().rev() {
         match step {
             SwapExecutionStep::Swap { swap_steps } => {
                 let mut vec = swap_steps.clone();
@@ -428,8 +493,8 @@ fn query_simulate_swap_exact_asset_out(
                 transfer_channel,
             } => {
                 let res: QuerySimulateStakeResponse = icstaking_querier.simulate_stake(
-                    host_chain_id,
-                    transfer_channel,
+                    host_chain_id.to_string(),
+                    transfer_channel.to_string(),
                     None,
                     step_amount.amount.to_string().into(),
                 )?;
@@ -555,45 +620,45 @@ fn calculate_spot_price(
     let amm_querier = &AmmQuerier::new(&deps.querier);
     let icstaking_querier = &IcstakingQuerier::new(&deps.querier);
 
-    let spot_price =
-        execution_steps.into_iter().try_fold(
-            Decimal::one(),
-            |curr_spot_price, step| -> ContractResult<Decimal> {
-                let step_spot_price =
-                    match step {
-                        SwapExecutionStep::Swap { swap_steps } => swap_steps.into_iter().try_fold(
-                            Decimal::one(),
-                            |curr_spot_price, step| -> ContractResult<Decimal> {
-                                let spot_price_res: QuerySpotPriceResponse = amm_querier
-                                    .spot_price(
-                                        step.pool_id,
-                                        step.token_in,
-                                        step.token_out,
-                                        false,
-                                    )?;
-                                Ok(curr_spot_price
-                                    .checked_mul(Decimal::from_str(&spot_price_res.spot_price)?)?)
-                            },
-                        ),
-                        SwapExecutionStep::Stake {
-                            host_chain_id,
-                            transfer_channel,
-                        } => {
-                            let amount = Decimal::from_ratio(Uint128::from(1000000u32), Uint128::from(1u32));
-                            let res: QuerySimulateStakeResponse = icstaking_querier.simulate_stake(
-                                host_chain_id,
-                                transfer_channel,
-                                amount.to_string().into(),
-                                None,
-                            )?;
-                            Ok(Decimal::from_str(&res.amount_out.unwrap().amount).unwrap()
-                                .checked_div(amount).unwrap())
-                        }
-                    };
+    let spot_price = execution_steps.into_iter().try_fold(
+        Decimal::one(),
+        |curr_spot_price, step| -> ContractResult<Decimal> {
+            let step_spot_price = match step {
+                SwapExecutionStep::Swap { swap_steps } => swap_steps.into_iter().try_fold(
+                    Decimal::one(),
+                    |curr_spot_price, step| -> ContractResult<Decimal> {
+                        let spot_price_res: QuerySpotPriceResponse = amm_querier.spot_price(
+                            step.pool_id,
+                            step.token_in,
+                            step.token_out,
+                            false,
+                        )?;
+                        Ok(curr_spot_price
+                            .checked_mul(Decimal::from_str(&spot_price_res.spot_price)?)?)
+                    },
+                ),
+                SwapExecutionStep::Stake {
+                    host_chain_id,
+                    transfer_channel,
+                } => {
+                    let amount =
+                        Decimal::from_ratio(Uint128::from(1000000u32), Uint128::from(1u32));
+                    let res: QuerySimulateStakeResponse = icstaking_querier.simulate_stake(
+                        host_chain_id,
+                        transfer_channel,
+                        amount.to_string().into(),
+                        None,
+                    )?;
+                    Ok(Decimal::from_str(&res.amount_out.unwrap().amount)
+                        .unwrap()
+                        .checked_div(amount)
+                        .unwrap())
+                }
+            };
 
-                Ok(curr_spot_price.checked_mul(step_spot_price?)?)
-            },
-        )?;
+            Ok(curr_spot_price.checked_mul(step_spot_price?)?)
+        },
+    )?;
 
     Ok(spot_price)
 }

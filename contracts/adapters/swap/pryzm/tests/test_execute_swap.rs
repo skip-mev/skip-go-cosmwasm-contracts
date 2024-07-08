@@ -1,16 +1,11 @@
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env, mock_info},
-    to_json_binary, Addr, Coin,
-    ReplyOn::Never,
-    SubMsg, WasmMsg,
-};
-use osmosis_std::types::cosmos::base::v1beta1::Coin as OsmosisStdCoin;
-use osmosis_std::types::osmosis::poolmanager::v1beta1::{MsgSwapExactAmountIn, SwapAmountInRoute};
-use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_api_swap_adapter_osmosis_poolmanager::{
-    error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS,
+    Addr,
+    Coin, SubMsg, testing::{mock_dependencies, mock_env, mock_info},
 };
 use test_case::test_case;
+
+use skip::swap::{ExecuteMsg, SwapOperation};
+use skip_api_swap_adapter_pryzm::{error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS};
 
 /*
 Test Cases:
@@ -18,7 +13,7 @@ Test Cases:
 Expect Success
     - One Swap Operation
     - Multiple Swap Operations
-    - No Swap Operations (This is prevented in the entry point contract; and will fail on Osmosis module if attempted)
+    - No Swap Operations (This is prevented in the entry point contract)
 
 Expect Error
     - Unauthorized Caller (Only the stored entry point contract can call this function)
@@ -276,7 +271,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_osmosis_poolmanager::contract::execute(
+    let res = skip_api_swap_adapter_pryzm::contract::execute(
         deps.as_mut(),
         env,
         info,

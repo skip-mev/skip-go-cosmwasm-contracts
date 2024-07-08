@@ -7,6 +7,7 @@ use pryzm_std::types::pryzm::{
 use pryzm_std::types::cosmos::base::v1beta1::{Coin as CosmosCoin};
 
 use crate::error::ContractError;
+use crate::consts;
 
 #[cw_serde]
 pub enum SwapExecutionStep {
@@ -29,13 +30,17 @@ impl SwapExecutionStep {
         }
     }
 
-    pub fn get_return_denom(self) -> String {
+    pub fn get_return_denom(self) -> Result<String, ContractError> {
         return match self {
             SwapExecutionStep::Swap {swap_steps} => {
-                swap_steps.last().unwrap().token_out.clone()
+                let token_out = match swap_steps.last() {
+                    Some(last_op) => last_op.token_out.clone(),
+                    None => return Err(ContractError::SwapOperationsEmpty),
+                };
+                Ok(token_out)
             },
             SwapExecutionStep::Stake {host_chain_id, transfer_channel: _ } => {
-                format!("c{}", host_chain_id)
+                Ok(format!("{}{}", consts::C_ASSET_PREFIX, host_chain_id))
             },
         }
     }
