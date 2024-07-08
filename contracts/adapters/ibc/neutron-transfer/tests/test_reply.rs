@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use neutron_proto::neutron::transfer::MsgTransferResponse;
 use prost::Message;
-use skip_api_ibc_adapter_neutron_transfer::{
+use skip_go_ibc_adapter_neutron_transfer::{
     error::{ContractError, ContractResult},
     state::{ACK_ID_TO_RECOVER_ADDRESS, IN_PROGRESS_RECOVER_ADDRESS},
 };
@@ -176,7 +176,7 @@ fn test_reply(params: Params) -> ContractResult<()> {
 
     // Call reply with the given test parameters
     let res =
-        skip_api_ibc_adapter_neutron_transfer::contract::reply(deps.as_mut(), env, params.reply);
+        skip_go_ibc_adapter_neutron_transfer::contract::reply(deps.as_mut(), env, params.reply);
 
     // Assert the behavior is correct
     match res {

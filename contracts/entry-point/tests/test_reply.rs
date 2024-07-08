@@ -5,7 +5,7 @@ use cosmwasm_std::{
 };
 use cw20::{Cw20Coin, Cw20ExecuteMsg};
 use skip::asset::Asset;
-use skip_api_entry_point::{reply::RecoverTempStorage, state::RECOVER_TEMP_STORAGE};
+use skip_go_entry_point::{reply::RecoverTempStorage, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
 
 /*
@@ -179,7 +179,7 @@ fn test_reply(params: Params) {
     }
 
     // Call reply with the given test parameters
-    let res = skip_api_entry_point::contract::reply(deps.as_mut(), env, params.reply);
+    let res = skip_go_entry_point::contract::reply(deps.as_mut(), env, params.reply);
 
     // Assert the behavior is correct
     match res {

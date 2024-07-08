@@ -8,7 +8,7 @@ use skip::{
     entry_point::{Action, Affiliate, ExecuteMsg},
     swap::{Swap, SwapExactAssetIn, SwapOperation},
 };
-use skip_api_entry_point::{error::ContractError, state::RECOVER_TEMP_STORAGE};
+use skip_go_entry_point::{error::ContractError, state::RECOVER_TEMP_STORAGE};
 use test_case::test_case;
 
 /*
@@ -387,7 +387,7 @@ fn test_execute_swap_and_action_with_recover(params: Params) {
 
     let recovery_addr = Addr::unchecked("recovery_address");
     // Call execute_swap_and_action with the given test case params
-    let res = skip_api_entry_point::contract::execute(
+    let res = skip_go_entry_point::contract::execute(
         deps.as_mut(),
         env,
         info,
