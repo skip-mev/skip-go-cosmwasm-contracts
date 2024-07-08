@@ -23,8 +23,8 @@ pub struct MigrateMsg {}
 // The InstantiateMsg struct defines the initialization parameters for the entry point contract.
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub swap_venues: Vec<SwapVenue>,
-    pub ibc_transfer_contract_address: String,
+    pub swap_venues: Option<Vec<SwapVenue>>,
+    pub ibc_transfer_contract_address: Option<String>,
 }
 
 ///////////////
@@ -65,6 +65,11 @@ pub enum ExecuteMsg {
         timeout_timestamp: u64,
         post_swap_action: Action,
         exact_out: bool,
+    },
+    UpdateConfig {
+        owner: Option<Addr>,
+        swap_venues: Option<Vec<SwapVenue>>,
+        ibc_transfer_contract_address: Option<String>,
     },
 }
 

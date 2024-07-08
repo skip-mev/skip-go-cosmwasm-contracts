@@ -1,5 +1,6 @@
 use crate::reply::RecoverTempStorage;
 use cosmwasm_std::{Addr, Uint128};
+use cw_controllers::Admin;
 use cw_storage_plus::{Item, Map};
 
 pub const BLOCKED_CONTRACT_ADDRESSES: Map<&Addr, ()> = Map::new("blocked_contract_addresses");
@@ -14,3 +15,5 @@ pub const RECOVER_TEMP_STORAGE: Item<RecoverTempStorage> = Item::new("recover_te
 // has pre swap so that we can ensure the amount transferred out does not
 // exceed the amount the contract obtained from the current swap/call
 pub const PRE_SWAP_OUT_ASSET_AMOUNT: Item<Uint128> = Item::new("pre_swap_out_asset_amount");
+
+pub const OWNER: Admin = Admin::new("owner");

@@ -2,10 +2,10 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Addr,
 };
-use skip::{entry_point::InstantiateMsg, swap::SwapVenue};
+use skip::{entry_point::ExecuteMsg, swap::SwapVenue};
 use skip_api_entry_point::{
     error::ContractError,
-    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, OWNER, SWAP_VENUE_MAP},
 };
 use test_case::test_case;
 
@@ -15,20 +15,25 @@ Test Cases:
 Expect Response
     - Happy Path (tests the adapter and blocked contract addresses are stored correctly)
 
+Expect Error:
+    - Unauthorized
 Expect Error
     - Duplicate Swap Venue Names
  */
 
 // Define test parameters
 struct Params {
+    owner: Option<Addr>,
     swap_venues: Vec<SwapVenue>,
     ibc_transfer_contract_address: String,
+    sender: String,
     expected_error: Option<ContractError>,
 }
 
 // Test instantiate
 #[test_case(
     Params {
+        owner: None,
         swap_venues: vec![
             SwapVenue {
                 name: "neutron-astroport".to_string(),
@@ -40,11 +45,31 @@ struct Params {
             },
         ],
         ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
+        sender: "creator".to_string(),
         expected_error: None,
     };
     "Happy Path")]
 #[test_case(
     Params {
+        owner: None,
+        swap_venues: vec![
+            SwapVenue {
+                name: "neutron-astroport".to_string(),
+                adapter_contract_address: "neutron123".to_string(),
+            },
+            SwapVenue {
+                name: "osmosis-poolmanager".to_string(),
+                adapter_contract_address: "osmosis123".to_string(),
+            },
+        ],
+        ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
+         sender: "sender".to_string(),
+        expected_error: Some(ContractError::AdminError(cw_controllers::AdminError::NotAdmin{})),
+    };
+    "Unauthorized")]
+#[test_case(
+    Params {
+        owner: None,
         swap_venues: vec![
             SwapVenue {
                 name: "neutron-astroport".to_string(),
@@ -56,26 +81,33 @@ struct Params {
             },
         ],
         ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
+         sender: "creator".to_string(),
         expected_error: Some(ContractError::DuplicateSwapVenueName),
     };
     "Duplicate Swap Venue Names")]
-fn test_instantiate(params: Params) {
+fn test_update_config(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies();
 
     // Create mock info
-    let info = mock_info("creator", &[]);
+    let info = mock_info(&params.sender, &[]);
 
     // Create mock env with the entry point contract address
     let mut env = mock_env();
     env.contract.address = Addr::unchecked("entry_point");
 
+    // init owner
+    OWNER
+        .set(deps.as_mut(), Some(Addr::unchecked("creator")))
+        .unwrap();
+
     // Call instantiate with the given test parameters
-    let res = skip_api_entry_point::contract::instantiate(
+    let res = skip_api_entry_point::contract::execute(
         deps.as_mut(),
         env,
         info,
-        InstantiateMsg {
+        ExecuteMsg::UpdateConfig {
+            owner: params.owner,
             swap_venues: Some(params.swap_venues.clone()),
             ibc_transfer_contract_address: Some(params.ibc_transfer_contract_address),
         },
@@ -89,10 +121,6 @@ fn test_instantiate(params: Params) {
                 "expected test to error with {:?}, but it succeeded",
                 params.expected_error
             );
-
-            // Assert the entry point contract address exists in the blocked contract addresses map
-            assert!(BLOCKED_CONTRACT_ADDRESSES
-                .has(deps.as_ref().storage, &Addr::unchecked("entry_point")));
 
             // Get stored ibc transfer adapter contract address
             let stored_ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS

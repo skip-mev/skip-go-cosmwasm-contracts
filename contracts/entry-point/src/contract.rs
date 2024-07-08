@@ -2,11 +2,11 @@ use crate::{
     error::{ContractError, ContractResult},
     execute::{
         execute_post_swap_action, execute_swap_and_action, execute_swap_and_action_with_recover,
-        execute_user_swap, receive_cw20,
+        execute_update_config, execute_user_swap, receive_cw20,
     },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
-    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, OWNER, SWAP_VENUE_MAP},
 };
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
@@ -36,7 +36,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> ContractResult<Response> {
     // Set contract version
@@ -49,48 +49,60 @@ pub fn instantiate(
     BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &env.contract.address, &())?;
 
     // Iterate through the swap venues provided and create a map of venue names to swap adapter contract addresses
-    for swap_venue in msg.swap_venues.iter() {
-        // Validate the swap contract address
-        let checked_swap_contract_address = deps
-            .api
-            .addr_validate(&swap_venue.adapter_contract_address)?;
 
-        // Prevent duplicate swap venues by erroring if the venue name is already stored
-        if SWAP_VENUE_MAP.has(deps.storage, &swap_venue.name) {
-            return Err(ContractError::DuplicateSwapVenueName);
+    if let Some(swap_venues) = msg.swap_venues {
+        for swap_venue in swap_venues.iter() {
+            // Validate the swap contract address
+            let checked_swap_contract_address = deps
+                .api
+                .addr_validate(&swap_venue.adapter_contract_address)?;
+
+            // Prevent duplicate swap venues by erroring if the venue name is already stored
+            if SWAP_VENUE_MAP.has(deps.storage, &swap_venue.name) {
+                return Err(ContractError::DuplicateSwapVenueName);
+            }
+
+            // Store the swap venue name and contract address inside the swap venue map
+            SWAP_VENUE_MAP.save(
+                deps.storage,
+                &swap_venue.name,
+                &checked_swap_contract_address,
+            )?;
+
+            // Insert the swap contract address into the blocked contract addresses map
+            BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_swap_contract_address, &())?;
+
+            // Add the swap venue and contract address to the response
+            response = response
+                .add_attribute("action", "add_swap_venue")
+                .add_attribute("name", &swap_venue.name)
+                .add_attribute("contract_address", &checked_swap_contract_address);
         }
-
-        // Store the swap venue name and contract address inside the swap venue map
-        SWAP_VENUE_MAP.save(
-            deps.storage,
-            &swap_venue.name,
-            &checked_swap_contract_address,
-        )?;
-
-        // Insert the swap contract address into the blocked contract addresses map
-        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_swap_contract_address, &())?;
-
-        // Add the swap venue and contract address to the response
-        response = response
-            .add_attribute("action", "add_swap_venue")
-            .add_attribute("name", &swap_venue.name)
-            .add_attribute("contract_address", &checked_swap_contract_address);
     }
 
-    // Validate ibc transfer adapter contract addresses
-    let checked_ibc_transfer_contract_address =
-        deps.api.addr_validate(&msg.ibc_transfer_contract_address)?;
+    if let Some(ibc_transfer_contract_address) = msg.ibc_transfer_contract_address {
+        // Validate ibc transfer adapter contract addresses
+        let checked_ibc_transfer_contract_address =
+            deps.api.addr_validate(&ibc_transfer_contract_address)?;
 
-    // Store the ibc transfer adapter contract address
-    IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract_address)?;
+        // Store the ibc transfer adapter contract address
+        IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract_address)?;
 
-    // Insert the ibc transfer adapter contract address into the blocked contract addresses map
-    BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_ibc_transfer_contract_address, &())?;
+        // Insert the ibc transfer adapter contract address into the blocked contract addresses map
+        BLOCKED_CONTRACT_ADDRESSES.save(
+            deps.storage,
+            &checked_ibc_transfer_contract_address,
+            &(),
+        )?;
 
-    // Add the ibc transfer adapter contract address to the response
-    response = response
-        .add_attribute("action", "add_ibc_transfer_adapter")
-        .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+        // Add the ibc transfer adapter contract address to the response
+        response = response
+            .add_attribute("action", "add_ibc_transfer_adapter")
+            .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+    }
+
+    // Store sender as owner
+    OWNER.set(deps, Some(info.sender))?;
 
     Ok(response)
 }
@@ -173,6 +185,17 @@ pub fn execute(
             timeout_timestamp,
             post_swap_action,
             exact_out,
+        ),
+        ExecuteMsg::UpdateConfig {
+            owner,
+            swap_venues,
+            ibc_transfer_contract_address,
+        } => execute_update_config(
+            deps,
+            info,
+            owner,
+            swap_venues,
+            ibc_transfer_contract_address,
         ),
     }
 }

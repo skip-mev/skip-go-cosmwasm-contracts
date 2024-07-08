@@ -4,8 +4,8 @@ use crate::{
     error::{ContractError, ContractResult},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
-        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT,
-        RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, OWNER,
+        PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
     },
 };
 use cosmwasm_std::{
@@ -20,7 +20,7 @@ use skip::{
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactAssetOut,
+        SwapExactAssetOut, SwapVenue,
     },
 };
 
@@ -85,6 +85,77 @@ pub fn receive_cw20(
 /// EXECUTE ENTRYPOINTS ///
 ///////////////////////////
 
+// update config
+pub fn execute_update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    owner: Option<Addr>,
+    swap_venues: Option<Vec<SwapVenue>>,
+    ibc_transfer_contract_address: Option<String>,
+) -> ContractResult<Response> {
+    OWNER.assert_admin(deps.as_ref(), &info.sender)?;
+
+    let mut response: Response = Response::new().add_attribute("action", "update_config");
+
+    // Iterate through the swap venues provided and create a map of venue names to swap adapter contract addresses
+    if let Some(swap_venues) = swap_venues {
+        for swap_venue in swap_venues.iter() {
+            // Validate the swap contract address
+            let checked_swap_contract_address = deps
+                .api
+                .addr_validate(&swap_venue.adapter_contract_address)?;
+
+            // Prevent duplicate swap venues by erroring if the venue name is already stored
+            if SWAP_VENUE_MAP.has(deps.storage, &swap_venue.name) {
+                return Err(ContractError::DuplicateSwapVenueName);
+            }
+
+            // Store the swap venue name and contract address inside the swap venue map
+            SWAP_VENUE_MAP.save(
+                deps.storage,
+                &swap_venue.name,
+                &checked_swap_contract_address,
+            )?;
+
+            // Insert the swap contract address into the blocked contract addresses map
+            BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_swap_contract_address, &())?;
+
+            // Add the swap venue and contract address to the response
+            response = response
+                .add_attribute("action", "add_swap_venue")
+                .add_attribute("name", &swap_venue.name)
+                .add_attribute("contract_address", &checked_swap_contract_address);
+        }
+    }
+
+    if let Some(ibc_transfer_contract_address) = ibc_transfer_contract_address {
+        // Validate ibc transfer adapter contract addresses
+        let checked_ibc_transfer_contract_address =
+            deps.api.addr_validate(&ibc_transfer_contract_address)?;
+
+        // Store the ibc transfer adapter contract address
+        IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract_address)?;
+
+        // Insert the ibc transfer adapter contract address into the blocked contract addresses map
+        BLOCKED_CONTRACT_ADDRESSES.save(
+            deps.storage,
+            &checked_ibc_transfer_contract_address,
+            &(),
+        )?;
+
+        // Add the ibc transfer adapter contract address to the response
+        response = response
+            .add_attribute("action", "add_ibc_transfer_adapter")
+            .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+    }
+
+    if let Some(owner) = owner {
+        response = response.add_attribute("new_owner", owner.as_str());
+        OWNER.set(deps, Some(owner))?;
+    }
+
+    Ok(response)
+}
 // Main entry point for the contract
 // Dispatches the swap and post swap action
 #[allow(clippy::too_many_arguments)]
