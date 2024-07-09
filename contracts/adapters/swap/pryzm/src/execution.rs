@@ -71,8 +71,8 @@ pub fn extract_execution_steps(
     let mut amm_swap_steps: Vec<SwapStep> = Vec::new();
 
     // Iterate over the swap operations
-    let mut swap_operations_iter = operations.iter();
-    while let Some(swap_op) = swap_operations_iter.next() {
+    let swap_operations_iter = operations.iter();
+    for swap_op in swap_operations_iter {
         if swap_op.pool.starts_with(consts::ICSTAKING_POOL_PREFIX) {
             // Validate that the icstaking operation is converting an asset to a cAsset,
             // not a cAsset to an asset which is not supported
@@ -88,7 +88,7 @@ pub fn extract_execution_steps(
             }
 
             // If there are AMM swap steps from before, aggregate and push them into the execution steps
-            if amm_swap_steps.len() != 0 {
+            if amm_swap_steps.is_empty() {
                 execution_steps.push_back(SwapExecutionStep::Swap {
                     swap_steps: amm_swap_steps,
                 });
@@ -96,7 +96,7 @@ pub fn extract_execution_steps(
             }
 
             // split and validate the pool string
-            let split: Vec<&str> = swap_op.pool.split(":").collect();
+            let split: Vec<&str> = swap_op.pool.split(':').collect();
             if split.len() != 3 {
                 return Err(ContractError::InvalidPool {
                     msg: format!(
@@ -182,7 +182,7 @@ fn create_icstaking_stake_msg(
         creator: address,
         host_chain: host_chain_id,
         transfer_channel,
-        amount: coin_in.amount.to_string().into(),
+        amount: coin_in.amount.into(),
     }
     .into();
 

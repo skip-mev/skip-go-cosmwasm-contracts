@@ -118,7 +118,7 @@ fn execute_swap(
     let execution_steps = extract_execution_steps(operations)?;
 
     // Execute the swap
-    return execute_steps(deps, env, info.sender, coin_in, execution_steps);
+    execute_steps(deps, env, info.sender, coin_in, execution_steps)
 }
 
 // Executes the swap of the provided coin using the provided execution steps for the swapper
@@ -234,7 +234,7 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> ContractResult<Response> 
     in_progress_exec_steps.pop_front();
 
     // continue the swap execution with the next steps
-    return execute_steps(deps, env, swapper, coin_in, in_progress_exec_steps);
+    execute_steps(deps, env, swapper, coin_in, in_progress_exec_steps)
 }
 
 /////////////
