@@ -27,12 +27,12 @@ pub enum SwapExecutionStep {
 impl SwapExecutionStep {
 
     // Converts the step to the appropriate Pryzm message
-    pub fn to_cosmos_msg(self, address: String, coin_in: Coin) -> Result<CosmosMsg, ContractError> {
+    pub fn to_cosmos_msg(&self, address: String, coin_in: Coin) -> Result<CosmosMsg, ContractError> {
         match self {
             SwapExecutionStep::Swap {swap_steps} =>
                 create_amm_swap_msg(swap_steps, address, coin_in),
             SwapExecutionStep::Stake {host_chain_id, transfer_channel} =>
-                create_icstaking_stake_msg(host_chain_id, transfer_channel, address, coin_in),
+                create_icstaking_stake_msg(host_chain_id.clone(), transfer_channel.clone(), address, coin_in),
         }
     }
 
@@ -88,7 +88,7 @@ pub fn extract_execution_steps(
             }
 
             // If there are AMM swap steps from before, aggregate and push them into the execution steps
-            if amm_swap_steps.is_empty() {
+            if !amm_swap_steps.is_empty() {
                 execution_steps.push_back(SwapExecutionStep::Swap {
                     swap_steps: amm_swap_steps,
                 });
@@ -136,12 +136,20 @@ pub fn extract_execution_steps(
             });
         }
     }
+
+    // If there is any AMM swap steps left, push them into the execution steps
+    if !amm_swap_steps.is_empty() {
+        execution_steps.push_back(SwapExecutionStep::Swap {
+            swap_steps: amm_swap_steps,
+        });
+    }
+
     Ok(execution_steps)
 }
 
 // create Pryzm MsgBatchSwap using the provided swap steps
 pub fn create_amm_swap_msg(
-    swap_steps: Vec<SwapStep>,
+    swap_steps: &[SwapStep],
     address: String,
     coin_in: Coin,
 ) -> Result<CosmosMsg, ContractError> {
@@ -152,8 +160,8 @@ pub fn create_amm_swap_msg(
     };
 
     // set the amount_in on the first swap step
-    let mut swap_steps = swap_steps.clone();
-    if let Some(first_step) = swap_steps.get_mut(0) {
+    let mut steps = swap_steps.to_vec();
+    if let Some(first_step) = steps.get_mut(0) {
         first_step.amount = coin_in.amount.to_string().into();
     }
 
@@ -162,8 +170,8 @@ pub fn create_amm_swap_msg(
         creator: address,
         swap_type: SwapType::GivenIn.into(),
         max_amounts_in: vec![format_coin(coin_in)],
-        min_amounts_out: vec![format_coin(Coin::new(1, token_out))],
-        steps: swap_steps,
+        min_amounts_out: vec![CosmosCoin {amount: "1".to_string(), denom: token_out.to_string()}],
+        steps,
     }
     .into();
 
