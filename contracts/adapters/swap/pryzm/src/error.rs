@@ -18,6 +18,9 @@ pub enum ContractError {
     #[error(transparent)]
     Overflow(#[from] cosmwasm_std::OverflowError),
 
+    #[error(transparent)]
+    CheckedFromRatioError(#[from] cosmwasm_std::CheckedFromRatioError),
+
     #[error("Unauthorized")]
     Unauthorized,
 
@@ -38,6 +41,9 @@ pub enum ContractError {
 
     #[error("Unexpected message response received")]
     InvalidMsgResponse { msg: String },
+
+    #[error("Unexpected query response received")]
+    InvalidQueryResponse { msg: String },
 
     #[error("InvalidState: {msg:?}")]
     InvalidState { msg: String },

@@ -1,4 +1,4 @@
-use skip_api_swap_adapter_pryzm::swap::SwapExecutionStep;
+use skip_api_swap_adapter_pryzm::execution::SwapExecutionStep;
 
 #[test]
 fn test_execution_step_return_denom() {
