@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 #[allow(unused_imports)]
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
@@ -14,13 +15,16 @@ use pryzm_std::types::{
 };
 use test_case::test_case;
 
+#[allow(unused_imports)]
 use skip::swap::{ExecuteMsg, SwapOperation};
+
 #[allow(unused_imports)]
 use skip_go_swap_adapter_pryzm::{
     contract, error::ContractResult, reply_id::BATCH_SWAP_REPLY_ID, reply_id::STAKE_REPLY_ID,
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
-
+use skip_go_swap_adapter_pryzm::execution::SwapExecutionStep;
+use skip_go_swap_adapter_pryzm::state::{IN_PROGRESS_SWAP_OPERATIONS, IN_PROGRESS_SWAP_SENDER};
 /*
 Test Cases:
 
@@ -44,6 +48,8 @@ struct Params {
     swap_operations: Vec<SwapOperation>,
     expected_messages: Vec<SubMsg>,
     expected_error_string: String,
+    expected_stored_swapper: String,
+    expected_stored_steps: Vec<SwapExecutionStep>,
 }
 
 // Test execute_swap
@@ -96,6 +102,8 @@ struct Params {
             },
         ],
         expected_error_string: "".to_string(),
+        expected_stored_swapper: "".to_string(),
+        expected_stored_steps: vec![],
     };
 "One Swap Operation")]
 #[test_case(
@@ -163,6 +171,39 @@ struct Params {
             },
         ],
         expected_error_string: "".to_string(),
+        expected_stored_swapper: "entry_point".to_string(),
+        expected_stored_steps: vec![
+            SwapExecutionStep::Swap {
+                swap_steps: vec![
+                    SwapStep {
+                        pool_id: 1,
+                        token_in: "pr".to_string(),
+                        token_out: "ibc/uusdc".to_string(),
+                        amount: None,
+                    },
+                    SwapStep {
+                        pool_id: 2,
+                        token_in: "ibc/uusdc".to_string(),
+                        token_out: "ibc/uatom".to_string(),
+                        amount: None,
+                    },
+                ],
+            },
+            SwapExecutionStep::Stake {
+                host_chain_id: "uatom".to_string(),
+                transfer_channel: "channel-0".to_string()
+            },
+            SwapExecutionStep::Swap {
+                swap_steps: vec![
+                    SwapStep {
+                        pool_id: 3,
+                        token_in: "c:uatom".to_string(),
+                        token_out: "p:uatom:30Sep2024".to_string(),
+                        amount: None,
+                    },
+                ],
+            },
+        ],
     };
 "Multiple Swap Operations")]
 #[test_case(
@@ -198,6 +239,23 @@ struct Params {
             },
         ],
         expected_error_string: "".to_string(),
+        expected_stored_swapper: "entry_point".to_string(),
+        expected_stored_steps: vec![
+            SwapExecutionStep::Stake {
+                host_chain_id: "uatom".to_string(),
+                transfer_channel: "channel-0".to_string()
+            },
+            SwapExecutionStep::Swap {
+                swap_steps: vec![
+                    SwapStep {
+                        pool_id: 4,
+                        token_in: "c:pr".to_string(),
+                        token_out: "p:pr:30Sep2024".to_string(),
+                        amount: None,
+                    },
+                ],
+            },
+        ],
     };
 "First Step Liquid Staking")]
 #[test_case(
@@ -207,6 +265,8 @@ struct Params {
         swap_operations: vec![],
         expected_messages: vec![],
         expected_error_string: "swap_operations cannot be empty".to_string(),
+        expected_stored_swapper: "".to_string(),
+        expected_stored_steps: vec![],
     };
 "No Swap Operations")]
 #[test_case(
@@ -223,6 +283,8 @@ struct Params {
         ],
         expected_messages: vec![],
         expected_error_string: "No funds sent".to_string(),
+        expected_stored_swapper: "".to_string(),
+        expected_stored_steps: vec![],
     };
     "No Coin Sent - Expect Error")]
 #[test_case(
@@ -242,6 +304,8 @@ struct Params {
         ],
         expected_messages: vec![],
         expected_error_string: "Sent more than one denomination".to_string(),
+        expected_stored_swapper: "".to_string(),
+        expected_stored_steps: vec![],
     };
     "More Than One Coin Sent - Expect Error")]
 #[test_case(
@@ -258,6 +322,8 @@ struct Params {
         ],
         expected_messages: vec![],
         expected_error_string: "provided pool string is not a valid swap route".to_string(),
+        expected_stored_swapper: "".to_string(),
+        expected_stored_steps: vec![],
     };
     "Invalid Pool For Swap Operations - Expect Error")]
 #[test_case(
@@ -267,6 +333,8 @@ struct Params {
         swap_operations: vec![],
         expected_messages: vec![],
         expected_error_string: "Unauthorized".to_string(),
+        expected_stored_swapper: "".to_string(),
+        expected_stored_steps: vec![],
     };
     "Unauthorized Caller - Expect Error")]
 fn test_execute_swap(params: Params) -> ContractResult<()> {
@@ -308,6 +376,29 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
 
             // Assert the messages are correct
             assert_eq!(res.messages, params.expected_messages);
+
+            if !params.expected_stored_steps.is_empty() {
+                // Assert the stored steps are correct
+                let stored_steps = IN_PROGRESS_SWAP_OPERATIONS.load(deps.as_ref().storage)?;
+                assert_eq!(stored_steps, VecDeque::from(params.expected_stored_steps));
+            } else {
+                // Assert no steps are stored
+                assert!(IN_PROGRESS_SWAP_OPERATIONS
+                    .load(deps.as_ref().storage)
+                    .is_err());
+            }
+
+            if params.expected_stored_swapper != "" {
+                // Assert the stored swapper is correct
+                let stored_swapper = IN_PROGRESS_SWAP_SENDER.load(deps.as_ref().storage)?;
+                assert_eq!(
+                    stored_swapper,
+                    Addr::unchecked(params.expected_stored_swapper.as_str())
+                );
+            } else {
+                // Assert no address is stored
+                assert!(IN_PROGRESS_SWAP_SENDER.load(deps.as_ref().storage).is_err());
+            }
         }
         Err(err) => {
             // Assert the test expected an error
