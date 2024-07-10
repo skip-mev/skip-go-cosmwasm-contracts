@@ -291,7 +291,7 @@ Query:
                     "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
                     "amount": "70"
                 },
-                "swap_operations": [simulate_swap_exact_asset_in
+                "swap_operations": [
                     {
                         "pool": "amm:1",
                         "denom_in": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
