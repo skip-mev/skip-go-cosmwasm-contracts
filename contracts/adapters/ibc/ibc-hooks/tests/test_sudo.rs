@@ -5,7 +5,7 @@ use cosmwasm_std::{
     StdError, SubMsg,
 };
 use skip::{ibc::IbcLifecycleComplete, sudo::OsmosisSudoMsg as SudoMsg};
-use skip_api_ibc_adapter_ibc_hooks::{error::ContractResult, state::ACK_ID_TO_RECOVER_ADDRESS};
+use skip_go_ibc_adapter_ibc_hooks::{error::ContractResult, state::ACK_ID_TO_RECOVER_ADDRESS};
 use test_case::test_case;
 
 /*
@@ -153,7 +153,7 @@ fn test_sudo(params: Params) -> ContractResult<()> {
     }
 
     // Call sudo with the given test parameters
-    let res = skip_api_ibc_adapter_ibc_hooks::contract::sudo(deps.as_mut(), env, params.sudo_msg);
+    let res = skip_go_ibc_adapter_ibc_hooks::contract::sudo(deps.as_mut(), env, params.sudo_msg);
 
     // Assert the behavior is correct
     match res {

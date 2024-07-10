@@ -16,7 +16,6 @@ artifacts
 .idea
 
 # Things not ready yet
-LICENSE
 NOTICE
 .cargo
 .circleci

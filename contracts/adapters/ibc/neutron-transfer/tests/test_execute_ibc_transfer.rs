@@ -7,7 +7,7 @@ use cosmwasm_std::{
 };
 use neutron_proto::neutron::{feerefunder::Fee as NeutronFee, transfer::MsgTransfer};
 use skip::ibc::{ExecuteMsg, IbcFee, IbcInfo};
-use skip_api_ibc_adapter_neutron_transfer::{
+use skip_go_ibc_adapter_neutron_transfer::{
     error::ContractResult,
     state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_RECOVER_ADDRESS},
 };
@@ -142,7 +142,7 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_ibc_transfer with the given test parameters
-    let res = skip_api_ibc_adapter_neutron_transfer::contract::execute(
+    let res = skip_go_ibc_adapter_neutron_transfer::contract::execute(
         deps.as_mut(),
         env,
         info,

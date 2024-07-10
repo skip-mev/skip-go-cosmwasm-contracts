@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-dexter"
+name          = "skip-go-swap-adapter-dexter"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

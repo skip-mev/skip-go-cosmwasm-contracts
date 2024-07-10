@@ -5,7 +5,7 @@ use cosmwasm_std::{
     StdError, SubMsg,
 };
 use neutron_sdk::sudo::msg::{RequestPacket, TransferSudoMsg};
-use skip_api_ibc_adapter_neutron_transfer::{
+use skip_go_ibc_adapter_neutron_transfer::{
     error::{ContractError, ContractResult},
     state::ACK_ID_TO_RECOVER_ADDRESS,
 };
@@ -320,7 +320,7 @@ fn test_sudo(params: Params) -> ContractResult<()> {
 
     // Call sudo with the given test parameters
     let res =
-        skip_api_ibc_adapter_neutron_transfer::contract::sudo(deps.as_mut(), env, params.sudo_msg);
+        skip_go_ibc_adapter_neutron_transfer::contract::sudo(deps.as_mut(), env, params.sudo_msg);
 
     // Assert the behavior is correct
     match res {

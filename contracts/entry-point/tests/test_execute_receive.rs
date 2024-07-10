@@ -10,7 +10,7 @@ use skip::{
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
     swap::{Swap, SwapExactAssetIn, SwapOperation},
 };
-use skip_api_entry_point::{
+use skip_go_entry_point::{
     error::ContractError,
     reply::RECOVER_REPLY_ID,
     state::{IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
@@ -236,7 +236,7 @@ fn test_execute_receive(params: Params) {
 
     // Call execute_receive with the given test case params
     let res = match params.recovery_addr {
-        Some(recovery_addr) => skip_api_entry_point::contract::execute(
+        Some(recovery_addr) => skip_go_entry_point::contract::execute(
             deps.as_mut(),
             env,
             info,
@@ -254,7 +254,7 @@ fn test_execute_receive(params: Params) {
                 .unwrap(),
             }),
         ),
-        None => skip_api_entry_point::contract::execute(
+        None => skip_go_entry_point::contract::execute(
             deps.as_mut(),
             env,
             info,

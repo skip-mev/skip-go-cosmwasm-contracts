@@ -3,7 +3,7 @@ use cosmwasm_std::{
     Addr,
 };
 use skip::{entry_point::InstantiateMsg, swap::SwapVenue};
-use skip_api_entry_point::{
+use skip_go_entry_point::{
     error::ContractError,
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
 };
@@ -71,7 +71,7 @@ fn test_instantiate(params: Params) {
     env.contract.address = Addr::unchecked("entry_point");
 
     // Call instantiate with the given test parameters
-    let res = skip_api_entry_point::contract::instantiate(
+    let res = skip_go_entry_point::contract::instantiate(
         deps.as_mut(),
         env,
         info,

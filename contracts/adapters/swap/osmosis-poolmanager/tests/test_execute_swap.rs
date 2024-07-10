@@ -7,7 +7,7 @@ use cosmwasm_std::{
 use osmosis_std::types::cosmos::base::v1beta1::Coin as OsmosisStdCoin;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{MsgSwapExactAmountIn, SwapAmountInRoute};
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_api_swap_adapter_osmosis_poolmanager::{
+use skip_go_swap_adapter_osmosis_poolmanager::{
     error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use test_case::test_case;
@@ -276,7 +276,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_osmosis_poolmanager::contract::execute(
+    let res = skip_go_swap_adapter_osmosis_poolmanager::contract::execute(
         deps.as_mut(),
         env,
         info,

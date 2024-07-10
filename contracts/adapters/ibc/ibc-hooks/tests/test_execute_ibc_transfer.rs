@@ -8,7 +8,7 @@ use ibc_proto::cosmos::base::v1beta1::Coin as IbcCoin;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer;
 use prost::Message;
 use skip::ibc::{ExecuteMsg, IbcFee, IbcInfo};
-use skip_api_ibc_adapter_ibc_hooks::{
+use skip_go_ibc_adapter_ibc_hooks::{
     error::ContractResult,
     state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_CHANNEL_ID, IN_PROGRESS_RECOVER_ADDRESS},
 };
@@ -230,7 +230,7 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_ibc_transfer with the given test parameters
-    let res = skip_api_ibc_adapter_ibc_hooks::contract::execute(
+    let res = skip_go_ibc_adapter_ibc_hooks::contract::execute(
         deps.as_mut(),
         env,
         info,

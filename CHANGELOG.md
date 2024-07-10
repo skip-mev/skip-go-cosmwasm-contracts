@@ -75,7 +75,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## [v0.1.0](https://github.com/skip-mev/skip-api-contracts/releases/tag/v0.1.0) - 2023-07-18
 
-Let There Be Skip API Contracts!
+Let There Be Skip Go Contracts!
 
 ### Features
 - Supports swap exact in for the user.

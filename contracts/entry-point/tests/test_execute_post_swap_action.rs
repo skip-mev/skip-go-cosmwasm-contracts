@@ -10,7 +10,7 @@ use skip::{
     entry_point::{Action, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
 };
-use skip_api_entry_point::{
+use skip_go_entry_point::{
     error::ContractError,
     state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT},
 };
@@ -658,7 +658,7 @@ fn test_execute_post_swap_action(params: Params) {
         .unwrap();
 
     // Call execute_post_swap_action with the given test parameters
-    let res = skip_api_entry_point::contract::execute(
+    let res = skip_go_entry_point::contract::execute(
         deps.as_mut(),
         env,
         info,

@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-lido-satellite"
+name          = "skip-go-swap-adapter-lido-satellite"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }
