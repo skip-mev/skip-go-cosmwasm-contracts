@@ -35,14 +35,14 @@ struct Params {
 #[test_case(
     Params {
         caller: "swap_contract_address".to_string(),
-        contract_balance: vec![Coin::new(100, "upryzm")],
-        return_denom: "upryzm".to_string(),
+        contract_balance: vec![Coin::new(100, "pr")],
+        return_denom: "pr".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "swapper".to_string(),
-                    amount: vec![Coin::new(100, "upryzm")],
+                    amount: vec![Coin::new(100, "pr")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -55,17 +55,17 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![
-            Coin::new(100, "upryzm"),
+            Coin::new(100, "pr"),
             Coin::new(100, "uatom"),
         ],
-        return_denom: "upryzm".to_string(),
+        return_denom: "pr".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,
                 msg: BankMsg::Send {
                     to_address: "swapper".to_string(),
                     amount: vec![
-                        Coin::new(100, "upryzm"),
+                        Coin::new(100, "pr"),
                         Coin::new(100, "uatom")
                     ],
                 }.into(),
@@ -80,7 +80,7 @@ struct Params {
     Params {
         caller: "swap_contract_address".to_string(),
         contract_balance: vec![],
-        return_denom: "upryzm".to_string(),
+        return_denom: "pr".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,
@@ -99,7 +99,7 @@ struct Params {
     Params {
         caller: "random".to_string(),
         contract_balance: vec![],
-        return_denom: "upryzm".to_string(),
+        return_denom: "pr".to_string(),
         expected_messages: vec![
             SubMsg {
                 id: 0,

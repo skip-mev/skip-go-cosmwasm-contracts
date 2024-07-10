@@ -32,3 +32,5 @@ thiserror        = { workspace = true }
 
 [dev-dependencies]
 test-case        = { workspace = true }
+mockall          = { workspace = true }
+serde            = { workspace = true }

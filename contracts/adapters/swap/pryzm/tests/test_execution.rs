@@ -323,7 +323,7 @@ fn test_extract_execution_step() {
         }
     ]);
     assert!(result.is_err());
-    assert!(std::matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
 
     let result = extract_execution_steps(vec![
         SwapOperation {
@@ -334,7 +334,7 @@ fn test_extract_execution_step() {
         }
     ]);
     assert!(result.is_err());
-    assert!(std::matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
 
     let result = extract_execution_steps(vec![
         SwapOperation {
@@ -345,7 +345,7 @@ fn test_extract_execution_step() {
         }
     ]);
     assert!(result.is_err());
-    assert!(std::matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
 
     let result = extract_execution_steps(vec![
         SwapOperation {
@@ -356,7 +356,7 @@ fn test_extract_execution_step() {
         }
     ]);
     assert!(result.is_err());
-    assert!(std::matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
 
     let result = extract_execution_steps(vec![
         SwapOperation {
@@ -367,7 +367,7 @@ fn test_extract_execution_step() {
         }
     ]);
     assert!(result.is_err());
-    assert!(std::matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
 
     let result = extract_execution_steps(vec![
         SwapOperation {
@@ -378,7 +378,7 @@ fn test_extract_execution_step() {
         }
     ]);
     assert!(result.is_err());
-    assert!(std::matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
 
     let result = extract_execution_steps(vec![
         SwapOperation {
@@ -389,5 +389,5 @@ fn test_extract_execution_step() {
         }
     ]);
     assert!(result.is_err());
-    assert!(std::matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
 }

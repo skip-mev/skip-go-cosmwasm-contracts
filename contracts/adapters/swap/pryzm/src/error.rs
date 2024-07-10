@@ -39,10 +39,10 @@ pub enum ContractError {
     #[error("Asset Must Be Native, Pryzm Does Not Support CW20 Tokens")]
     AssetNotNative,
 
-    #[error("Unexpected message response received")]
+    #[error("Unexpected message response received: {msg:?}")]
     InvalidMsgResponse { msg: String },
 
-    #[error("Unexpected query response received")]
+    #[error("Unexpected query response received: {msg:?}")]
     InvalidQueryResponse { msg: String },
 
     #[error("InvalidState: {msg:?}")]

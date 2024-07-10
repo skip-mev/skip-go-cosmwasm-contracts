@@ -61,7 +61,7 @@ pub fn simulate_swap_exact_asset_in(
                     amm_querier.simulate_batch_swap(SwapType::GivenIn.into(), vec)?;
                 if res.amounts_out.len() != 1 {
                     return Err(ContractError::InvalidQueryResponse {
-                        msg: "unexpected amounts out length is batch swap simulation".to_string(),
+                        msg: "unexpected amounts out length in batch swap simulation".to_string(),
                     });
                 }
                 // set the output of the simulation as the input for the next step
@@ -153,16 +153,16 @@ pub fn simulate_swap_exact_asset_out(
                 // make the swap steps reversed and set the amount on the first step
                 let mut vec = swap_steps.clone();
                 vec.reverse();
-                if let Some(first_step) = vec.last_mut() {
+                if let Some(first_step) = vec.first_mut() {
                     first_step.amount = step_amount.amount.to_string().into();
                 }
                 // execute the simulation query on the amm module
                 let res: QuerySimulateBatchSwapResponse =
                     amm_querier.simulate_batch_swap(SwapType::GivenOut.into(), vec)?;
                 // set the output of the simulation as the input for the next step
-                if res.amounts_out.len() != 1 {
+                if res.amounts_in.len() != 1 {
                     return Err(ContractError::InvalidQueryResponse {
-                        msg: "unexpected amounts out length is batch swap simulation".to_string(),
+                        msg: "unexpected amounts in length in batch swap simulation".to_string(),
                     });
                 }
                 step_amount = parse_coin(res.amounts_in.first().unwrap());
