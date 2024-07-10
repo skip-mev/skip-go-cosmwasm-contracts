@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 #[allow(unused_imports)]
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
@@ -13,18 +12,19 @@ use pryzm_std::types::{
     pryzm::amm::v1::{MsgBatchSwap, SwapStep, SwapType},
     pryzm::icstaking::v1::MsgStake,
 };
+use std::collections::VecDeque;
 use test_case::test_case;
 
 #[allow(unused_imports)]
 use skip::swap::{ExecuteMsg, SwapOperation};
 
+use skip_go_swap_adapter_pryzm::execution::SwapExecutionStep;
+use skip_go_swap_adapter_pryzm::state::{IN_PROGRESS_SWAP_OPERATIONS, IN_PROGRESS_SWAP_SENDER};
 #[allow(unused_imports)]
 use skip_go_swap_adapter_pryzm::{
     contract, error::ContractResult, reply_id::BATCH_SWAP_REPLY_ID, reply_id::STAKE_REPLY_ID,
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
-use skip_go_swap_adapter_pryzm::execution::SwapExecutionStep;
-use skip_go_swap_adapter_pryzm::state::{IN_PROGRESS_SWAP_OPERATIONS, IN_PROGRESS_SWAP_SENDER};
 /*
 Test Cases:
 
@@ -388,7 +388,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
                     .is_err());
             }
 
-            if params.expected_stored_swapper != "" {
+            if !params.expected_stored_swapper.is_empty() {
                 // Assert the stored swapper is correct
                 let stored_swapper = IN_PROGRESS_SWAP_SENDER.load(deps.as_ref().storage)?;
                 assert_eq!(
