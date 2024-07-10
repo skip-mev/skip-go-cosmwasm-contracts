@@ -7,8 +7,8 @@ use cosmwasm_std::{
 use test_case::test_case;
 
 use skip::{error::SkipError, swap::ExecuteMsg};
-use skip_api_swap_adapter_pryzm::error::{ContractError, ContractResult};
-use skip_api_swap_adapter_pryzm::contract;
+use skip_go_swap_adapter_pryzm::contract;
+use skip_go_swap_adapter_pryzm::error::{ContractError, ContractResult};
 
 /*
 Test Cases:

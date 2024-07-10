@@ -1,14 +1,14 @@
-use std::collections::VecDeque;
+use crate::consts;
+use crate::error::ContractError;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{coin, Coin, CosmosMsg, Uint128};
+use pryzm_std::types::cosmos::base::v1beta1::Coin as CosmosCoin;
 use pryzm_std::types::pryzm::{
     amm::v1::{MsgBatchSwap, SwapStep, SwapType},
     icstaking::v1::MsgStake,
 };
-use pryzm_std::types::cosmos::base::v1beta1::{Coin as CosmosCoin};
 use skip::swap::SwapOperation;
-use crate::error::ContractError;
-use crate::consts;
+use std::collections::VecDeque;
 
 // SwapExecutionStep is an enum that represents the different types of swap operations that can be executed
 #[cw_serde]
@@ -19,39 +19,50 @@ pub enum SwapExecutionStep {
     },
     // Stake represents a liquid staking operation on Pryzm's icstaking module
     Stake {
-        host_chain_id: String, // the host chain id for staking
+        host_chain_id: String,    // the host chain id for staking
         transfer_channel: String, // the transfer channel of the tokens
     },
 }
 
 impl SwapExecutionStep {
-
     // Converts the step to the appropriate Pryzm message
-    pub fn to_cosmos_msg(&self, address: String, coin_in: Coin) -> Result<CosmosMsg, ContractError> {
+    pub fn to_cosmos_msg(
+        &self,
+        address: String,
+        coin_in: Coin,
+    ) -> Result<CosmosMsg, ContractError> {
         match self {
-            SwapExecutionStep::Swap {swap_steps} =>
-                create_amm_swap_msg(swap_steps, address, coin_in),
-            SwapExecutionStep::Stake {host_chain_id, transfer_channel} =>
-                create_icstaking_stake_msg(host_chain_id.clone(), transfer_channel.clone(), address, coin_in),
+            SwapExecutionStep::Swap { swap_steps } => {
+                create_amm_swap_msg(swap_steps, address, coin_in)
+            }
+            SwapExecutionStep::Stake {
+                host_chain_id,
+                transfer_channel,
+            } => create_icstaking_stake_msg(
+                host_chain_id.clone(),
+                transfer_channel.clone(),
+                address,
+                coin_in,
+            ),
         }
     }
 
     // Returns the output denom of the step
     pub fn get_return_denom(&self) -> Result<String, ContractError> {
         return match self {
-            SwapExecutionStep::Swap {swap_steps} => {
+            SwapExecutionStep::Swap { swap_steps } => {
                 // take the last step token_out as the return denom
                 let token_out = match swap_steps.last() {
                     Some(last_op) => last_op.token_out.clone(),
                     None => return Err(ContractError::SwapOperationsEmpty),
                 };
                 Ok(token_out)
-            },
-            SwapExecutionStep::Stake {host_chain_id, .. } => {
+            }
+            SwapExecutionStep::Stake { host_chain_id, .. } => {
                 // calculate the cAsset denom by prefixing "c:" to the host chain id
                 Ok(format!("{}{}", consts::C_ASSET_PREFIX, host_chain_id))
-            },
-        }
+            }
+        };
     }
 }
 
@@ -170,7 +181,10 @@ pub fn create_amm_swap_msg(
         creator: address,
         swap_type: SwapType::GivenIn.into(),
         max_amounts_in: vec![format_coin(coin_in)],
-        min_amounts_out: vec![CosmosCoin {amount: "1".to_string(), denom: token_out.to_string()}],
+        min_amounts_out: vec![CosmosCoin {
+            amount: "1".to_string(),
+            denom: token_out.to_string(),
+        }],
         steps,
     }
     .into();

@@ -1557,7 +1557,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "skip-api-swap-adapter-pryzm"
+name = "skip-go-swap-adapter-pryzm"
 version = "0.3.0"
 dependencies = [
  "cosmwasm-schema",

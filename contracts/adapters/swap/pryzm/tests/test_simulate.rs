@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 use std::str::FromStr;
 
-use cosmwasm_std::{coin, Decimal, from_json, OwnedDeps, StdResult};
 use cosmwasm_std::testing::{mock_env, MockApi, MockStorage};
+use cosmwasm_std::{coin, from_json, Decimal, OwnedDeps, StdResult};
 use pryzm_std::types::cosmos::base::v1beta1::Coin as CosmosCoin;
 use pryzm_std::types::pryzm::amm::v1::{
     QuerySimulateBatchSwapRequest, QuerySimulateBatchSwapResponse, QuerySpotPriceRequest,
@@ -14,9 +14,12 @@ use pryzm_std::types::pryzm::icstaking::v1::{
 
 use skip::asset::Asset;
 use skip::error::SkipError;
-use skip::swap::{QueryMsg, Route, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation};
-use skip_api_swap_adapter_pryzm::contract;
-use skip_api_swap_adapter_pryzm::error::ContractError;
+use skip::swap::{
+    QueryMsg, Route, SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse,
+    SwapOperation,
+};
+use skip_go_swap_adapter_pryzm::contract;
+use skip_go_swap_adapter_pryzm::error::ContractError;
 
 use crate::mock::MockQuerier;
 
@@ -418,7 +421,7 @@ fn test_simulate_smart_swap() {
                             interface: None,
                         },
                     ],
-                }
+                },
             ],
         },
     );
@@ -493,7 +496,7 @@ fn test_simulate_smart_swap() {
                             interface: None,
                         },
                     ],
-                }
+                },
             ],
             include_spot_price: true,
         },
@@ -616,7 +619,7 @@ fn setup_mocks() -> MockQuerier {
                 token_in: "c:uatom".to_string(),
                 token_out: "y:uatom:30Sep2024".to_string(),
                 amount: None,
-            }
+            },
         ],
         "1705",
         "ibc/y:uatom:30Sep2024",

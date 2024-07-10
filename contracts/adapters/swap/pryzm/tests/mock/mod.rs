@@ -1,10 +1,10 @@
 use cosmwasm_std::{
-    ContractResult, Querier as CWStdQuerier, QuerierResult, SystemResult, to_json_binary,
-    to_json_vec,
+    to_json_binary, to_json_vec, ContractResult, Querier as CWStdQuerier, QuerierResult,
+    SystemResult,
 };
 use cosmwasm_std::{Empty, QueryRequest};
-use mockall::*;
 use mockall::predicate::*;
+use mockall::*;
 use serde::Serialize;
 
 mock! {

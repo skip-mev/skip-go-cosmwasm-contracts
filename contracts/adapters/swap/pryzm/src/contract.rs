@@ -1,15 +1,15 @@
 use std::collections::VecDeque;
 
 use cosmwasm_std::{
-    Addr, Binary, Coin, Deps, DepsMut, entry_point, Env, MessageInfo, Reply, Response,
-    SubMsg, SubMsgResponse, SubMsgResult, to_json_binary, WasmMsg,
+    entry_point, to_json_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, SubMsg, SubMsgResponse, SubMsgResult, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
 use pryzm_std::types::pryzm::{amm::v1::MsgBatchSwapResponse, icstaking::v1::MsgStakeResponse};
 
 use skip::swap::{
-    execute_transfer_funds_back, ExecuteMsg, get_ask_denom_for_routes, InstantiateMsg, MigrateMsg,
+    execute_transfer_funds_back, get_ask_denom_for_routes, ExecuteMsg, InstantiateMsg, MigrateMsg,
     QueryMsg, SwapOperation,
 };
 
@@ -18,9 +18,9 @@ use crate::{
     execution::{extract_execution_steps, parse_coin, SwapExecutionStep},
     reply_id,
     simulate::{
-        simulate_smart_swap_exact_asset_in_with_metadata, simulate_swap_exact_asset_in,
-        simulate_swap_exact_asset_in_with_metadata, simulate_swap_exact_asset_out,
-        simulate_swap_exact_asset_out_with_metadata, simulate_smart_swap_exact_asset_in,
+        simulate_smart_swap_exact_asset_in, simulate_smart_swap_exact_asset_in_with_metadata,
+        simulate_swap_exact_asset_in, simulate_swap_exact_asset_in_with_metadata,
+        simulate_swap_exact_asset_out, simulate_swap_exact_asset_out_with_metadata,
     },
     state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_SWAP_OPERATIONS, IN_PROGRESS_SWAP_SENDER},
 };

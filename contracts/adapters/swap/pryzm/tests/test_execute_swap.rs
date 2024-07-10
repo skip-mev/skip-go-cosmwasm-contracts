@@ -1,23 +1,23 @@
 #[allow(unused_imports)]
 use cosmwasm_std::{
-    Addr,
-    Coin, ReplyOn::Never, ReplyOn::Success,
-    SubMsg,
     testing::{mock_dependencies, mock_env, mock_info},
-    to_json_binary, WasmMsg,
+    to_json_binary, Addr, Coin,
+    ReplyOn::Never,
+    ReplyOn::Success,
+    SubMsg, WasmMsg,
 };
 #[allow(unused_imports)]
 use pryzm_std::types::{
     cosmos::base::v1beta1::Coin as CosmosCoin,
     pryzm::amm::v1::{MsgBatchSwap, SwapStep, SwapType},
+    pryzm::icstaking::v1::MsgStake,
 };
-use pryzm_std::types::pryzm::icstaking::v1::MsgStake;
 use test_case::test_case;
 
 use skip::swap::{ExecuteMsg, SwapOperation};
 #[allow(unused_imports)]
-use skip_api_swap_adapter_pryzm::{
-    error::ContractResult, reply_id::BATCH_SWAP_REPLY_ID, reply_id::STAKE_REPLY_ID,
+use skip_go_swap_adapter_pryzm::{
+    contract, error::ContractResult, reply_id::BATCH_SWAP_REPLY_ID, reply_id::STAKE_REPLY_ID,
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 
@@ -287,7 +287,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_pryzm::contract::execute(
+    let res = contract::execute(
         deps.as_mut(),
         env,
         info,

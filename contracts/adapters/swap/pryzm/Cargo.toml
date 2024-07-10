@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-pryzm"
+name          = "skip-go-swap-adapter-pryzm"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

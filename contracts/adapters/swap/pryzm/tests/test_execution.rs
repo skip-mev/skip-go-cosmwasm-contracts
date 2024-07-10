@@ -6,8 +6,8 @@ use pryzm_std::types::pryzm::{
 };
 
 use skip::swap::SwapOperation;
-use skip_api_swap_adapter_pryzm::error::ContractError;
-use skip_api_swap_adapter_pryzm::execution::{extract_execution_steps, SwapExecutionStep};
+use skip_go_swap_adapter_pryzm::error::ContractError;
+use skip_go_swap_adapter_pryzm::execution::{extract_execution_steps, SwapExecutionStep};
 
 #[test]
 fn test_execution_step_return_denom() {
@@ -16,38 +16,40 @@ fn test_execution_step_return_denom() {
     assert!(step.get_return_denom().is_err());
 
     // single step Swap type step
-    let step = SwapExecutionStep::Swap { swap_steps: vec![
-        SwapStep {
+    let step = SwapExecutionStep::Swap {
+        swap_steps: vec![SwapStep {
             pool_id: 1,
             token_in: "a".to_string(),
             token_out: "b".to_string(),
-            amount: Some("1000".to_string())
-        }
-    ] };
+            amount: Some("1000".to_string()),
+        }],
+    };
     assert!(step.get_return_denom().is_ok());
     assert_eq!("b", step.get_return_denom().unwrap());
 
     // multistep Swap type step
-    let step = SwapExecutionStep::Swap { swap_steps: vec![
-        SwapStep {
-            pool_id: 1,
-            token_in: "a".to_string(),
-            token_out: "b".to_string(),
-            amount: Some("1000".to_string())
-        },
-        SwapStep {
-            pool_id: 3,
-            token_in: "b".to_string(),
-            token_out: "c".to_string(),
-            amount: None
-        },
-        SwapStep {
-            pool_id: 2,
-            token_in: "c".to_string(),
-            token_out: "d".to_string(),
-            amount: None
-        }
-    ] };
+    let step = SwapExecutionStep::Swap {
+        swap_steps: vec![
+            SwapStep {
+                pool_id: 1,
+                token_in: "a".to_string(),
+                token_out: "b".to_string(),
+                amount: Some("1000".to_string()),
+            },
+            SwapStep {
+                pool_id: 3,
+                token_in: "b".to_string(),
+                token_out: "c".to_string(),
+                amount: None,
+            },
+            SwapStep {
+                pool_id: 2,
+                token_in: "c".to_string(),
+                token_out: "d".to_string(),
+                amount: None,
+            },
+        ],
+    };
     assert!(step.get_return_denom().is_ok());
     assert_eq!("d", step.get_return_denom().unwrap());
 
@@ -66,83 +68,103 @@ fn test_execution_step_cosmos_msg() {
 
     // empty swap steps
     let step = SwapExecutionStep::Swap { swap_steps: vec![] };
-    assert!(step.to_cosmos_msg(address.to_string(), coin(1000, "a")).is_err());
+    assert!(step
+        .to_cosmos_msg(address.to_string(), coin(1000, "a"))
+        .is_err());
 
     // single step Swap type step
-    let step = SwapExecutionStep::Swap { swap_steps: vec![
-        SwapStep {
+    let step = SwapExecutionStep::Swap {
+        swap_steps: vec![SwapStep {
             pool_id: 1,
             token_in: "a".to_string(),
             token_out: "b".to_string(),
-            amount: None
-        }
-    ] };
+            amount: None,
+        }],
+    };
     let result = step.to_cosmos_msg(address.to_string(), coin(1000, "a"));
     assert!(result.is_ok());
-    assert_eq!(<MsgBatchSwap as Into<CosmosMsg>>::into(MsgBatchSwap {
-        creator: address.to_string(),
-        swap_type: SwapType::GivenIn.into(),
-        max_amounts_in: vec![CosmosCoin {amount: "1000".to_string(), denom: "a".to_string()}],
-        min_amounts_out: vec![CosmosCoin {amount: "1".to_string(), denom: "b".to_string()}],
-        steps: vec![
-            SwapStep {
+    assert_eq!(
+        <MsgBatchSwap as Into<CosmosMsg>>::into(MsgBatchSwap {
+            creator: address.to_string(),
+            swap_type: SwapType::GivenIn.into(),
+            max_amounts_in: vec![CosmosCoin {
+                amount: "1000".to_string(),
+                denom: "a".to_string()
+            }],
+            min_amounts_out: vec![CosmosCoin {
+                amount: "1".to_string(),
+                denom: "b".to_string()
+            }],
+            steps: vec![SwapStep {
                 pool_id: 1,
                 token_in: "a".to_string(),
                 token_out: "b".to_string(),
                 amount: "1000".to_string().into()
-            }
-        ],
-    }), result.unwrap());
+            }],
+        }),
+        result.unwrap()
+    );
 
     // multistep Swap type step
-    let step = SwapExecutionStep::Swap { swap_steps: vec![
-        SwapStep {
-            pool_id: 1,
-            token_in: "a".to_string(),
-            token_out: "b".to_string(),
-            amount: None
-        },
-        SwapStep {
-            pool_id: 3,
-            token_in: "b".to_string(),
-            token_out: "c".to_string(),
-            amount: None
-        },
-        SwapStep {
-            pool_id: 2,
-            token_in: "c".to_string(),
-            token_out: "d".to_string(),
-            amount: None
-        }
-    ] };
-    let result = step.to_cosmos_msg(address.to_string(), coin(1000, "a"));
-    assert!(result.is_ok());
-    assert_eq!(<MsgBatchSwap as Into<CosmosMsg>>::into(MsgBatchSwap {
-        creator: address.to_string(),
-        swap_type: SwapType::GivenIn.into(),
-        max_amounts_in: vec![CosmosCoin {amount: "1000".to_string(), denom: "a".to_string()}],
-        min_amounts_out: vec![CosmosCoin {amount: "1".to_string(), denom: "d".to_string()}],
-        steps: vec![
+    let step = SwapExecutionStep::Swap {
+        swap_steps: vec![
             SwapStep {
                 pool_id: 1,
                 token_in: "a".to_string(),
                 token_out: "b".to_string(),
-                amount: "1000".to_string().into()
+                amount: None,
             },
             SwapStep {
                 pool_id: 3,
                 token_in: "b".to_string(),
                 token_out: "c".to_string(),
-                amount: None
+                amount: None,
             },
             SwapStep {
                 pool_id: 2,
                 token_in: "c".to_string(),
                 token_out: "d".to_string(),
-                amount: None
-            }
+                amount: None,
+            },
         ],
-    }), result.unwrap());
+    };
+    let result = step.to_cosmos_msg(address.to_string(), coin(1000, "a"));
+    assert!(result.is_ok());
+    assert_eq!(
+        <MsgBatchSwap as Into<CosmosMsg>>::into(MsgBatchSwap {
+            creator: address.to_string(),
+            swap_type: SwapType::GivenIn.into(),
+            max_amounts_in: vec![CosmosCoin {
+                amount: "1000".to_string(),
+                denom: "a".to_string()
+            }],
+            min_amounts_out: vec![CosmosCoin {
+                amount: "1".to_string(),
+                denom: "d".to_string()
+            }],
+            steps: vec![
+                SwapStep {
+                    pool_id: 1,
+                    token_in: "a".to_string(),
+                    token_out: "b".to_string(),
+                    amount: "1000".to_string().into()
+                },
+                SwapStep {
+                    pool_id: 3,
+                    token_in: "b".to_string(),
+                    token_out: "c".to_string(),
+                    amount: None
+                },
+                SwapStep {
+                    pool_id: 2,
+                    token_in: "c".to_string(),
+                    token_out: "d".to_string(),
+                    amount: None
+                }
+            ],
+        }),
+        result.unwrap()
+    );
 
     // stake step
     let step = SwapExecutionStep::Stake {
@@ -151,12 +173,15 @@ fn test_execution_step_cosmos_msg() {
     };
     let result = step.to_cosmos_msg(address.to_string(), coin(1000, "uatom"));
     assert!(result.is_ok());
-    assert_eq!(<MsgStake as Into<CosmosMsg>>::into(MsgStake {
-        creator: address.to_string(),
-        host_chain: "uatom".to_string(),
-        transfer_channel: "channel-0".to_string(),
-        amount: "1000".into(),
-    }), result.unwrap());
+    assert_eq!(
+        <MsgStake as Into<CosmosMsg>>::into(MsgStake {
+            creator: address.to_string(),
+            host_chain: "uatom".to_string(),
+            transfer_channel: "channel-0".to_string(),
+            amount: "1000".into(),
+        }),
+        result.unwrap()
+    );
 }
 
 #[test]
@@ -166,27 +191,26 @@ fn test_extract_execution_step() {
     assert!(result.is_err());
 
     // single amm swap step
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "amm:1".to_string(),
-            denom_in: "a".to_string(),
-            denom_out: "b".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "amm:1".to_string(),
+        denom_in: "a".to_string(),
+        denom_out: "b".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_ok());
     let vec = result.unwrap();
     assert_eq!(1, vec.len());
-    assert_eq!(SwapExecutionStep::Swap{
-        swap_steps: vec![
-            SwapStep{
+    assert_eq!(
+        SwapExecutionStep::Swap {
+            swap_steps: vec![SwapStep {
                 pool_id: 1,
                 token_in: "a".to_string(),
                 token_out: "b".to_string(),
                 amount: None
-            }
-        ]
-    }, vec.front().unwrap().clone());
+            }]
+        },
+        vec.front().unwrap().clone()
+    );
 
     // multi step amm swap
     let result = extract_execution_steps(vec![
@@ -207,50 +231,54 @@ fn test_extract_execution_step() {
             denom_in: "c".to_string(),
             denom_out: "d".to_string(),
             interface: None,
-        }
+        },
     ]);
     assert!(result.is_ok());
     let vec = result.unwrap();
     assert_eq!(1, vec.len());
-    assert_eq!(SwapExecutionStep::Swap{
-        swap_steps: vec![
-            SwapStep{
-                pool_id: 1,
-                token_in: "a".to_string(),
-                token_out: "b".to_string(),
-                amount: None
-            },
-            SwapStep{
-                pool_id: 3,
-                token_in: "b".to_string(),
-                token_out: "c".to_string(),
-                amount: None
-            },
-            SwapStep{
-                pool_id: 2,
-                token_in: "c".to_string(),
-                token_out: "d".to_string(),
-                amount: None
-            }
-        ]
-    }, vec.front().unwrap().clone());
+    assert_eq!(
+        SwapExecutionStep::Swap {
+            swap_steps: vec![
+                SwapStep {
+                    pool_id: 1,
+                    token_in: "a".to_string(),
+                    token_out: "b".to_string(),
+                    amount: None
+                },
+                SwapStep {
+                    pool_id: 3,
+                    token_in: "b".to_string(),
+                    token_out: "c".to_string(),
+                    amount: None
+                },
+                SwapStep {
+                    pool_id: 2,
+                    token_in: "c".to_string(),
+                    token_out: "d".to_string(),
+                    amount: None
+                }
+            ]
+        },
+        vec.front().unwrap().clone()
+    );
 
     // single staking step
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "icstaking:uatom:channel-0".to_string(),
-            denom_in: "uatom".to_string(),
-            denom_out: "c:uatom".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "icstaking:uatom:channel-0".to_string(),
+        denom_in: "uatom".to_string(),
+        denom_out: "c:uatom".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_ok());
     let vec = result.unwrap();
     assert_eq!(1, vec.len());
-    assert_eq!(SwapExecutionStep::Stake{
-        host_chain_id: "uatom".to_string(),
-        transfer_channel: "channel-0".to_string(),
-    }, vec.front().unwrap().clone());
+    assert_eq!(
+        SwapExecutionStep::Stake {
+            host_chain_id: "uatom".to_string(),
+            transfer_channel: "channel-0".to_string(),
+        },
+        vec.front().unwrap().clone()
+    );
 
     // multiple steps including amm and icstaking
     let result = extract_execution_steps(vec![
@@ -277,117 +305,131 @@ fn test_extract_execution_step() {
             denom_in: "c:uatom".to_string(),
             denom_out: "y:uatom:30Sep2024".to_string(),
             interface: None,
-        }
+        },
     ]);
     assert!(result.is_ok());
     let mut vec = result.unwrap();
     assert_eq!(3, vec.len());
-    assert_eq!(SwapExecutionStep::Swap{
-        swap_steps: vec![
-            SwapStep{
-                pool_id: 7,
-                token_in: "uusdc".to_string(),
-                token_out: "uauuu".to_string(),
-                amount: None
-            },
-            SwapStep{
-                pool_id: 12,
-                token_in: "uauuu".to_string(),
-                token_out: "uatom".to_string(),
-                amount: None
-            },
-        ]
-    }, vec.pop_front().unwrap().clone());
-    assert_eq!(SwapExecutionStep::Stake{
-        host_chain_id: "uatom".to_string(),
-        transfer_channel: "channel-0".to_string(),
-    }, vec.pop_front().unwrap().clone());
-    assert_eq!(SwapExecutionStep::Swap{
-        swap_steps: vec![
-            SwapStep{
+    assert_eq!(
+        SwapExecutionStep::Swap {
+            swap_steps: vec![
+                SwapStep {
+                    pool_id: 7,
+                    token_in: "uusdc".to_string(),
+                    token_out: "uauuu".to_string(),
+                    amount: None
+                },
+                SwapStep {
+                    pool_id: 12,
+                    token_in: "uauuu".to_string(),
+                    token_out: "uatom".to_string(),
+                    amount: None
+                },
+            ]
+        },
+        vec.pop_front().unwrap().clone()
+    );
+    assert_eq!(
+        SwapExecutionStep::Stake {
+            host_chain_id: "uatom".to_string(),
+            transfer_channel: "channel-0".to_string(),
+        },
+        vec.pop_front().unwrap().clone()
+    );
+    assert_eq!(
+        SwapExecutionStep::Swap {
+            swap_steps: vec![SwapStep {
                 pool_id: 1,
                 token_in: "c:uatom".to_string(),
                 token_out: "y:uatom:30Sep2024".to_string(),
                 amount: None
-            },
-        ]
-    }, vec.pop_front().unwrap().clone());
+            },]
+        },
+        vec.pop_front().unwrap().clone()
+    );
 
     // invalid pools
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "amm:invalid".to_string(),
-            denom_in: "a".to_string(),
-            denom_out: "b".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "amm:invalid".to_string(),
+        denom_in: "a".to_string(),
+        denom_out: "b".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_err());
-    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(
+        result.err().unwrap(),
+        ContractError::InvalidPool { .. }
+    ));
 
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "invalid:1".to_string(),
-            denom_in: "a".to_string(),
-            denom_out: "b".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "invalid:1".to_string(),
+        denom_in: "a".to_string(),
+        denom_out: "b".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_err());
-    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(
+        result.err().unwrap(),
+        ContractError::InvalidPool { .. }
+    ));
 
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "icstaking:1".to_string(),
-            denom_in: "uatom".to_string(),
-            denom_out: "c:uatom".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "icstaking:1".to_string(),
+        denom_in: "uatom".to_string(),
+        denom_out: "c:uatom".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_err());
-    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(
+        result.err().unwrap(),
+        ContractError::InvalidPool { .. }
+    ));
 
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "icstaking:uatom:channel-0".to_string(),
-            denom_in: "c:uatom".to_string(),
-            denom_out: "uatom".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "icstaking:uatom:channel-0".to_string(),
+        denom_in: "c:uatom".to_string(),
+        denom_out: "uatom".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_err());
-    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(
+        result.err().unwrap(),
+        ContractError::InvalidPool { .. }
+    ));
 
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "icstaking:uatom:channel-0".to_string(),
-            denom_in: "c:uatom".to_string(),
-            denom_out: "c:uosmo".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "icstaking:uatom:channel-0".to_string(),
+        denom_in: "c:uatom".to_string(),
+        denom_out: "c:uosmo".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_err());
-    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(
+        result.err().unwrap(),
+        ContractError::InvalidPool { .. }
+    ));
 
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "icstaking:uatom:channel-0".to_string(),
-            denom_in: "uatom".to_string(),
-            denom_out: "uosmo".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "icstaking:uatom:channel-0".to_string(),
+        denom_in: "uatom".to_string(),
+        denom_out: "uosmo".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_err());
-    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(
+        result.err().unwrap(),
+        ContractError::InvalidPool { .. }
+    ));
 
-    let result = extract_execution_steps(vec![
-        SwapOperation {
-            pool: "icstaking:uatom:channel-0:some".to_string(),
-            denom_in: "uatom".to_string(),
-            denom_out: "c:uatom".to_string(),
-            interface: None,
-        }
-    ]);
+    let result = extract_execution_steps(vec![SwapOperation {
+        pool: "icstaking:uatom:channel-0:some".to_string(),
+        denom_in: "uatom".to_string(),
+        denom_out: "c:uatom".to_string(),
+        interface: None,
+    }]);
     assert!(result.is_err());
-    assert!(matches!(result.err().unwrap(), ContractError::InvalidPool {..}));
+    assert!(matches!(
+        result.err().unwrap(),
+        ContractError::InvalidPool { .. }
+    ));
 }
