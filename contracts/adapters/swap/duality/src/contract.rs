@@ -25,7 +25,7 @@ use neutron_sdk::{
     },
 };
 
-use std::str::FromStr;
+use std::{str::FromStr};
 
 use skip::{
     asset::Asset,
@@ -644,13 +644,13 @@ fn get_spot_price_and_tick(
         }),
     };
 
-    let tick_liq_resp: AllTickLiquidityResponse = get_tick_liquidity_all(deps, query_msg.into())?;
+    let tick_liq_resp: AllTickLiquidityResponse = get_tick_liquidity_all(deps, query_msg)?;
 
-    if tick_liq_resp.tick_liquidity.len() == 0 {
+    if tick_liq_resp.tick_liquidity.is_empty() {
         return Err(ContractError::NoLiquidityToParse);
     }
 
-    let liq = &tick_liq_resp.tick_liquidity[0];
+    let liq: &neutron_sdk::stargate::dex::types::TickLiquidity = &tick_liq_resp.tick_liquidity[0];
 
     let spot_price_str: String;
     let tick_index: i64;
@@ -666,25 +666,21 @@ fn get_spot_price_and_tick(
         }
     }
 
-    // Decimal::from fails if we supply more than 18 fractional digits.
-    // Our prices can be much more persise than the 18 ddigit allowance here so a good number of
-    // prices will not be supported.
-    let spot_price_decimal: Decimal = parse_and_validate_decimal(&spot_price_str)?;
-
-    // This is somewhat problematic. Maybe split up the function so we only get if we actually need the decimal
-    if spot_price_decimal.is_zero() {
-        return Err(ContractError::PriceTruncateError);
-    };
+    // Decimal::from fails if we supply more than 18 fractional or decimal digits.
+    // Our prices can be much more persise than the 18 ddigit allowance here so a number of
+    // our highest and lowest prices will not be supported on some assets. 
+    let spot_price_decimal: Decimal = parse_and_validate_price(&spot_price_str)?;
 
     Ok((spot_price_decimal, tick_index))
 }
 
-fn parse_and_validate_decimal(input: &str) -> ContractResult<Decimal> {
+fn parse_and_validate_price(input: &str) -> ContractResult<Decimal> {
     // find position of decinal point
     if let Some(pos) = input.find('.') {
-        // get only fractional and integer parts
+        // get fractional and integer parts
         let fractional_part_full = &input[pos + 1..];
         let integer_part = &input[..pos];
+
         // only perform this logic if there are more than 18 trailling decimals points
         if fractional_part_full.len() > 18 {
             // if the 19th digit is > 5 round up.
@@ -696,49 +692,121 @@ fn parse_and_validate_decimal(input: &str) -> ContractResult<Decimal> {
                 .unwrap()
                 >= 5;
 
-            // Create a string with 18 decimal places from input
-            let fractional_part_truncated = format!("{}", &fractional_part_full[..18]);
-            let truncated_str_full = format!("{}.{}", integer_part, &fractional_part_truncated);
+            // truncate the original fractiona part to 18
+            let fractional_part_truncated = &fractional_part_full[..18];
+            // create the full string with only 18 trailling fractional digits then create the decinal.
+            let truncated_str_full = format!("{}.{}", integer_part, fractional_part_truncated);
             let mut decimal = Decimal::from_str(&truncated_str_full).map_err(|e| {
                 StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
             })?;
 
-            // if rounding up is needed add smallest decimal value
+            // if we're rounding up we add min value
             if round_up {
                 decimal += Decimal::from_str("0.000000000000000001").unwrap();
             }
 
+            // error if the return price is zero at this point.
+            if decimal == Decimal::zero() {
+                return Err(ContractError::PriceTruncateError);
+            }
+
+            // check for price deviation due to truncating.
             // we only check for deviation from original value if numerator (integer_value) is 0. Otherwise cutting least significant digits
             // will have a negligible price impact.
-            let integer_value = Decimal::from_str(&integer_part).map_err(|e| {
+            let integer_value = Decimal::from_str(integer_part).map_err(|e| {
                 StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
             })?;
-            if (integer_value == Decimal::zero()) {
-                // create decimals from the decimal points trailling the 0 to compare.
-                let fractional_original =
-                    Decimal::from_str(&fractional_part_full).map_err(|e| {
-                        StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
-                    })?;
-                let fractional_truncated =
-                    Decimal::from_str(&fractional_part_truncated).map_err(|e| {
-                        StdError::generic_err(format!("Failed to parse truncated Decimal: {}", e))
-                    })?;
+            if integer_value == Decimal::zero() {
+                // create ints from the fractional trailing digits to compare.
+                // using int128 is safe here since PercDec struct is max len 27
+                let fractional_original: i128 = fractional_part_full.parse().unwrap_or(0);
+                let fractional_truncated: i128 = fractional_part_truncated.parse().unwrap_or(0);
+                let scale_factor = 10_i128
+                    .pow((fractional_part_full.len() - fractional_part_truncated.len()) as u32);
+                let fractional_truncated_scaled = fractional_truncated * scale_factor;
+                let diff = (fractional_original - fractional_truncated_scaled).abs();
+                let pct_diff: f64 = diff as f64 / fractional_original as f64 * 100.0;
                 // error if truncating caused more than a 1% price difference
-                let diff: Decimal = fractional_original.abs_diff(fractional_truncated);
-                let pct_diff: Decimal = diff.checked_div(fractional_original).map_err(|e| {
-                    StdError::generic_err(format!("Failed to perform price division: {}", e))
-                })?;
-                if pct_diff > Decimal::percent(1) {
+                if pct_diff > 1.0 {
                     return Err(ContractError::PriceTruncateError);
                 }
                 return Ok(decimal);
             }
+            return Ok(decimal);
+        } else {
+            // price has fewer than 18 decimal places. We convert the input directly
+            let spot_price = Decimal::from_str(input).map_err(|e| {
+                StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
+            })?;
+            return Ok(spot_price);
         }
     }
-
-    // If no rounding is needed, parse the original input
+    // spot price has no fractional value. we convert the input directly.
     let spot_price = Decimal::from_str(input).map_err(|e| {
         StdError::generic_err(format!("Failed to parse spot_price as Decimal: {}", e))
     })?;
-    return Ok(spot_price);
+    Ok(spot_price)
+}
+
+
+///////////////
+/// TESTS   ///
+///////////////
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
+
+    #[derive(Debug, PartialEq)]
+    enum ExpectedError {
+        PriceTruncateError,
+        GenericErr(String),
+    }
+    
+    #[test_case("0.000000000000000010100000", "0.000000000000000010" ; "0.99% change no truncate")]
+    #[test_case("2.0", "2.0" ; "single fractional point -1")]
+    #[test_case("99925198949099993173.0", "99925198949099993173.0" ; "single fractional point -2")]
+    #[test_case("1.1111222", "1.1111222" ; "few fractional points -1")]
+    #[test_case("340251183460499231732.1111222", "340251183460499231732.1111222" ; "few fractional points -2")]
+    #[test_case("123456789", "123456789" ; "no fractional points -1")]
+    #[test_case("340251183460499231732", "340251183460499231732" ; "no fractional points -2")]
+    #[test_case("0.111111111111111111111111111111111", "0.111111111111111111" ; "max fractional -1")]
+    #[test_case("340251183460499231732.111111111111111111111111111111", "340251183460499231732.111111111111111111" ; "max fractional -2")]
+    #[test_case("1.99999999999999999990000000000", "2.0" ; "rounding -1")]
+    #[test_case("1.11112222333344445590000000000", "1.111122223333444456" ; "rounding -2 ")]
+    #[test_case("340251183460499231732.9999999999999999999999", "340251183460499231733.0" ; "rounding -3")]
+    #[test_case("99925198949099993173.11112222333344445590000000000", "99925198949099993173.111122223333444456" ; "rounding -4")]
+    #[test_case("340251183460499231732.999999999999999999", "340251183460499231732.999999999999999999" ; "large decimal")]
+    fn test_parse_and_validate_price(
+        input: &str,
+        expected: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let expected_dec = Decimal::from_str(expected).map_err(|e| {
+            StdError::generic_err(format!("Failed to parse expected Decimal: {}", e))
+        })?;
+        let result = parse_and_validate_price(input)?;
+        assert_eq!(result, expected_dec);
+        Ok(())
+    }
+
+    #[test_case("0.00000000000000001011111111", ExpectedError::PriceTruncateError ; "price truncate error 1")]
+    #[test_case("0.0000000000000000005", ExpectedError::PriceTruncateError ; "price truncate error 2")]
+    #[test_case("0.0000000000000000099999999", ExpectedError::PriceTruncateError ; "price truncate error 3")]
+    #[test_case("12345667845674567456745674567", ExpectedError::GenericErr("Value too big".to_string()) ; "too large decimal")]
+    fn test_parse_and_validate_price_error(input: &str, expected_error: ExpectedError) -> Result<(), Box<dyn std::error::Error>> {
+        match parse_and_validate_price(input) {
+            Ok(_) => Err(Box::new(StdError::generic_err("Expected error, but got Ok"))),
+            Err(e) => match expected_error {
+                ExpectedError::PriceTruncateError => match e {
+                    ContractError::PriceTruncateError => Ok(()),
+                    _ => Err(Box::new(StdError::generic_err(format!("Unexpected error: {:?}", e)))),
+                },
+                ExpectedError::GenericErr(ref msg) => match e {
+                    ContractError::Std(StdError::GenericErr { msg: ref err_msg, .. })if err_msg.contains(msg) => Ok(()),
+                    _ => Err(Box::new(StdError::generic_err(format!("Unexpected error: {:?}", e)))),
+                },
+            },
+        }
+    }
 }
