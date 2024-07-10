@@ -127,7 +127,7 @@ pub fn simulate_swap_exact_asset_out(
     };
 
     // Get coin out from asset out, error if asset out is not a
-    // native coin because Osmosis does not support CW20 tokens.
+    // native coin because Pryzm does not support CW20 tokens.
     let coin_out = match asset_out {
         Asset::Native(coin) => coin,
         _ => return Err(ContractError::AssetNotNative),

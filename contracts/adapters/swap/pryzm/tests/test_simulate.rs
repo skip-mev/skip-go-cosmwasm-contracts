@@ -633,7 +633,7 @@ fn setup_mocks() -> MockQuerier {
     );
     mock_spot_price(&mut querier, 4, "ibc/uatom", "c:uatom", "0.9");
 
-    return querier;
+    querier
 }
 
 fn mock_stake_given_in(

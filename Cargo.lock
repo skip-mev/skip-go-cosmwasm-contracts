@@ -1566,7 +1566,6 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "mockall",
- "osmosis-std",
  "pryzm-std",
  "serde",
  "skip",

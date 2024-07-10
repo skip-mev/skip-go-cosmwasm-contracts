@@ -155,7 +155,7 @@ fn test_execution_step_cosmos_msg() {
         creator: address.to_string(),
         host_chain: "uatom".to_string(),
         transfer_channel: "channel-0".to_string(),
-        amount: "1000".to_string().into(),
+        amount: "1000".into(),
     }), result.unwrap());
 }
 
