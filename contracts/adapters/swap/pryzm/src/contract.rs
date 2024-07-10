@@ -169,8 +169,9 @@ fn execute_steps(
         }
     };
 
-    // store the steps to continue after the current step is executed in the reply entrypoint
+    // store the steps and the swapper to continue after the current step is executed in the reply entrypoint
     IN_PROGRESS_SWAP_OPERATIONS.save(deps.storage, &execution_steps)?;
+    IN_PROGRESS_SWAP_SENDER.save(deps.storage, &swapper)?;
 
     Ok(Response::new()
         .add_submessage(sub_msg)
