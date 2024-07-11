@@ -25,7 +25,7 @@ use neutron_sdk::{
     },
 };
 
-use std::{str::FromStr};
+use std::str::FromStr;
 
 use skip::{
     asset::Asset,
@@ -650,7 +650,7 @@ fn get_spot_price_and_tick(
         return Err(ContractError::NoLiquidityToParse);
     }
 
-    let liq: &neutron_sdk::stargate::dex::types::TickLiquidity = &tick_liq_resp.tick_liquidity[0];
+    let liq = &tick_liq_resp.tick_liquidity[0];
 
     let spot_price_str: String;
     let tick_index: i64;
