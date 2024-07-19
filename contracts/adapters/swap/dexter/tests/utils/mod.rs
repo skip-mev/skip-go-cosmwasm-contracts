@@ -79,9 +79,9 @@ pub fn store_token_code(app: &mut App<BankKeeper, MockApiBech32>) -> u64 {
 
 pub fn store_dexter_swap_adapter_code(app: &mut App<BankKeeper, MockApiBech32>) -> u64 {
     let dexter_swap_adapter_contract = Box::new(ContractWrapper::new_with_empty(
-        skip_api_swap_adapter_dexter::contract::execute,
-        skip_api_swap_adapter_dexter::contract::instantiate,
-        skip_api_swap_adapter_dexter::contract::query,
+        skip_go_swap_adapter_dexter::contract::execute,
+        skip_go_swap_adapter_dexter::contract::instantiate,
+        skip_go_swap_adapter_dexter::contract::query,
     ));
     app.store_code(dexter_swap_adapter_contract)
 }

@@ -5,7 +5,7 @@ use cosmwasm_std::{
     SubMsg,
 };
 use skip::{error::SkipError, swap::ExecuteMsg};
-use skip_api_swap_adapter_white_whale::error::{ContractError, ContractResult};
+use skip_go_swap_adapter_white_whale::error::{ContractError, ContractResult};
 use test_case::test_case;
 
 /*
@@ -127,7 +127,7 @@ fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
     let info = mock_info(&params.caller, &[]);
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_white_whale::contract::execute(
+    let res = skip_go_swap_adapter_white_whale::contract::execute(
         deps.as_mut(),
         env,
         info,

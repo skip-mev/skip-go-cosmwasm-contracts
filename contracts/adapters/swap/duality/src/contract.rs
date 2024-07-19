@@ -31,7 +31,7 @@ use skip::{
     asset::Asset,
     swap::{
         execute_transfer_funds_back, get_ask_denom_for_routes,
-        DualityInstatiateMsg as InstantiateMsg, ExecuteMsg, MigrateMsg, QueryMsg, Route,
+        DualityInstantiateMsg as InstantiateMsg, ExecuteMsg, MigrateMsg, QueryMsg, Route,
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
@@ -703,7 +703,7 @@ fn parse_and_validate_price(input: &str) -> ContractResult<Decimal> {
             // if we're rounding up we add min value
             if round_up {
                 decimal += Decimal::from_str("0.000000000000000001").unwrap();
-            }
+            } 
 
             // error if the return price is zero at this point.
             if decimal == Decimal::zero() {

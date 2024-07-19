@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use ibc_proto::ibc::applications::transfer::v1::MsgTransferResponse;
 use prost::Message;
-use skip_api_ibc_adapter_ibc_hooks::{
+use skip_go_ibc_adapter_ibc_hooks::{
     error::ContractResult,
     state::{ACK_ID_TO_RECOVER_ADDRESS, IN_PROGRESS_CHANNEL_ID, IN_PROGRESS_RECOVER_ADDRESS},
 };
@@ -206,7 +206,7 @@ fn test_reply(params: Params) -> ContractResult<()> {
     }
 
     // Call reply with the given test parameters
-    let res = skip_api_ibc_adapter_ibc_hooks::contract::reply(deps.as_mut(), env, params.reply);
+    let res = skip_go_ibc_adapter_ibc_hooks::contract::reply(deps.as_mut(), env, params.reply);
 
     // Assert the behavior is correct
     match res {

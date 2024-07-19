@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-ibc-adapter-neutron-transfer"
+name          = "skip-go-ibc-adapter-neutron-transfer"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

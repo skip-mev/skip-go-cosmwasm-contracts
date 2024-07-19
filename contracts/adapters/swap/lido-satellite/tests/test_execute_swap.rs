@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 use lido_satellite::msg::ExecuteMsg as LidoSatelliteExecuteMsg;
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_api_swap_adapter_lido_satellite::{
+use skip_go_swap_adapter_lido_satellite::{
     error::{ContractError, ContractResult},
     state::{
         BRIDGED_DENOM, CANONICAL_DENOM, ENTRY_POINT_CONTRACT_ADDRESS,
@@ -180,7 +180,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     CANONICAL_DENOM.save(deps.as_mut().storage, &String::from("factory/wstETH"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_lido_satellite::contract::execute(
+    let res = skip_go_swap_adapter_lido_satellite::contract::execute(
         deps.as_mut(),
         env,
         info,

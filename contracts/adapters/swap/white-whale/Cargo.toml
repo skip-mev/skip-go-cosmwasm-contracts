@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-white-whale"
+name          = "skip-go-swap-adapter-white-whale"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }

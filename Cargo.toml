@@ -15,8 +15,8 @@ edition       = "2021"
 rust-version  = "1.71.0"
 license       = "TBD"
 homepage      = "https://skip.money/"
-repository    = "https://github.com/skip-mev/skip-api-contracts"
-documentation = "https://github.com/skip-mev/skip-api-contracts#readme"
+repository    = "https://github.com/skip-mev/skip-go-cosmwasm-contracts"
+documentation = "https://github.com/skip-mev/skip-go-cosmwasm-contracts#readme"
 keywords      = ["cosmwasm"]
 
 [workspace.dependencies]

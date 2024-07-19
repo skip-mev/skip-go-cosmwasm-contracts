@@ -33,7 +33,7 @@ use skip::{
     asset::Asset,
     swap::{
         execute_transfer_funds_back, get_ask_denom_for_routes,
-        DualityInstatiateMsg as InstantiateMsg, ExecuteMsg, MigrateMsg, QueryMsg, Route,
+        DualityInstantiateMsg as InstantiateMsg, ExecuteMsg, MigrateMsg, QueryMsg, Route,
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };

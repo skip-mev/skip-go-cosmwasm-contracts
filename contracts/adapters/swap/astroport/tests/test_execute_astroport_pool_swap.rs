@@ -12,7 +12,7 @@ use cosmwasm_std::{
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_api_swap_adapter_astroport::error::{ContractError, ContractResult};
+use skip_go_swap_adapter_astroport::error::{ContractError, ContractResult};
 use test_case::test_case;
 
 /*
@@ -194,7 +194,7 @@ fn test_execute_astroport_pool_swap(params: Params) -> ContractResult<()> {
     let info = mock_info(&params.caller, &[]);
 
     // Call execute_astroport_pool_swap with the given test parameters
-    let res = skip_api_swap_adapter_astroport::contract::execute(
+    let res = skip_go_swap_adapter_astroport::contract::execute(
         deps.as_mut(),
         env,
         info,

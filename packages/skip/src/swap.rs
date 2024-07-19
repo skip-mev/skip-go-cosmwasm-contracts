@@ -48,7 +48,7 @@ pub struct LidoSatelliteInstantiateMsg {
 }
 
 #[cw_serde]
-pub struct DualityInstatiateMsg {
+pub struct DualityInstantiateMsg {
     pub entry_point_contract_address: String,
     pub dex_module_address: String,
 }
