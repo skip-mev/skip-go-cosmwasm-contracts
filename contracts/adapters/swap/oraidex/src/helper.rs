@@ -1,6 +1,8 @@
-use cosmwasm_std::{Api, StdError};
+use cosmwasm_std::{Api, Coin, StdError, Uint128};
+use cw20::Cw20Coin;
 use oraiswap::asset::AssetInfo;
 use oraiswap_v3::{percentage::Percentage, FeeTier, PoolKey};
+use skip::asset::Asset;
 
 use crate::error::ContractError;
 
@@ -11,6 +13,20 @@ pub fn denom_to_asset_info(api: &dyn Api, denom: &str) -> AssetInfo {
         AssetInfo::NativeToken {
             denom: denom.to_string(),
         }
+    }
+}
+
+pub fn denom_to_asset(api: &dyn Api, denom: &str, amount: Uint128) -> Asset {
+    if let Ok(contract_addr) = api.addr_validate(denom) {
+        Asset::Cw20(Cw20Coin {
+            address: contract_addr.to_string(),
+            amount,
+        })
+    } else {
+        Asset::Native(Coin {
+            denom: denom.to_string(),
+            amount,
+        })
     }
 }
 

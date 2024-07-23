@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{
     error::{ContractError, ContractResult},
-    helper::{convert_pool_id_to_v3_pool_key, denom_to_asset_info},
+    helper::{convert_pool_id_to_v3_pool_key, denom_to_asset, denom_to_asset_info},
     state::{ENTRY_POINT_CONTRACT_ADDRESS, ORAIDEX_ROUTER_ADDRESS},
 };
 use cosmwasm_std::{
@@ -14,7 +14,8 @@ use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 
 use oraiswap::mixed_router::{
-    ExecuteMsg as OraidexRouterExecuteMsg, SwapOperation as OraidexSwapOperation,
+    ExecuteMsg as OraidexRouterExecuteMsg, QueryMsg as OraidexQueryMsg,
+    SimulateSwapOperationsResponse, SwapOperation as OraidexSwapOperation,
 };
 use skip::{
     asset::Asset,
@@ -430,45 +431,40 @@ fn simulate_swap_exact_asset_in(
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
-    panic!("not implemented")
-    // let dexter_router_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
+    let oraidex_router_address = ORAIDEX_ROUTER_ADDRESS.load(deps.storage)?;
 
-    // let mut hop_swap_requests: Vec<HopSwapRequest> = vec![];
-    // for operation in &swap_operations {
-    //     let pool_id: u64 = operation.pool.parse().unwrap();
-    //     let pool_id_u128 = Uint128::from(pool_id);
+    let mut hop_swap_requests: Vec<OraidexSwapOperation> = vec![];
+    for operation in &swap_operations {
+        if operation.pool.contains("-") {
+            // v3
+            let pool_key = convert_pool_id_to_v3_pool_key(&operation.pool)?;
+            let x_to_y = pool_key.token_x == operation.denom_in;
 
-    //     hop_swap_requests.push(HopSwapRequest {
-    //         pool_id: pool_id_u128,
-    //         asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-    //         asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-    //     });
-    // }
+            hop_swap_requests.push(OraidexSwapOperation::SwapV3 { pool_key, x_to_y })
+        } else {
+            // v2
+            hop_swap_requests.push(OraidexSwapOperation::OraiSwap {
+                offer_asset_info: denom_to_asset_info(deps.api, &operation.denom_in),
+                ask_asset_info: denom_to_asset_info(deps.api, &operation.denom_out),
+            })
+        }
+    }
 
-    // let dexter_router_query = RouterQueryMsg::SimulateMultihopSwap {
-    //     multiswap_request: hop_swap_requests,
-    //     swap_type: dexter::vault::SwapType::GiveIn {},
-    //     amount: asset_in.amount(),
-    // };
+    let oraidex_router_query = OraidexQueryMsg::SimulateSwapOperations {
+        offer_amount: asset_in.amount(),
+        operations: hop_swap_requests,
+    };
 
-    // let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps
-    //     .querier
-    //     .query_wasm_smart(dexter_router_address, &dexter_router_query)?;
+    let oraidex_router_response: SimulateSwapOperationsResponse = deps
+        .querier
+        .query_wasm_smart(oraidex_router_address, &oraidex_router_query)?;
 
-    // if let ResponseType::Success {} = dexter_router_response.response {
-    //     // Get the asset out
-    //     let last_response = dexter_router_response.swap_operations.last().unwrap();
-
-    //     let asset_out = Asset::Native(Coin {
-    //         denom: last_response.asset_out.to_string(),
-    //         amount: last_response.received_amount,
-    //     });
-
-    //     // Return the asset out and optionally the simulation responses
-    //     Ok(asset_out)
-    // } else {
-    //     Err(ContractError::SimulationError)
-    // }
+    let asset_out = denom_to_asset(
+        deps.api,
+        &swap_operations.last().unwrap().denom_out,
+        oraidex_router_response.amount,
+    );
+    Ok(asset_out)
 }
 
 // Simulates a swap exact amount out request, returning the asset in needed and optionally the reverse simulation responses
