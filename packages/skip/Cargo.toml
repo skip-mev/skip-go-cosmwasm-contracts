@@ -27,3 +27,4 @@ osmosis-std = { workspace = true }
 thiserror = { workspace = true }
 white-whale-std = { workspace = true }
 oraiswap = { workspace = true }
+cw20-ics20-msg = { workspace = true }

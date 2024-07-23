@@ -5,6 +5,7 @@ use std::convert::From;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Coins, StdError};
 use cw20::Cw20ReceiveMsg;
+use cw20_ics20_msg::msg::TransferBackMsg;
 
 ///////////////
 /// MIGRATE ///
@@ -35,16 +36,15 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     IbcWasmTransfer {
-        ibc_wasm_info: IbcWasmInfo,
+        ibc_wasm_info: TransferBackMsg,
         coin: Asset,
-        timeout_timestamp: u64,
     },
     Receive(Cw20ReceiveMsg),
 }
 #[cw_serde]
 pub enum Cw20HookMsg {
     IbcWasmTransfer {
-        ibc_wasm_info: IbcWasmInfo,
+        ibc_wasm_info: TransferBackMsg,
         coin: Asset,
         timeout_timestamp: u64,
     },
@@ -106,21 +106,11 @@ impl IbcFee {
     }
 }
 
-// The IbcWasmInfo struct defines the information for an IBC transfer standardized across all IBC WASM Transfer Adapter contracts.
-#[cw_serde]
-pub struct IbcWasmInfo {
-    pub local_channel_id: String,
-    pub remote_address: String,
-    pub remote_denom: String, // prefix + erc20
-    pub memo: String,         // prefix + evm address
-}
-
 // The IbcTransfer struct defines the parameters for an IBC transfer standardized across all IBC Transfer Adapter contracts.
 #[cw_serde]
 pub struct IbcWasmTransfer {
-    pub info: IbcWasmInfo,
+    pub info: TransferBackMsg,
     pub coin: Asset,
-    pub timeout_timestamp: u64,
 }
 
 // Converts an IbcTransfer struct to an ExecuteMsg::IbcTransfer enum
@@ -129,22 +119,8 @@ impl From<IbcWasmTransfer> for ExecuteMsg {
         ExecuteMsg::IbcWasmTransfer {
             ibc_wasm_info: ibc_transfer.info,
             coin: ibc_transfer.coin,
-            timeout_timestamp: ibc_transfer.timeout_timestamp,
         }
     }
-}
-
-#[cw_serde]
-pub struct TransferBackMsg {
-    /// the local ibc endpoint you want to send tokens back on
-    pub local_channel_id: String,
-    pub remote_address: String,
-    /// remote denom so that we know what denom to filter when we query based on the asset info. Most likely be: oraib0x... or eth0x...
-    pub remote_denom: String,
-    /// How long the packet lives in seconds. If not specified, use default_timeout
-    pub timeout: Option<u64>,
-    /// metadata of the transfer to suit the new fungible token transfer
-    pub memo: Option<String>,
 }
 
 #[cw_serde]

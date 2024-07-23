@@ -9,13 +9,11 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20_ics20_msg::msg::TransferBackMsg;
 use cw_utils::{must_pay, one_coin};
 use skip::{
     asset::Asset,
-    ibc_wasm::{
-        Cw20HookMsg, ExecuteMsg, IbcWasmExecuteMsg, IbcWasmInfo, InstantiateMsg, MigrateMsg,
-        QueryMsg, TransferBackMsg,
-    },
+    ibc_wasm::{Cw20HookMsg, ExecuteMsg, IbcWasmExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
 };
 
 ///////////////
@@ -99,7 +97,7 @@ pub fn receive_cw20(
             if sent_asset.ne(&coin) {
                 return Err(ContractError::InvalidFund {});
             }
-            execute_ibc_wasm_transfer(deps, env, info, ibc_wasm_info, coin, timeout_timestamp)
+            execute_ibc_wasm_transfer(deps, env, info, ibc_wasm_info, coin)
         }
     }
 }
@@ -118,15 +116,14 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::IbcWasmTransfer {
-            ibc_wasm_info: ibc_info,
+            ibc_wasm_info,
             coin,
-            timeout_timestamp,
         } => {
             let fund = one_coin(&info)?;
             if Asset::from(fund).ne(&coin) {
                 return Err(ContractError::InvalidFund {});
             }
-            execute_ibc_wasm_transfer(deps, env, info, ibc_info, coin, timeout_timestamp)
+            execute_ibc_wasm_transfer(deps, env, info, ibc_wasm_info, coin)
         }
     }
 }
@@ -136,9 +133,8 @@ fn execute_ibc_wasm_transfer(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    ibc_info: IbcWasmInfo,
+    transfer_back_msg: TransferBackMsg,
     asset: Asset,
-    timeout_timestamp: u64,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
@@ -149,14 +145,6 @@ fn execute_ibc_wasm_transfer(
     if info.sender != entry_point_contract_address {
         return Err(ContractError::Unauthorized);
     }
-
-    let transfer_back_msg = TransferBackMsg {
-        local_channel_id: ibc_info.local_channel_id,
-        remote_address: ibc_info.remote_address,
-        remote_denom: ibc_info.remote_denom,
-        timeout: Some(timeout_timestamp),
-        memo: Some(ibc_info.memo),
-    };
 
     let msg = match &asset {
         Asset::Native(coin) => WasmMsg::Execute {
