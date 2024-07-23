@@ -167,7 +167,7 @@ fn execute_ibc_transfer(
 
 // Handles the reply from the ibc transfer sub message
 // Upon success, maps the sub msg AckID (channel_id, sequence_id)
-// to the in progress ibc transfer struct, and saves it to storage.
+// to the in progress ibc transfe r struct, and saves it to storage.
 // Now that the map entry is stored, it also removes the in progress
 // ibc transfer from storage.
 #[entry_point]

@@ -56,6 +56,7 @@ oraiswap = { git = "https://github.com/oraichain/oraiswap.git", rev = "87e07012a
 oraiswap-v3 = { git = "https://github.com/oraichain/oraiswap-v3.git", rev = "7f2b8ac6a239790006d7a662e6f56c175e189be0", features = [
   "library",
 ] }
+cw20-ics20-msg = { git = "https://github.com/oraichain/ibc-bridge-wasm.git", rev = "cffb587ebcdc54d5419c8a0f03fe0f58e245e609" }
 
 [profile.release]
 codegen-units = 1

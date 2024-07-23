@@ -14,6 +14,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anybuf"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a03eb4d55fa21466cac727930be07f82581223ee04bcaf61f934e98b7ecb859"
+
+[[package]]
 name = "anyhow"
 version = "1.0.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -57,6 +63,12 @@ name = "base64ct"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
+
+[[package]]
+name = "bech32"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf9ff0bbfd639f15c74af777d81383cf53efb7c93613f6cab67c6c11e05bbf8b"
 
 [[package]]
 name = "bech32"
@@ -522,6 +534,20 @@ dependencies = [
  "semver",
  "serde",
  "thiserror",
+]
+
+[[package]]
+name = "cw20-ics20-msg"
+version = "0.0.3"
+source = "git+https://github.com/oraichain/ibc-bridge-wasm.git?rev=cffb587ebcdc54d5419c8a0f03fe0f58e245e609#cffb587ebcdc54d5419c8a0f03fe0f58e245e609"
+dependencies = [
+ "anybuf",
+ "bech32 0.8.1",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw20 1.1.2",
+ "oraiswap",
 ]
 
 [[package]]
@@ -1570,6 +1596,21 @@ dependencies = [
  "neutron-sdk 0.8.0",
  "prost 0.11.9",
  "protobuf 3.3.0",
+ "skip",
+ "test-case",
+ "thiserror",
+]
+
+[[package]]
+name = "skip-api-ibc-adapter-orai-ibc-wasm"
+version = "0.3.0"
+dependencies = [
+ "cosmos-sdk-proto 0.19.0",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw2 1.1.2",
+ "cw20-ics20-msg",
  "skip",
  "test-case",
  "thiserror",

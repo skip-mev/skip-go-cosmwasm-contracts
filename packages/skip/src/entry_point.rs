@@ -1,6 +1,7 @@
 use crate::{
     asset::Asset,
     ibc::IbcInfo,
+    ibc_wasm::IbcWasmInfo,
     swap::{Swap, SwapExactAssetOut, SwapVenue},
 };
 
@@ -25,6 +26,7 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub swap_venues: Option<Vec<SwapVenue>>,
     pub ibc_transfer_contract_address: Option<String>,
+    pub ibc_wasm_contract_address: Option<String>,
 }
 
 ///////////////
@@ -70,6 +72,7 @@ pub enum ExecuteMsg {
         owner: Option<Addr>,
         swap_venues: Option<Vec<SwapVenue>>,
         ibc_transfer_contract_address: Option<String>,
+        ibc_wasm_contract_address: Option<String>,
     },
     UniversalSwap {
         memo: String,
@@ -135,6 +138,10 @@ pub enum Action {
     ContractCall {
         contract_address: String,
         msg: Binary,
+    },
+    IbcWasmTransfer {
+        ibc_wasm_info: IbcWasmInfo,
+        fee_swap: Option<SwapExactAssetOut>,
     },
 }
 

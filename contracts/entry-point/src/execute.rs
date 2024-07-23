@@ -4,8 +4,8 @@ use crate::{
     error::{ContractError, ContractResult},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
-        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, OWNER,
-        PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS,
+        OWNER, PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
     },
 };
 use cosmwasm_std::{
@@ -19,6 +19,7 @@ use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
+    ibc_wasm::{ExecuteMsg as IbcWasmTransferExecuteMsg, IbcWasmTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
         SwapExactAssetIn, SwapExactAssetOut, SwapOperation, SwapVenue,
@@ -94,6 +95,7 @@ pub fn execute_update_config(
     owner: Option<Addr>,
     swap_venues: Option<Vec<SwapVenue>>,
     ibc_transfer_contract_address: Option<String>,
+    ibc_wasm_contract_address: Option<String>,
 ) -> ContractResult<Response> {
     OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
@@ -149,6 +151,23 @@ pub fn execute_update_config(
         response = response
             .add_attribute("action", "add_ibc_transfer_adapter")
             .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+    }
+
+    if let Some(ibc_wasm_contract_address) = ibc_wasm_contract_address {
+        // Validate ibc transfer adapter contract addresses
+        let checked_ibc_wasm_contract_address =
+            deps.api.addr_validate(&ibc_wasm_contract_address)?;
+
+        // Store the ibc transfer adapter contract address
+        IBC_WASM_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_wasm_contract_address)?;
+
+        // Insert the ibc transfer adapter contract address into the blocked contract addresses map
+        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_ibc_wasm_contract_address, &())?;
+
+        // Add the ibc transfer adapter contract address to the response
+        response = response
+            .add_attribute("action", "add_ibc_wasm_transfer_adapter")
+            .add_attribute("contract_address", &checked_ibc_wasm_contract_address);
     }
 
     if let Some(owner) = owner {
@@ -699,6 +718,36 @@ pub fn execute_post_swap_action(
             response = response
                 .add_message(contract_call_msg)
                 .add_attribute("action", "dispatch_post_swap_contract_call");
+        }
+        Action::IbcWasmTransfer { ibc_wasm_info, .. } => {
+            let transfer_out_coin = match transfer_out_asset {
+                Asset::Native(coin) => coin,
+                _ => return Err(ContractError::NonNativeIbcTransfer),
+            };
+
+            // Create the IBC transfer message
+            let ibc_transfer_msg: IbcWasmTransferExecuteMsg = IbcWasmTransfer {
+                info: ibc_wasm_info,
+                coin: transfer_out_coin.clone(),
+                timeout_timestamp,
+            }
+            .into();
+
+            // Get the IBC transfer adapter contract address
+            let ibc_wasm_transfer_contract_address =
+                IBC_WASM_CONTRACT_ADDRESS.load(deps.storage)?;
+
+            // Send the IBC transfer by calling the IBC transfer contract
+            let ibc_wasm_transfer_msg = WasmMsg::Execute {
+                contract_addr: ibc_wasm_transfer_contract_address.to_string(),
+                msg: to_json_binary(&ibc_transfer_msg)?,
+                funds: vec![transfer_out_coin],
+            };
+
+            // Add the IBC transfer message to the response
+            response = response
+                .add_message(ibc_wasm_transfer_msg)
+                .add_attribute("action", "dispatch_post_swap_ibc_wasm_transfer");
         }
     };
 
