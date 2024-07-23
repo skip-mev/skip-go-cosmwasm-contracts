@@ -1,4 +1,6 @@
 use cosmwasm_std::{OverflowError, StdError};
+use cw_utils::PaymentError;
+use skip::error::SkipError;
 use thiserror::Error;
 
 pub type ContractResult<T> = core::result::Result<T, ContractError>;
@@ -10,6 +12,12 @@ pub enum ContractError {
 
     #[error(transparent)]
     Overflow(#[from] OverflowError),
+
+    #[error(transparent)]
+    Skip(#[from] SkipError),
+
+    #[error("{0}")]
+    Payment(#[from] PaymentError),
 
     #[error("Unauthorized")]
     Unauthorized,
@@ -28,6 +36,9 @@ pub enum ContractError {
 
     #[error("Failed to receive ibc funds to refund the user")]
     NoFundsToRefund,
+
+    #[error("Invalid fund")]
+    InvalidFund,
 
     #[error("ACK ID already exists for channel ID {channel_id} and sequence ID {sequence_id}")]
     AckIDAlreadyExists {

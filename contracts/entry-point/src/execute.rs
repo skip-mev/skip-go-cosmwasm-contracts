@@ -12,7 +12,7 @@ use cosmwasm_std::{
     from_json, to_json_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
     Response, SubMsg, Uint128, WasmMsg,
 };
-use cw20::{Cw20Coin, Cw20ReceiveMsg};
+use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 use oraiswap::universal_swap_memo::{memo::SwapOperation as UniversalSwapOperation, Memo};
 use skip::{
@@ -720,15 +720,10 @@ pub fn execute_post_swap_action(
                 .add_attribute("action", "dispatch_post_swap_contract_call");
         }
         Action::IbcWasmTransfer { ibc_wasm_info, .. } => {
-            let transfer_out_coin = match transfer_out_asset {
-                Asset::Native(coin) => coin,
-                _ => return Err(ContractError::NonNativeIbcTransfer),
-            };
-
             // Create the IBC transfer message
             let ibc_transfer_msg: IbcWasmTransferExecuteMsg = IbcWasmTransfer {
                 info: ibc_wasm_info,
-                coin: transfer_out_coin.clone(),
+                coin: transfer_out_asset.clone(),
                 timeout_timestamp,
             }
             .into();
@@ -738,10 +733,21 @@ pub fn execute_post_swap_action(
                 IBC_WASM_CONTRACT_ADDRESS.load(deps.storage)?;
 
             // Send the IBC transfer by calling the IBC transfer contract
-            let ibc_wasm_transfer_msg = WasmMsg::Execute {
-                contract_addr: ibc_wasm_transfer_contract_address.to_string(),
-                msg: to_json_binary(&ibc_transfer_msg)?,
-                funds: vec![transfer_out_coin],
+            let ibc_wasm_transfer_msg = match &transfer_out_asset {
+                Asset::Native(coin) => WasmMsg::Execute {
+                    contract_addr: ibc_wasm_transfer_contract_address.to_string(),
+                    msg: to_json_binary(&ibc_transfer_msg)?,
+                    funds: vec![coin.clone()],
+                },
+                Asset::Cw20(coin) => WasmMsg::Execute {
+                    contract_addr: coin.clone().address,
+                    msg: to_json_binary(&Cw20ExecuteMsg::Send {
+                        contract: ibc_wasm_transfer_contract_address.to_string(),
+                        amount: coin.amount,
+                        msg: to_json_binary(&ibc_transfer_msg)?,
+                    })?,
+                    funds: vec![],
+                },
             };
 
             // Add the IBC transfer message to the response

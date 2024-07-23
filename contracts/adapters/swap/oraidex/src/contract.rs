@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::{
     error::{ContractError, ContractResult},
     helper::{convert_pool_id_to_v3_pool_key, denom_to_asset_info},
