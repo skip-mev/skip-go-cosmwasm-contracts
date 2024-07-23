@@ -29,7 +29,7 @@ cw-utils = { workspace = true }
 skip = { workspace = true }
 thiserror = { workspace = true }
 oraiswap = { workspace = true }
-dexter = { workspace = true }
+oraiswap-v3 = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = { workspace = true }

@@ -2,27 +2,26 @@ use std::str::FromStr;
 
 use crate::{
     error::{ContractError, ContractResult},
-    state::{DEXTER_ROUTER_ADDRESS, DEXTER_VAULT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
+    helper::{convert_pool_id_to_v3_pool_key, denom_to_asset_info},
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, ORAIDEX_ROUTER_ADDRESS},
 };
 use cosmwasm_std::{
     entry_point, from_json, to_json_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo,
     Response, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
-use cw20::{Cw20Coin, Cw20ReceiveMsg};
+use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::one_coin;
-use dexter::{
-    pool::{self, ResponseType, SpotPrice},
-    router::{ExecuteMsg as RouterExecuteMsg, HopSwapRequest, QueryMsg as RouterQueryMsg},
-    vault::{PoolInfoResponse, QueryMsg as VaultQueryMsg},
+
+use oraiswap::mixed_router::{
+    ExecuteMsg as OraidexRouterExecuteMsg, SwapOperation as OraidexSwapOperation,
 };
 use skip::{
     asset::Asset,
     swap::{
-        execute_transfer_funds_back, get_ask_denom_for_routes, Cw20HookMsg,
-        DexterAdapterInstantiateMsg, ExecuteMsg, MigrateMsg, QueryMsg, Route,
-        SimulateSmartSwapExactAssetInResponse, SimulateSwapExactAssetInResponse,
-        SimulateSwapExactAssetOutResponse, SwapOperation,
+        execute_transfer_funds_back, get_ask_denom_for_routes, Cw20HookMsg, ExecuteMsg, MigrateMsg,
+        OraidexInstantiateMsg, QueryMsg, Route, SimulateSmartSwapExactAssetInResponse,
+        SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
 
@@ -51,7 +50,7 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: DexterAdapterInstantiateMsg,
+    msg: OraidexInstantiateMsg,
 ) -> ContractResult<Response> {
     // Set contract version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -60,16 +59,13 @@ pub fn instantiate(
     let checked_entry_point_contract_address =
         deps.api.addr_validate(&msg.entry_point_contract_address)?;
 
-    let dexter_vault_contract_address =
-        deps.api.addr_validate(&msg.dexter_vault_contract_address)?;
-    let dexter_router_contract_address = deps
+    let oraidex_router_contract_address = deps
         .api
-        .addr_validate(&msg.dexter_router_contract_address)?;
+        .addr_validate(&msg.oraidex_router_contract_address)?;
 
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
-    DEXTER_ROUTER_ADDRESS.save(deps.storage, &dexter_router_contract_address)?;
-    DEXTER_VAULT_ADDRESS.save(deps.storage, &dexter_vault_contract_address)?;
+    ORAIDEX_ROUTER_ADDRESS.save(deps.storage, &oraidex_router_contract_address)?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
@@ -102,9 +98,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { operations } => {
-            execute_swap(deps, env, info, sent_asset.amount(), operations)
-        }
+        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, sent_asset, operations),
     }
 }
 
@@ -134,7 +128,7 @@ pub fn execute(
                 return Err(ContractError::CoinInDenomMismatch);
             }
 
-            execute_swap(deps, env, info, coin.amount, operations)
+            execute_swap(deps, env, info, Asset::Native(coin), operations)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -156,12 +150,12 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    amount_in: Uint128,
+    sent_asset: Asset,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
-    let dexter_router_contract_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
+    let oraidex_router_contract_address = ORAIDEX_ROUTER_ADDRESS.load(deps.storage)?;
 
     // Enforce the caller is the entry point contract
     if info.sender != entry_point_contract_address {
@@ -171,59 +165,60 @@ fn execute_swap(
     // Create a response object to return
     let response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    let mut hop_swap_requests = vec![];
+    let mut hop_swap_requests: Vec<OraidexSwapOperation> = vec![];
 
     for operation in &operations {
-        let pool_id: u64 = operation
-            .pool
-            .parse()
-            .map_err(|_| ContractError::PoolIdParseError)?;
-        let pool_id_u128 = Uint128::from(pool_id);
+        if operation.pool.contains("-") {
+            let pool_key = convert_pool_id_to_v3_pool_key(&operation.pool)?;
+            let x_to_y = pool_key.token_x == operation.denom_in;
 
-        hop_swap_requests.push(HopSwapRequest {
-            pool_id: pool_id_u128,
-            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-        });
+            hop_swap_requests.push(OraidexSwapOperation::SwapV3 { pool_key, x_to_y })
+        } else {
+            // v2
+            hop_swap_requests.push(OraidexSwapOperation::OraiSwap {
+                offer_asset_info: denom_to_asset_info(deps.api, &operation.denom_in),
+                ask_asset_info: denom_to_asset_info(deps.api, &operation.denom_out),
+            })
+        }
     }
 
-    let dexter_router_msg = RouterExecuteMsg::ExecuteMultihopSwap {
-        requests: hop_swap_requests,
-        recipient: None,
-        offer_amount: amount_in,
-        // doing this since we would validate it anyway in the entrypoint contract from where swap adapter is called
+    let oraidex_router_msg = OraidexRouterExecuteMsg::ExecuteSwapOperations {
+        operations: hop_swap_requests,
         minimum_receive: None,
+        to: Some(entry_point_contract_address),
     };
+    // {
+    //     requests: hop_swap_requests,
+    //     recipient: None,
+    //     offer_amount: amount_in,
+    //     // doing this since we would validate it anyway in the entrypoint contract from where swap adapter is called
+    //     minimum_receive: None,
+    // };
 
     let denom_in = operations.first().unwrap().denom_in.clone();
 
-    let dexter_router_wasm_msg = WasmMsg::Execute {
-        contract_addr: dexter_router_contract_address.to_string(),
-        msg: to_json_binary(&dexter_router_msg)?,
-        funds: vec![Coin {
-            denom: denom_in,
-            amount: amount_in,
-        }],
-    };
-
-    let return_denom = match operations.last() {
-        Some(last_op) => last_op.denom_out.clone(),
-        None => return Err(ContractError::SwapOperationsEmpty),
-    };
-
-    // Create the transfer funds back message
-    let transfer_funds_back_msg = WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
-        msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-            swapper: entry_point_contract_address,
-            return_denom,
-        })?,
-        funds: vec![],
+    let oraidex_router_wasm_msg = match sent_asset {
+        Asset::Cw20(coin) => WasmMsg::Execute {
+            contract_addr: coin.address,
+            msg: to_json_binary(&Cw20ExecuteMsg::Send {
+                contract: oraidex_router_contract_address.to_string(),
+                amount: coin.amount,
+                msg: to_json_binary(&oraidex_router_msg)?,
+            })?,
+            funds: vec![],
+        },
+        Asset::Native(coin) => WasmMsg::Execute {
+            contract_addr: oraidex_router_contract_address.to_string(),
+            msg: to_json_binary(&oraidex_router_msg)?,
+            funds: vec![Coin {
+                denom: denom_in,
+                amount: coin.amount,
+            }],
+        },
     };
 
     Ok(response
-        .add_message(dexter_router_wasm_msg)
-        .add_message(transfer_funds_back_msg)
+        .add_message(oraidex_router_wasm_msg)
         .add_attribute("action", "dispatch_swaps_and_transfer_back"))
 }
 

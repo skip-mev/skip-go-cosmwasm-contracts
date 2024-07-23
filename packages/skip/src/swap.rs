@@ -53,6 +53,12 @@ pub struct HallswapInstantiateMsg {
     pub hallswap_contract_address: String,
 }
 
+#[cw_serde]
+pub struct OraidexInstantiateMsg {
+    pub entry_point_contract_address: String,
+    pub oraidex_router_contract_address: String,
+}
+
 /////////////////////////
 ///      EXECUTE      ///
 /////////////////////////
