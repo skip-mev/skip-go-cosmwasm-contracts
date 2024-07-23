@@ -169,6 +169,7 @@ fn execute_swap(
 
     for operation in &operations {
         if operation.pool.contains("-") {
+            // v3
             let pool_key = convert_pool_id_to_v3_pool_key(&operation.pool)?;
             let x_to_y = pool_key.token_x == operation.denom_in;
 
@@ -187,13 +188,6 @@ fn execute_swap(
         minimum_receive: None,
         to: Some(entry_point_contract_address),
     };
-    // {
-    //     requests: hop_swap_requests,
-    //     recipient: None,
-    //     offer_amount: amount_in,
-    //     // doing this since we would validate it anyway in the entrypoint contract from where swap adapter is called
-    //     minimum_receive: None,
-    // };
 
     let denom_in = operations.first().unwrap().denom_in.clone();
 
