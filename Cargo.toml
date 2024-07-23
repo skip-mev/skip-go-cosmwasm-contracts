@@ -47,12 +47,12 @@ osmosis-std = "0.15.3"
 prost = "0.11"
 serde-cw-value = "0.7.0"
 serde-json-wasm = "0.5.1"
-skip = { version = "0.3.0", path = "./packages/skip" }
+skip = { path = "./packages/skip" }
 test-case = "3.3.1"
 thiserror = "1"
 white-whale-std = "1.1.1"
 cw-controllers = "1.1"
-oraiswap = { git = "https://github.com/oraichain/oraiswap.git", rev = "87e07012a2b809b10f6103f1183d49e36556179f" }
+oraiswap = { git = "https://github.com/oraichain/oraiswap.git", rev = "2666bd3" }
 oraiswap-v3 = { git = "https://github.com/oraichain/oraiswap-v3.git", rev = "7f2b8ac6a239790006d7a662e6f56c175e189be0", features = [
   "library",
 ] }

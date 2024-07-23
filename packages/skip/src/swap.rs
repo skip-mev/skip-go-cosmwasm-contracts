@@ -4,11 +4,13 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{to_json_binary, WasmMsg};
 use cosmwasm_std::{
     Addr, Api, BankMsg, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
 };
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
+use oraiswap::universal_swap_memo::memo::SwapOperation as UniversalSwapOperation;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -191,6 +193,32 @@ pub struct SwapOperation {
     pub denom_in: String,
     pub denom_out: String,
     pub interface: Option<Binary>,
+}
+
+// ORAICHAIN universal swap conversion
+impl SwapOperation {
+    pub fn try_from(operations: Vec<UniversalSwapOperation>) -> Vec<Self> {
+        operations
+            .into_iter()
+            .map(|operation| SwapOperation {
+                pool: operation.pool_id,
+                denom_in: operation.denom_in,
+                denom_out: operation.denom_out,
+                interface: None,
+            })
+            .collect()
+    }
+
+    pub fn to_cosmos_msg(
+        operations: Vec<SwapOperation>,
+        contract_addr: &str,
+        sent_asset: Asset,
+    ) -> Result<CosmosMsg, SkipError> {
+        let msg = ExecuteMsg::Swap { operations };
+        Ok(sent_asset
+            .into_wasm_msg(contract_addr.to_string(), to_json_binary(&msg)?)?
+            .into())
+    }
 }
 
 // ASTROPORT CONVERSION

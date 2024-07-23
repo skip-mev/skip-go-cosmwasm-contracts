@@ -1,4 +1,4 @@
-use std::vec;
+use std::{str::FromStr, vec};
 
 use crate::{
     error::{ContractError, ContractResult},
@@ -9,12 +9,12 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    from_json, to_json_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
-    Response, SubMsg, Uint128, WasmMsg,
+    from_json, to_json_binary, Addr, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env,
+    MessageInfo, Response, Storage, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::one_coin;
-use oraiswap::universal_swap_memo::{memo::SwapOperation as UniversalSwapOperation, Memo};
+use oraiswap::universal_swap_memo::{memo::UserSwap, Memo};
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
@@ -22,7 +22,7 @@ use skip::{
     ibc_wasm::{ExecuteMsg as IbcWasmTransferExecuteMsg, IbcWasmTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactAssetIn, SwapExactAssetOut, SwapOperation, SwapVenue,
+        SwapExactAssetOut, SwapOperation, SwapVenue,
     },
 };
 
@@ -80,7 +80,9 @@ pub fn receive_cw20(
             post_swap_action,
             affiliates,
         ),
-        Cw20HookMsg::UniversalSwap { memo } => execute_universal_swap(deps, env, info, memo),
+        Cw20HookMsg::UniversalSwap { memo } => {
+            execute_universal_swap(deps, env, info, Some(sent_asset), memo)
+        }
     }
 }
 
@@ -182,27 +184,83 @@ pub fn execute_universal_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    sent_asset: Option<Asset>,
     memo: String,
 ) -> ContractResult<Response> {
+    // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_universal_swap");
+
+    // Validate and unwrap the sent asset
+    let sent_asset = match sent_asset {
+        Some(sent_asset) => {
+            sent_asset.validate(&deps, &env, &info)?;
+            sent_asset
+        }
+        None => one_coin(&info)?.into(),
+    };
     let memo_data = Memo::decode_memo(Binary::from_base64(&memo)?)?;
     let user_swap = memo_data.user_swap.unwrap_or_default();
-    // TODO: parse
+    let mut cosmos_msgs: Vec<CosmosMsg> = vec![];
+    convert_user_swap_to_cosmos_msgs(
+        deps.storage,
+        deps.api,
+        &mut cosmos_msgs,
+        user_swap,
+        sent_asset,
+    )?;
+    response = response.add_messages(cosmos_msgs);
     Ok(response)
 }
 
-fn convert_operations_to_swap_operations(
-    operations: Vec<UniversalSwapOperation>,
-) -> Vec<SwapOperation> {
-    operations
+pub fn convert_user_swap_to_cosmos_msgs(
+    storage: &mut dyn Storage,
+    api: &dyn Api,
+    cosmos_msgs: &mut Vec<CosmosMsg>,
+    user_swap: UserSwap,
+    sent_asset: Asset,
+) -> Result<(), ContractError> {
+    let adapter_contract = SWAP_VENUE_MAP.load(storage, &user_swap.swap_venue_name)?;
+    let adapter_contract_str = adapter_contract.into_string();
+
+    // if not a smart route -> transform into adapter messages
+    if let Some(swap_exact) = user_swap.swap_exact_asset_in {
+        let swap_ops = SwapOperation::try_from(swap_exact.operations);
+        cosmos_msgs.push(SwapOperation::to_cosmos_msg(
+            swap_ops,
+            &adapter_contract_str,
+            sent_asset,
+        )?);
+        return Ok(());
+    }
+    // if it is a smart route -> we will swap multiple times aka needs multiple cosmos msgs before finishing the swap
+    let smart_swap_exact_in = user_swap.smart_swap_exact_asset_in.unwrap_or_default();
+    let mut total_offer_amount_from_routes: Uint128 = Uint128::zero();
+    let msgs = smart_swap_exact_in
+        .routes
         .into_iter()
-        .map(|operation| SwapOperation {
-            pool: operation.pool_id,
-            denom_in: operation.denom_in,
-            denom_out: operation.denom_out,
-            interface: None,
+        .filter_map(|route| {
+            let offer_amount = Uint128::from_str(&route.offer_amount).unwrap_or_default();
+            if offer_amount.is_zero() {
+                return None;
+            }
+            let route_asset = Asset::new(api, sent_asset.denom(), offer_amount);
+
+            total_offer_amount_from_routes = total_offer_amount_from_routes
+                .checked_add(route_asset.amount())
+                .unwrap_or_default();
+            let swap_ops = SwapOperation::try_from(route.operations);
+
+            SwapOperation::to_cosmos_msg(swap_ops, &adapter_contract_str, route_asset).ok()
         })
-        .collect()
+        .collect::<Vec<CosmosMsg>>();
+
+    // double check total offer amount versus the sent asset. If they don't match -> we wont process
+    if total_offer_amount_from_routes.ne(&sent_asset.amount()) {
+        return Ok(());
+    }
+    cosmos_msgs.extend(msgs);
+
+    Ok(())
 }
 
 // Main entry point for the contract

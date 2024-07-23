@@ -219,7 +219,7 @@ pub fn execute(
             ibc_transfer_contract_address,
             ibc_wasm_contract_address,
         ),
-        ExecuteMsg::UniversalSwap { memo } => execute_universal_swap(deps, env, info, memo),
+        ExecuteMsg::UniversalSwap { memo } => execute_universal_swap(deps, env, info, None, memo),
     }
 }
 
