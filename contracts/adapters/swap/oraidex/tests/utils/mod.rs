@@ -1,8 +1,8 @@
 use cosmwasm_std::testing::mock_env;
 use cosmwasm_std::{Addr, Coin, Timestamp, Uint128};
 
+use cw_multi_test::addons::{MockAddressGenerator, MockApiBech32};
 use cw_multi_test::{App, AppBuilder, BankKeeper, ContractWrapper, Executor, WasmKeeper};
-use cw_multi_test::{MockAddressGenerator, MockApiBech32};
 
 use dexter::vault::{
     ExecuteMsg as VaultExecuteMsg, FeeInfo, InstantiateMsg as VaultInstantiateMsg, PauseInfo,

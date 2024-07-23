@@ -34,7 +34,7 @@ cw2 = "1.1"
 cw20 = "1.1"
 cw-storage-plus = "1"
 cw-utils = "1.0.3"
-cw-multi-test = "0.20.0"
+cw-multi-test = "1.2.0"
 ibc-proto = { version = "0.32.1", default-features = false }
 lido-satellite = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = [
   "library",
@@ -52,6 +52,7 @@ test-case = "3.3.1"
 thiserror = "1"
 white-whale-std = "1.1.1"
 cw-controllers = "1.1"
+oraiswap = { git = "https://github.com/oraichain/oraiswap.git", rev = "e55e713f3c0c0640452d5788d2890057a4b84161" }
 
 [profile.release]
 codegen-units = 1
