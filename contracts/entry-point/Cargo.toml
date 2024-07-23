@@ -29,6 +29,8 @@ cw-utils = { workspace = true }
 skip = { workspace = true }
 thiserror = { workspace = true }
 cw-controllers = { workspace = true }
+prost = { workspace = true }
+oraiswap = { workspace = true }
 
 [dev-dependencies]
 test-case = { workspace = true }

@@ -9,18 +9,19 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    from_json, to_json_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    SubMsg, Uint128, WasmMsg,
+    from_json, to_json_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
+    Response, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
+use oraiswap::universal_swap_memo::{memo::SwapOperation as UniversalSwapOperation, Memo};
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactAssetOut, SwapVenue,
+        SwapExactAssetIn, SwapExactAssetOut, SwapOperation, SwapVenue,
     },
 };
 
@@ -78,6 +79,7 @@ pub fn receive_cw20(
             post_swap_action,
             affiliates,
         ),
+        Cw20HookMsg::UniversalSwap { memo } => execute_universal_swap(deps, env, info, memo),
     }
 }
 
@@ -156,6 +158,34 @@ pub fn execute_update_config(
 
     Ok(response)
 }
+
+pub fn execute_universal_swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    memo: String,
+) -> ContractResult<Response> {
+    let mut response: Response = Response::new().add_attribute("action", "execute_universal_swap");
+    let memo_data = Memo::decode_memo(Binary::from_base64(&memo)?)?;
+    let user_swap = memo_data.user_swap.unwrap_or_default();
+    // TODO: parse
+    Ok(response)
+}
+
+fn convert_operations_to_swap_operations(
+    operations: Vec<UniversalSwapOperation>,
+) -> Vec<SwapOperation> {
+    operations
+        .into_iter()
+        .map(|operation| SwapOperation {
+            pool: operation.pool_id,
+            denom_in: operation.denom_in,
+            denom_out: operation.denom_out,
+            interface: None,
+        })
+        .collect()
+}
+
 // Main entry point for the contract
 // Dispatches the swap and post swap action
 #[allow(clippy::too_many_arguments)]

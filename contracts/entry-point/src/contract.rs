@@ -2,7 +2,7 @@ use crate::{
     error::{ContractError, ContractResult},
     execute::{
         execute_post_swap_action, execute_swap_and_action, execute_swap_and_action_with_recover,
-        execute_update_config, execute_user_swap, receive_cw20,
+        execute_universal_swap, execute_update_config, execute_user_swap, receive_cw20,
     },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
@@ -197,6 +197,7 @@ pub fn execute(
             swap_venues,
             ibc_transfer_contract_address,
         ),
+        ExecuteMsg::UniversalSwap { memo } => execute_universal_swap(deps, env, info, memo),
     }
 }
 

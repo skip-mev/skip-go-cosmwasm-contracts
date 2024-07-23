@@ -430,44 +430,45 @@ fn simulate_swap_exact_asset_in(
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
-    let dexter_router_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
+    panic!("not implemented")
+    // let dexter_router_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
 
-    let mut hop_swap_requests: Vec<HopSwapRequest> = vec![];
-    for operation in &swap_operations {
-        let pool_id: u64 = operation.pool.parse().unwrap();
-        let pool_id_u128 = Uint128::from(pool_id);
+    // let mut hop_swap_requests: Vec<HopSwapRequest> = vec![];
+    // for operation in &swap_operations {
+    //     let pool_id: u64 = operation.pool.parse().unwrap();
+    //     let pool_id_u128 = Uint128::from(pool_id);
 
-        hop_swap_requests.push(HopSwapRequest {
-            pool_id: pool_id_u128,
-            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-        });
-    }
+    //     hop_swap_requests.push(HopSwapRequest {
+    //         pool_id: pool_id_u128,
+    //         asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+    //         asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
+    //     });
+    // }
 
-    let dexter_router_query = RouterQueryMsg::SimulateMultihopSwap {
-        multiswap_request: hop_swap_requests,
-        swap_type: dexter::vault::SwapType::GiveIn {},
-        amount: asset_in.amount(),
-    };
+    // let dexter_router_query = RouterQueryMsg::SimulateMultihopSwap {
+    //     multiswap_request: hop_swap_requests,
+    //     swap_type: dexter::vault::SwapType::GiveIn {},
+    //     amount: asset_in.amount(),
+    // };
 
-    let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps
-        .querier
-        .query_wasm_smart(dexter_router_address, &dexter_router_query)?;
+    // let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps
+    //     .querier
+    //     .query_wasm_smart(dexter_router_address, &dexter_router_query)?;
 
-    if let ResponseType::Success {} = dexter_router_response.response {
-        // Get the asset out
-        let last_response = dexter_router_response.swap_operations.last().unwrap();
+    // if let ResponseType::Success {} = dexter_router_response.response {
+    //     // Get the asset out
+    //     let last_response = dexter_router_response.swap_operations.last().unwrap();
 
-        let asset_out = Asset::Native(Coin {
-            denom: last_response.asset_out.to_string(),
-            amount: last_response.received_amount,
-        });
+    //     let asset_out = Asset::Native(Coin {
+    //         denom: last_response.asset_out.to_string(),
+    //         amount: last_response.received_amount,
+    //     });
 
-        // Return the asset out and optionally the simulation responses
-        Ok(asset_out)
-    } else {
-        Err(ContractError::SimulationError)
-    }
+    //     // Return the asset out and optionally the simulation responses
+    //     Ok(asset_out)
+    // } else {
+    //     Err(ContractError::SimulationError)
+    // }
 }
 
 // Simulates a swap exact amount out request, returning the asset in needed and optionally the reverse simulation responses
@@ -476,44 +477,45 @@ fn simulate_swap_exact_asset_out(
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
-    let dexter_router_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
+    panic!("not implemented")
+    // let dexter_router_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
 
-    let mut hop_swap_requests: Vec<HopSwapRequest> = vec![];
-    for operation in &swap_operations {
-        let pool_id: u64 = operation.pool.parse().unwrap();
-        let pool_id_u128 = Uint128::from(pool_id);
+    // let mut hop_swap_requests: Vec<HopSwapRequest> = vec![];
+    // for operation in &swap_operations {
+    //     let pool_id: u64 = operation.pool.parse().unwrap();
+    //     let pool_id_u128 = Uint128::from(pool_id);
 
-        hop_swap_requests.push(HopSwapRequest {
-            pool_id: pool_id_u128,
-            asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-            asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-        });
-    }
+    //     hop_swap_requests.push(HopSwapRequest {
+    //         pool_id: pool_id_u128,
+    //         asset_in: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+    //         asset_out: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
+    //     });
+    // }
 
-    let dexter_router_query = RouterQueryMsg::SimulateMultihopSwap {
-        multiswap_request: hop_swap_requests,
-        swap_type: dexter::vault::SwapType::GiveOut {},
-        amount: asset_out.amount(),
-    };
+    // let dexter_router_query = RouterQueryMsg::SimulateMultihopSwap {
+    //     multiswap_request: hop_swap_requests,
+    //     swap_type: dexter::vault::SwapType::GiveOut {},
+    //     amount: asset_out.amount(),
+    // };
 
-    let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps
-        .querier
-        .query_wasm_smart(dexter_router_address, &dexter_router_query)?;
+    // let dexter_router_response: dexter::router::SimulateMultiHopResponse = deps
+    //     .querier
+    //     .query_wasm_smart(dexter_router_address, &dexter_router_query)?;
 
-    if let ResponseType::Success {} = dexter_router_response.response {
-        // Get the asset out
-        let first_response = dexter_router_response.swap_operations.first().unwrap();
+    // if let ResponseType::Success {} = dexter_router_response.response {
+    //     // Get the asset out
+    //     let first_response = dexter_router_response.swap_operations.first().unwrap();
 
-        let asset_in = Asset::Native(Coin {
-            denom: first_response.asset_in.to_string(),
-            amount: first_response.offered_amount,
-        });
+    //     let asset_in = Asset::Native(Coin {
+    //         denom: first_response.asset_in.to_string(),
+    //         amount: first_response.offered_amount,
+    //     });
 
-        // Return the asset out and optionally the simulation responses
-        Ok(asset_in)
-    } else {
-        Err(ContractError::SimulationError)
-    }
+    //     // Return the asset out and optionally the simulation responses
+    //     Ok(asset_in)
+    // } else {
+    //     Err(ContractError::SimulationError)
+    // }
 }
 
 fn simulate_smart_swap_exact_asset_in(
@@ -541,33 +543,34 @@ fn calculate_spot_price(
     deps: Deps,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Decimal> {
-    let dexter_vault_address = DEXTER_VAULT_ADDRESS.load(deps.storage)?;
-    let mut final_price = Decimal::one();
-    for operation in &swap_operations {
-        let pool_id: u64 = operation.pool.parse().unwrap();
-        let pool_id_u128 = Uint128::from(pool_id);
+    panic!("not implemented")
+    // let dexter_vault_address = DEXTER_VAULT_ADDRESS.load(deps.storage)?;
+    // let mut final_price = Decimal::one();
+    // for operation in &swap_operations {
+    //     let pool_id: u64 = operation.pool.parse().unwrap();
+    //     let pool_id_u128 = Uint128::from(pool_id);
 
-        let pool_info: PoolInfoResponse = deps.querier.query_wasm_smart(
-            dexter_vault_address.clone(),
-            &VaultQueryMsg::GetPoolById {
-                pool_id: pool_id_u128,
-            },
-        )?;
+    //     let pool_info: PoolInfoResponse = deps.querier.query_wasm_smart(
+    //         dexter_vault_address.clone(),
+    //         &VaultQueryMsg::GetPoolById {
+    //             pool_id: pool_id_u128,
+    //         },
+    //     )?;
 
-        let spot_price: SpotPrice = deps.querier.query_wasm_smart(
-            pool_info.pool_addr,
-            &pool::QueryMsg::SpotPrice {
-                offer_asset: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
-                ask_asset: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
-            },
-        )?;
+    //     let spot_price: SpotPrice = deps.querier.query_wasm_smart(
+    //         pool_info.pool_addr,
+    //         &pool::QueryMsg::SpotPrice {
+    //             offer_asset: dexter::asset::AssetInfo::native_token(operation.denom_in.clone()),
+    //             ask_asset: dexter::asset::AssetInfo::native_token(operation.denom_out.clone()),
+    //         },
+    //     )?;
 
-        final_price = final_price
-            .checked_mul(Decimal::from_str(&spot_price.price_including_fee.to_string()).unwrap())
-            .unwrap();
-    }
+    //     final_price = final_price
+    //         .checked_mul(Decimal::from_str(&spot_price.price_including_fee.to_string()).unwrap())
+    //         .unwrap();
+    // }
 
-    Ok(final_price)
+    // Ok(final_price)
 }
 
 fn calculate_weighted_spot_price(

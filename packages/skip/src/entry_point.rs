@@ -71,6 +71,9 @@ pub enum ExecuteMsg {
         swap_venues: Option<Vec<SwapVenue>>,
         ibc_transfer_contract_address: Option<String>,
     },
+    UniversalSwap {
+        memo: String,
+    },
 }
 
 /// This structure describes a CW20 hook message.
@@ -90,6 +93,9 @@ pub enum Cw20HookMsg {
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
+    },
+    UniversalSwap {
+        memo: String,
     },
 }
 
