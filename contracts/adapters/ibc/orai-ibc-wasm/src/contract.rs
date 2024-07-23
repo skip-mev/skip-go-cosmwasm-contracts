@@ -8,7 +8,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 
-use skip::ibc_wasm::{ExecuteMsg, IbcInfo, InstantiateMsg, MigrateMsg, QueryMsg};
+use skip::ibc_wasm::{ExecuteMsg, IbcWasmInfo, InstantiateMsg, MigrateMsg, QueryMsg};
 
 ///////////////
 /// MIGRATE ///
@@ -85,7 +85,7 @@ fn execute_ibc_wasm_transfer(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    ibc_info: IbcInfo,
+    ibc_info: IbcWasmInfo,
     coin: Coin,
     timeout_timestamp: u64,
 ) -> ContractResult<Response> {

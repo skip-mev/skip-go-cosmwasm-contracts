@@ -16,20 +16,6 @@ pub fn denom_to_asset_info(api: &dyn Api, denom: &str) -> AssetInfo {
     }
 }
 
-pub fn denom_to_asset(api: &dyn Api, denom: &str, amount: Uint128) -> Asset {
-    if let Ok(contract_addr) = api.addr_validate(denom) {
-        Asset::Cw20(Cw20Coin {
-            address: contract_addr.to_string(),
-            amount,
-        })
-    } else {
-        Asset::Native(Coin {
-            denom: denom.to_string(),
-            amount,
-        })
-    }
-}
-
 pub fn convert_pool_id_to_v3_pool_key(pool_id: &str) -> Result<PoolKey, ContractError> {
     //poolID:  tokenX-tokenY-fee-tickSpace
     let parts: Vec<&str> = pool_id.split('-').collect();

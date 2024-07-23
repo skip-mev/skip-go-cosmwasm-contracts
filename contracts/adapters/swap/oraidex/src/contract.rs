@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{
     error::{ContractError, ContractResult},
-    helper::{convert_pool_id_to_v3_pool_key, denom_to_asset, denom_to_asset_info},
+    helper::{convert_pool_id_to_v3_pool_key, denom_to_asset_info},
     state::{ENTRY_POINT_CONTRACT_ADDRESS, ORAIDEX_ROUTER_ADDRESS},
 };
 use cosmwasm_std::{
@@ -459,7 +459,7 @@ fn simulate_swap_exact_asset_in(
         .querier
         .query_wasm_smart(oraidex_router_address, &oraidex_router_query)?;
 
-    let asset_out = denom_to_asset(
+    let asset_out = Asset::new(
         deps.api,
         &swap_operations.last().unwrap().denom_out,
         oraidex_router_response.amount,

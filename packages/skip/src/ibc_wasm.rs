@@ -102,9 +102,10 @@ impl IbcFee {
 pub struct IbcWasmInfo {
     pub local_channel_id: String,
     pub remote_address: String,
-    pub remote_denom: Option<IbcFee>, // prefix + erc20
-    pub memo: String,                 // prefix + evm address
+    pub remote_denom: String, // prefix + erc20
+    pub memo: String,         // prefix + evm address
     pub timeout: Option<u64>,
+    pub fee: Option<IbcFee>,
 }
 
 // The IbcTransfer struct defines the parameters for an IBC transfer standardized across all IBC Transfer Adapter contracts.
