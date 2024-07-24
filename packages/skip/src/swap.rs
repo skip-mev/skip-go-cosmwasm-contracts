@@ -5,7 +5,7 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_json_binary, WasmMsg};
+use cosmwasm_std::{to_json_binary, StdError, StdResult, WasmMsg};
 use cosmwasm_std::{
     Addr, Api, BankMsg, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
 };
@@ -330,6 +330,17 @@ impl SwapExactAssetIn {
             operations: SwapOperation::from(swap_exact.operations.clone()),
         }
     }
+
+    pub fn get_min_asset(&self, api: &dyn Api, minimum_receive: &str) -> StdResult<Asset> {
+        let last_swap_op = self.operations.last().ok_or(StdError::GenericErr {
+            msg: "swap exact in has no ops".to_string(),
+        })?;
+        Ok(Asset::new(
+            api,
+            &last_swap_op.denom_out,
+            Uint128::from_str(minimum_receive)?,
+        ))
+    }
 }
 
 // Swap object that swaps the remaining asset recevied
@@ -368,6 +379,7 @@ impl SmartSwapExactAssetIn {
         }
     }
 
+    // impl for universal swap
     pub fn from(
         api: &dyn Api,
         asset_denom: &str,
@@ -382,6 +394,25 @@ impl SmartSwapExactAssetIn {
                 .map(|route| Route::from(api, asset_denom, &route))
                 .collect(),
         }
+    }
+
+    pub fn get_min_asset(&self, api: &dyn Api, minimum_receive: &str) -> StdResult<Asset> {
+        let last_swap_op = self
+            .routes
+            .first()
+            .ok_or(StdError::GenericErr {
+                msg: "smart swap exact in has no routes".to_string(),
+            })?
+            .operations
+            .last()
+            .ok_or(StdError::GenericErr {
+                msg: "smart swap exact in has no ops".to_string(),
+            })?;
+        Ok(Asset::new(
+            api,
+            &last_swap_op.denom_out,
+            Uint128::from_str(minimum_receive)?,
+        ))
     }
 }
 

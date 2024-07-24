@@ -213,6 +213,7 @@ pub fn execute_universal_swap(
             &mut cosmos_msgs,
             user_swap,
             post_action,
+            &memo_data.minimum_receive,
             sent_asset,
             memo_data.timeout_timestamp,
             deps.api.addr_validate(&memo_data.recovery_addr)?,
@@ -224,6 +225,7 @@ pub fn execute_universal_swap(
             env.contract.address.as_str(),
             &mut cosmos_msgs,
             user_swap,
+            &memo_data.minimum_receive,
             sent_asset,
         )?;
     }
@@ -238,18 +240,18 @@ pub fn convert_user_swap_to_cosmos_msgs(
     env_contract_address: &str,
     cosmos_msgs: &mut Vec<CosmosMsg>,
     user_swap: UserSwap,
+    minimum_receive: &str,
     sent_asset: Asset,
 ) -> Result<(), ContractError> {
     // if not a smart route -> transform into adapter messages
     if let Some(swap_exact) = user_swap.swap_exact_asset_in {
+        let swap_exact_in = SwapExactAssetIn::from(&user_swap.swap_venue_name, &swap_exact);
+        let min_asset = swap_exact_in.get_min_asset(api, minimum_receive)?;
         let user_swap_msg = WasmMsg::Execute {
             contract_addr: env_contract_address.to_string(),
             msg: to_json_binary(&ExecuteMsg::UserSwap {
-                swap: Swap::SwapExactAssetIn(SwapExactAssetIn::from(
-                    &user_swap.swap_venue_name,
-                    &swap_exact,
-                )),
-                min_asset: sent_asset.clone(),
+                swap: Swap::SwapExactAssetIn(swap_exact_in),
+                min_asset,
                 remaining_asset: sent_asset.clone(),
                 affiliates: vec![],
             })?,
@@ -258,17 +260,19 @@ pub fn convert_user_swap_to_cosmos_msgs(
         cosmos_msgs.push(user_swap_msg.into());
         return Ok(());
     }
-    let smart_swap_exact_in = user_swap.smart_swap_exact_asset_in.unwrap_or_default();
+    let universal_swap_smart_exact_in = user_swap.smart_swap_exact_asset_in.unwrap_or_default();
+    let smart_swap_exact_in = SmartSwapExactAssetIn::from(
+        api,
+        sent_asset.denom(),
+        &user_swap.swap_venue_name,
+        &universal_swap_smart_exact_in,
+    );
+    let min_asset = smart_swap_exact_in.get_min_asset(api, minimum_receive)?;
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env_contract_address.to_string(),
         msg: to_json_binary(&ExecuteMsg::UserSwap {
-            swap: Swap::SmartSwapExactAssetIn(SmartSwapExactAssetIn::from(
-                api,
-                sent_asset.denom(),
-                &user_swap.swap_venue_name,
-                &smart_swap_exact_in,
-            )),
-            min_asset: sent_asset.clone(),
+            swap: Swap::SmartSwapExactAssetIn(smart_swap_exact_in),
+            min_asset,
             remaining_asset: sent_asset.clone(),
             affiliates: vec![],
         })?,
@@ -285,12 +289,15 @@ pub fn convert_user_swap_with_action_to_cosmos_msgs(
     cosmos_msgs: &mut Vec<CosmosMsg>,
     user_swap: UserSwap,
     post_swap_action: PostAction,
+    minimum_receive: &str,
     sent_asset: Asset,
     timeout_timestamp: u64,
     recovery_addr: Addr,
 ) -> Result<(), ContractError> {
     // if not a smart route -> transform into adapter messages
     if let Some(swap_exact) = user_swap.swap_exact_asset_in {
+        let swap_exact_in = SwapExactAssetIn::from(&user_swap.swap_venue_name, &swap_exact);
+        let min_asset = swap_exact_in.get_min_asset(api, minimum_receive)?;
         let user_swap_msg = WasmMsg::Execute {
             contract_addr: env_contract_address.to_string(),
             msg: to_json_binary(&ExecuteMsg::SwapAndActionWithRecover {
@@ -299,7 +306,7 @@ pub fn convert_user_swap_with_action_to_cosmos_msgs(
                     &user_swap.swap_venue_name,
                     &swap_exact,
                 )),
-                min_asset: sent_asset,
+                min_asset,
                 timeout_timestamp,
                 post_swap_action: Action::try_from(post_swap_action, timeout_timestamp)?,
                 affiliates: vec![],
@@ -310,18 +317,20 @@ pub fn convert_user_swap_with_action_to_cosmos_msgs(
         cosmos_msgs.push(user_swap_msg.into());
         return Ok(());
     }
-    let smart_swap_exact_in = user_swap.smart_swap_exact_asset_in.unwrap_or_default();
+    let smart_swap_exact = user_swap.smart_swap_exact_asset_in.unwrap_or_default();
+    let smart_swap_exact_in = SmartSwapExactAssetIn::from(
+        api,
+        sent_asset.denom(),
+        &user_swap.swap_venue_name,
+        &smart_swap_exact,
+    );
+    let min_asset = smart_swap_exact_in.get_min_asset(api, minimum_receive)?;
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env_contract_address.to_string(),
         msg: to_json_binary(&ExecuteMsg::SwapAndActionWithRecover {
             sent_asset: Some(sent_asset.clone()),
-            user_swap: Swap::SmartSwapExactAssetIn(SmartSwapExactAssetIn::from(
-                api,
-                sent_asset.denom(),
-                &user_swap.swap_venue_name,
-                &smart_swap_exact_in,
-            )),
-            min_asset: sent_asset,
+            user_swap: Swap::SmartSwapExactAssetIn(smart_swap_exact_in),
+            min_asset,
             timeout_timestamp,
             post_swap_action: Action::try_from(post_swap_action, timeout_timestamp)?,
             affiliates: vec![],
