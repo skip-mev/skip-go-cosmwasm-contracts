@@ -1,8 +1,7 @@
-use cosmwasm_std::{Api, Coin, StdError, Uint128};
-use cw20::Cw20Coin;
+use cosmwasm_std::{Api, StdError};
+
 use oraiswap::asset::AssetInfo;
 use oraiswap_v3::{percentage::Percentage, FeeTier, PoolKey};
-use skip::asset::Asset;
 
 use crate::error::ContractError;
 

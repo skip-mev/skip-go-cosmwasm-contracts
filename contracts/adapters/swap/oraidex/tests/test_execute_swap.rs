@@ -2,17 +2,19 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     to_json_binary, Addr, Coin,
     ReplyOn::Never,
-    SubMsg, Uint128, WasmMsg,
+    SubMsg,  WasmMsg,
 };
+use oraiswap_v3::{percentage::Percentage, FeeTier, PoolKey};
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_api_swap_adapter_dexter::{
+use skip_api_swap_adapter_oraidex::{
     error::ContractResult,
-    state::{DEXTER_ROUTER_ADDRESS, DEXTER_VAULT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, ORAIDEX_ROUTER_ADDRESS},
 };
 
-use dexter::asset::AssetInfo as DexterAssetInfo;
-
-use dexter::router::{ExecuteMsg as DexterRouterExecuteMsg, HopSwapRequest};
+use oraiswap::{
+    asset::AssetInfo,
+    mixed_router::{ExecuteMsg as OraidexRouterExecuteMsg, SwapOperation as OraidexSwapOperation},
+};
 use test_case::test_case;
 
 /*
@@ -44,12 +46,12 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "uxprt")],
+        info_funds: vec![Coin::new(100, "orai")],
         swap_operations: vec![
             SwapOperation {
                 pool: "1".to_string(),
-                denom_in: "uxprt".to_string(),
-                denom_out: "stk/uxprt".to_string(),
+                denom_in: "orai".to_string(),
+                denom_out: "atom".to_string(),
                 interface: None,
             }
         ],
@@ -57,45 +59,16 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "dexter_router".to_string(),
-                    msg: to_json_binary(& DexterRouterExecuteMsg::ExecuteMultihopSwap {
-                        requests: vec![
-                            HopSwapRequest {
-                                pool_id: Uint128::from(1u128),
-                                asset_in: DexterAssetInfo::NativeToken {
-                                        denom: "uxprt".to_string()
-                                },
-                                asset_out: DexterAssetInfo::NativeToken {
-                                        denom: "stk/uxprt".to_string()
-                                },
-                            }
-                        ],
-                        offer_amount: Uint128::from(100u128),
-                        recipient: None,
-                        minimum_receive: None
-                    })?,
+                    contract_addr: "oraidex_router".to_string(),
+                    msg: to_json_binary(&OraidexRouterExecuteMsg::ExecuteSwapOperations { operations: vec![OraidexSwapOperation::OraiSwap { offer_asset_info: AssetInfo::Token { contract_addr: Addr::unchecked("orai") }, ask_asset_info:AssetInfo::Token { contract_addr: Addr::unchecked("atom") } } ], minimum_receive: None, to: Some(Addr::unchecked("entry_point")) })?,
                     funds: vec![
-                        Coin::new(100, "uxprt")
+                        Coin::new(100, "orai")
                     ],
                 }
                 .into(),
                 gas_limit: None,
                 reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "stk/uxprt".to_string(),
-                        swapper: Addr::unchecked("entry_point"),
-                    })?,
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
+            }
         ],
         expected_error_string: "".to_string(),
     };
@@ -103,18 +76,18 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "os")],
+        info_funds: vec![Coin::new(100, "orai")],
         swap_operations: vec![
             SwapOperation {
                 pool: "1".to_string(),
-                denom_in: "os".to_string(),
+                denom_in: "orai".to_string(),
                 denom_out: "uatom".to_string(),
                 interface: None,
             },
             SwapOperation {
-                pool: "2".to_string(),
+                pool: "uatom-usdt-3000000000-10".to_string(),
                 denom_in: "uatom".to_string(),
-                denom_out: "untrn".to_string(),
+                denom_out: "usdt".to_string(),
                 interface: None,
             }
         ],
@@ -122,49 +95,16 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "dexter_router".to_string(),
-                    msg: to_json_binary(& DexterRouterExecuteMsg::ExecuteMultihopSwap {
-                        requests: vec![
-                           HopSwapRequest {
-                                pool_id: Uint128::from(1u128),
-                                asset_in: DexterAssetInfo::NativeToken {
-                                        denom: "os".to_string()
-                                },
-                                asset_out: DexterAssetInfo::NativeToken {
-                                        denom: "uatom".to_string()
-                                },
-                            },
-                            HopSwapRequest {
-                                pool_id: Uint128::from(2u128),
-                                asset_in: DexterAssetInfo::NativeToken {
-                                        denom: "uatom".to_string()
-                                },
-                                asset_out: DexterAssetInfo::NativeToken {
-                                        denom: "untrn".to_string()
-                                },
-                            }
-                        ],
-                        offer_amount: Uint128::from(100u128),
-                        recipient: None,
-                        minimum_receive: None
-                    })?,
+                    contract_addr: "oraidex_router".to_string(),
+                    msg: to_json_binary(&OraidexRouterExecuteMsg::ExecuteSwapOperations { 
+                        operations:  vec![
+                            OraidexSwapOperation::OraiSwap { offer_asset_info: AssetInfo::Token { contract_addr: Addr::unchecked("orai") }, ask_asset_info:AssetInfo::Token { contract_addr: Addr::unchecked("uatom") } },
+                            OraidexSwapOperation::SwapV3 { pool_key: PoolKey{token_x: "uatom".to_string(), token_y: "usdt".to_string(), fee_tier: FeeTier {fee: Percentage(3000000000), tick_spacing: 10}}, x_to_y: true }],
+                        minimum_receive: None, 
+                        to: Some(Addr::unchecked("entry_point")) })?,
                     funds: vec![
-                        Coin::new(100, "os")
+                        Coin::new(100, "orai")
                     ],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "untrn".to_string(),
-                        swapper: Addr::unchecked("entry_point"),
-                    })?,
-                    funds: vec![],
                 }
                 .into(),
                 gas_limit: None,
@@ -177,37 +117,9 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "os")],
+        info_funds: vec![Coin::new(100, "orai")],
         swap_operations: vec![],
         expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "uatom".to_string(),
-                        swapper: Addr::unchecked("entry_point"),
-                    })?,
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "uatom".to_string(),
-                        swapper: Addr::unchecked("entry_point"),
-                    })?,
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
         ],
         expected_error_string: "swap_operations cannot be empty".to_string(),
     };
@@ -253,16 +165,32 @@ struct Params {
         info_funds: vec![Coin::new(100, "os")],
         swap_operations: vec![
             SwapOperation {
-                pool: "pool_1".to_string(),
+                pool: "tokenx-tokeny-100".to_string(),
                 denom_in: "os".to_string(),
                 denom_out: "uatom".to_string(),
                 interface: None,
             }
         ],
         expected_messages: vec![],
-        expected_error_string: "Pool ID cannot be parsed from the given string".to_string(),
+        expected_error_string: "Generic error: Invalid v3 pool_id, require exactly 4 fields".to_string(),
     };
     "Invalid Pool ID Conversion For Swap Operations - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        info_funds: vec![Coin::new(100, "os")],
+        swap_operations: vec![
+            SwapOperation {
+                pool: "tokenx-tokeny-abc-def".to_string(),
+                denom_in: "os".to_string(),
+                denom_out: "uatom".to_string(),
+                interface: None,
+            }
+        ],
+        expected_messages: vec![],
+        expected_error_string: "Generic error: Invalid fee in v3 pool".to_string(),
+    };
+    "Invalid Pool ID Conversion For Swap Operations, cannot parse string to uint - Expect Error")]
 #[test_case(
     Params {
         caller: "random".to_string(),
@@ -298,11 +226,10 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
 
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
-    DEXTER_VAULT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("dexter_vault"))?;
-    DEXTER_ROUTER_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("dexter_router"))?;
+    ORAIDEX_ROUTER_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("oraidex_router"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_dexter::contract::execute(
+    let res = skip_api_swap_adapter_oraidex::contract::execute(
         deps.as_mut(),
         env,
         info,
@@ -310,6 +237,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
             operations: params.swap_operations.clone(),
         },
     );
+    println!("{:?}", res);
 
     // Assert the behavior is correct
     match res {
