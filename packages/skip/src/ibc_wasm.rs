@@ -46,7 +46,6 @@ pub enum Cw20HookMsg {
     IbcWasmTransfer {
         ibc_wasm_info: TransferBackMsg,
         coin: Asset,
-        timeout_timestamp: u64,
     },
 }
 /////////////
