@@ -1,4 +1,4 @@
-use std::vec;
+use std::{str::FromStr, vec};
 
 use crate::{
     error::{ContractError, ContractResult},
@@ -202,11 +202,14 @@ pub fn execute_universal_swap(
         None => one_coin(&info)?.into(),
     };
     let memo_data = Memo::decode_memo(Binary::from_base64(&memo)?)?;
-    let user_swap = memo_data.user_swap.unwrap_or_default();
+    // let user_swap = memo_data.user_swap.unwrap_or_default();
     let mut cosmos_msgs: Vec<CosmosMsg> = vec![];
 
     // call swap and action with recover
-    if let Some(post_action) = memo_data.post_swap_action {
+    if let (Some(post_action), Some(user_swap)) = (
+        memo_data.post_swap_action.clone(),
+        memo_data.user_swap.clone(),
+    ) {
         convert_user_swap_with_action_to_cosmos_msgs(
             deps.api,
             env.contract.address.as_str(),
@@ -218,7 +221,7 @@ pub fn execute_universal_swap(
             memo_data.timeout_timestamp,
             deps.api.addr_validate(&memo_data.recovery_addr)?,
         )?;
-    } else {
+    } else if let Some(user_swap) = memo_data.user_swap {
         // otherwise, call swap
         convert_user_swap_to_cosmos_msgs(
             deps.api,
@@ -228,7 +231,34 @@ pub fn execute_universal_swap(
             &memo_data.minimum_receive,
             sent_asset,
         )?;
+    } else if let Some(post_action) = memo_data.post_swap_action {
+        let pre_swap_out_asset_amount =
+            get_current_asset_available(&deps, &env, sent_asset.denom())?
+                .amount()
+                .checked_sub(sent_asset.amount())?;
+
+        PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &pre_swap_out_asset_amount)?;
+
+        let min_asset = Asset::new(
+            deps.api,
+            &sent_asset.denom(),
+            Uint128::from_str(&memo_data.minimum_receive)?,
+        );
+        let post_swap_action_msg = WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_json_binary(&ExecuteMsg::PostSwapAction {
+                min_asset,
+                timeout_timestamp: memo_data.timeout_timestamp,
+                post_swap_action: Action::try_from(post_action, memo_data.timeout_timestamp)?,
+                exact_out: false,
+            })?,
+            funds: vec![],
+        };
+        cosmos_msgs.push(post_swap_action_msg.into());
+    } else {
+        return Err(ContractError::MissingUserSwapOrPostAction {});
     }
+
     response = response.add_messages(cosmos_msgs);
     Ok(response)
 
