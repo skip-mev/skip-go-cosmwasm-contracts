@@ -52,7 +52,7 @@ test-case = "3.3.1"
 thiserror = "1"
 white-whale-std = "1.1.1"
 cw-controllers = "1.1"
-oraiswap = { git = "https://github.com/oraichain/oraiswap.git", rev = "f4b0cc2f96e87938c6f203ac0a82012bcfe4b17b" }
+oraiswap = { git = "https://github.com/oraichain/oraiswap.git", rev = "53527b5" }
 oraiswap-v3 = { git = "https://github.com/oraichain/oraiswap-v3.git", rev = "7f2b8ac6a239790006d7a662e6f56c175e189be0", features = [
   "library",
 ] }

@@ -1108,7 +1108,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 [[package]]
 name = "oraiswap"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/oraiswap.git?rev=87e07012a2b809b10f6103f1183d49e36556179f#87e07012a2b809b10f6103f1183d49e36556179f"
+source = "git+https://github.com/oraichain/oraiswap.git?rev=53527b5#53527b5273cc82bcdcab2a573c40a0e820a96d01"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1128,7 +1128,7 @@ dependencies = [
 [[package]]
 name = "oraiswap"
 version = "0.2.0"
-source = "git+https://github.com/oraichain/oraiswap.git?rev=f4b0cc2f96e87938c6f203ac0a82012bcfe4b17b#f4b0cc2f96e87938c6f203ac0a82012bcfe4b17b"
+source = "git+https://github.com/oraichain/oraiswap.git?rev=87e07012a2b809b10f6103f1183d49e36556179f#87e07012a2b809b10f6103f1183d49e36556179f"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1563,7 +1563,7 @@ dependencies = [
  "cw20-ics20-msg",
  "ibc-proto",
  "neutron-proto",
- "oraiswap 0.2.0 (git+https://github.com/oraichain/oraiswap.git?rev=f4b0cc2f96e87938c6f203ac0a82012bcfe4b17b)",
+ "oraiswap 0.2.0 (git+https://github.com/oraichain/oraiswap.git?rev=53527b5)",
  "osmosis-std",
  "thiserror",
  "white-whale-std",
@@ -1580,7 +1580,7 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "cw20 1.1.2",
- "oraiswap 0.2.0 (git+https://github.com/oraichain/oraiswap.git?rev=f4b0cc2f96e87938c6f203ac0a82012bcfe4b17b)",
+ "oraiswap 0.2.0 (git+https://github.com/oraichain/oraiswap.git?rev=53527b5)",
  "prost 0.11.9",
  "skip",
  "test-case",
@@ -1732,7 +1732,7 @@ dependencies = [
  "dexter-stable-pool",
  "dexter-vault",
  "dexter-weighted-pool",
- "oraiswap 0.2.0 (git+https://github.com/oraichain/oraiswap.git?rev=f4b0cc2f96e87938c6f203ac0a82012bcfe4b17b)",
+ "oraiswap 0.2.0 (git+https://github.com/oraichain/oraiswap.git?rev=53527b5)",
  "oraiswap-v3",
  "skip",
  "test-case",
