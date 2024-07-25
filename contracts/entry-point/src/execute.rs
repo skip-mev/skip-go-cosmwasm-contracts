@@ -1,4 +1,4 @@
-use std::{str::FromStr, vec};
+use std::vec;
 
 use crate::{
     error::{ContractError, ContractResult},
@@ -10,7 +10,7 @@ use crate::{
 };
 use cosmwasm_std::{
     from_json, to_json_binary, Addr, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env,
-    MessageInfo, Response, Storage, SubMsg, Uint128, WasmMsg,
+    MessageInfo, Response, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::one_coin;
@@ -25,7 +25,7 @@ use skip::{
     ibc_wasm::{ExecuteMsg as IbcWasmTransferExecuteMsg, IbcWasmTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
-        SmartSwapExactAssetIn, Swap, SwapExactAssetIn, SwapExactAssetOut, SwapOperation, SwapVenue,
+        SmartSwapExactAssetIn, Swap, SwapExactAssetIn, SwapExactAssetOut, SwapVenue,
     },
 };
 
@@ -261,12 +261,46 @@ pub fn convert_user_swap_to_cosmos_msgs(
         return Ok(());
     }
     let universal_swap_smart_exact_in = user_swap.smart_swap_exact_asset_in.unwrap_or_default();
-    let smart_swap_exact_in = SmartSwapExactAssetIn::from(
+
+    let mut smart_swap_exact_in = SmartSwapExactAssetIn::from(
         api,
         sent_asset.denom(),
         &user_swap.swap_venue_name,
         &universal_swap_smart_exact_in,
     );
+
+    if smart_swap_exact_in.routes.is_empty() {
+        return Err(ContractError::Skip(skip::error::SkipError::RoutesEmpty));
+    }
+
+    match smart_swap_exact_in.amount().cmp(&sent_asset.amount()) {
+        std::cmp::Ordering::Equal => {}
+        std::cmp::Ordering::Less => {
+            let diff = sent_asset.amount().checked_sub(sent_asset.amount())?;
+
+            // If the total swap in amount is less than remaining asset,
+            // adjust the routes to match the remaining asset amount
+            let largest_route_idx = smart_swap_exact_in.largest_route_index()?;
+
+            smart_swap_exact_in.routes[largest_route_idx]
+                .offer_asset
+                .add(diff)?;
+        }
+        std::cmp::Ordering::Greater => {
+            let diff = smart_swap_exact_in
+                .amount()
+                .checked_sub(sent_asset.amount())?;
+
+            // If the total swap in amount is greater than remaining asset,
+            // adjust the routes to match the remaining asset amount
+            let largest_route_idx = smart_swap_exact_in.largest_route_index()?;
+
+            smart_swap_exact_in.routes[largest_route_idx]
+                .offer_asset
+                .sub(diff)?;
+        }
+    }
+
     let min_asset = smart_swap_exact_in.get_min_asset(api, minimum_receive)?;
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env_contract_address.to_string(),
