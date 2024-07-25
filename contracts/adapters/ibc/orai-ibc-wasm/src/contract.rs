@@ -3,17 +3,16 @@ use crate::{
     state::{ENTRY_POINT_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, SubMsg, SubMsgResult, WasmMsg,
+    entry_point, from_json, to_json_binary, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
 use cw2::set_contract_version;
 
 use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw20_ics20_msg::msg::TransferBackMsg;
-use cw_utils::{must_pay, one_coin};
+use cw_utils::one_coin;
 use skip::{
     asset::Asset,
-    ibc_wasm::{Cw20HookMsg, ExecuteMsg, IbcWasmExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
+    ibc_wasm::{Cw20HookMsg, ExecuteMsg, IbcWasmExecuteMsg, InstantiateMsg, MigrateMsg},
 };
 
 ///////////////
@@ -82,7 +81,6 @@ pub fn receive_cw20(
         address: info.sender.to_string(),
         amount: cw20_msg.amount,
     });
-    sent_asset.validate(&deps, &env, &info)?;
 
     // Set the sender to the originating address that triggered the cw20 send call
     // This is later validated / enforced to be the entry point contract address
@@ -92,7 +90,6 @@ pub fn receive_cw20(
         Cw20HookMsg::IbcWasmTransfer {
             ibc_wasm_info,
             coin,
-            timeout_timestamp,
         } => {
             if sent_asset.ne(&coin) {
                 return Err(ContractError::InvalidFund {});
