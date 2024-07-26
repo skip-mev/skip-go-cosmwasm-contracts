@@ -1,5 +1,6 @@
 use cosmwasm_schema::write_api;
-use skip::swap::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use oraiswap::mixed_router::{ExecuteMsg, QueryMsg};
+use skip::swap::OraidexInstantiateMsg as InstantiateMsg;
 
 fn main() {
     write_api! {
