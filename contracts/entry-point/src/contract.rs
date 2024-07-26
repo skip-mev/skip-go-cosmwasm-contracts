@@ -24,7 +24,7 @@ use skip::entry_point::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Response> {
-    unimplemented!()
+    Ok(Response::default())
 }
 
 ///////////////////
