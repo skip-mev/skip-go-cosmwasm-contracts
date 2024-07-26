@@ -173,6 +173,11 @@ impl Action {
                 fee_swap: None,
             });
         }
+        if let Some(transfer_msg) = post_swap_action.transfer_msg {
+            return Ok(Action::Transfer {
+                to_address: transfer_msg.to_address,
+            });
+        }
         Err(cosmwasm_std::StdError::GenericErr {
             msg: "No post swap action found".to_string(),
         })
