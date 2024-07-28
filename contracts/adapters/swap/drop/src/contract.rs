@@ -1,8 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{
-        BRIDGED_DENOM, CANONICAL_DENOM, DROP_CORE_CONTRACT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS,
-    },
+    state::{BONDED_DENOM, DROP_CORE_CONTRACT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, REMOTE_DENOM},
 };
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
@@ -73,12 +71,12 @@ pub fn instantiate(
         &drop_staking_base::msg::core::QueryMsg::Config {},
     )?;
 
-    let canonical_denom = drop_core_config
+    let bonded_denom = drop_core_config
         .ld_denom
-        .ok_or(ContractError::CanonicalDenomNotSet {})?;
+        .ok_or(ContractError::BondedDenomNotSet {})?;
 
-    CANONICAL_DENOM.save(deps.storage, &canonical_denom)?;
-    BRIDGED_DENOM.save(deps.storage, &drop_core_config.remote_denom)?;
+    BONDED_DENOM.save(deps.storage, &bonded_denom)?;
+    REMOTE_DENOM.save(deps.storage, &drop_core_config.remote_denom)?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
@@ -94,8 +92,8 @@ pub fn instantiate(
             "drop_core_contract_address",
             drop_factory_state.core_contract,
         )
-        .add_attribute("canonical_denom", canonical_denom)
-        .add_attribute("bridged_denom", drop_core_config.remote_denom))
+        .add_attribute("bonded_denom", bonded_denom)
+        .add_attribute("remote_denom", drop_core_config.remote_denom))
 }
 
 ///////////////
@@ -144,14 +142,14 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
-    let bridged_denom = BRIDGED_DENOM.load(deps.storage)?;
-    let canonical_denom = CANONICAL_DENOM.load(deps.storage)?;
+    let remote_denom = REMOTE_DENOM.load(deps.storage)?;
+    let bonded_denom = BONDED_DENOM.load(deps.storage)?;
 
     // Decide which message to Core contract should be emitted
-    let (drop_core_msg, return_denom) = if coin_in.denom == bridged_denom {
+    let (drop_core_msg, return_denom) = if coin_in.denom == remote_denom {
         (
             drop_staking_base::msg::core::ExecuteMsg::Bond { receiver: None },
-            canonical_denom,
+            bonded_denom,
         )
     } else {
         return Err(ContractError::UnsupportedDenom);
@@ -187,13 +185,13 @@ fn execute_swap(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
-    let bridged_denom = BRIDGED_DENOM.load(deps.storage)?;
-    let canonical_denom = CANONICAL_DENOM.load(deps.storage)?;
+    let remote_denom = REMOTE_DENOM.load(deps.storage)?;
+    let bonded_denom = BONDED_DENOM.load(deps.storage)?;
 
     match msg {
         QueryMsg::SimulateSwapExactAssetIn { asset_in, .. } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -204,7 +202,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         }
         QueryMsg::SimulateSwapExactAssetOut { asset_out, .. } => {
             let asset_in_denom =
-                get_opposite_denom(asset_out.denom(), &bridged_denom, &canonical_denom);
+                get_opposite_denom(asset_out.denom(), &remote_denom, &bonded_denom);
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -219,7 +217,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             ..
         } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -243,7 +241,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             ..
         } => {
             let asset_in_denom =
-                get_opposite_denom(asset_out.denom(), &bridged_denom, &canonical_denom);
+                get_opposite_denom(asset_out.denom(), &remote_denom, &bonded_denom);
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -263,7 +261,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         }
         QueryMsg::SimulateSmartSwapExactAssetIn { asset_in, .. } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -278,7 +276,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             ..
         } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &bridged_denom, &canonical_denom);
+                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -300,10 +298,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     .map_err(From::from)
 }
 
-fn get_opposite_denom(denom: &str, bridged_denom: &str, canonical_denom: &str) -> String {
+fn get_opposite_denom(denom: &str, remote_denom: &str, bonded_denom: &str) -> String {
     match denom {
-        denom if denom == bridged_denom => canonical_denom.to_string(),
-        denom if denom == canonical_denom => bridged_denom.to_string(),
+        denom if denom == remote_denom => bonded_denom.to_string(),
+        denom if denom == bonded_denom => remote_denom.to_string(),
         _ => unimplemented!(),
     }
 }

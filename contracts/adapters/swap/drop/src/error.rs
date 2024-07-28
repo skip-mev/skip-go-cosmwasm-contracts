@@ -21,6 +21,6 @@ pub enum ContractError {
     #[error("this denom is not supported by Drop")]
     UnsupportedDenom,
 
-    #[error("canonical denom was not set")]
-    CanonicalDenomNotSet,
+    #[error("bonded denom was not set")]
+    BondedDenomNotSet,
 }
