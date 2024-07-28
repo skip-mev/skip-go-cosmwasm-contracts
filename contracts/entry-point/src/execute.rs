@@ -256,7 +256,8 @@ pub fn execute_universal_swap(
         };
         cosmos_msgs.push(post_swap_action_msg.into());
     } else {
-        return Err(ContractError::MissingUserSwapOrPostAction {});
+        // fallback case, we send the sent tokens back to recovery addr
+        cosmos_msgs.push(sent_asset.transfer(&memo_data.recovery_addr))
     }
 
     response = response.add_messages(cosmos_msgs);
