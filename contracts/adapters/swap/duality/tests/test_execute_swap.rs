@@ -1,23 +1,15 @@
 use cosmwasm_std::{
-    entry_point, to_json_binary, ReplyOn::Never, Addr, Coin, CosmosMsg, Uint128, WasmMsg
-};
-use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     SubMsg,
 };
+use cosmwasm_std::{to_json_binary, Addr, Coin, CosmosMsg, ReplyOn::Never, WasmMsg};
 use neutron_sdk::{
-    bindings::query::PageRequest,
     proto_types::neutron::dex::{MsgMultiHopSwap, MultiHopRoute},
-    stargate::{aux::create_stargate_msg, dex::query::{get_estimate_multi_hop_swap, get_estimate_place_limit_order, get_tick_liquidity_all}}
+    stargate::aux::create_stargate_msg,
 };
-use skip::
-    swap::{
-        ExecuteMsg, SwapOperation,
-    };
+use skip::swap::{ExecuteMsg, SwapOperation};
 
-use skip_go_swap_adapter_duality::{
-    error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS,
-};
+use skip_go_swap_adapter_duality::{error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS};
 
 use test_case::test_case;
 
@@ -69,8 +61,7 @@ struct Params {
                     amount_in: String::from("100"),
                     exit_limit_price: String::from("000000000000000000000000001"),
                     pick_best_route: true,
-                })?
-                .into(),
+                })?,
                 gas_limit: None,
                 reply_on: Never,
             },
@@ -120,8 +111,7 @@ struct Params {
                     amount_in: String::from("100"),
                     exit_limit_price: String::from("000000000000000000000000001"),
                     pick_best_route: true,
-                })?
-                .into(),
+                })?,
                 gas_limit: None,
                 reply_on: Never,
             },
@@ -143,8 +133,6 @@ struct Params {
         expected_error_string: "".to_string(),
     };
 "Multiple Swap Operations")]
-
-
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
@@ -160,8 +148,7 @@ struct Params {
                     amount_in: String::from("100"),
                     exit_limit_price: String::from("000000000000000000000000001"),
                     pick_best_route: true,
-                })?
-                .into(),
+                })?,
                 gas_limit: None,
                 reply_on: Never,
             },

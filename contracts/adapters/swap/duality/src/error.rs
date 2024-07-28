@@ -36,7 +36,9 @@ pub enum ContractError {
     #[error("Asset Must Be Native, Osmosis Does Not Support CW20 Tokens")]
     AssetNotNative,
 
-    #[error("Swap operation denom mismatch. tokenOut of previous swap must be tokenIn of next swap")]
+    #[error(
+        "Swap operation denom mismatch. tokenOut of previous swap must be tokenIn of next swap"
+    )]
     SwapOperationDenomMismatch,
 
     #[error("failed to convert uint to int. value of coin amount as Uint128 exceeds max possible Int128 amount")]

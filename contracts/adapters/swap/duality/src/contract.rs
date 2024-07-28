@@ -668,7 +668,7 @@ fn get_spot_price_and_tick(
 
     // Decimal::from fails if we supply more than 18 fractional or decimal digits.
     // Our prices can be much more persise than the 18 ddigit allowance here so a number of
-    // our highest and lowest prices will not be supported on some assets. 
+    // our highest and lowest prices will not be supported on some assets.
     let spot_price_decimal: Decimal = parse_and_validate_price(&spot_price_str)?;
 
     Ok((spot_price_decimal, tick_index))
@@ -703,7 +703,7 @@ fn parse_and_validate_price(input: &str) -> ContractResult<Decimal> {
             // if we're rounding up we add min value
             if round_up {
                 decimal += Decimal::from_str("0.000000000000000001").unwrap();
-            } 
+            }
 
             // error if the return price is zero at this point.
             if decimal == Decimal::zero() {
@@ -748,7 +748,6 @@ fn parse_and_validate_price(input: &str) -> ContractResult<Decimal> {
     Ok(spot_price)
 }
 
-
 ///////////////
 /// TESTS   ///
 ///////////////
@@ -763,7 +762,7 @@ mod tests {
         PriceTruncateError,
         GenericErr(String),
     }
-    
+
     #[test_case("0.000000000000000010100000", "0.000000000000000010" ; "0.99% change no truncate")]
     #[test_case("2.0", "2.0" ; "single fractional point -1")]
     #[test_case("99925198949099993173.0", "99925198949099993173.0" ; "single fractional point -2")]
@@ -794,17 +793,30 @@ mod tests {
     #[test_case("0.0000000000000000005", ExpectedError::PriceTruncateError ; "price truncate error 2")]
     #[test_case("0.0000000000000000099999999", ExpectedError::PriceTruncateError ; "price truncate error 3")]
     #[test_case("12345667845674567456745674567", ExpectedError::GenericErr("Value too big".to_string()) ; "too large decimal")]
-    fn test_parse_and_validate_price_error(input: &str, expected_error: ExpectedError) -> Result<(), Box<dyn std::error::Error>> {
+    fn test_parse_and_validate_price_error(
+        input: &str,
+        expected_error: ExpectedError,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         match parse_and_validate_price(input) {
-            Ok(_) => Err(Box::new(StdError::generic_err("Expected error, but got Ok"))),
+            Ok(_) => Err(Box::new(StdError::generic_err(
+                "Expected error, but got Ok",
+            ))),
             Err(e) => match expected_error {
                 ExpectedError::PriceTruncateError => match e {
                     ContractError::PriceTruncateError => Ok(()),
-                    _ => Err(Box::new(StdError::generic_err(format!("Unexpected error: {:?}", e)))),
+                    _ => Err(Box::new(StdError::generic_err(format!(
+                        "Unexpected error: {:?}",
+                        e
+                    )))),
                 },
                 ExpectedError::GenericErr(ref msg) => match e {
-                    ContractError::Std(StdError::GenericErr { msg: ref err_msg, .. })if err_msg.contains(msg) => Ok(()),
-                    _ => Err(Box::new(StdError::generic_err(format!("Unexpected error: {:?}", e)))),
+                    ContractError::Std(StdError::GenericErr {
+                        msg: ref err_msg, ..
+                    }) if err_msg.contains(msg) => Ok(()),
+                    _ => Err(Box::new(StdError::generic_err(format!(
+                        "Unexpected error: {:?}",
+                        e
+                    )))),
                 },
             },
         }
