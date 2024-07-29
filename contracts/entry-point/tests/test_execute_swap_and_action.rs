@@ -1656,7 +1656,7 @@ struct Params {
             },
         ),
         min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
-        timeout_timestamp: 0,
+        timeout_timestamp: 99,
         post_swap_action: Action::Transfer {
             to_address: "to_address".to_string(),
         },
@@ -1878,7 +1878,7 @@ fn test_execute_swap_and_action(params: Params) {
     // Create mock env with parameters that make testing easier
     let mut env = mock_env();
     env.contract.address = Addr::unchecked("entry_point");
-    env.block.time = Timestamp::from_seconds(100);
+    env.block.time = Timestamp::from_nanos(100);
 
     // Convert info funds vector into a slice of Coin objects
     let info_funds: &[Coin] = &params.info_funds;

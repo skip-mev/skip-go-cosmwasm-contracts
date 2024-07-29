@@ -1,6 +1,5 @@
 use crate::{
     error::{ContractError, ContractResult},
-    ics20::build_ibc_send_packet,
     state::{
         ACK_ID_TO_RECOVER_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_CHANNEL_ID,
         IN_PROGRESS_RECOVER_ADDRESS,
@@ -8,10 +7,12 @@ use crate::{
 };
 use cosmwasm_std::{
     entry_point, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, SubMsg, SubMsgResult, Timestamp,
+    Reply, Response, SubMsg, SubMsgResult,
 };
 use cw2::set_contract_version;
-use ibc_proto::ibc::applications::transfer::v1::MsgTransferResponse;
+use ibc_proto::ibc::{
+    applications::transfer::v1::MsgTransferResponse, apps::transfer::v1::MsgTransfer,
+};
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
@@ -137,27 +138,31 @@ fn execute_ibc_transfer(
     let memo = verify_and_create_memo(ibc_info.memo, env.contract.address.to_string())?;
 
     // Create osmosis ibc transfer message
-    // let msg = MsgTransfer {
-    //     source_port: "transfer".to_string(),
-    //     source_channel: ibc_info.source_channel,
-    //     token: Some(ProtoCoin(coin).into()),
-    //     sender: env.contract.address.to_string(),
-    //     receiver: ibc_info.receiver,
-    //     timeout_height: None,
-    //     timeout_timestamp,
-    //     memo,
-    // };
+    let msg = MsgTransfer {
+        source_port: "transfer".to_string(),
+        source_channel: ibc_info.source_channel,
+        token: Some(ProtoCoin(coin).into()),
+        sender: env.contract.address.to_string(),
+        receiver: ibc_info.receiver,
+        timeout_height: None,
+        timeout_timestamp,
+        memo,
+    };
 
     // Create stargate message from osmosis ibc transfer message
-    let msg = CosmosMsg::Ibc(build_ibc_send_packet(
-        coin.amount,
-        &coin.denom,
-        env.contract.address.as_str(),
-        &ibc_info.receiver,
-        Some(memo),
-        &ibc_info.source_channel,
-        Timestamp::from_nanos(timeout_timestamp).into(),
-    )?);
+    let msg = CosmosMsg::Stargate {
+        type_url: IBC_MSG_TRANSFER_TYPE_URL.to_string(),
+        value: msg.encode_to_vec().into(),
+    };
+    // let msg = CosmosMsg::Ibc(build_ibc_send_packet(
+    //     coin.amount,
+    //     &coin.denom,
+    //     env.contract.address.as_str(),
+    //     &ibc_info.receiver,
+    //     Some(memo),
+    //     &ibc_info.source_channel,
+    //     Timestamp::from_nanos(timeout_timestamp).into(),
+    // )?);
 
     // Create sub message from osmosis ibc transfer message to receive a reply
     let sub_msg = SubMsg::reply_on_success(msg, REPLY_ID);
