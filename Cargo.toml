@@ -27,8 +27,8 @@ dexter-stable-pool   = "1.1.1"
 dexter-weighted-pool = "1.1.1"
 dexter-lp-token  = "1.0.0"
 dexter-router    = "1.1.0"
-cosmwasm-schema  = "1.5.0"
-cosmwasm-std     = { version = "1.5", features = ["stargate"] }
+cosmwasm-schema  = "1.5.4"
+cosmwasm-std     = { version = "1.5.4", features = ["stargate"] }
 cosmos-sdk-proto = { version = "0.19", default-features = false }
 cw2              = "1.1"
 cw20             = "1.1"
@@ -37,12 +37,14 @@ cw-utils         = "1.0.3"
 cw-multi-test    = "0.20.0"
 ibc-proto        = { version = "0.32.1", default-features = false }
 lido-satellite   = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = ["library"] }
+drop-factory     = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "main", features = ["library"] }
+drop-staking-base = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "main", features = ["library"] }
 neutron-proto    = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
-neutron-sdk      = "0.8"
+neutron-sdk      = "0.10.0"
 osmosis-std      = "0.15.3"
 prost            = "0.11"
 serde-cw-value   = "0.7.0"
-serde-json-wasm  = "0.5.1"
+serde-json-wasm  = "1.0.1"
 skip             = { version = "0.3.0", path = "./packages/skip" }
 test-case        = "3.3.1"
 thiserror        = "1"
