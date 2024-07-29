@@ -376,10 +376,17 @@ pub fn convert_user_swap_with_action_to_cosmos_msgs(
             affiliates: vec![],
             recovery_addr,
         })?;
+        let funds = match sent_asset {
+            Asset::Native(coin) => vec![coin],
+            Asset::Cw20(_) => vec![],
+        };
         cosmos_msgs.push(
-            sent_asset
-                .into_wasm_msg(env_contract_address.to_string(), msg)?
-                .into(),
+            WasmMsg::Execute {
+                contract_addr: env_contract_address.to_string(),
+                msg,
+                funds,
+            }
+            .into(),
         );
         return Ok(());
     }
@@ -400,11 +407,18 @@ pub fn convert_user_swap_with_action_to_cosmos_msgs(
         affiliates: vec![],
         recovery_addr,
     })?;
-
+    let funds = match sent_asset {
+        Asset::Native(coin) => vec![coin],
+        Asset::Cw20(_) => vec![],
+    };
+    // dont use into_wasm_msg because we are calling a self-execute msg, there's no need to send from cw20 to self with the same amount.
     cosmos_msgs.push(
-        sent_asset
-            .into_wasm_msg(env_contract_address.to_string(), msg)?
-            .into(),
+        WasmMsg::Execute {
+            contract_addr: env_contract_address.to_string(),
+            msg,
+            funds,
+        }
+        .into(),
     );
     Ok(())
 }
@@ -619,7 +633,6 @@ pub fn execute_swap_and_action_with_recover(
         }),
         RECOVER_REPLY_ID,
     );
-
     Ok(Response::new().add_submessage(sub_msg))
 }
 
