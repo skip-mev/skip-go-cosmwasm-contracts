@@ -450,7 +450,7 @@ pub fn execute_swap_and_action(
     };
 
     // Error if the current block time is greater than the timeout timestamp
-    if env.block.time.nanos() > timeout_timestamp {
+    if env.block.time.seconds() > timeout_timestamp {
         return Err(ContractError::Timeout);
     }
 
