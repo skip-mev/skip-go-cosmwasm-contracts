@@ -42,6 +42,12 @@ pub struct DexterAdapterInstantiateMsg {
 }
 
 #[cw_serde]
+pub struct DropBondInstantiateMsg {
+    pub entry_point_contract_address: String,
+    pub drop_factory_contract_address: String,
+}
+
+#[cw_serde]
 pub struct LidoSatelliteInstantiateMsg {
     pub entry_point_contract_address: String,
     pub lido_satellite_contract_address: String,
