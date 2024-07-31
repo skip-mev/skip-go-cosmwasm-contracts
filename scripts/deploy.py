@@ -195,6 +195,8 @@ def main():
             }
             if "lido_satellite_contract_address" in venue:
                 swap_adapter_instantiate_args["lido_satellite_contract_address"] = venue["lido_satellite_contract_address"]
+            if "drop_contract_address" in venue:
+                swap_adapter_instantiate_args["drop_factory_contract_address"] = venue["drop_factory_contract_address"]
             if "hallswap_contract_address" in venue:
                 swap_adapter_instantiate_args["hallswap_contract_address"] = venue["hallswap_contract_address"]
             if "dexter_vault_contract_address" in venue:
