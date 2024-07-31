@@ -1,5 +1,5 @@
 [package]
-name          = "skip-api-swap-adapter-drop"
+name          = "skip-go-swap-adapter-drop"
 version       = { workspace = true }
 rust-version  = { workspace = true }
 authors       = { workspace = true }
