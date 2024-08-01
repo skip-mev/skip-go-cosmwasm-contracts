@@ -18,7 +18,7 @@ from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import (
     MsgInstantiateContract, 
     MsgInstantiateContract2,
     MsgMigrateContract,
-    MsgUpdateAdmin,
+    MsgClearAdmin,
     )
 from cosmpy.common.utils import json_encode
 from cosmpy.protos.cosmos.authz.v1beta1.tx_pb2 import MsgExec
@@ -92,9 +92,6 @@ SALT = config["SALT"].encode("utf-8")
 # Pregenerated Contract Addresses
 ENTRY_POINT_PRE_GENERATED_ADDRESS = config["ENTRY_POINT_PRE_GENERATED_ADDRESS"]
 
-# Admin address for future migrations
-ADMIN_ADDRESS = config["ADMIN_ADDRESS"]
-
 MNEMONIC = config["MNEMONIC"]
 del config["MNEMONIC"]
 
@@ -145,7 +142,7 @@ def main():
         ibc_transfer_adapter_contract_address = instantiate_contract(
             client, 
             wallet, 
-            ADMIN_ADDRESS,
+            None,
             ibc_transfer_adapter_contract_code_id, 
             {"entry_point_contract_address": ENTRY_POINT_PRE_GENERATED_ADDRESS}, 
             "Skip Swap IBC Transfer Adapter", 
@@ -205,7 +202,7 @@ def main():
             swap_adapter_contract_address = instantiate_contract(
                 client, 
                 wallet, 
-                ADMIN_ADDRESS,
+                None,
                 swap_adapter_contract_code_id, 
                 swap_adapter_instantiate_args, 
                 f"Skip Swap Swap Adapter {venue['name']}", 
@@ -270,7 +267,7 @@ def main():
         entry_point_contract_address = instantiate_contract(
             client, 
             wallet, 
-            ADMIN_ADDRESS,
+            None,
             entry_point_contract_code_id, 
             entry_point_instantiate_args, 
             "Skip Swap Entry Point", 
@@ -297,15 +294,15 @@ def main():
             "ibc_transfer_adapter"
         )
         
-        # Update Admin for IBC transfer adapter contract back to real admin
-        update_admin(
+        # Clear Admin for IBC transfer adapter contract
+        clear_admin(
             client, 
             wallet, 
             ibc_transfer_adapter_contract_address, 
             "ibc_transfer_adapter"
         )
         
-        # Store, migrate, and update admin for swap adapter contracts
+        # Store, migrate, and clear admin for swap adapter contracts
         for i, venue in enumerate(SWAP_VENUES):
             swap_adapter_contract_code_id = store_contract(
                 client, 
@@ -326,7 +323,7 @@ def main():
                 args, 
                 f"swap_adapter_{venue['name']}"
             )
-            update_admin(
+            clear_admin(
                 client, 
                 wallet, 
                 swap_adapter_contract_address, 
@@ -517,27 +514,26 @@ def migrate_contract(client, wallet, contract_address, code_id, args, name) -> s
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     return contract_address
 
-def update_admin(client, wallet, contract_address, name):
+def clear_admin(client, wallet, contract_address, name):
     if CHAIN == "osmosis":
         gas_limit = 600000
     else:
         gas_limit = 300000
-    msg = MsgUpdateAdmin(
+    msg = MsgClearAdmin(
         sender=str(wallet.address()),
-        new_admin=ADMIN_ADDRESS,
         contract=contract_address,
     )
-    update_admin_tx = create_tx(
+    clear_admin_tx = create_tx(
         msg=msg, 
         client=client, 
         wallet=wallet, 
         gas_limit=gas_limit,
         fee=f"{int(GAS_PRICE*gas_limit)}{DENOM}"
     )
-    tx_hash = sha256(update_admin_tx.tx.SerializeToString()).hexdigest()
+    tx_hash = sha256(clear_admin_tx.tx.SerializeToString()).hexdigest()
     print("Tx hash: ", tx_hash)
-    broadcast_tx(update_admin_tx)
-    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"update_admin_{name}_tx_hash"] = tx_hash
+    broadcast_tx(clear_admin_tx)
+    DEPLOYED_CONTRACTS_INFO["tx-hashes"][f"clear_admin_{name}_tx_hash"] = tx_hash
     with open(f"{DEPLOYED_CONTRACTS_FOLDER_PATH}/{CHAIN}/{NETWORK}.toml", "w") as f:
         toml.dump(DEPLOYED_CONTRACTS_INFO, f)
     return None
@@ -562,7 +558,6 @@ def instantiate2_contract(
     if permissioned_uploader_address is not None:
         msg = MsgInstantiateContract2(
             sender=permissioned_uploader_address,
-            admin=ADMIN_ADDRESS,
             code_id=code_id,
             msg=json_encode(args).encode("UTF8"),
             label=label,
@@ -573,7 +568,6 @@ def instantiate2_contract(
     else:
         msg = MsgInstantiateContract2(
             sender=str(wallet.address()),
-            admin=ADMIN_ADDRESS,
             code_id=code_id,
             msg=json_encode(args).encode("UTF8"),
             label=label,
