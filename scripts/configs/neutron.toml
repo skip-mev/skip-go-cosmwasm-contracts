@@ -54,5 +54,5 @@ swap_adapter_path = "../artifacts/skip_go_swap_adapter_lido_satellite-aarch64.wa
 
 [[testnet_swap_venues]]
 name = "testnet-neutron-drop"
-drop_contract_address = "neutron13w6n6kj5pz59chgmeq63xeuy5y8shd2h9hkm2tvy5a35ugnuzzlsltznae"
+drop_factory_contract_address = "neutron1yumnxj30nyxhvv4zdq963vk7v63mfjg5jghawxrgj4cc0fja829qugzjpt"
 swap_adapter_path = "../artifacts/skip_go_swap_adapter_drop-aarch64.wasm"
