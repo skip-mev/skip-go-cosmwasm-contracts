@@ -1605,22 +1605,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "skip-api-swap-adapter-drop"
-version = "0.3.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 1.2.0",
- "cw-utils 1.0.3",
- "cw2 1.1.2",
- "drop-factory",
- "drop-staking-base",
- "skip",
- "test-case",
- "thiserror",
-]
-
-[[package]]
 name = "skip-go-entry-point"
 version = "0.3.0"
 dependencies = [
@@ -1710,6 +1694,22 @@ dependencies = [
  "dexter-stable-pool",
  "dexter-vault",
  "dexter-weighted-pool",
+ "skip",
+ "test-case",
+ "thiserror",
+]
+
+[[package]]
+name = "skip-go-swap-adapter-drop"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "drop-factory",
+ "drop-staking-base",
  "skip",
  "test-case",
  "thiserror",
