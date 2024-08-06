@@ -1,26 +1,31 @@
-use std::vec;
+use std::{str::FromStr, vec};
 
 use crate::{
     error::{ContractError, ContractResult},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
-        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, OWNER,
-        PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS,
+        OWNER, PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
     },
 };
 use cosmwasm_std::{
-    from_json, to_json_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    SubMsg, Uint128, WasmMsg,
+    from_json, to_json_binary, Addr, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env,
+    MessageInfo, Response, SubMsg, Uint128, WasmMsg,
 };
-use cw20::{Cw20Coin, Cw20ReceiveMsg};
+use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::one_coin;
+use oraiswap::universal_swap_memo::{
+    memo::{PostAction, UserSwap},
+    Memo,
+};
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
+    ibc_wasm::{ExecuteMsg as IbcWasmTransferExecuteMsg, IbcWasmTransfer},
     swap::{
-        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactAssetOut, SwapVenue,
+        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
+        SmartSwapExactAssetIn, Swap, SwapExactAssetIn, SwapExactAssetOut, SwapVenue,
     },
 };
 
@@ -78,6 +83,9 @@ pub fn receive_cw20(
             post_swap_action,
             affiliates,
         ),
+        Cw20HookMsg::UniversalSwap { memo } => {
+            execute_universal_swap(deps, env, info, Some(sent_asset), memo)
+        }
     }
 }
 
@@ -92,6 +100,7 @@ pub fn execute_update_config(
     owner: Option<Addr>,
     swap_venues: Option<Vec<SwapVenue>>,
     ibc_transfer_contract_address: Option<String>,
+    ibc_wasm_contract_address: Option<String>,
 ) -> ContractResult<Response> {
     OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
@@ -149,6 +158,23 @@ pub fn execute_update_config(
             .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
     }
 
+    if let Some(ibc_wasm_contract_address) = ibc_wasm_contract_address {
+        // Validate ibc transfer adapter contract addresses
+        let checked_ibc_wasm_contract_address =
+            deps.api.addr_validate(&ibc_wasm_contract_address)?;
+
+        // Store the ibc transfer adapter contract address
+        IBC_WASM_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_wasm_contract_address)?;
+
+        // Insert the ibc transfer adapter contract address into the blocked contract addresses map
+        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_ibc_wasm_contract_address, &())?;
+
+        // Add the ibc transfer adapter contract address to the response
+        response = response
+            .add_attribute("action", "add_ibc_wasm_transfer_adapter")
+            .add_attribute("contract_address", &checked_ibc_wasm_contract_address);
+    }
+
     if let Some(owner) = owner {
         response = response.add_attribute("new_owner", owner.as_str());
         OWNER.set(deps, Some(owner))?;
@@ -156,6 +182,155 @@ pub fn execute_update_config(
 
     Ok(response)
 }
+
+pub fn execute_universal_swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    sent_asset: Option<Asset>,
+    memo: String,
+) -> ContractResult<Response> {
+    // Create a response object to return
+    let mut response: Response = Response::new().add_attribute("action", "execute_universal_swap");
+
+    // Validate and unwrap the sent asset
+    let sent_asset = match sent_asset {
+        Some(sent_asset) => {
+            sent_asset.validate(&deps, &env, &info)?;
+            sent_asset
+        }
+        None => one_coin(&info)?.into(),
+    };
+    let memo_data = Memo::decode_memo(Binary::from_base64(&memo)?)?;
+    // let user_swap = memo_data.user_swap.unwrap_or_default();
+    let mut cosmos_msgs: Vec<CosmosMsg> = vec![];
+
+    // call swap and action with recover
+    if let (Some(post_action), Some(user_swap)) = (
+        memo_data.post_swap_action.clone(),
+        memo_data.user_swap.clone(),
+    ) {
+        convert_user_swap_with_action_to_cosmos_msgs(
+            deps.api,
+            env.contract.address.as_str(),
+            &mut cosmos_msgs,
+            user_swap,
+            post_action,
+            &memo_data.minimum_receive,
+            sent_asset,
+            memo_data.timeout_timestamp,
+            deps.api.addr_validate(&memo_data.recovery_addr)?,
+        )?;
+    } else if let Some(post_action) = memo_data.post_swap_action {
+        let pre_swap_out_asset_amount =
+            get_current_asset_available(&deps, &env, sent_asset.denom())?
+                .amount()
+                .checked_sub(sent_asset.amount())?;
+
+        PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &pre_swap_out_asset_amount)?;
+
+        let min_asset = Asset::new(
+            deps.api,
+            &sent_asset.denom(),
+            Uint128::from_str(&memo_data.minimum_receive)?,
+        );
+        let post_swap_action_msg = WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_json_binary(&ExecuteMsg::PostSwapAction {
+                min_asset,
+                timeout_timestamp: memo_data.timeout_timestamp,
+                post_swap_action: Action::try_from(post_action, memo_data.timeout_timestamp)?,
+                exact_out: false,
+            })?,
+            funds: vec![],
+        };
+        cosmos_msgs.push(post_swap_action_msg.into());
+    } else {
+        // fallback case, we send the sent tokens back to recovery addr
+        cosmos_msgs.push(sent_asset.transfer(&memo_data.recovery_addr))
+    }
+
+    response = response.add_messages(cosmos_msgs);
+    Ok(response)
+
+    // handle post swap
+}
+
+pub fn convert_user_swap_with_action_to_cosmos_msgs(
+    api: &dyn Api,
+    env_contract_address: &str,
+    cosmos_msgs: &mut Vec<CosmosMsg>,
+    user_swap: UserSwap,
+    post_swap_action: PostAction,
+    minimum_receive: &str,
+    sent_asset: Asset,
+    timeout_timestamp: u64,
+    recovery_addr: Addr,
+) -> Result<(), ContractError> {
+    // if not a smart route -> transform into adapter messages
+    if let Some(swap_exact) = user_swap.swap_exact_asset_in {
+        let swap_exact_in = SwapExactAssetIn::from(&user_swap.swap_venue_name, &swap_exact);
+        let min_asset = swap_exact_in.get_min_asset(api, minimum_receive)?;
+
+        let msg = to_json_binary(&ExecuteMsg::SwapAndActionWithRecover {
+            sent_asset: Some(sent_asset.clone()),
+            user_swap: Swap::SwapExactAssetIn(SwapExactAssetIn::from(
+                &user_swap.swap_venue_name,
+                &swap_exact,
+            )),
+            min_asset,
+            timeout_timestamp,
+            post_swap_action: Action::try_from(post_swap_action, timeout_timestamp)?,
+            affiliates: vec![],
+            recovery_addr,
+        })?;
+        let funds = match sent_asset {
+            Asset::Native(coin) => vec![coin],
+            Asset::Cw20(_) => vec![],
+        };
+        cosmos_msgs.push(
+            WasmMsg::Execute {
+                contract_addr: env_contract_address.to_string(),
+                msg,
+                funds,
+            }
+            .into(),
+        );
+        return Ok(());
+    }
+    let smart_swap_exact = user_swap.smart_swap_exact_asset_in.unwrap_or_default();
+    let smart_swap_exact_in = SmartSwapExactAssetIn::from(
+        api,
+        sent_asset.denom(),
+        &user_swap.swap_venue_name,
+        &smart_swap_exact,
+    );
+    let min_asset = smart_swap_exact_in.get_min_asset(api, minimum_receive)?;
+    let msg = to_json_binary(&ExecuteMsg::SwapAndActionWithRecover {
+        sent_asset: Some(sent_asset.clone()),
+        user_swap: Swap::SmartSwapExactAssetIn(smart_swap_exact_in),
+        min_asset,
+        timeout_timestamp,
+        post_swap_action: Action::try_from(post_swap_action, timeout_timestamp)?,
+        affiliates: vec![],
+        recovery_addr,
+    })?;
+    let funds = match sent_asset {
+        Asset::Native(coin) => vec![coin],
+        Asset::Cw20(_) => vec![],
+    };
+    // dont use into_wasm_msg because we are calling a self-execute msg, there's no need to send from cw20 to self with the same amount.
+    cosmos_msgs.push(
+        WasmMsg::Execute {
+            contract_addr: env_contract_address.to_string(),
+            msg,
+            funds,
+        }
+        .into(),
+    );
+    Ok(())
+}
+
 // Main entry point for the contract
 // Dispatches the swap and post swap action
 #[allow(clippy::too_many_arguments)]
@@ -366,7 +541,6 @@ pub fn execute_swap_and_action_with_recover(
         }),
         RECOVER_REPLY_ID,
     );
-
     Ok(Response::new().add_submessage(sub_msg))
 }
 
@@ -669,6 +843,41 @@ pub fn execute_post_swap_action(
             response = response
                 .add_message(contract_call_msg)
                 .add_attribute("action", "dispatch_post_swap_contract_call");
+        }
+        Action::IbcWasmTransfer { ibc_wasm_info, .. } => {
+            // Create the IBC transfer message
+            let ibc_transfer_msg: IbcWasmTransferExecuteMsg = IbcWasmTransfer {
+                info: ibc_wasm_info,
+                coin: transfer_out_asset.clone(),
+            }
+            .into();
+
+            // Get the IBC transfer adapter contract address
+            let ibc_wasm_transfer_contract_address =
+                IBC_WASM_CONTRACT_ADDRESS.load(deps.storage)?;
+
+            // Send the IBC transfer by calling the IBC transfer contract
+            let ibc_wasm_transfer_msg = match &transfer_out_asset {
+                Asset::Native(coin) => WasmMsg::Execute {
+                    contract_addr: ibc_wasm_transfer_contract_address.to_string(),
+                    msg: to_json_binary(&ibc_transfer_msg)?,
+                    funds: vec![coin.clone()],
+                },
+                Asset::Cw20(coin) => WasmMsg::Execute {
+                    contract_addr: coin.clone().address,
+                    msg: to_json_binary(&Cw20ExecuteMsg::Send {
+                        contract: ibc_wasm_transfer_contract_address.to_string(),
+                        amount: coin.amount,
+                        msg: to_json_binary(&ibc_transfer_msg)?,
+                    })?,
+                    funds: vec![],
+                },
+            };
+
+            // Add the IBC transfer message to the response
+            response = response
+                .add_message(ibc_wasm_transfer_msg)
+                .add_attribute("action", "dispatch_post_swap_ibc_wasm_transfer");
         }
     };
 

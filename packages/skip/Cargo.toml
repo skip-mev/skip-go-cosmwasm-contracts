@@ -1,28 +1,30 @@
 [package]
-name          = "skip"
-version       = { workspace = true }
-rust-version  = { workspace = true }
-authors       = { workspace = true }
-edition       = { workspace = true }
-license       = { workspace = true }
-homepage      = { workspace = true }
-repository    = { workspace = true }
+name = "skip"
+version = { workspace = true }
+rust-version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
 documentation = { workspace = true }
-keywords      = { workspace = true }
+keywords = { workspace = true }
 
 [features]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-astroport           = { workspace = true }
-cosmos-sdk-proto    = { workspace = true }
-cosmwasm-schema     = { workspace = true }
-cosmwasm-std        = { workspace = true }
-cw-utils            = { workspace = true }
-cw20                = { workspace = true }
-ibc-proto           = { workspace = true }
-neutron-proto       = { workspace = true }
-osmosis-std         = { workspace = true }
-thiserror           = { workspace = true }
-white-whale-std     = { workspace = true }
+astroport = { workspace = true }
+cosmos-sdk-proto = { workspace = true }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true }
+cw-utils = { workspace = true }
+cw20 = { workspace = true }
+ibc-proto = { workspace = true }
+neutron-proto = { workspace = true }
+osmosis-std = { workspace = true }
+thiserror = { workspace = true }
+white-whale-std = { workspace = true }
+oraiswap = { workspace = true }
+cw20-ics20-msg = { workspace = true }

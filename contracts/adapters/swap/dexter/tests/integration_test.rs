@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use cosmwasm_std::{to_json_binary, Addr, Coin, Decimal, Decimal256, Uint128};
-use cw_multi_test::{addons::MockApiBech32, App, BankKeeper, Executor};
+use cw_multi_test::{App, BankKeeper, Executor, MockApiBech32};
 use dexter::{
     asset::{Asset as DexterAsset, AssetInfo as DexterAssetInfo},
     vault::{self, FeeInfo, NativeAssetPrecisionInfo},

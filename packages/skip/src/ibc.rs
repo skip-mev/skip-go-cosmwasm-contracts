@@ -5,6 +5,7 @@ use std::convert::From;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Coins, StdError};
 use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
+use oraiswap::universal_swap_memo::memo::IbcTransfer as UniversalIbcTransfer;
 
 ///////////////
 /// MIGRATE ///
@@ -133,6 +134,19 @@ pub struct IbcInfo {
     pub fee: Option<IbcFee>,
     pub memo: String,
     pub recover_address: String,
+}
+
+// convert from IbcTransfer of universal swap to IbcInfo
+impl IbcInfo {
+    pub fn from(ibc_transfer: UniversalIbcTransfer) -> Self {
+        IbcInfo {
+            source_channel: ibc_transfer.source_channel,
+            receiver: ibc_transfer.receiver,
+            fee: None,
+            memo: ibc_transfer.memo,
+            recover_address: ibc_transfer.recover_address,
+        }
+    }
 }
 
 // The IbcTransfer struct defines the parameters for an IBC transfer standardized across all IBC Transfer Adapter contracts.

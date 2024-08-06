@@ -1,14 +1,20 @@
 use crate::{asset::Asset, error::SkipError};
 
+use std::str::FromStr;
 use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{to_json_binary, StdError, StdResult, WasmMsg};
 use cosmwasm_std::{
     Addr, Api, BankMsg, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
 };
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
+use oraiswap::universal_swap_memo::memo::{
+    Route as UniversalSwapRoute, SmartSwapExactAssetIn as UniversalSmartSwapExactIn,
+    SwapExactAssetIn as UniversalSwapExactIn, SwapOperation as UniversalSwapOperation,
+};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -51,6 +57,12 @@ pub struct LidoSatelliteInstantiateMsg {
 pub struct HallswapInstantiateMsg {
     pub entry_point_contract_address: String,
     pub hallswap_contract_address: String,
+}
+
+#[cw_serde]
+pub struct OraidexInstantiateMsg {
+    pub entry_point_contract_address: String,
+    pub oraidex_router_contract_address: String,
 }
 
 /////////////////////////
@@ -169,6 +181,20 @@ impl Route {
     }
 }
 
+impl Route {
+    // for universal swap
+    pub fn from(api: &dyn Api, asset_denom: &str, route: &UniversalSwapRoute) -> Self {
+        Route {
+            offer_asset: Asset::new(
+                api,
+                asset_denom,
+                Uint128::from_str(&route.offer_amount).unwrap_or_default(),
+            ),
+            operations: SwapOperation::from(route.operations.clone()),
+        }
+    }
+}
+
 pub fn get_ask_denom_for_routes(routes: &[Route]) -> Result<String, SkipError> {
     match routes.last() {
         Some(route) => route.ask_denom(),
@@ -185,6 +211,32 @@ pub struct SwapOperation {
     pub denom_in: String,
     pub denom_out: String,
     pub interface: Option<Binary>,
+}
+
+// ORAICHAIN universal swap conversion
+impl SwapOperation {
+    pub fn from(operations: Vec<UniversalSwapOperation>) -> Vec<Self> {
+        operations
+            .into_iter()
+            .map(|operation| SwapOperation {
+                pool: operation.pool_id,
+                denom_in: operation.denom_in,
+                denom_out: operation.denom_out,
+                interface: None,
+            })
+            .collect()
+    }
+
+    pub fn to_cosmos_msg(
+        operations: Vec<SwapOperation>,
+        contract_addr: &str,
+        sent_asset: Asset,
+    ) -> Result<CosmosMsg, SkipError> {
+        let msg = ExecuteMsg::Swap { operations };
+        Ok(sent_asset
+            .into_wasm_msg(contract_addr.to_string(), to_json_binary(&msg)?)?
+            .into())
+    }
 }
 
 // ASTROPORT CONVERSION
@@ -270,6 +322,27 @@ pub struct SwapExactAssetIn {
     pub operations: Vec<SwapOperation>,
 }
 
+// convert from SwapExactAssetIn of universal swap to kip SwapExactAssetIn
+impl SwapExactAssetIn {
+    pub fn from(swap_venue_name: &str, swap_exact: &UniversalSwapExactIn) -> Self {
+        SwapExactAssetIn {
+            swap_venue_name: swap_venue_name.to_string(),
+            operations: SwapOperation::from(swap_exact.operations.clone()),
+        }
+    }
+
+    pub fn get_min_asset(&self, api: &dyn Api, minimum_receive: &str) -> StdResult<Asset> {
+        let last_swap_op = self.operations.last().ok_or(StdError::GenericErr {
+            msg: "swap exact in has no ops".to_string(),
+        })?;
+        Ok(Asset::new(
+            api,
+            &last_swap_op.denom_out,
+            Uint128::from_str(minimum_receive)?,
+        ))
+    }
+}
+
 // Swap object that swaps the remaining asset recevied
 // over multiple routes from the contract call minus fee swap (if present)
 #[cw_serde]
@@ -304,6 +377,42 @@ impl SmartSwapExactAssetIn {
             Some(idx) => Ok(idx),
             None => Err(SkipError::RoutesEmpty),
         }
+    }
+
+    // impl for universal swap
+    pub fn from(
+        api: &dyn Api,
+        asset_denom: &str,
+        swap_venue_name: &str,
+        swap_exact: &UniversalSmartSwapExactIn,
+    ) -> Self {
+        SmartSwapExactAssetIn {
+            swap_venue_name: swap_venue_name.to_string(),
+            routes: swap_exact
+                .routes
+                .iter()
+                .map(|route| Route::from(api, asset_denom, &route))
+                .collect(),
+        }
+    }
+
+    pub fn get_min_asset(&self, api: &dyn Api, minimum_receive: &str) -> StdResult<Asset> {
+        let last_swap_op = self
+            .routes
+            .first()
+            .ok_or(StdError::GenericErr {
+                msg: "smart swap exact in has no routes".to_string(),
+            })?
+            .operations
+            .last()
+            .ok_or(StdError::GenericErr {
+                msg: "smart swap exact in has no ops".to_string(),
+            })?;
+        Ok(Asset::new(
+            api,
+            &last_swap_op.denom_out,
+            Uint128::from_str(minimum_receive)?,
+        ))
     }
 }
 

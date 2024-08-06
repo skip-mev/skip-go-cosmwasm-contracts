@@ -23,6 +23,7 @@ Expect Error
 struct Params {
     swap_venues: Vec<SwapVenue>,
     ibc_transfer_contract_address: String,
+    ibc_wasm_contract_address: String,
     expected_error: Option<ContractError>,
 }
 
@@ -38,8 +39,13 @@ struct Params {
                 name: "osmosis-poolmanager".to_string(),
                 adapter_contract_address: "osmosis123".to_string(),
             },
+            SwapVenue {
+                name: "oraidex-universal-swap".to_string(),
+                adapter_contract_address: "orai123".to_string(),
+            },
         ],
         ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
+        ibc_wasm_contract_address: "ibc_wasm_adapter".to_string(),
         expected_error: None,
     };
     "Happy Path")]
@@ -56,6 +62,7 @@ struct Params {
             },
         ],
         ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
+        ibc_wasm_contract_address: "ibc_wasm_adapter".to_string(),
         expected_error: Some(ContractError::DuplicateSwapVenueName),
     };
     "Duplicate Swap Venue Names")]
@@ -78,6 +85,7 @@ fn test_instantiate(params: Params) {
         InstantiateMsg {
             swap_venues: Some(params.swap_venues.clone()),
             ibc_transfer_contract_address: Some(params.ibc_transfer_contract_address),
+            ibc_wasm_contract_address: Some(params.ibc_wasm_contract_address),
         },
     );
 

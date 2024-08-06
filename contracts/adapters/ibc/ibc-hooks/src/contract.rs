@@ -10,7 +10,9 @@ use cosmwasm_std::{
     Reply, Response, SubMsg, SubMsgResult,
 };
 use cw2::set_contract_version;
-use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferResponse};
+use ibc_proto::ibc::{
+    applications::transfer::v1::MsgTransferResponse, apps::transfer::v1::MsgTransfer,
+};
 use prost::Message;
 use serde_cw_value::Value;
 use skip::{
@@ -152,6 +154,15 @@ fn execute_ibc_transfer(
         type_url: IBC_MSG_TRANSFER_TYPE_URL.to_string(),
         value: msg.encode_to_vec().into(),
     };
+    // let msg = CosmosMsg::Ibc(build_ibc_send_packet(
+    //     coin.amount,
+    //     &coin.denom,
+    //     env.contract.address.as_str(),
+    //     &ibc_info.receiver,
+    //     Some(memo),
+    //     &ibc_info.source_channel,
+    //     Timestamp::from_nanos(timeout_timestamp).into(),
+    // )?);
 
     // Create sub message from osmosis ibc transfer message to receive a reply
     let sub_msg = SubMsg::reply_on_success(msg, REPLY_ID);
@@ -167,7 +178,7 @@ fn execute_ibc_transfer(
 
 // Handles the reply from the ibc transfer sub message
 // Upon success, maps the sub msg AckID (channel_id, sequence_id)
-// to the in progress ibc transfer struct, and saves it to storage.
+// to the in progress ibc transfe r struct, and saves it to storage.
 // Now that the map entry is stored, it also removes the in progress
 // ibc transfer from storage.
 #[entry_point]

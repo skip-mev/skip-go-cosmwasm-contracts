@@ -34,7 +34,7 @@ cw2 = "1.1"
 cw20 = "1.1"
 cw-storage-plus = "1"
 cw-utils = "1.0.3"
-cw-multi-test = "0.20.0"
+cw-multi-test = "1.2.0"
 ibc-proto = { version = "0.32.1", default-features = false }
 lido-satellite = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = [
   "library",
@@ -47,11 +47,16 @@ osmosis-std = "0.15.3"
 prost = "0.11"
 serde-cw-value = "0.7.0"
 serde-json-wasm = "0.5.1"
-skip = { version = "0.3.0", path = "./packages/skip" }
+skip = { path = "./packages/skip" }
 test-case = "3.3.1"
 thiserror = "1"
 white-whale-std = "1.1.1"
 cw-controllers = "1.1"
+oraiswap = { git = "https://github.com/oraichain/oraiswap.git", rev = "843b39ca6c02ae8f2de628f4ddd444173d4de3ba" }
+oraiswap-v3 = { git = "https://github.com/oraichain/oraiswap-v3.git", rev = "7f2b8ac6a239790006d7a662e6f56c175e189be0", features = [
+  "library",
+] }
+cw20-ics20-msg = { git = "https://github.com/oraichain/ibc-bridge-wasm.git", rev = "2aeedc7f4f21823db6872aed8ca97f4376e597f8" }
 
 [profile.release]
 codegen-units = 1

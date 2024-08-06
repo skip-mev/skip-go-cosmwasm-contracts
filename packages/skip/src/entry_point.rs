@@ -5,8 +5,10 @@ use crate::{
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Uint128};
+use cosmwasm_std::{Addr, Binary, StdResult, Uint128};
 use cw20::Cw20ReceiveMsg;
+use cw20_ics20_msg::msg::TransferBackMsg;
+use oraiswap::universal_swap_memo::memo::PostAction;
 
 ///////////////
 /// MIGRATE ///
@@ -25,6 +27,7 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub swap_venues: Option<Vec<SwapVenue>>,
     pub ibc_transfer_contract_address: Option<String>,
+    pub ibc_wasm_contract_address: Option<String>,
 }
 
 ///////////////
@@ -70,6 +73,10 @@ pub enum ExecuteMsg {
         owner: Option<Addr>,
         swap_venues: Option<Vec<SwapVenue>>,
         ibc_transfer_contract_address: Option<String>,
+        ibc_wasm_contract_address: Option<String>,
+    },
+    UniversalSwap {
+        memo: String,
     },
 }
 
@@ -90,6 +97,9 @@ pub enum Cw20HookMsg {
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
+    },
+    UniversalSwap {
+        memo: String,
     },
 }
 
@@ -130,6 +140,48 @@ pub enum Action {
         contract_address: String,
         msg: Binary,
     },
+    IbcWasmTransfer {
+        ibc_wasm_info: TransferBackMsg,
+        fee_swap: Option<SwapExactAssetOut>,
+    },
+}
+
+// convert PostAction of universal swap to Action
+impl Action {
+    pub fn try_from(post_swap_action: PostAction, timeout_timestamp: u64) -> StdResult<Self> {
+        if let Some(ibc_transfer) = post_swap_action.ibc_transfer_msg {
+            return Ok(Action::IbcTransfer {
+                ibc_info: IbcInfo::from(ibc_transfer),
+                fee_swap: None,
+            });
+        }
+        if let Some(contract_call) = post_swap_action.contract_call {
+            return Ok(Action::ContractCall {
+                contract_address: contract_call.contract_address,
+                msg: Binary::from_base64(&contract_call.msg)?,
+            });
+        }
+        if let Some(ibc_wasm_transfer) = post_swap_action.ibc_wasm_transfer_msg {
+            return Ok(Action::IbcWasmTransfer {
+                ibc_wasm_info: TransferBackMsg {
+                    local_channel_id: ibc_wasm_transfer.local_channel_id,
+                    remote_address: ibc_wasm_transfer.remote_address,
+                    remote_denom: ibc_wasm_transfer.remote_denom,
+                    timeout: Some(timeout_timestamp),
+                    memo: ibc_wasm_transfer.memo,
+                },
+                fee_swap: None,
+            });
+        }
+        if let Some(transfer_msg) = post_swap_action.transfer_msg {
+            return Ok(Action::Transfer {
+                to_address: transfer_msg.to_address,
+            });
+        }
+        Err(cosmwasm_std::StdError::GenericErr {
+            msg: "No post swap action found".to_string(),
+        })
+    }
 }
 
 // The Affiliate struct is used to specify an affiliate address and BPS fee taken

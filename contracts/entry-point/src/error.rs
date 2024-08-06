@@ -75,4 +75,7 @@ pub enum ContractError {
 
     #[error("Reply id: {0} not valid")]
     ReplyIdError(u64),
+
+    #[error("User_swap or post_action is required")]
+    MissingUserSwapOrPostAction,
 }

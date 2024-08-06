@@ -2,11 +2,14 @@ use crate::{
     error::{ContractError, ContractResult},
     execute::{
         execute_post_swap_action, execute_swap_and_action, execute_swap_and_action_with_recover,
-        execute_update_config, execute_user_swap, receive_cw20,
+        execute_universal_swap, execute_update_config, execute_user_swap, receive_cw20,
     },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
-    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, OWNER, SWAP_VENUE_MAP},
+    state::{
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS,
+        OWNER, SWAP_VENUE_MAP,
+    },
 };
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
@@ -21,7 +24,7 @@ use skip::entry_point::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Response> {
-    unimplemented!()
+    Ok(Response::default())
 }
 
 ///////////////////
@@ -99,6 +102,23 @@ pub fn instantiate(
         response = response
             .add_attribute("action", "add_ibc_transfer_adapter")
             .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+    }
+
+    if let Some(ibc_wasm_contract_address) = msg.ibc_wasm_contract_address {
+        // Validate ibc transfer adapter contract addresses
+        let checked_ibc_wasm_contract_address =
+            deps.api.addr_validate(&ibc_wasm_contract_address)?;
+
+        // Store the ibc transfer adapter contract address
+        IBC_WASM_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_wasm_contract_address)?;
+
+        // Insert the ibc transfer adapter contract address into the blocked contract addresses map
+        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_ibc_wasm_contract_address, &())?;
+
+        // Add the ibc transfer adapter contract address to the response
+        response = response
+            .add_attribute("action", "add_ibc_wasm_transfer_adapter")
+            .add_attribute("contract_address", &checked_ibc_wasm_contract_address);
     }
 
     // Store sender as owner
@@ -190,13 +210,16 @@ pub fn execute(
             owner,
             swap_venues,
             ibc_transfer_contract_address,
+            ibc_wasm_contract_address,
         } => execute_update_config(
             deps,
             info,
             owner,
             swap_venues,
             ibc_transfer_contract_address,
+            ibc_wasm_contract_address,
         ),
+        ExecuteMsg::UniversalSwap { memo } => execute_universal_swap(deps, env, info, None, memo),
     }
 }
 
