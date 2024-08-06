@@ -1716,6 +1716,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "skip-go-swap-adapter-duality"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "neutron-sdk 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "skip",
+ "test-case",
+ "thiserror",
+]
+
+[[package]]
 name = "skip-go-swap-adapter-hallswap"
 version = "0.3.0"
 dependencies = [
