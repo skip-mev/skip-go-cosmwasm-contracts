@@ -4,9 +4,6 @@ MNEMONIC = "<YOUR MNEMONIC HERE>"
 # Commit Hash of the commit used to build the contracts
 COMMIT_HASH = "<COMMIT HASH HERE>"
 
-# Admin address to execute migrations from
-ADMIN_ADDRESS = "<ADMIN ADDRESS HERE>"
-
 MAINNET_REST_URL = "https://persistence-api.polkachu.com" 
 MAINNET_RPC_URL = "https://persistence-rpc.polkachu.com"
 MAINNET_CHAIN_ID = "core-1"
