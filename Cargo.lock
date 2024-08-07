@@ -801,7 +801,7 @@ checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 [[package]]
 name = "drop-factory"
 version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#a4da7691eb86e0c2364b9d4daccba9b1f036d2ab"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -813,18 +813,22 @@ dependencies = [
  "drop-puppeteer-base",
  "drop-staking-base",
  "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
+ "semver",
  "thiserror",
 ]
 
 [[package]]
 name = "drop-helpers"
 version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#a4da7691eb86e0c2364b9d4daccba9b1f036d2ab"
 dependencies = [
+ "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus 1.2.0",
  "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
+ "prost 0.12.4",
+ "schemars",
  "serde",
  "serde-json-wasm 1.0.1",
  "thiserror",
@@ -833,7 +837,7 @@ dependencies = [
 [[package]]
 name = "drop-macros"
 version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#a4da7691eb86e0c2364b9d4daccba9b1f036d2ab"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -845,7 +849,7 @@ dependencies = [
 [[package]]
 name = "drop-puppeteer-base"
 version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#a4da7691eb86e0c2364b9d4daccba9b1f036d2ab"
 dependencies = [
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
@@ -857,6 +861,7 @@ dependencies = [
  "prost 0.12.4",
  "prost-types 0.12.4",
  "schemars",
+ "semver",
  "serde",
  "serde-json-wasm 1.0.1",
  "thiserror",
@@ -865,7 +870,7 @@ dependencies = [
 [[package]]
 name = "drop-staking-base"
 version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=main#afaa0229b7535e344a2d852b9596dde69dab23a3"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#a4da7691eb86e0c2364b9d4daccba9b1f036d2ab"
 dependencies = [
  "astroport 3.12.2",
  "cosmos-sdk-proto 0.20.0",
@@ -873,6 +878,7 @@ dependencies = [
  "cosmwasm-std",
  "cw-ownable",
  "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
  "cw721 0.18.0",
  "cw721-base 0.18.0",
  "drop-helpers",
@@ -881,6 +887,7 @@ dependencies = [
  "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
  "optfield",
  "prost 0.12.4",
+ "semver",
  "serde",
  "thiserror",
 ]

@@ -7,7 +7,7 @@ use cosmwasm_std::{
 use skip::{asset::Asset, swap::QueryMsg};
 use skip_api_swap_adapter_drop::{
     error::ContractResult,
-    state::{BONDED_DENOM, DROP_CORE_CONTRACT_ADDRESS, REMOTE_DENOM},
+    state::{DROP_CORE_CONTRACT_ADDRESS, FACTORY_BONDED_DENOM, IBC_REMOTE_DENOM},
 };
 use test_case::test_case;
 
@@ -176,8 +176,8 @@ fn test_queries(params: Params) -> ContractResult<()> {
     )?;
 
     // Store Lido Satellite denoms
-    REMOTE_DENOM.save(deps.as_mut().storage, &String::from("ibc/uatom"))?;
-    BONDED_DENOM.save(deps.as_mut().storage, &String::from("factory/uatom"))?;
+    IBC_REMOTE_DENOM.save(deps.as_mut().storage, &String::from("ibc/uatom"))?;
+    FACTORY_BONDED_DENOM.save(deps.as_mut().storage, &String::from("factory/uatom"))?;
 
     // Call execute_swap with the given test parameters
     let res = skip_api_swap_adapter_drop::contract::query(deps.as_ref(), env, params.query.clone())

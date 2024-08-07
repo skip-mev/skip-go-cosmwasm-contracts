@@ -8,7 +8,10 @@ use cosmwasm_std::{
 use skip::swap::ExecuteMsg;
 use skip_api_swap_adapter_drop::{
     error::{ContractError, ContractResult},
-    state::{BONDED_DENOM, DROP_CORE_CONTRACT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, REMOTE_DENOM},
+    state::{
+        DROP_CORE_CONTRACT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, FACTORY_BONDED_DENOM,
+        IBC_REMOTE_DENOM,
+    },
 };
 use test_case::test_case;
 
@@ -44,7 +47,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "drop_core_contract".to_string(),
-                    msg: to_json_binary(&drop_staking_base::msg::core::ExecuteMsg::Bond{ receiver: None })?,
+                    msg: to_json_binary(&drop_staking_base::msg::core::ExecuteMsg::Bond{ r#ref: None, receiver: None })?,
                     funds: vec![Coin::new(100, "ibc/uatom")],
                 }
                 .into(),
@@ -131,8 +134,8 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
     )?;
 
     // Store Lido Satellite denoms
-    REMOTE_DENOM.save(deps.as_mut().storage, &String::from("ibc/uatom"))?;
-    BONDED_DENOM.save(deps.as_mut().storage, &String::from("factory/uatom"))?;
+    IBC_REMOTE_DENOM.save(deps.as_mut().storage, &String::from("ibc/uatom"))?;
+    FACTORY_BONDED_DENOM.save(deps.as_mut().storage, &String::from("factory/uatom"))?;
 
     // Call execute_swap with the given test parameters
     let res = skip_api_swap_adapter_drop::contract::execute(

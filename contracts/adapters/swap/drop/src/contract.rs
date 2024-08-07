@@ -1,6 +1,9 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{BONDED_DENOM, DROP_CORE_CONTRACT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, REMOTE_DENOM},
+    state::{
+        DROP_CORE_CONTRACT_ADDRESS, DROP_TOKEN_CONTRACT_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS,
+        FACTORY_BONDED_DENOM, IBC_REMOTE_DENOM,
+    },
 };
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
@@ -66,17 +69,27 @@ pub fn instantiate(
         &deps.api.addr_validate(&drop_factory_state.core_contract)?,
     )?;
 
+    DROP_TOKEN_CONTRACT_ADDRESS.save(
+        deps.storage,
+        &deps.api.addr_validate(&drop_factory_state.token_contract)?,
+    )?;
+
+    let drop_token_config: drop_staking_base::msg::token::ConfigResponse =
+        deps.querier.query_wasm_smart(
+            &drop_factory_state.token_contract,
+            &drop_staking_base::msg::token::QueryMsg::Config {},
+        )?;
+
+    let bonded_denom = drop_token_config.denom;
+
+    FACTORY_BONDED_DENOM.save(deps.storage, &bonded_denom)?;
+
     let drop_core_config: drop_staking_base::state::core::Config = deps.querier.query_wasm_smart(
-        &checked_drop_factory_contract_address,
+        &drop_factory_state.core_contract,
         &drop_staking_base::msg::core::QueryMsg::Config {},
     )?;
 
-    let bonded_denom = drop_core_config
-        .ld_denom
-        .ok_or(ContractError::BondedDenomNotSet {})?;
-
-    BONDED_DENOM.save(deps.storage, &bonded_denom)?;
-    REMOTE_DENOM.save(deps.storage, &drop_core_config.remote_denom)?;
+    IBC_REMOTE_DENOM.save(deps.storage, &drop_core_config.base_denom)?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
@@ -92,8 +105,8 @@ pub fn instantiate(
             "drop_core_contract_address",
             drop_factory_state.core_contract,
         )
-        .add_attribute("bonded_denom", bonded_denom)
-        .add_attribute("remote_denom", drop_core_config.remote_denom))
+        .add_attribute("factory_bonded_denom", bonded_denom)
+        .add_attribute("ibc_remote_denom", drop_core_config.base_denom))
 }
 
 ///////////////
@@ -142,13 +155,16 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
-    let remote_denom = REMOTE_DENOM.load(deps.storage)?;
-    let bonded_denom = BONDED_DENOM.load(deps.storage)?;
+    let remote_denom = IBC_REMOTE_DENOM.load(deps.storage)?;
+    let bonded_denom = FACTORY_BONDED_DENOM.load(deps.storage)?;
 
     // Decide which message to Core contract should be emitted
     let (drop_core_msg, return_denom) = if coin_in.denom == remote_denom {
         (
-            drop_staking_base::msg::core::ExecuteMsg::Bond { receiver: None },
+            drop_staking_base::msg::core::ExecuteMsg::Bond {
+                r#ref: None,
+                receiver: None,
+            },
             bonded_denom,
         )
     } else {
@@ -185,8 +201,8 @@ fn execute_swap(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
-    let remote_denom = REMOTE_DENOM.load(deps.storage)?;
-    let bonded_denom = BONDED_DENOM.load(deps.storage)?;
+    let remote_denom = IBC_REMOTE_DENOM.load(deps.storage)?;
+    let bonded_denom = FACTORY_BONDED_DENOM.load(deps.storage)?;
 
     match msg {
         QueryMsg::SimulateSwapExactAssetIn { asset_in, .. } => {
