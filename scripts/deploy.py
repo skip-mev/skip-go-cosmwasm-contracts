@@ -22,8 +22,6 @@ from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import (
     )
 from cosmpy.common.utils import json_encode
 from cosmpy.protos.cosmos.authz.v1beta1.tx_pb2 import MsgExec
-from terra_sdk.client.lcd import LCDClient
-from terra_sdk.key.mnemonic import MnemonicKey
 
 CHAIN = sys.argv[1]
 NETWORK = sys.argv[2]
@@ -359,24 +357,15 @@ def create_tx(
     
 def create_wallet(client) -> LocalWallet:
     """ Create a wallet from a mnemonic and return it"""
-    if CHAIN == "terra":
-        mk = MnemonicKey(mnemonic=MNEMONIC)
-        terra = LCDClient(REST_URL, CHAIN_ID)
-        terra_wallet = terra.wallet(mk)
-        wallet = LocalWallet(PrivateKey(terra_wallet.key.private_key), prefix="terra")
-        balance = client.query_bank_balance(str(wallet.address()), DENOM)
-        print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
-    else:
-        seed_bytes = Bip39SeedGenerator(MNEMONIC).Generate()
-        bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.COSMOS).DeriveDefaultPath()
-        wallet = LocalWallet(
-            PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes()), 
-            prefix=ADDRESS_PREFIX
-        )  
-        balance = client.query_bank_balance(str(wallet.address()), DENOM)
-        print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
+    seed_bytes = Bip39SeedGenerator(MNEMONIC).Generate()
+    bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.COSMOS).DeriveDefaultPath()
+    wallet = LocalWallet(
+        PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes()), 
+        prefix=ADDRESS_PREFIX
+    )  
+    balance = client.query_bank_balance(str(wallet.address()), DENOM)
+    print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
     return wallet
-
 
 def init_deployed_contracts_info():
     DEPLOYED_CONTRACTS_INFO["info"] = {}
