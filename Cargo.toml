@@ -49,8 +49,6 @@ skip             = { version = "0.3.0", path = "./packages/skip" }
 test-case        = "3.3.1"
 thiserror        = "1"
 white-whale-std  = "1.1.1"
-protobuf = "=3.4.0"
-protobuf-support = "=3.4.0"
 
 [profile.release]
 codegen-units    = 1
