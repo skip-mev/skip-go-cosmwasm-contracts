@@ -18,8 +18,8 @@ DENOM = "uhuahua"
 GAS_PRICE = 1
 
 # Contract Paths
-ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_api_entry_point-aarch64.wasm"
-IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_api_ibc_adapter_ibc_hooks-aarch64.wasm"
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_hooks-aarch64.wasm"
 
 # SALT USED TO GENERATE A DETERMINSTIC ADDRESS
 SALT = "1"
@@ -29,9 +29,9 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[swap_venues]]
 name = "chihuahua-white-whale"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_white_whale-aarch64.wasm"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_white_whale-aarch64.wasm"
 
 [[swap_venues]]
 name = "chihuahua-hallswap"
 hallswap_contract_address = "chihuahua1w029h820yzthj3kqfvv6dzd6h84ys26uxg6x0zd3zmc93kutqe9qrwgsn7"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_hallswap-aarch64.wasm"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_hallswap-aarch64.wasm"

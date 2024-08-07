@@ -18,8 +18,8 @@ DENOM = "uluna"
 GAS_PRICE = 0.015
 
 # Contract Paths
-ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_api_entry_point-aarch64.wasm"
-IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_api_ibc_adapter_ibc_hooks-aarch64.wasm"
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_hooks-aarch64.wasm"
 
 # SALT USED TO GENERATE A DETERMINSTIC ADDRESS
 SALT = "1"
@@ -29,21 +29,21 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[swap_venues]]
 name = "terra-astroport"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_astroport-aarch64.wasm"
 
 [[swap_venues]]
 name = "terra-white-whale"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_white_whale-aarch64.wasm"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_white_whale-aarch64.wasm"
 
 [[swap_venues]]
 name = "terra-hallswap"
 hallswap_contract_address = "terra1e3nqr8vwu32pzgasraud9avpwdd8phmqgre5kpwlytgedj2emkkq3l67hy"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_hallswap-aarch64.wasm"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_hallswap-aarch64.wasm"
 
 # [[testnet_swap_venues]]
 # name = "testnet-terra-astroport"
-# swap_adapter_path = "../artifacts/skip_api_swap_adapter_astroport-aarch64.wasm"
+# swap_adapter_path = "../artifacts/skip_go_swap_adapter_astroport-aarch64.wasm"
 
 # [[testnet_swap_venues]]
 # name = "testnet-terra-white-whale"
-# swap_adapter_path = "../artifacts/skip_api_swap_adapter_white_whale-aarch64.wasm"
+# swap_adapter_path = "../artifacts/skip_go_swap_adapter_white_whale-aarch64.wasm"
