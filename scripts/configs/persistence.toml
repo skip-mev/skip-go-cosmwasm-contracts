@@ -17,8 +17,8 @@ DENOM = "uxprt"
 GAS_PRICE = 0.025
 
 # Contract Paths
-ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_api_entry_point-aarch64.wasm"
-IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_api_ibc_adapter_ibc_hooks-aarch64.wasm"
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_hooks-aarch64.wasm"
 
 # SALT USED TO GENERATE A DETERMINSTIC ADDRESS
 SALT = "1"
@@ -30,10 +30,10 @@ ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 name = "persistence-dexter"
 dexter_vault_contract_address = "persistence1k8re7jwz6rnnwrktnejdwkwnncte7ek7gt29gvnl3sdrg9mtnqkstujtpg"
 dexter_router_contract_address = "persistence132xmxm33vwjlur2pszl4hu9r32lqmqagvunnuc5hq4htps7rr3kqsf4dsk"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_dexter-aarch64.wasm"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_dexter-aarch64.wasm"
 
 [[testnet_swap_venues]]
 name = "testnet-persistence-dexter"
 dexter_vault_contract_address = "persistence1hrpna9v7vs3stzyd4z3xf00676kf78zpe2u5ksvljswn2vnjp3ys64pna7"
 dexter_router_contract_address = "persistence1f6jlx7d9y408tlzue7r2qcf79plp549n30yzqjajjud8vm7m4vds8udaex"
-swap_adapter_path = "../artifacts/skip_api_swap_adapter_dexter-aarch64.wasm"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_dexter-aarch64.wasm"

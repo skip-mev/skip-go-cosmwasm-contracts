@@ -5,7 +5,7 @@ use cosmwasm_std::{
 };
 // use lido_satellite::msg::ExecuteMsg as LidoSatelliteExecuteMsg;
 use skip::{asset::Asset, swap::QueryMsg};
-use skip_api_swap_adapter_drop::{
+use skip_go_swap_adapter_drop::{
     error::ContractResult,
     state::{DROP_CORE_CONTRACT_ADDRESS, FACTORY_BONDED_DENOM, IBC_REMOTE_DENOM},
 };
@@ -180,7 +180,7 @@ fn test_queries(params: Params) -> ContractResult<()> {
     FACTORY_BONDED_DENOM.save(deps.as_mut().storage, &String::from("factory/uatom"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_api_swap_adapter_drop::contract::query(deps.as_ref(), env, params.query.clone())
+    let res = skip_go_swap_adapter_drop::contract::query(deps.as_ref(), env, params.query.clone())
         .unwrap();
 
     assert_eq!(res, params.response);
