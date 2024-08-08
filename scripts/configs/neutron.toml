@@ -46,7 +46,13 @@ swap_adapter_path = "../artifacts/skip_go_swap_adapter_astroport-aarch64.wasm"
 
 [[testnet_swap_venues]]
 name = "testnet-neutron-drop"
+drop_factory_contract_address = "neutron1yumnxj30nyxhvv4zdq963vk7v63mfjg5jghawxrgj4cc0fja829qugzjpt"
 swap_adapter_path = "../artifacts/skip_go_swap_adapter_drop-aarch64.wasm"
+
+[[testnet_swap_venues]]
+name = "testnet-neutron-duality"
+dex_module_address = "neutron1n58mly6f7er0zs6swtetqgfqs36jaarqlplf59"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_duality-aarch64.wasm"
 
 [[testnet_swap_venues]]
 name = "testnet-neutron-lido-satellite"

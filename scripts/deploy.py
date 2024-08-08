@@ -196,6 +196,10 @@ def main():
                 swap_adapter_instantiate_args["dexter_vault_contract_address"] = venue["dexter_vault_contract_address"]
             if "dexter_router_contract_address" in venue:
                 swap_adapter_instantiate_args["dexter_router_contract_address"] = venue["dexter_router_contract_address"]
+            if "drop_factory_contract_address" in venue:
+                swap_adapter_instantiate_args["drop_factory_contract_address"] = venue["drop_factory_contract_address"]
+            if "dex_module_address" in venue:
+                swap_adapter_instantiate_args["dex_module_address"] = venue["dex_module_address"]
             
             swap_adapter_contract_address = instantiate_contract(
                 client, 
@@ -448,6 +452,8 @@ def instantiate_contract(
     permissioned_uploader_address
 ) -> str:
     if CHAIN == "osmosis":
+        gas_limit = 600000
+    elif CHAIN == "neutron":
         gas_limit = 600000
     else:
         gas_limit = 300000
