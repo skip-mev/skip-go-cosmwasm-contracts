@@ -317,7 +317,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 fn get_opposite_denom(denom: &str, remote_denom: &str, bonded_denom: &str) -> String {
     match denom {
         denom if denom == remote_denom => bonded_denom.to_string(),
-        denom if denom == bonded_denom => remote_denom.to_string(),
         _ => unimplemented!(),
     }
 }
