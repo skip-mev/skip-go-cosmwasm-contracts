@@ -207,7 +207,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
         QueryMsg::SimulateSwapExactAssetIn { asset_in, .. } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
+                get_opposite_denom_in(asset_in.denom(), &remote_denom, &bonded_denom)?;
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -218,7 +218,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         }
         QueryMsg::SimulateSwapExactAssetOut { asset_out, .. } => {
             let asset_in_denom =
-                get_opposite_denom(asset_out.denom(), &remote_denom, &bonded_denom);
+                get_opposite_denom_out(asset_out.denom(), &remote_denom, &bonded_denom)?;
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -233,7 +233,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             ..
         } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
+                get_opposite_denom_in(asset_in.denom(), &remote_denom, &bonded_denom)?;
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -257,7 +257,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             ..
         } => {
             let asset_in_denom =
-                get_opposite_denom(asset_out.denom(), &remote_denom, &bonded_denom);
+                get_opposite_denom_out(asset_out.denom(), &remote_denom, &bonded_denom)?;
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -277,7 +277,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
         }
         QueryMsg::SimulateSmartSwapExactAssetIn { asset_in, .. } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
+                get_opposite_denom_in(asset_in.denom(), &remote_denom, &bonded_denom)?;
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -292,7 +292,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             ..
         } => {
             let asset_out_denom =
-                get_opposite_denom(asset_in.denom(), &remote_denom, &bonded_denom);
+                get_opposite_denom_in(asset_in.denom(), &remote_denom, &bonded_denom)?;
 
             let exchange_rate = get_exchange_rate(deps)?;
 
@@ -314,9 +314,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     .map_err(From::from)
 }
 
-fn get_opposite_denom(denom: &str, remote_denom: &str, bonded_denom: &str) -> String {
-    match denom {
-        denom if denom == remote_denom => bonded_denom.to_string(),
+fn get_opposite_denom_in(denom_in: &str, remote_denom: &str, bonded_denom: &str) -> ContractResult<String> {
+    match denom_in {
+        // if doing an 'in' query, only allow for simulating putting the remote denom in
+        denom_in if denom_in == remote_denom => Ok(bonded_denom.to_string()),
+        denom_in if denom_in == bonded_denom => Err(ContractError::UnsupportedDenom),
+        _ => unimplemented!(),
+    }
+}
+
+fn get_opposite_denom_out(denom_out: &str, remote_denom: &str, bonded_denom: &str) -> ContractResult<String> {
+    match denom_out {
+        // if doing an 'out' query, only allow for simulating getting the bonded denom out
+        denom_out if denom_out == remote_denom => Err(ContractError::UnsupportedDenom),
+        denom_out if denom_out == bonded_denom => Ok(remote_denom.to_string()),
         _ => unimplemented!(),
     }
 }

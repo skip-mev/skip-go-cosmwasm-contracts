@@ -6,7 +6,7 @@ use cosmwasm_std::{
 // use lido_satellite::msg::ExecuteMsg as LidoSatelliteExecuteMsg;
 use skip::{asset::Asset, swap::QueryMsg};
 use skip_go_swap_adapter_drop::{
-    error::ContractResult,
+    error::ContractResult, error::ContractError,
     state::{DROP_CORE_CONTRACT_ADDRESS, FACTORY_BONDED_DENOM, IBC_REMOTE_DENOM},
 };
 use test_case::test_case;
@@ -16,9 +16,10 @@ struct Params {
     query: QueryMsg,
     response: Binary,
     exchange_rate: Decimal,
+    expected_error: Option<ContractError>,
 }
 
-// Test execute_swap
+// Test queries
 #[test_case(
     Params {
         query: QueryMsg::SimulateSwapExactAssetIn {
@@ -30,6 +31,7 @@ struct Params {
             "factory/uatom",
         ))).unwrap(),
         exchange_rate: Decimal::one(),
+        expected_error: None,
     };
     "SimulateSwapExactAssetIn Query")]
 #[test_case(
@@ -43,8 +45,20 @@ struct Params {
             "factory/uatom",
         ))).unwrap(),
         exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
+        expected_error: None,
     };
     "SimulateSwapExactAssetIn Query half exchange rate")]
+#[test_case(
+    Params {
+        query: QueryMsg::SimulateSwapExactAssetOut {
+            swap_operations: vec![],
+            asset_out: Asset::Native(Coin::new(100, "ibc/uatom")),
+        },
+        response: Binary([].to_vec()),
+        exchange_rate: Decimal::one(),
+        expected_error: Some(ContractError::UnsupportedDenom),
+    };
+    "SimulateSwapExactAssetOut Query - want out remote denom")]
 #[test_case(
     Params {
         query: QueryMsg::SimulateSwapExactAssetOut {
@@ -56,8 +70,9 @@ struct Params {
             "ibc/uatom",
         ))).unwrap(),
         exchange_rate: Decimal::one(),
+        expected_error: None,
     };
-    "SimulateSwapExactAssetOut Query")]
+    "SimulateSwapExactAssetOut Query - want out factory denom")]
 #[test_case(
     Params {
         query: QueryMsg::SimulateSwapExactAssetOut {
@@ -69,8 +84,20 @@ struct Params {
             "ibc/uatom",
         ))).unwrap(),
         exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
+        expected_error: None,
     };
-    "SimulateSwapExactAssetOut Query half exchange rate")]
+    "SimulateSwapExactAssetOut Query half exchange rate - want out factory denom")]
+#[test_case(
+    Params {
+        query: QueryMsg::SimulateSwapExactAssetOut {
+            swap_operations: vec![],
+            asset_out: Asset::Native(Coin::new(100, "ibc/uatom")),
+        },
+        response: Binary([].to_vec()),
+        exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
+        expected_error: Some(ContractError::UnsupportedDenom),
+    };
+    "SimulateSwapExactAssetOut Query half exchange rate - want out remote denom")]
 #[test_case(
     Params {
         query: QueryMsg::SimulateSwapExactAssetInWithMetadata {
@@ -86,6 +113,7 @@ struct Params {
             spot_price: None
         }).unwrap(),
         exchange_rate: Decimal::one(),
+        expected_error: None,
     };
     "SimulateSwapExactAssetInWithMetadata Query")]
 #[test_case(
@@ -103,6 +131,7 @@ struct Params {
             spot_price: Some(Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap())
         }).unwrap(),
         exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
+        expected_error: None,
     };
     "SimulateSwapExactAssetInWithMetadata Query include spot price")]
 #[test_case(
@@ -120,8 +149,33 @@ struct Params {
             spot_price: None
         }).unwrap(),
         exchange_rate: Decimal::one(),
+        expected_error: None,
     };
-    "SimulateSwapExactAssetOutWithMetadata Query")]
+    "SimulateSwapExactAssetOutWithMetadata Query - want out factory denom")]
+#[test_case(
+    Params {
+        query: QueryMsg::SimulateSwapExactAssetOutWithMetadata {
+            swap_operations: vec![],
+            asset_out: Asset::Native(Coin::new(100, "ibc/uatom")),
+            include_spot_price: false,
+        },
+        response: Binary([].to_vec()),
+        exchange_rate: Decimal::one(),
+        expected_error: Some(ContractError::UnsupportedDenom),
+    };
+    "SimulateSwapExactAssetOutWithMetadata Query - want out remote denom")]
+#[test_case(
+    Params {
+        query: QueryMsg::SimulateSwapExactAssetOutWithMetadata {
+            swap_operations: vec![],
+            asset_out: Asset::Native(Coin::new(100, "ibc/uatom")),
+            include_spot_price: true,
+        },
+        response: Binary([].to_vec()),
+        exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
+        expected_error: Some(ContractError::UnsupportedDenom),
+    };
+    "SimulateSwapExactAssetOutWithMetadata Query include spot price - want out remote denom")]
 #[test_case(
     Params {
         query: QueryMsg::SimulateSwapExactAssetOutWithMetadata {
@@ -137,8 +191,9 @@ struct Params {
             spot_price: Some(Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap())
         }).unwrap(),
         exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
+        expected_error: None,
     };
-    "SimulateSwapExactAssetOutWithMetadata Query include spot price")]
+    "SimulateSwapExactAssetOutWithMetadata Query include spot price - want out factory denom")]
 
 fn test_queries(params: Params) -> ContractResult<()> {
     // Create mock dependencies
@@ -169,21 +224,43 @@ fn test_queries(params: Params) -> ContractResult<()> {
     let mut env = mock_env();
     env.contract.address = Addr::unchecked("swap_contract_address");
 
-    // Store the lido satellite contract address
+    // Store the drop contract address
     DROP_CORE_CONTRACT_ADDRESS.save(
         deps.as_mut().storage,
         &Addr::unchecked("drop_core_contract"),
     )?;
 
-    // Store Lido Satellite denoms
+    // Store drop remote and bonded denoms
     IBC_REMOTE_DENOM.save(deps.as_mut().storage, &String::from("ibc/uatom"))?;
     FACTORY_BONDED_DENOM.save(deps.as_mut().storage, &String::from("factory/uatom"))?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_go_swap_adapter_drop::contract::query(deps.as_ref(), env, params.query.clone())
-        .unwrap();
+    let res = skip_go_swap_adapter_drop::contract::query(deps.as_ref(), env, params.query.clone());
 
-    assert_eq!(res, params.response);
+    match res {
+        Ok(res) => {
+            // Assert that we did not want an error
+            assert!(
+                params.expected_error.is_none(),
+                "expected test to error with {:?}, but it succeeded",
+                params.expected_error
+            );
+
+            // Assert the response is correct
+            assert_eq!(res, params.response);
+        }
+        Err(err) => {
+            // Asser that we did in fact expect an error
+            assert!(
+                params.expected_error.is_some(),
+                "expected test to succeed, but it errored with {:?}",
+                err
+            ); 
+            
+            // Assert the error is correct
+            assert_eq!(err, params.expected_error.unwrap());
+        }
+    }
 
     Ok(())
 }
