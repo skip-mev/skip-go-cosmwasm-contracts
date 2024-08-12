@@ -1,13 +1,14 @@
 
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env, mock_info}, to_json_binary, Addr, Coin, SubMsg, Uint128, WasmMsg
+    testing::{mock_dependencies, mock_env, mock_info}, to_json_binary, Addr, BankMsg, Coin, CosmosMsg, SubMsg, Uint128, WasmMsg
 };
 
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw20_ics20_msg::msg::TransferBackMsg;
+use cw_controllers::AdminError;
 use skip::{asset::Asset, ibc_wasm::ExecuteMsg};
 use skip_api_ibc_adapter_orai_ibc_wasm::{
-    error::ContractResult, state::{ENTRY_POINT_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS},
+    contract::execute, error::{ContractError, ContractResult}, state::{ENTRY_POINT_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS, OWNER}
 };
 use test_case::test_case;
 
@@ -144,4 +145,19 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     }
 
     Ok(())
+}
+
+
+#[test]
+fn test_withdraw_stuck_asset() {
+    let mut deps = mock_dependencies();
+    OWNER.set(deps.as_mut(), Some(Addr::unchecked("admin"))).unwrap();
+
+    // case 1: unauthorized
+   let err = execute(deps.as_mut(), mock_env(), mock_info("addr000", &[]), ExecuteMsg::WithdrawAsset { coin: Asset::Native(Coin { denom: "orai".to_string(), amount: Uint128::new(1000000) }), receiver: Some(Addr::unchecked("receiver")) }).unwrap_err();
+   assert_eq!(err, ContractError::AdminError(AdminError::NotAdmin {  }));
+
+   // case 2: success
+    let res = execute(deps.as_mut(), mock_env(), mock_info("admin", &[]), ExecuteMsg::WithdrawAsset { coin: Asset::Native(Coin { denom: "orai".to_string(), amount: Uint128::new(1000000) }), receiver: Some(Addr::unchecked("receiver")) }).unwrap();
+    assert_eq!(res.messages, vec![SubMsg::new(CosmosMsg::Bank(BankMsg::Send { to_address: "receiver".to_string(), amount: vec![Coin{denom: "orai".to_string(), amount: Uint128::new(1000000)}] }))]);
 }
