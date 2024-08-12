@@ -3,7 +3,7 @@ use crate::{asset::Asset, error::SkipError};
 use std::convert::From;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Coin, Coins, StdError};
+use cosmwasm_std::{Addr, Coin, Coins, StdError};
 use cw20::Cw20ReceiveMsg;
 use cw20_ics20_msg::msg::TransferBackMsg;
 
@@ -16,6 +16,7 @@ use cw20_ics20_msg::msg::TransferBackMsg;
 pub struct MigrateMsg {
     pub entry_point_contract_address: String,
     pub ibc_wasm_contract_address: String,
+    pub new_owner: Option<Addr>,
 }
 ///////////////////
 /// INSTANTIATE ///
@@ -40,6 +41,13 @@ pub enum ExecuteMsg {
         coin: Asset,
     },
     Receive(Cw20ReceiveMsg),
+    UpdateOwner {
+        new_owner: Addr,
+    },
+    WithdrawAsset {
+        coin: Asset,
+        receiver: Option<Addr>,
+    },
 }
 #[cw_serde]
 pub enum Cw20HookMsg {

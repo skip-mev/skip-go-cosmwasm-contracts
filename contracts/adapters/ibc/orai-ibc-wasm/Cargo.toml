@@ -29,6 +29,7 @@ skip = { workspace = true }
 thiserror = { workspace = true }
 cw20-ics20-msg = { workspace = true }
 cw-utils = { workspace = true }
+cw-controllers = { workspace = true }
 
 [dev-dependencies]
 cosmos-sdk-proto = { workspace = true }

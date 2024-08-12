@@ -1,4 +1,5 @@
 use cosmwasm_std::{OverflowError, StdError};
+use cw_controllers::AdminError;
 use cw_utils::PaymentError;
 use skip::error::SkipError;
 use thiserror::Error;
@@ -18,6 +19,9 @@ pub enum ContractError {
 
     #[error("{0}")]
     Payment(#[from] PaymentError),
+
+    #[error("{0}")]
+    AdminError(#[from] AdminError),
 
     #[error("Unauthorized")]
     Unauthorized,

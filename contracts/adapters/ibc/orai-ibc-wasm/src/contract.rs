@@ -1,9 +1,10 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{ENTRY_POINT_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS},
+    state::{ENTRY_POINT_CONTRACT_ADDRESS, IBC_WASM_CONTRACT_ADDRESS, OWNER},
 };
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, DepsMut, Env, MessageInfo, Response, WasmMsg,
+    entry_point, from_json, to_json_binary, Addr, DepsMut, Empty, Env, MessageInfo, Response,
+    WasmMsg,
 };
 use cw2::set_contract_version;
 
@@ -31,6 +32,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Resp
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
     IBC_WASM_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_wasm_contract_address)?;
+    if let Some(owner) = msg.new_owner {
+        OWNER.set(deps, Some(owner))?;
+    }
 
     Ok(Response::new()
         .add_attribute("action", "migrate")
@@ -56,7 +60,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> ContractResult<Response> {
     // Set contract version
@@ -72,6 +76,7 @@ pub fn instantiate(
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
     IBC_WASM_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_wasm_contract_address)?;
+    OWNER.set(deps, Some(info.sender))?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
@@ -142,7 +147,42 @@ pub fn execute(
             }
             execute_ibc_wasm_transfer(deps, env, info, ibc_wasm_info, coin)
         }
+        ExecuteMsg::UpdateOwner { new_owner } => execute_update_owner(deps, info, new_owner),
+        ExecuteMsg::WithdrawAsset { coin, receiver } => {
+            execute_withdraw_asset(deps, info, coin, receiver)
+        }
     }
+}
+
+// update new owner
+fn execute_update_owner(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_owner: Addr,
+) -> ContractResult<Response> {
+    OWNER.execute_update_admin::<Empty, Empty>(deps, info, Some(new_owner.clone()))?;
+
+    Ok(Response::new().add_attributes(vec![
+        ("action", "update_owner"),
+        ("new_owner", new_owner.as_str()),
+    ]))
+}
+
+// withdraw stuck coin and transfer back to user
+fn execute_withdraw_asset(
+    deps: DepsMut,
+    info: MessageInfo,
+    coin: Asset,
+    receiver: Option<Addr>,
+) -> ContractResult<Response> {
+    OWNER.assert_admin(deps.as_ref(), &info.sender)?;
+    let receiver = receiver.unwrap_or(info.sender);
+
+    let msg = coin.transfer(receiver.as_str());
+
+    Ok(Response::new()
+        .add_attributes(vec![("action", "withdraw_asset")])
+        .add_message(msg))
 }
 
 // Converts the given info and coin into a  ibc wasm transfer message,
