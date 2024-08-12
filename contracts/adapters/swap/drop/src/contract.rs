@@ -314,7 +314,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     .map_err(From::from)
 }
 
-fn get_opposite_denom_in(denom_in: &str, remote_denom: &str, bonded_denom: &str) -> ContractResult<String> {
+fn get_opposite_denom_in(
+    denom_in: &str,
+    remote_denom: &str,
+    bonded_denom: &str,
+) -> ContractResult<String> {
     match denom_in {
         // if doing an 'in' query, only allow for simulating putting the remote denom in
         denom_in if denom_in == remote_denom => Ok(bonded_denom.to_string()),
@@ -323,7 +327,11 @@ fn get_opposite_denom_in(denom_in: &str, remote_denom: &str, bonded_denom: &str)
     }
 }
 
-fn get_opposite_denom_out(denom_out: &str, remote_denom: &str, bonded_denom: &str) -> ContractResult<String> {
+fn get_opposite_denom_out(
+    denom_out: &str,
+    remote_denom: &str,
+    bonded_denom: &str,
+) -> ContractResult<String> {
     match denom_out {
         // if doing an 'out' query, only allow for simulating getting the bonded denom out
         denom_out if denom_out == remote_denom => Err(ContractError::UnsupportedDenom),

@@ -6,7 +6,8 @@ use cosmwasm_std::{
 // use lido_satellite::msg::ExecuteMsg as LidoSatelliteExecuteMsg;
 use skip::{asset::Asset, swap::QueryMsg};
 use skip_go_swap_adapter_drop::{
-    error::ContractResult, error::ContractError,
+    error::ContractError,
+    error::ContractResult,
     state::{DROP_CORE_CONTRACT_ADDRESS, FACTORY_BONDED_DENOM, IBC_REMOTE_DENOM},
 };
 use test_case::test_case;
@@ -255,8 +256,7 @@ fn test_queries(params: Params) -> ContractResult<()> {
                 params.expected_error.is_some(),
                 "expected test to succeed, but it errored with {:?}",
                 err
-            ); 
-            
+            );
             // Assert the error is correct
             assert_eq!(err, params.expected_error.unwrap());
         }
