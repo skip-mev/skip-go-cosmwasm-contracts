@@ -212,7 +212,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             let exchange_rate = get_exchange_rate(deps)?;
 
             to_json_binary(&Asset::Native(Coin::new(
-                (exchange_rate * asset_in.amount()).into(),
+                (asset_in.amount().div_floor(exchange_rate)).into(), //(asset_in.amount().div_floor(exchange_rate)).into()
                 asset_out_denom,
             )))
         }
@@ -223,7 +223,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             let exchange_rate = get_exchange_rate(deps)?;
 
             to_json_binary(&Asset::Native(Coin::new(
-                (asset_out.amount().div_floor(exchange_rate)).into(),
+                (exchange_rate * asset_out.amount()).into(), //(exchange_rate * asset_out.amount()).into()
                 asset_in_denom,
             )))
         }
@@ -245,7 +245,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 
             to_json_binary(&SimulateSwapExactAssetInResponse {
                 asset_out: Asset::Native(Coin::new(
-                    (exchange_rate * asset_in.amount()).into(),
+                    (asset_in.amount().div_floor(exchange_rate)).into(),
                     asset_out_denom,
                 )),
                 spot_price,
@@ -269,7 +269,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 
             to_json_binary(&SimulateSwapExactAssetOutResponse {
                 asset_in: Asset::Native(Coin::new(
-                    (asset_out.amount().div_floor(exchange_rate)).into(),
+                    (exchange_rate * asset_out.amount()).into(),
                     asset_in_denom,
                 )),
                 spot_price,
@@ -282,7 +282,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             let exchange_rate = get_exchange_rate(deps)?;
 
             to_json_binary(&Asset::Native(Coin::new(
-                (exchange_rate * asset_in.amount()).into(),
+                (asset_in.amount().div_floor(exchange_rate)).into(),
                 asset_out_denom,
             )))
         }
@@ -304,7 +304,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 
             to_json_binary(&SimulateSwapExactAssetInResponse {
                 asset_out: Asset::Native(Coin::new(
-                    (exchange_rate * asset_in.amount()).into(),
+                    (asset_in.amount().div_floor(exchange_rate)).into(),
                     asset_out_denom,
                 )),
                 spot_price,
