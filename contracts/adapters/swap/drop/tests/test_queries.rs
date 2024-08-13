@@ -42,7 +42,7 @@ struct Params {
             asset_in: Asset::Native(Coin::new(100, "ibc/uatom")),
         },
         response: to_json_binary(&Asset::Native(Coin::new(
-            50,
+            200,
             "factory/uatom",
         ))).unwrap(),
         exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
@@ -81,7 +81,7 @@ struct Params {
             asset_out: Asset::Native(Coin::new(100, "factory/uatom")),
         },
         response: to_json_binary(&Asset::Native(Coin::new(
-            200,
+            50,
             "ibc/uatom",
         ))).unwrap(),
         exchange_rate: Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap(),
@@ -126,7 +126,7 @@ struct Params {
         },
         response: to_json_binary(&skip::swap::SimulateSwapExactAssetInResponse{
             asset_out: Asset::Native(Coin::new(
-                50,
+                200,
                 "factory/uatom",
             )),
             spot_price: Some(Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap())
@@ -186,7 +186,7 @@ struct Params {
         },
         response: to_json_binary(&skip::swap::SimulateSwapExactAssetOutResponse{
             asset_in: Asset::Native(Coin::new(
-                200,
+                50,
                 "ibc/uatom",
             )),
             spot_price: Some(Decimal::from_atomics(cosmwasm_std::Uint128::new(5), 1).unwrap())
@@ -261,6 +261,7 @@ fn test_queries(params: Params) -> ContractResult<()> {
             assert_eq!(err, params.expected_error.unwrap());
         }
     }
+    println!("{:?}", exchange_rate);
 
     Ok(())
 }
