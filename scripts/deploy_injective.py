@@ -61,9 +61,6 @@ SALT = config["SALT"].encode("utf-8")
 # Pregenerated Contract Addresses
 ENTRY_POINT_PRE_GENERATED_ADDRESS = config["ENTRY_POINT_PRE_GENERATED_ADDRESS"]
 
-# Admin address for future migrations
-ADMIN_ADDRESS = config["ADMIN_ADDRESS"]
-
 # MNEMONIC
 MNEMONIC = config["MNEMONIC"]
 
@@ -164,7 +161,6 @@ async def instantiate_contract(
 ):
     msg = wasm_tx_pb.MsgInstantiateContract(
         sender=address.to_acc_bech32(),
-        admin=ADMIN_ADDRESS,
         code_id=code_id,
         label=label,
         msg=json.dumps(args).encode('utf-8'),
@@ -193,7 +189,6 @@ async def instantiate2_contract(
 ):
     msg = wasm_tx_pb.MsgInstantiateContract2(
         sender=address.to_acc_bech32(),
-        admin=ADMIN_ADDRESS,
         code_id=code_id,
         label=label,
         msg=json.dumps(args).encode('utf-8'),
