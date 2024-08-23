@@ -625,16 +625,16 @@ fn setup_mocks() -> MockQuerier {
         "ibc/y:uatom:30Sep2024",
     );
 
-    mock_spot_price(&mut querier, 1, "ibc/uosmo", "ibc/uusdc", "0.25");
-    mock_spot_price(&mut querier, 2, "ibc/uusdc", "ibc/uatom", "2");
+    mock_spot_price(&mut querier, 1, "ibc/uusdc", "ibc/uosmo", "0.25");
+    mock_spot_price(&mut querier, 2, "ibc/uatom", "ibc/uusdc", "2");
     mock_spot_price(
         &mut querier,
         3,
-        "c:uatom",
         "y:uatom:30Sep2024",
+        "c:uatom",
         "1.263157895",
     );
-    mock_spot_price(&mut querier, 4, "ibc/uatom", "c:uatom", "0.9");
+    mock_spot_price(&mut querier, 4, "c:uatom", "ibc/uatom", "0.9");
 
     querier
 }

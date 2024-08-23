@@ -287,8 +287,8 @@ fn calculate_spot_price(
                         // spot price for a Swap step can be queried from amm module
                         let spot_price_res: QuerySpotPriceResponse = amm_querier.spot_price(
                             step.pool_id,
-                            step.token_in,
                             step.token_out,
+                            step.token_in,
                             false,
                         )?;
                         // parse the result and multiply the spot price with the current value
