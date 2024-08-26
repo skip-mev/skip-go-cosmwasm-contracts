@@ -599,7 +599,7 @@ fn calculate_spot_price_multi(
         Decimal::one(),
         |curr_spot_price, swap_op| -> ContractResult<Decimal> {
             let (spot_price_decimal, _) =
-                get_spot_price_and_tick(deps, &swap_op.denom_out, &swap_op.denom_in)?;
+                get_spot_price_and_tick(deps, &swap_op.denom_in, &swap_op.denom_out)?;
 
             // make sure to invert the price result since the expected output is the inverse of how Duality calculates price
             let division_result = Decimal::one()
