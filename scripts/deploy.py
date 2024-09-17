@@ -451,9 +451,7 @@ def instantiate_contract(
     name,
     permissioned_uploader_address
 ) -> str:
-    if CHAIN == "osmosis":
-        gas_limit = 600000
-    elif CHAIN == "neutron":
+    if CHAIN == "osmosis" or CHAIN == "neutron":
         gas_limit = 600000
     else:
         gas_limit = 300000
@@ -556,7 +554,7 @@ def instantiate2_contract(
     pre_gen_address,
     permissioned_uploader_address
 ) -> str:
-    if CHAIN == "osmosis":
+    if CHAIN == "osmosis" or CHAIN == "neutron":
         gas_limit = 600000
     else:
         gas_limit = 300000
