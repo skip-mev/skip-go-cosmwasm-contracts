@@ -1,0 +1,35 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+MAINNET_REST_URL = "https://api.pryzm.zone" 
+MAINNET_RPC_URL = "https://rpc.pryzm.zone"
+MAINNET_CHAIN_ID = "pryzm-1"
+
+TESTNET_REST_URL = "https://testnet-api.pryzm.zone"
+TESTNET_RPC_URL = "https://testnet-rpc.pryzm.zone"
+TESTNET_CHAIN_ID = "indigo-1"
+
+ADDRESS_PREFIX = "pryzm"
+DENOM = "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+GAS_PRICE = 0.015
+
+# Contract Paths
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_hooks-aarch64.wasm"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+[[swap_venues]]
+name = "pryzm-native"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_pryzm-aarch64.wasm"
+
+[[testnet_swap_venues]]
+name = "testnet-pryzm-native"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_pryzm-aarch64.wasm"

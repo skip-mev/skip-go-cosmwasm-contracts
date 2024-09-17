@@ -1,0 +1,40 @@
+[info]
+chain_id = "indigo-1"
+network = "testnet"
+deploy_date = "20/08/2024 12:02:32"
+commit_hash = "<COMMIT HASH HERE>"
+salt = "2"
+
+[checksums]
+"skip_api_swap_adapter_drop-aarch64.wasm" = "2ea621dafbaede4dd8c38b359966d42808513a3fa5fdfd4bbf2641cdfadf0094"
+"skip_go_entry_point-aarch64.wasm" = "ad769c800f304595d8d5009c88315210d056c6b03beb3e86ab64c216c3ae01e1"
+"skip_go_ibc_adapter_ibc_hooks-aarch64.wasm" = "691098edddef51c0ae210f8a0fa198c2e9a53704cb7ef373b24e5fe7038874f6"
+"skip_go_ibc_adapter_neutron_transfer-aarch64.wasm" = "28dcc6db06bf21f12997688e6b3fbedffd093286669e3b75877b7a1f9734e484"
+"skip_go_placeholder-aarch64.wasm" = "9f1885683e45b08f3b2ce7a92716cd99f324ac211ed26c6c8b0c3422ce3bb504"
+"skip_go_swap_adapter_astroport-aarch64.wasm" = "85d5f92a7a06a72efe88608cc9cae1fc045d738eb49b8655a8c71b47e687d43f"
+"skip_go_swap_adapter_dexter-aarch64.wasm" = "50a59433db5eece6490e6c574c2d4bdda0e4cbeb5ea60f4c84876325b480b9c5"
+"skip_go_swap_adapter_drop-aarch64.wasm" = "12bc54194338dd8eb72eb6f19b43c1d3d94204264df2a3bc4026d7941b947883"
+"skip_go_swap_adapter_duality-aarch64.wasm" = "5a79dc05180532e203ea7583500c410d08ff1ca3c40ffd8165d75180ba52441d"
+"skip_go_swap_adapter_hallswap-aarch64.wasm" = "d88911659910dfb32fd6d999f69645d43032d1cde6dfb5aa7c9edccf69d445de"
+"skip_go_swap_adapter_lido_satellite-aarch64.wasm" = "fc028e4d6e43491c2a0dcfabb7f2f5c3a2016659936dfa96f522bbbdf7d5305f"
+"skip_go_swap_adapter_osmosis_poolmanager-aarch64.wasm" = "df3a4d8e4cd62fb7b293ac3f47cedf7a28308584ec64954400584624f3551960"
+"skip_go_swap_adapter_pryzm-aarch64.wasm" = "ee897afece5893bcff28127b415a9274cc436ac4eda06d6cd83a4d7a0d9dbfab"
+"skip_go_swap_adapter_white_whale-aarch64.wasm" = "c26a7e66311a1a4dbfdb9f06a51e85817aec72100a1ec72aef9a0b56c15a10f1"
+
+[code-ids]
+ibc_transfer_adapter_contract_code_id = "152"
+swap_adapter_testnet-pryzm-native_contract_code_id = "153"
+entry_point_contract_code_id = "154"
+
+[contract-addresses]
+ibc_transfer_adapter_contract_address = "pryzm1nqc5eyd797gk7t2vkytwaf2g5wwh63gh7gj0ptqpen0mcu6jlc9slnpfdf"
+swap_adapter_testnet-pryzm-native_contract_address = "pryzm1svrgrrs76826aurd6pl5n4s220uzfx6v8d5vt4p3ev40tp0xg8msnlc20w"
+entry_point_contract_address = "pryzm1k6f4crmvu9l4t0x07mj7dm3gvpa38ty8qdvpq2q9vxutqy25esaqcv7adz"
+
+[tx-hashes]
+store_ibc_transfer_adapter_tx_hash = "63bd9cd04a16b6b51c451b02f369d39eb5dad717ff04bf63b50c2a26568117d3"
+instantiate_ibc_transfer_adapter_tx_hash = "c0b01c8b7ad7520f1cdcd739b5dcfa687ded519348d1d378d1f2bf6398de9958"
+store_swap_adapter_testnet-pryzm-native_tx_hash = "c3b695b722013e887b803c8943a1288c8d17aad784b8e55ff8ff4f12066c51a8"
+instantiate_swap_adapter_testnet-pryzm-native_tx_hash = "45e74dc3361e9a655de7fd4c1e78a7ebec6cf55af6a6a73f65b8dc40ae5ad1fe"
+store_entry_point_tx_hash = "ad0e456ee3067455b0b985c4b7766702fdab05144786e342cc6df4382de21797"
+instantiate_entry_point_tx_hash = "3316486005d2048a346db4d603e1176bbf5ee8bca237e6be3d5176e3d20d8199"
