@@ -4,16 +4,16 @@ use crate::{
     state::{ENTRY_POINT_CONTRACT_ADDRESS, ORAIDEX_ROUTER_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo,
+    entry_point, from_json, to_json_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
     Response, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
-use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::{Cw20Coin, Cw20ReceiveMsg};
 use cw_utils::one_coin;
 
 use oraiswap::mixed_router::{
-    ExecuteMsg as OraidexRouterExecuteMsg, QueryMsg as OraidexQueryMsg,
-    SimulateSwapOperationsResponse, SwapOperation as OraidexSwapOperation,
+    QueryMsg as OraidexQueryMsg, SimulateSwapOperationsResponse,
+    SwapOperation as OraidexSwapOperation,
 };
 use skip::{
     asset::{get_current_asset_available, Asset},
@@ -23,9 +23,6 @@ use skip::{
         SimulateSwapExactAssetInResponse, SimulateSwapExactAssetOutResponse, SwapOperation,
     },
 };
-
-// const DEXTER_VAULT_ADDRESS: &str = "persistence1k8re7jwz6rnnwrktnejdwkwnncte7ek7gt29gvnl3sdrg9mtnqkstujtpg";
-// const DEXTER_ROUTER_ADDRESS: &str = "persistence132xmxm33vwjlur2pszl4hu9r32lqmqagvunnuc5hq4htps7rr3kqsf4dsk";
 
 ///////////////
 /// MIGRATE ///
@@ -97,7 +94,7 @@ pub fn receive_cw20(
     info.sender = deps.api.addr_validate(&cw20_msg.sender)?;
 
     match from_json(&cw20_msg.msg)? {
-        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, sent_asset, operations),
+        Cw20HookMsg::Swap { operations } => execute_swap(deps, env, info, operations),
     }
 }
 
@@ -127,7 +124,7 @@ pub fn execute(
                 return Err(ContractError::CoinInDenomMismatch);
             }
 
-            execute_swap(deps, env, info, Asset::Native(coin), operations)
+            execute_swap(deps, env, info, operations)
         }
         ExecuteMsg::TransferFundsBack {
             swapper,
@@ -152,12 +149,10 @@ fn execute_swap(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    sent_asset: Asset,
     operations: Vec<SwapOperation>,
 ) -> ContractResult<Response> {
     // Get entry point contract address from storage
     let entry_point_contract_address = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.storage)?;
-    let oraidex_router_contract_address = ORAIDEX_ROUTER_ADDRESS.load(deps.storage)?;
 
     // Enforce the caller is the entry point contract
     if info.sender != entry_point_contract_address {
@@ -167,54 +162,7 @@ fn execute_swap(
     // Create a response object to return
     let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    // let mut hop_swap_requests: Vec<OraidexSwapOperation> = vec![];
-
-    // for operation in &operations {
-    //     if operation.pool.contains("-") {
-    //         // v3
-    //         let pool_key = convert_pool_id_to_v3_pool_key(&operation.pool)?;
-    //         let x_to_y = pool_key.token_x == operation.denom_in;
-
-    //         hop_swap_requests.push(OraidexSwapOperation::SwapV3 { pool_key, x_to_y })
-    //     } else {
-    //         // v2
-    //         hop_swap_requests.push(OraidexSwapOperation::OraiSwap {
-    //             offer_asset_info: denom_to_asset_info(deps.api, &operation.denom_in),
-    //             ask_asset_info: denom_to_asset_info(deps.api, &operation.denom_out),
-    //         })
-    //     }
-    // }
-
-    // let oraidex_router_msg = OraidexRouterExecuteMsg::ExecuteSwapOperations {
-    //     operations: hop_swap_requests,
-    //     minimum_receive: None,
-    //     // to: Some(entry_point_contract_address),
-    //     to: None,
-    // };
-
-    // let denom_in = operations.first().unwrap().denom_in.clone();
-
-    // let oraidex_router_wasm_msg = match sent_asset {
-    //     Asset::Cw20(coin) => WasmMsg::Execute {
-    //         contract_addr: coin.address,
-    //         msg: to_json_binary(&Cw20ExecuteMsg::Send {
-    //             contract: oraidex_router_contract_address.to_string(),
-    //             amount: coin.amount,
-    //             msg: to_json_binary(&oraidex_router_msg)?,
-    //         })?,
-    //         funds: vec![],
-    //     },
-    //     Asset::Native(coin) => WasmMsg::Execute {
-    //         contract_addr: oraidex_router_contract_address.to_string(),
-    //         msg: to_json_binary(&oraidex_router_msg)?,
-    //         funds: vec![Coin {
-    //             denom: denom_in,
-    //             amount: coin.amount,
-    //         }],
-    //     },
-    // };
-
-    // Add an astroport pool swap message to the response for each swap operation
+    // Add an oraidex pool swap message to the response for each swap operation
     for operation in &operations {
         let swap_msg = WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
@@ -528,9 +476,9 @@ fn simulate_swap_exact_asset_in(
 
 // Simulates a swap exact amount out request, returning the asset in needed and optionally the reverse simulation responses
 fn simulate_swap_exact_asset_out(
-    deps: Deps,
-    asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
+    _deps: Deps,
+    _asset_out: Asset,
+    _swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
     panic!("not implemented")
     // let dexter_router_address = DEXTER_ROUTER_ADDRESS.load(deps.storage)?;
@@ -595,8 +543,8 @@ fn simulate_smart_swap_exact_asset_in(
 
 // find spot prices for all the pools in the swap operations
 fn calculate_spot_price(
-    deps: Deps,
-    swap_operations: Vec<SwapOperation>,
+    _deps: Deps,
+    _swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Decimal> {
     panic!("not implemented")
     // let dexter_vault_address = DEXTER_VAULT_ADDRESS.load(deps.storage)?;
