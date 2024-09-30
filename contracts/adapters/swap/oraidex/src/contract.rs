@@ -1,6 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
-    helper::{convert_pool_id_to_v3_pool_key, denom_to_asset_info},
+    helper::{convert_pool_id_to_v3_pool_key, denom_to_asset_info, parse_to_swap_msg},
     state::{ENTRY_POINT_CONTRACT_ADDRESS, ORAIDEX_ROUTER_ADDRESS},
 };
 use cosmwasm_std::{
@@ -16,7 +16,7 @@ use oraiswap::mixed_router::{
     SimulateSwapOperationsResponse, SwapOperation as OraidexSwapOperation,
 };
 use skip::{
-    asset::Asset,
+    asset::{get_current_asset_available, Asset},
     swap::{
         execute_transfer_funds_back, get_ask_denom_for_routes, Cw20HookMsg, ExecuteMsg, MigrateMsg,
         OraidexInstantiateMsg, QueryMsg, Route, SimulateSmartSwapExactAssetInResponse,
@@ -139,8 +139,11 @@ pub fn execute(
             swapper,
             return_denom,
         )?),
+        ExecuteMsg::OraidexPoolSwap { operation } => {
+            execute_oraidex_pool_swap(deps, env, info, operation)
+        }
         _ => {
-            panic!("NOT IMPLEMENTED");
+            unimplemented!()
         }
     }
 }
@@ -162,57 +165,115 @@ fn execute_swap(
     }
 
     // Create a response object to return
-    let response: Response = Response::new().add_attribute("action", "execute_swap");
+    let mut response: Response = Response::new().add_attribute("action", "execute_swap");
 
-    let mut hop_swap_requests: Vec<OraidexSwapOperation> = vec![];
+    // let mut hop_swap_requests: Vec<OraidexSwapOperation> = vec![];
 
+    // for operation in &operations {
+    //     if operation.pool.contains("-") {
+    //         // v3
+    //         let pool_key = convert_pool_id_to_v3_pool_key(&operation.pool)?;
+    //         let x_to_y = pool_key.token_x == operation.denom_in;
+
+    //         hop_swap_requests.push(OraidexSwapOperation::SwapV3 { pool_key, x_to_y })
+    //     } else {
+    //         // v2
+    //         hop_swap_requests.push(OraidexSwapOperation::OraiSwap {
+    //             offer_asset_info: denom_to_asset_info(deps.api, &operation.denom_in),
+    //             ask_asset_info: denom_to_asset_info(deps.api, &operation.denom_out),
+    //         })
+    //     }
+    // }
+
+    // let oraidex_router_msg = OraidexRouterExecuteMsg::ExecuteSwapOperations {
+    //     operations: hop_swap_requests,
+    //     minimum_receive: None,
+    //     // to: Some(entry_point_contract_address),
+    //     to: None,
+    // };
+
+    // let denom_in = operations.first().unwrap().denom_in.clone();
+
+    // let oraidex_router_wasm_msg = match sent_asset {
+    //     Asset::Cw20(coin) => WasmMsg::Execute {
+    //         contract_addr: coin.address,
+    //         msg: to_json_binary(&Cw20ExecuteMsg::Send {
+    //             contract: oraidex_router_contract_address.to_string(),
+    //             amount: coin.amount,
+    //             msg: to_json_binary(&oraidex_router_msg)?,
+    //         })?,
+    //         funds: vec![],
+    //     },
+    //     Asset::Native(coin) => WasmMsg::Execute {
+    //         contract_addr: oraidex_router_contract_address.to_string(),
+    //         msg: to_json_binary(&oraidex_router_msg)?,
+    //         funds: vec![Coin {
+    //             denom: denom_in,
+    //             amount: coin.amount,
+    //         }],
+    //     },
+    // };
+
+    // Add an astroport pool swap message to the response for each swap operation
     for operation in &operations {
-        if operation.pool.contains("-") {
-            // v3
-            let pool_key = convert_pool_id_to_v3_pool_key(&operation.pool)?;
-            let x_to_y = pool_key.token_x == operation.denom_in;
-
-            hop_swap_requests.push(OraidexSwapOperation::SwapV3 { pool_key, x_to_y })
-        } else {
-            // v2
-            hop_swap_requests.push(OraidexSwapOperation::OraiSwap {
-                offer_asset_info: denom_to_asset_info(deps.api, &operation.denom_in),
-                ask_asset_info: denom_to_asset_info(deps.api, &operation.denom_out),
-            })
-        }
-    }
-
-    let oraidex_router_msg = OraidexRouterExecuteMsg::ExecuteSwapOperations {
-        operations: hop_swap_requests,
-        minimum_receive: None,
-        to: Some(entry_point_contract_address),
-    };
-
-    let denom_in = operations.first().unwrap().denom_in.clone();
-
-    let oraidex_router_wasm_msg = match sent_asset {
-        Asset::Cw20(coin) => WasmMsg::Execute {
-            contract_addr: coin.address,
-            msg: to_json_binary(&Cw20ExecuteMsg::Send {
-                contract: oraidex_router_contract_address.to_string(),
-                amount: coin.amount,
-                msg: to_json_binary(&oraidex_router_msg)?,
+        let swap_msg = WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_json_binary(&ExecuteMsg::OraidexPoolSwap {
+                operation: operation.clone(),
             })?,
             funds: vec![],
-        },
-        Asset::Native(coin) => WasmMsg::Execute {
-            contract_addr: oraidex_router_contract_address.to_string(),
-            msg: to_json_binary(&oraidex_router_msg)?,
-            funds: vec![Coin {
-                denom: denom_in,
-                amount: coin.amount,
-            }],
-        },
+        };
+        response = response.add_message(swap_msg);
+    }
+
+    let return_denom = match operations.last() {
+        Some(last_op) => last_op.denom_out.clone(),
+        None => return Err(ContractError::SwapOperationsEmpty),
+    };
+
+    // Create the transfer funds back message
+    let transfer_funds_back_msg = WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
+            swapper: entry_point_contract_address,
+            return_denom,
+        })?,
+        funds: vec![],
     };
 
     Ok(response
-        .add_message(oraidex_router_wasm_msg)
+        .add_message(transfer_funds_back_msg)
         .add_attribute("action", "dispatch_swaps_and_transfer_back"))
+}
+
+fn execute_oraidex_pool_swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    operation: SwapOperation,
+) -> ContractResult<Response> {
+    // Ensure the caller is the contract itself
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized);
+    }
+
+    // Get the current asset available on contract to swap in
+    let offer_asset = get_current_asset_available(&deps, &env, &operation.denom_in)?;
+
+    // Error if the offer asset amount is zero
+    if offer_asset.amount().is_zero() {
+        return Err(ContractError::NoOfferAssetAmount);
+    }
+
+    // Create the oraidex pool swap msg depending on the offer asset type
+    let (contract_addr, msg) = parse_to_swap_msg(&deps.as_ref(), operation)?;
+
+    // Create the wasm oraidex pool swap message
+    let swap_msg = offer_asset.into_wasm_msg(contract_addr.to_string(), msg)?;
+
+    Ok(Response::new()
+        .add_message(swap_msg)
+        .add_attribute("action", "dispatch_astroport_pool_swap"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

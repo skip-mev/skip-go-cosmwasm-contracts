@@ -5,7 +5,7 @@ use std::{convert::TryFrom, num::ParseIntError};
 
 use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_json_binary, StdError, StdResult, WasmMsg};
+use cosmwasm_std::{to_json_binary, StdError, StdResult};
 use cosmwasm_std::{
     Addr, Api, BankMsg, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
 };
@@ -78,6 +78,7 @@ pub enum ExecuteMsg {
     TransferFundsBack { swapper: Addr, return_denom: String },
     AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
     WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
+    OraidexPoolSwap { operation: SwapOperation }, // Only used for the oraidex swap adapter contract
 }
 
 #[cw_serde]
