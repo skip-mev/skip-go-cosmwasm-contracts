@@ -12,8 +12,8 @@ use astrovault::{
     },
 };
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, Uint128, WasmMsg, WasmQuery,
+    entry_point, from_json, to_json_binary, Addr, BankMsg, Binary, CosmosMsg, Decimal, Deps,
+    DepsMut, Env, MessageInfo, QueryRequest, Response, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::{ensure_from_older_version, set_contract_version};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ReceiveMsg};
@@ -362,6 +362,16 @@ fn query_simulate_swap_exact_asset_in(
         return Err(ContractError::CoinInDenomMismatch);
     }
 
+    let (asset_out, _) = simulate_swap_exact_asset_in(deps, asset_in, swap_operations)?;
+
+    Ok(asset_out)
+}
+
+fn simulate_swap_exact_asset_in(
+    deps: Deps,
+    asset_in: Asset,
+    swap_operations: Vec<SwapOperation>,
+) -> ContractResult<(Asset, Decimal)> {
     let astrovault_router_contract_address = ASTROVAULT_ROUTER_ADDRESS.load(deps.storage)?;
     let hops = convert_operations_to_hops(
         deps,
@@ -378,10 +388,13 @@ fn query_simulate_swap_exact_asset_in(
             })?,
         }))?;
 
-    Ok(Asset::new(
-        deps.api,
-        &simulation_response.to.info.to_string(),
-        simulation_response.to.amount,
+    Ok((
+        Asset::new(
+            deps.api,
+            &simulation_response.to.info.to_string(),
+            simulation_response.to.amount,
+        ),
+        simulation_response.to_spot_price,
     ))
 }
 
@@ -402,31 +415,13 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
         return Err(ContractError::CoinInDenomMismatch);
     }
 
-    let astrovault_router_contract_address = ASTROVAULT_ROUTER_ADDRESS.load(deps.storage)?;
-    let hops = convert_operations_to_hops(
-        deps,
-        astrovault_router_contract_address.to_string(),
-        swap_operations,
-    )?;
-
-    let simulation_response: QueryRouteSwapSimulation =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: astrovault_router_contract_address.to_string(),
-            msg: to_json_binary(&router::query_msg::QueryMsg::RouteSwapSimulation {
-                amount: asset_in.amount(),
-                hops,
-            })?,
-        }))?;
+    let (asset_out, spot_price) = simulate_swap_exact_asset_in(deps, asset_in, swap_operations)?;
 
     // Create the response
     let response = SimulateSwapExactAssetInResponse {
-        asset_out: Asset::new(
-            deps.api,
-            &simulation_response.to.info.to_string(),
-            simulation_response.to.amount,
-        ),
+        asset_out,
         spot_price: if include_spot_price {
-            Some(simulation_response.to_spot_price)
+            Some(spot_price)
         } else {
             None
         },
@@ -440,43 +435,58 @@ fn query_simulate_smart_swap_exact_asset_in(
     ask_denom: String,
     routes: Vec<Route>,
 ) -> ContractResult<Asset> {
-    simulate_smart_swap_exact_asset_in(deps, ask_denom, routes)
+    let (asset_out, _) = simulate_smart_swap_exact_asset_in(deps, ask_denom, routes)?;
+
+    Ok(asset_out)
 }
 
 fn simulate_smart_swap_exact_asset_in(
     deps: Deps,
     ask_denom: String,
     routes: Vec<Route>,
-) -> ContractResult<Asset> {
+) -> ContractResult<(Asset, Vec<Decimal>)> {
     let mut asset_out = Asset::new(deps.api, &ask_denom, Uint128::zero());
+    let mut spot_prices = Vec::new();
 
     for route in &routes {
-        let route_asset_out = query_simulate_swap_exact_asset_in(
+        let (route_asset_out, spot_price) = simulate_swap_exact_asset_in(
             deps,
             route.offer_asset.clone(),
             route.operations.clone(),
         )?;
 
         asset_out.add(route_asset_out.amount())?;
+        spot_prices.push(spot_price);
     }
 
-    Ok(asset_out)
+    Ok((asset_out, spot_prices))
 }
 
 fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     deps: Deps,
-    _asset_in: Asset,
+    asset_in: Asset,
     ask_denom: String,
     routes: Vec<Route>,
-    _include_spot_price: bool,
+    include_spot_price: bool,
 ) -> ContractResult<SimulateSmartSwapExactAssetInResponse> {
-    let asset_out = simulate_smart_swap_exact_asset_in(deps, ask_denom, routes.clone())?;
+    let (asset_out, spot_prices) =
+        simulate_smart_swap_exact_asset_in(deps, ask_denom, routes.clone())?;
 
-    // TODO: Implement spot price calculation for smart swaps
-    let response = SimulateSmartSwapExactAssetInResponse {
+    let mut response = SimulateSmartSwapExactAssetInResponse {
         asset_out,
         spot_price: None,
     };
+
+    if include_spot_price {
+        let mut spot_price = Decimal::zero();
+        for (i, route) in routes.iter().enumerate() {
+            let weight = Decimal::from_ratio(route.offer_asset.amount(), asset_in.amount());
+            let route_spot_price = spot_prices[i];
+            spot_price += weight * route_spot_price;
+        }
+
+        response.spot_price = Some(spot_price);
+    }
 
     Ok(response)
 }
