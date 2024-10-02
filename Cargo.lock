@@ -1915,6 +1915,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "skip-go-swap-adapter-swap-baby"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "lido-satellite",
+ "skip",
+ "thiserror",
+]
+
+[[package]]
 name = "skip-go-swap-adapter-white-whale"
 version = "0.3.0"
 dependencies = [
