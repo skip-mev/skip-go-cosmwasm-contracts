@@ -201,7 +201,7 @@ fn tests() {
                 ],
             },
             swap_baby::QueryMsg::SimulateSwapExactAmountOutWithHops {
-                want_out: Coin::new(10, "ETH").into(),
+                want_out: Coin::new(10, "ETH"),
                 hops: vec![
                     swap_baby::Hop {
                         pool: "cw-btc-usdt".to_string(),
@@ -241,7 +241,7 @@ fn tests() {
                 include_spot_price: true,
             },
             swap_baby::QueryMsg::SimulateSwapExactAmountOutWithHops {
-                want_out: Coin::new(10, "ETH").into(),
+                want_out: Coin::new(10, "ETH"),
                 hops: vec![
                     swap_baby::Hop {
                         pool: "cw-btc-usdt".to_string(),
@@ -284,7 +284,7 @@ fn tests() {
                 include_spot_price: false,
             },
             swap_baby::QueryMsg::SimulateSwapExactAmountOutWithHops {
-                want_out: Coin::new(10, "ETH").into(),
+                want_out: Coin::new(10, "ETH"),
                 hops: vec![
                     swap_baby::Hop {
                         pool: "cw-btc-usdt".to_string(),
