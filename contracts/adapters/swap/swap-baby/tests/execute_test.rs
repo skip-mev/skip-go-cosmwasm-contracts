@@ -1,12 +1,14 @@
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::{to_json_binary, Addr, Coin, CosmosMsg, WasmMsg};
+use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_go_swap_adapter_swap_baby::contract::{execute, instantiate};
 use skip_go_swap_adapter_swap_baby::error::ContractError;
 use skip_go_swap_adapter_swap_baby::msg::InstantiateMsg;
-use skip_go_swap_adapter_swap_baby::state::{ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS};
+use skip_go_swap_adapter_swap_baby::state::{
+    ENTRY_POINT_CONTRACT_ADDRESS, ROUTER_CONTRACT_ADDRESS,
+};
 use skip_go_swap_adapter_swap_baby::swap_baby::ExecuteMsg as SwapBabyExecuteMsg;
 use skip_go_swap_adapter_swap_baby::swap_baby::Hop as SwapBabyHop;
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{to_json_binary, to_json_string, Addr, Coin, CosmosMsg, WasmMsg};
-use skip::swap::{ExecuteMsg, SwapOperation};
 
 #[test]
 fn test_instantiate() {
@@ -26,11 +28,19 @@ fn test_instantiate() {
     assert!(result.is_ok(), "Instantiation should succeed");
 
     // Verify state
-    let stored_entry_point = ENTRY_POINT_CONTRACT_ADDRESS.load(deps.as_ref().storage).unwrap();
-    assert_eq!(entry_point_addr, stored_entry_point, "Incorrect entry point address stored");
+    let stored_entry_point = ENTRY_POINT_CONTRACT_ADDRESS
+        .load(deps.as_ref().storage)
+        .unwrap();
+    assert_eq!(
+        entry_point_addr, stored_entry_point,
+        "Incorrect entry point address stored"
+    );
 
     let stored_router = ROUTER_CONTRACT_ADDRESS.load(deps.as_ref().storage).unwrap();
-    assert_eq!(router_addr, stored_router, "Incorrect router address stored");
+    assert_eq!(
+        router_addr, stored_router,
+        "Incorrect router address stored"
+    );
 }
 
 #[test]
@@ -47,13 +57,17 @@ fn test_execute_unauthorized() {
         entry_point_contract_address: entry_point_addr.to_string(),
         router_contract_address: router_addr.to_string(),
     };
-    instantiate(deps.as_mut(), env.clone(), instantiate_info, instantiate_msg).unwrap();
+    instantiate(
+        deps.as_mut(),
+        env.clone(),
+        instantiate_info,
+        instantiate_msg,
+    )
+    .unwrap();
 
     // Attempt unauthorized execution
     let unauthorized_info = mock_info("unauthorized", &[]);
-    let execute_msg = ExecuteMsg::Swap {
-        operations: vec![],
-    };
+    let execute_msg = ExecuteMsg::Swap { operations: vec![] };
 
     let result = execute(deps.as_mut(), env, unauthorized_info, execute_msg);
 

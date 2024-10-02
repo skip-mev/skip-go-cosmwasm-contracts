@@ -57,10 +57,12 @@ pub fn instantiate(
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.storage, &checked_entry_point_contract_address)?;
     ROUTER_CONTRACT_ADDRESS.save(deps.storage, &checked_router_address)?;
 
-    Ok(Response::new().add_attribute("action", "instantiate").add_attribute(
-        "entry_point_contract_address",
-        checked_entry_point_contract_address.to_string(),
-    ))
+    Ok(Response::new()
+        .add_attribute("action", "instantiate")
+        .add_attribute(
+            "entry_point_contract_address",
+            checked_entry_point_contract_address.to_string(),
+        ))
 }
 
 /////////////////
@@ -75,9 +77,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Swap {
-            operations,
-        } => execute_swap(deps, env, info, operations),
+        ExecuteMsg::Swap { operations } => execute_swap(deps, env, info, operations),
         _ => unimplemented!("not implemented"),
     }
 }
@@ -148,26 +148,27 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
             asset_out,
             swap_operations,
             include_spot_price,
-        } => Ok(to_json_binary(&query_simulate_swap_exact_asset_out_with_metadata(
-            deps,
-            asset_out,
-            swap_operations,
-            include_spot_price,
-        )?)?),
+        } => Ok(to_json_binary(
+            &query_simulate_swap_exact_asset_out_with_metadata(
+                deps,
+                asset_out,
+                swap_operations,
+                include_spot_price,
+            )?,
+        )?),
         QueryMsg::SimulateSwapExactAssetInWithMetadata {
             asset_in,
             swap_operations,
             include_spot_price,
-        } => Ok(to_json_binary(&query_simulate_swap_exact_asset_in_with_metadata(
-            deps,
-            asset_in,
-            swap_operations,
-            include_spot_price,
-        )?)?),
-        QueryMsg::SimulateSmartSwapExactAssetIn {
-            asset_in,
-            routes,
-        } => {
+        } => Ok(to_json_binary(
+            &query_simulate_swap_exact_asset_in_with_metadata(
+                deps,
+                asset_in,
+                swap_operations,
+                include_spot_price,
+            )?,
+        )?),
+        QueryMsg::SimulateSmartSwapExactAssetIn { asset_in, routes } => {
             let ask_denom = get_ask_denom_for_routes(&routes)?;
             Ok(to_json_binary(&query_simulate_smart_swap_exact_asset_in(
                 deps, asset_in, ask_denom, &routes,
@@ -180,13 +181,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
         } => {
             let ask_denom = get_ask_denom_for_routes(&routes)?;
 
-            Ok(to_json_binary(&query_simulate_smart_swap_exact_asset_in_with_metadata(
-                deps,
-                asset_in,
-                ask_denom,
-                routes,
-                include_spot_price,
-            )?)?)
+            Ok(to_json_binary(
+                &query_simulate_smart_swap_exact_asset_in_with_metadata(
+                    deps,
+                    asset_in,
+                    ask_denom,
+                    routes,
+                    include_spot_price,
+                )?,
+            )?)
         }
     }
 }
@@ -208,8 +211,12 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
 ) -> Result<SimulateSwapExactAssetOutResponse, ContractError> {
     let coin_out = get_coin_from_asset(asset_out)?;
     let (first_op, last_op) = (
-        operations.first().ok_or(ContractError::SwapOperationsEmpty)?,
-        operations.last().ok_or(ContractError::SwapOperationsEmpty)?,
+        operations
+            .first()
+            .ok_or(ContractError::SwapOperationsEmpty)?,
+        operations
+            .last()
+            .ok_or(ContractError::SwapOperationsEmpty)?,
     );
 
     // check that coin out matches the last swap operations out

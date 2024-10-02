@@ -1,7 +1,3 @@
-use skip_go_swap_adapter_swap_baby::contract::{instantiate, query};
-use skip_go_swap_adapter_swap_baby::error::ContractError;
-use skip_go_swap_adapter_swap_baby::msg::InstantiateMsg;
-use skip_go_swap_adapter_swap_baby::swap_baby;
 use cosmwasm_schema::serde::Serialize;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
@@ -9,6 +5,10 @@ use cosmwasm_std::{
     WasmQuery,
 };
 use skip::swap::{Route, SwapOperation};
+use skip_go_swap_adapter_swap_baby::contract::{instantiate, query};
+use skip_go_swap_adapter_swap_baby::error::ContractError;
+use skip_go_swap_adapter_swap_baby::msg::InstantiateMsg;
+use skip_go_swap_adapter_swap_baby::swap_baby;
 use std::str::FromStr;
 
 struct TestCase {
@@ -53,10 +53,7 @@ impl TestCase {
 
         let querier = move |msg: &WasmQuery| -> QuerierResult {
             match msg {
-                WasmQuery::Smart {
-                    contract_addr,
-                    msg,
-                } => {
+                WasmQuery::Smart { contract_addr, msg } => {
                     assert_eq!(contract_addr, "router");
                     let msg = from_json::<swap_baby::QueryMsg>(msg)
                         .expect("unable to decode router message");
@@ -76,7 +73,7 @@ impl TestCase {
             Ok(r) => {
                 assert_eq!(r, query_resp.expect("no error wanted"));
             }
-            Err(err) => {
+            Err(_err) => {
                 query_resp.expect_err("error wanted");
             }
         }

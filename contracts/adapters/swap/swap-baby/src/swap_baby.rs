@@ -1,6 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{to_json_binary, Coin, CosmosMsg, Decimal, StdResult, Uint128, WasmMsg};
-use skip::swap::SwapOperation;
 
 #[cw_serde]
 pub enum ExecuteMsg {
@@ -39,15 +38,9 @@ pub struct SwapExactAmountInWithHopsResponse {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(QuerySimulateSwapExactAmountInWithHopsResponse)]
-    SimulateSwapExactAmountInWithHops {
-        input: Coin,
-        hops: Vec<Hop>,
-    },
+    SimulateSwapExactAmountInWithHops { input: Coin, hops: Vec<Hop> },
     #[returns(QuerySimulateSwapExactAmountOutWithHopsResponse)]
-    SimulateSwapExactAmountOutWithHops {
-        want_out: Coin,
-        hops: Vec<Hop>,
-    },
+    SimulateSwapExactAmountOutWithHops { want_out: Coin, hops: Vec<Hop> },
 }
 
 #[cw_serde]
