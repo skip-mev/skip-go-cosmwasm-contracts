@@ -167,7 +167,8 @@ def main():
             ibc_placeholder_contract_code_id, 
             {}, 
             "Skip Swap IBC Transfer Adapter", 
-            "ibc_transfer_adapter"
+            "ibc_transfer_adapter",
+            PERMISSIONED_UPLOADER_ADDRESS
         )
     
     entry_point_instantiate_args = {
