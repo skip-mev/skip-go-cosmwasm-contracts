@@ -405,7 +405,7 @@ def store_contract(
     permissioned_uploader_address
 ) -> int:
     if CHAIN == "osmosis":
-        gas_limit = 9000000
+        gas_limit = 15000000
     else:
         gas_limit = 5000000
         
@@ -456,7 +456,7 @@ def instantiate_contract(
     else:
         gas_limit = 300000
         
-    if permissioned_uploader_address is not None:
+    if permissioned_uploader_address is not None and CHAIN != "osmosis":
         msg = MsgInstantiateContract(
             sender=permissioned_uploader_address,
             admin=admin,
@@ -559,7 +559,7 @@ def instantiate2_contract(
     else:
         gas_limit = 300000
 
-    if permissioned_uploader_address is not None:
+    if permissioned_uploader_address is not None and CHAIN != "osmosis":
         msg = MsgInstantiateContract2(
             sender=permissioned_uploader_address,
             code_id=code_id,
