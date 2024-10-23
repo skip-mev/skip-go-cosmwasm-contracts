@@ -66,6 +66,13 @@ pub enum ExecuteMsg {
         post_swap_action: Action,
         exact_out: bool,
     },
+    Action {
+        sent_asset: Option<Asset>,
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+    },
 }
 
 /// This structure describes a CW20 hook message.

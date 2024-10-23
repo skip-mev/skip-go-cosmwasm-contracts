@@ -17,7 +17,7 @@ use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
-    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcTransfer},
+    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
         SwapExactAssetOut,
@@ -128,54 +128,8 @@ pub fn execute_swap_and_action(
     // by either creating a fee swap message or deducting the ibc fees from
     // the remaining asset received amount.
     if let Action::IbcTransfer { ibc_info, fee_swap } = &post_swap_action {
-        let ibc_fee_coin = ibc_info
-            .fee
-            .as_ref()
-            .map(|fee| fee.one_coin())
-            .transpose()?;
-
-        if let Some(fee_swap) = fee_swap {
-            let ibc_fee_coin = ibc_fee_coin
-                .clone()
-                .ok_or(ContractError::FeeSwapWithoutIbcFees)?;
-
-            // NOTE: this call mutates remaining_asset by deducting ibc_fee_coin's amount from it
-            let fee_swap_msg = verify_and_create_fee_swap_msg(
-                &deps,
-                fee_swap,
-                &mut remaining_asset,
-                &ibc_fee_coin,
-            )?;
-
-            // Add the fee swap message to the response
-            response = response
-                .add_message(fee_swap_msg)
-                .add_attribute("action", "dispatch_fee_swap");
-        } else if let Some(ibc_fee_coin) = &ibc_fee_coin {
-            if remaining_asset.denom() != ibc_fee_coin.denom {
-                return Err(ContractError::IBCFeeDenomDiffersFromAssetReceived);
-            }
-
-            // Deduct the ibc_fee_coin amount from the remaining asset amount
-            remaining_asset.sub(ibc_fee_coin.amount)?;
-        }
-
-        // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
-        if let Some(ibc_fee_coin) = ibc_fee_coin {
-            // Get the ibc transfer adapter contract address
-            let ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
-
-            // Create the ibc fee bank send message
-            let ibc_fee_msg = BankMsg::Send {
-                to_address: ibc_transfer_contract_address.to_string(),
-                amount: vec![ibc_fee_coin],
-            };
-
-            // Add the ibc fee message to the response
-            response = response
-                .add_message(ibc_fee_msg)
-                .add_attribute("action", "dispatch_ibc_fee_bank_send");
-        }
+        response =
+            handle_ibc_transfer_fees(&deps, ibc_info, fee_swap, &mut remaining_asset, response)?;
     }
 
     // Set a boolean to determine if the user swap is exact out or not
@@ -534,24 +488,117 @@ pub fn execute_post_swap_action(
         )
         .add_attribute("post_swap_action_denom_out", transfer_out_asset.denom());
 
-    match post_swap_action {
+    // Dispatch the action message
+    response = validate_and_dispatch_action(
+        deps,
+        post_swap_action,
+        transfer_out_asset,
+        timeout_timestamp,
+        response,
+    )?;
+
+    Ok(response)
+}
+
+// Dispatches an action
+#[allow(clippy::too_many_arguments)]
+pub fn execute_action(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    sent_asset: Option<Asset>,
+    timeout_timestamp: u64,
+    action: Action,
+    exact_out: bool,
+    min_asset: Option<Asset>,
+) -> ContractResult<Response> {
+    // Create a response object to return
+    let mut response: Response = Response::new().add_attribute("action", "execute_action");
+
+    // Validate and unwrap the sent asset
+    let sent_asset = match sent_asset {
+        Some(sent_asset) => {
+            sent_asset.validate(&deps, &env, &info)?;
+            sent_asset
+        }
+        None => one_coin(&info)?.into(),
+    };
+
+    // Error if the current block time is greater than the timeout timestamp
+    if env.block.time.nanos() > timeout_timestamp {
+        return Err(ContractError::Timeout);
+    }
+
+    // Already validated at entrypoints (both direct and cw20_receive)
+    let mut remaining_asset = sent_asset;
+
+    // If the post swap action is an IBC transfer, then handle the ibc fees
+    // by either creating a fee swap message or deducting the ibc fees from
+    // the remaining asset received amount.
+    if let Action::IbcTransfer { ibc_info, fee_swap } = &action {
+        response =
+            handle_ibc_transfer_fees(&deps, ibc_info, fee_swap, &mut remaining_asset, response)?;
+    }
+
+    // Validate and determine the asset to be used for the action
+    let action_asset = if exact_out {
+        let min_asset = min_asset.ok_or(ContractError::NoMinAssetProvided)?;
+
+        // Ensure remaining_asset and min_asset have the same denom
+        if remaining_asset.denom() != min_asset.denom() {
+            return Err(ContractError::ActionDenomMismatch);
+        }
+
+        // Ensure remaining_asset is greater than or equal to min_asset
+        if remaining_asset.amount() < min_asset.amount() {
+            return Err(ContractError::RemainingAssetLessThanMinAsset);
+        }
+
+        min_asset
+    } else {
+        remaining_asset.clone()
+    };
+
+    // Dispatch the action message
+    response =
+        validate_and_dispatch_action(deps, action, action_asset, timeout_timestamp, response)?;
+
+    // Return the response
+    Ok(response)
+}
+
+////////////////////////
+/// HELPER FUNCTIONS ///
+////////////////////////
+
+// ACTION HELPER FUNCTIONS
+
+// Validates and adds an action message to the response
+fn validate_and_dispatch_action(
+    deps: DepsMut,
+    action: Action,
+    action_asset: Asset,
+    timeout_timestamp: u64,
+    mut response: Response,
+) -> Result<Response, ContractError> {
+    match action {
         Action::Transfer { to_address } => {
             // Error if the destination address is not a valid address on the current chain
             deps.api.addr_validate(&to_address)?;
 
             // Create the transfer message
-            let transfer_msg = transfer_out_asset.transfer(&to_address);
+            let transfer_msg = action_asset.transfer(&to_address);
 
             // Add the transfer message to the response
             response = response
                 .add_message(transfer_msg)
-                .add_attribute("action", "dispatch_post_swap_transfer");
+                .add_attribute("action", "dispatch_action_transfer");
         }
         Action::IbcTransfer { ibc_info, .. } => {
             // Validates recover address, errors if invalid
             deps.api.addr_validate(&ibc_info.recover_address)?;
 
-            let transfer_out_coin = match transfer_out_asset {
+            let transfer_out_coin = match action_asset {
                 Asset::Native(coin) => coin,
                 _ => return Err(ContractError::NonNativeIbcTransfer),
             };
@@ -577,7 +624,7 @@ pub fn execute_post_swap_action(
             // Add the IBC transfer message to the response
             response = response
                 .add_message(ibc_transfer_msg)
-                .add_attribute("action", "dispatch_post_swap_ibc_transfer");
+                .add_attribute("action", "dispatch_action_ibc_transfer");
         }
         Action::ContractCall {
             contract_address,
@@ -592,21 +639,75 @@ pub fn execute_post_swap_action(
             }
 
             // Create the contract call message
-            let contract_call_msg = transfer_out_asset.into_wasm_msg(contract_address, msg)?;
+            let contract_call_msg = action_asset.into_wasm_msg(contract_address, msg)?;
 
             // Add the contract call message to the response
             response = response
                 .add_message(contract_call_msg)
-                .add_attribute("action", "dispatch_post_swap_contract_call");
+                .add_attribute("action", "dispatch_action_contract_call");
         }
     };
 
     Ok(response)
 }
 
-////////////////////////
-/// HELPER FUNCTIONS ///
-////////////////////////
+// IBC FEE HELPER FUNCTIONS
+
+// Creates the fee swap and ibc transfer messages and adds them to the response
+fn handle_ibc_transfer_fees(
+    deps: &DepsMut,
+    ibc_info: &IbcInfo,
+    fee_swap: &Option<SwapExactAssetOut>,
+    mut remaining_asset: &mut Asset,
+    mut response: Response,
+) -> Result<Response, ContractError> {
+    let ibc_fee_coin = ibc_info
+        .fee
+        .as_ref()
+        .map(|fee| fee.one_coin())
+        .transpose()?;
+
+    if let Some(fee_swap) = fee_swap {
+        let ibc_fee_coin = ibc_fee_coin
+            .clone()
+            .ok_or(ContractError::FeeSwapWithoutIbcFees)?;
+
+        // NOTE: this call mutates remaining_asset by deducting ibc_fee_coin's amount from it
+        let fee_swap_msg =
+            verify_and_create_fee_swap_msg(&deps, fee_swap, &mut remaining_asset, &ibc_fee_coin)?;
+
+        // Add the fee swap message to the response
+        response = response
+            .add_message(fee_swap_msg)
+            .add_attribute("action", "dispatch_fee_swap");
+    } else if let Some(ibc_fee_coin) = &ibc_fee_coin {
+        if remaining_asset.denom() != ibc_fee_coin.denom {
+            return Err(ContractError::IBCFeeDenomDiffersFromAssetReceived);
+        }
+
+        // Deduct the ibc_fee_coin amount from the remaining asset amount
+        remaining_asset.sub(ibc_fee_coin.amount)?;
+    }
+
+    // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
+    if let Some(ibc_fee_coin) = ibc_fee_coin {
+        // Get the ibc transfer adapter contract address
+        let ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+
+        // Create the ibc fee bank send message
+        let ibc_fee_msg = BankMsg::Send {
+            to_address: ibc_transfer_contract_address.to_string(),
+            amount: vec![ibc_fee_coin],
+        };
+
+        // Add the ibc fee message to the response
+        response = response
+            .add_message(ibc_fee_msg)
+            .add_attribute("action", "dispatch_ibc_fee_bank_send");
+    }
+
+    Ok(response)
+}
 
 // SWAP MESSAGE HELPER FUNCTIONS
 
