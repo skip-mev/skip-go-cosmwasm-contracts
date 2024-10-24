@@ -1,8 +1,9 @@
 use crate::{
     error::{ContractError, ContractResult},
     execute::{
-        execute_post_swap_action, execute_swap_and_action, execute_swap_and_action_with_recover,
-        execute_user_swap, receive_cw20,
+        execute_action, execute_action_with_recover, execute_post_swap_action,
+        execute_swap_and_action, execute_swap_and_action_with_recover, execute_user_swap,
+        receive_cw20,
     },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
@@ -173,6 +174,40 @@ pub fn execute(
             timeout_timestamp,
             post_swap_action,
             exact_out,
+        ),
+        ExecuteMsg::Action {
+            sent_asset,
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+        } => execute_action(
+            deps,
+            env,
+            info,
+            sent_asset,
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+        ),
+        ExecuteMsg::ActionWithRecover {
+            sent_asset,
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+            recovery_addr,
+        } => execute_action_with_recover(
+            deps,
+            env,
+            info,
+            sent_asset,
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+            recovery_addr,
         ),
     }
 }

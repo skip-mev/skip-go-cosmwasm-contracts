@@ -71,4 +71,17 @@ pub enum ContractError {
 
     #[error("Reply id: {0} not valid")]
     ReplyIdError(u64),
+
+    //////////////////
+    ///   ACTION   ///
+    //////////////////
+
+    #[error("No Minimum Asset Provided with Exact Out Action")]
+    NoMinAssetProvided,
+
+    #[error("Sent Asset and Min Asset Denoms Do Not Match with Exact Out Action")]
+    ActionDenomMismatch,
+
+    #[error("Remaining Asset Less Than Min Asset with Exact Out Action")]
+    RemainingAssetLessThanMinAsset,
 }

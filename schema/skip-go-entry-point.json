@@ -238,6 +238,112 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "object",
+            "required": [
+              "action",
+              "exact_out",
+              "timeout_timestamp"
+            ],
+            "properties": {
+              "action": {
+                "$ref": "#/definitions/Action"
+              },
+              "exact_out": {
+                "type": "boolean"
+              },
+              "min_asset": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Asset"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "sent_asset": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Asset"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "timeout_timestamp": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "action_with_recover"
+        ],
+        "properties": {
+          "action_with_recover": {
+            "type": "object",
+            "required": [
+              "action",
+              "exact_out",
+              "recovery_addr",
+              "timeout_timestamp"
+            ],
+            "properties": {
+              "action": {
+                "$ref": "#/definitions/Action"
+              },
+              "exact_out": {
+                "type": "boolean"
+              },
+              "min_asset": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Asset"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "recovery_addr": {
+                "$ref": "#/definitions/Addr"
+              },
+              "sent_asset": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Asset"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "timeout_timestamp": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ],
     "definitions": {
