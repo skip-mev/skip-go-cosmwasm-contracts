@@ -73,6 +73,14 @@ pub enum ExecuteMsg {
         exact_out: bool,
         min_asset: Option<Asset>,
     },
+    ActionWithRecover {
+        sent_asset: Option<Asset>,
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+        recovery_addr: Addr,
+    },
 }
 
 /// This structure describes a CW20 hook message.

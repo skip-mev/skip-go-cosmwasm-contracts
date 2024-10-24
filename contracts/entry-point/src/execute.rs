@@ -567,6 +567,56 @@ pub fn execute_action(
     Ok(response)
 }
 
+// Entrypoint that catches all errors in Action and recovers
+// the original funds sent to the contract to a recover address.
+#[allow(clippy::too_many_arguments)]
+pub fn execute_action_with_recover(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    sent_asset: Option<Asset>,
+    timeout_timestamp: u64,
+    action: Action,
+    exact_out: bool,
+    min_asset: Option<Asset>,
+    recovery_addr: Addr,
+) -> ContractResult<Response> {
+    let mut assets: Vec<Asset> = info.funds.iter().cloned().map(Asset::Native).collect();
+
+    if let Some(asset) = &sent_asset {
+        if let Asset::Cw20(_) = asset {
+            assets.push(asset.clone());
+        }
+    }
+
+    // Store all parameters into a temporary storage.
+    RECOVER_TEMP_STORAGE.save(
+        deps.storage,
+        &RecoverTempStorage {
+            assets,
+            recovery_addr,
+        },
+    )?;
+
+    // Then call ExecuteMsg::Action using a SubMsg.
+    let sub_msg = SubMsg::reply_always(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_json_binary(&ExecuteMsg::Action {
+                sent_asset,
+                timeout_timestamp,
+                action,
+                exact_out,
+                min_asset,
+            })?,
+            funds: info.funds,
+        }),
+        RECOVER_REPLY_ID,
+    );
+
+    Ok(Response::new().add_submessage(sub_msg))
+}
+
 ////////////////////////
 /// HELPER FUNCTIONS ///
 ////////////////////////
@@ -658,7 +708,7 @@ fn handle_ibc_transfer_fees(
     deps: &DepsMut,
     ibc_info: &IbcInfo,
     fee_swap: &Option<SwapExactAssetOut>,
-    mut remaining_asset: &mut Asset,
+    remaining_asset: &mut Asset,
     mut response: Response,
 ) -> Result<Response, ContractError> {
     let ibc_fee_coin = ibc_info
@@ -674,7 +724,7 @@ fn handle_ibc_transfer_fees(
 
         // NOTE: this call mutates remaining_asset by deducting ibc_fee_coin's amount from it
         let fee_swap_msg =
-            verify_and_create_fee_swap_msg(&deps, fee_swap, &mut remaining_asset, &ibc_fee_coin)?;
+            verify_and_create_fee_swap_msg(deps, fee_swap, remaining_asset, &ibc_fee_coin)?;
 
         // Add the fee swap message to the response
         response = response
