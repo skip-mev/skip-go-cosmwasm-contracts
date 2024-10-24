@@ -78,6 +78,38 @@ pub fn receive_cw20(
             post_swap_action,
             affiliates,
         ),
+        Cw20HookMsg::Action {
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+        } => execute_action(
+            deps,
+            env,
+            info,
+            Some(sent_asset),
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+        ),
+        Cw20HookMsg::ActionWithRecover {
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+            recovery_addr,
+        } => execute_action_with_recover(
+            deps,
+            env,
+            info,
+            Some(sent_asset),
+            timeout_timestamp,
+            action,
+            exact_out,
+            min_asset,
+            recovery_addr,
+        ),
     }
 }
 

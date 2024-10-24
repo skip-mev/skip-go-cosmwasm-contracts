@@ -101,6 +101,19 @@ pub enum Cw20HookMsg {
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
     },
+    Action {
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+    },
+    ActionWithRecover {
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+        recovery_addr: Addr,
+    },
 }
 
 /////////////
