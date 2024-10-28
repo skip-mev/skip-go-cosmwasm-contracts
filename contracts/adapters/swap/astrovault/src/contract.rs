@@ -2,14 +2,11 @@ use crate::{
     error::{ContractError, ContractResult},
     state::{ASTROVAULT_CASHBACK_ADDRESS, ASTROVAULT_ROUTER_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
-use astrovault::{
-    nft_booster::handle_msg,
-    router::{
-        self,
-        handle_msg::RouterReceiveMsg,
-        query_msg::{ConfigResponse, QueryRouteSwapSimulation, RoutePoolType},
-        state::HopV2,
-    },
+use astrovault::router::{
+    self,
+    handle_msg::RouterReceiveMsg,
+    query_msg::{ConfigResponse, QueryRouteSwapSimulation, RoutePoolType},
+    state::HopV2,
 };
 use cosmwasm_std::{
     entry_point, from_json, to_json_binary, Addr, BankMsg, Binary, CosmosMsg, Decimal, Deps,
