@@ -133,18 +133,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(cw20_msg) => receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Swap { operations } => {
-            // validate that there's at least one swap operation
-            if operations.is_empty() {
-                return Err(ContractError::SwapOperationsEmpty);
-            }
-
             let coin = one_coin(&info)?;
-
-            // validate that the one coin is the same as the first swap operation's denom in
-            if coin.denom != operations.first().unwrap().denom_in {
-                return Err(ContractError::CoinInDenomMismatch);
-            }
-
             execute_swap(deps, env, info, coin.amount, operations)
         }
         ExecuteMsg::TransferFundsBack {
