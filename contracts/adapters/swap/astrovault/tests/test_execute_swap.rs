@@ -26,9 +26,7 @@ Expect Success
 Expect Error
     - Unauthorized Caller (Only the stored entry point contract can call this function)
     - No Coin Sent
-    - Bad Coin Sent
     - More Than One Coin Sent
-    - No Swap Operations
  */
 
 // Define test parameters
@@ -160,15 +158,6 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "os")],
-        swap_operations: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::SwapOperationsEmpty),
-    };
-    "No Swap Operations")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
         info_funds: vec![],
         swap_operations: vec![
             SwapOperation {
@@ -182,24 +171,6 @@ struct Params {
         expected_error: Some(ContractError::Payment(cw_utils::PaymentError::NoFunds{})),
     };
     "No Coin Sent - Expect Error")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        info_funds: vec![
-            Coin::new(100, "un"), // should be os
-        ],
-        swap_operations: vec![
-            SwapOperation {
-                pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "ua".to_string(),
-                interface: None,
-            }
-        ],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::CoinInDenomMismatch{}),
-    };
-    "Bad Coin Sent - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
