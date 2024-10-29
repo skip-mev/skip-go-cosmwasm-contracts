@@ -238,7 +238,7 @@ async def broadcast_tx(
     
     # build tx
     gas_price = GAS_PRICE
-    gas_limit = int(sim_res["gasInfo"]["gasUsed"]) + GAS_FEE_BUFFER_AMOUNT  # add buffer for gas fee computation
+    gas_limit = int(sim_res["gasInfo"]["gasUsed"]) + GAS_FEE_BUFFER_AMOUNT + 100_000  # add buffer for gas fee computation
     gas_fee = "{:.18f}".format((gas_price * gas_limit) / pow(10, 18)).rstrip("0")
     fee = [
         composer.Coin(
@@ -284,7 +284,7 @@ async def broadcast_tx(
 
     
 def get_contract_address(tx_logs):
-    for event in tx_logs['txResponse']['logs'][0]['events']:
+    for event in tx_logs['txResponse']['events']:
         if event['type'] == "instantiate":
             for attr in event['attributes']:
                 if attr['key'] == "_contract_address":
