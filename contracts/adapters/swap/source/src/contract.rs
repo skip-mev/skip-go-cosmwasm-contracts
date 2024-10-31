@@ -381,9 +381,3 @@ fn get_coin_from_asset(asset: Asset) -> Result<Coin, ContractError> {
         Asset::Cw20(_) => Err(ContractError::AssetNotNative),
     }
 }
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn test() {}
-}
