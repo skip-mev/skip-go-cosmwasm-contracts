@@ -78,6 +78,7 @@ fn test_instantiate(params: Params) {
         InstantiateMsg {
             swap_venues: params.swap_venues.clone(),
             ibc_transfer_contract_address: params.ibc_transfer_contract_address,
+            hyperlane_transfer_contract_address: None,
         },
     );
 

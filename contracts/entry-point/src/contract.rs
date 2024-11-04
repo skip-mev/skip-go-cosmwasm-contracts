@@ -7,7 +7,10 @@ use crate::{
     },
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
-    state::{BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP},
+    state::{
+        BLOCKED_CONTRACT_ADDRESSES, HYPERLANE_TRANSFER_CONTRACT_ADDRESS,
+        IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP,
+    },
 };
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
@@ -92,6 +95,33 @@ pub fn instantiate(
     response = response
         .add_attribute("action", "add_ibc_transfer_adapter")
         .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+
+    // If the hyperlane transfer contract address is provided, validate and store it
+    if let Some(hyperlane_transfer_contract_address) = msg.hyperlane_transfer_contract_address {
+        // Validate hyperlane transfer adapter contract address
+        let checked_hyperlane_transfer_contract_address = deps
+            .api
+            .addr_validate(&hyperlane_transfer_contract_address)?;
+
+        // Store the hyperlane transfer adapter contract address
+        HYPERLANE_TRANSFER_CONTRACT_ADDRESS
+            .save(deps.storage, &checked_hyperlane_transfer_contract_address)?;
+
+        // Insert the hyperlane transfer adapter contract address into the blocked contract addresses map
+        BLOCKED_CONTRACT_ADDRESSES.save(
+            deps.storage,
+            &checked_hyperlane_transfer_contract_address,
+            &(),
+        )?;
+
+        // Add the hyperlane transfer adapter contract address to the response
+        response = response
+            .add_attribute("action", "add_hyperlane_transfer_adapter")
+            .add_attribute(
+                "contract_address",
+                &checked_hyperlane_transfer_contract_address,
+            );
+    }
 
     Ok(response)
 }

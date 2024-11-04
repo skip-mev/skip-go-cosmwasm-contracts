@@ -4,8 +4,9 @@ use crate::{
     error::{ContractError, ContractResult},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
-        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT,
-        RECOVER_TEMP_STORAGE, SWAP_VENUE_MAP,
+        BLOCKED_CONTRACT_ADDRESSES, HYPERLANE_TRANSFER_CONTRACT_ADDRESS,
+        IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE,
+        SWAP_VENUE_MAP,
     },
 };
 use cosmwasm_std::{
@@ -17,6 +18,7 @@ use cw_utils::one_coin;
 use skip::{
     asset::{get_current_asset_available, Asset},
     entry_point::{Action, Affiliate, Cw20HookMsg, ExecuteMsg},
+    hyperlane::{ExecuteMsg as HplExecuteMsg, ExecuteMsg::HplTransfer},
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
     swap::{
         validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
@@ -727,6 +729,43 @@ fn validate_and_dispatch_action(
             response = response
                 .add_message(contract_call_msg)
                 .add_attribute("action", "dispatch_action_contract_call");
+        }
+        Action::HplTransfer {
+            dest_domain,
+            recipient,
+            hook,
+            metadata,
+            warp_address,
+        } => {
+            let transfer_out_coin = match action_asset {
+                Asset::Native(coin) => coin,
+                _ => return Err(ContractError::NonNativeHplTransfer),
+            };
+
+            // Create the Hyperlane transfer message
+            let hpl_transfer_msg: HplExecuteMsg = HplTransfer {
+                dest_domain,
+                recipient,
+                hook,
+                metadata,
+                warp_address,
+            };
+
+            // Get the Hyperlane transfer adapter contract address
+            let hpl_transfer_contract_address =
+                HYPERLANE_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+
+            // Send the Hyperlane transfer by calling the Hyperlane transfer contract
+            let hpl_transfer_msg = WasmMsg::Execute {
+                contract_addr: hpl_transfer_contract_address.to_string(),
+                msg: to_json_binary(&hpl_transfer_msg)?,
+                funds: vec![transfer_out_coin],
+            };
+
+            // Add the Hyperlane transfer message to the response
+            response = response
+                .add_message(hpl_transfer_msg)
+                .add_attribute("action", "dispatch_action_ibc_transfer");
         }
     };
 
