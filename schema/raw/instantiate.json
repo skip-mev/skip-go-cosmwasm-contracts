@@ -8,6 +8,12 @@
     "swap_venues"
   ],
   "properties": {
+    "hyperlane_transfer_contract_address": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "ibc_transfer_contract_address": {
       "type": "string"
     },
