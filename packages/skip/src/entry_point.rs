@@ -66,6 +66,21 @@ pub enum ExecuteMsg {
         post_swap_action: Action,
         exact_out: bool,
     },
+    Action {
+        sent_asset: Option<Asset>,
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+    },
+    ActionWithRecover {
+        sent_asset: Option<Asset>,
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+        recovery_addr: Addr,
+    },
 }
 
 /// This structure describes a CW20 hook message.
@@ -85,6 +100,19 @@ pub enum Cw20HookMsg {
         timeout_timestamp: u64,
         post_swap_action: Action,
         affiliates: Vec<Affiliate>,
+    },
+    Action {
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+    },
+    ActionWithRecover {
+        timeout_timestamp: u64,
+        action: Action,
+        exact_out: bool,
+        min_asset: Option<Asset>,
+        recovery_addr: Addr,
     },
 }
 
