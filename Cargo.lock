@@ -1841,7 +1841,6 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "hpl-interface",
- "ibc-proto",
  "prost 0.11.9",
  "serde-cw-value",
  "serde-json-wasm 1.0.1",

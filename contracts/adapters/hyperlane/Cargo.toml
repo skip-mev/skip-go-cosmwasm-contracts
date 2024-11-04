@@ -26,7 +26,6 @@ cw2              = { workspace = true }
 cw-storage-plus  = { workspace = true }
 cw-utils         = { workspace = true }
 hpl-interface    = { workspace = true }
-ibc-proto        = { workspace = true }
 prost            = { workspace = true }
 serde-json-wasm  = { workspace = true }
 serde-cw-value   = { workspace = true }
