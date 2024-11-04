@@ -21,6 +21,7 @@ keywords      = ["cosmwasm"]
 
 [workspace.dependencies]
 astroport        = "2.9"
+astrovault       = "0.1.8"
 dexter           = "1.4.0"
 dexter-vault     = "1.1.0"
 dexter-stable-pool   = "1.1.1"
