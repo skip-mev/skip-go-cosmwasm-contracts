@@ -27,9 +27,9 @@ swap_adapter_pryzm-native_contract_code_id = "10"
 entry_point_contract_code_id = "11"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "pryzm1s85asu5dckeelmgzrwqakxc8tc4gllutjq4uq3a4lwak2hfp9c3qar6gnf"
-swap_adapter_pryzm-native_contract_address = "pryzm1zlwdkv49rmsug0pnwu6fmwnl267lfr34smmfyer9dvakpnk29whqqh0h9x"
-entry_point_contract_address = "pryzm1k6f4crmvu9l4t0x07mj7dm3gvpa38ty8qdvpq2q9vxutqy25esaqcv7adz"
+ibc_transfer_adapter_contract_address = "pryzm1780emnrt7v9uqx5txhpxc0z8zfawq0czjmtd4q2maz83cckwjlfsd466qq"
+swap_adapter_pryzm-native_contract_address = "pryzm14xc5dkz0rn8j99lxz69mkv3wzawmadg7xurkzy49m9yefmqx5c6s63ez2f"
+entry_point_contract_address = "pryzm1tugep3navnjwlyjtnz7qzm2csnhpvg7y8gn9hffjqe37ymq5c76sz2e2xq"
 
 [tx-hashes]
 store_ibc_transfer_adapter_tx_hash = "f599333c64f54ed18e4d800b5a1401189f2587c72e67b9e4a0a3ccc5c5b97aa7"
