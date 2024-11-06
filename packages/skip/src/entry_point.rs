@@ -5,7 +5,7 @@ use crate::{
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Uint128};
+use cosmwasm_std::{Addr, Binary, HexBinary, Uint128};
 use cw20::Cw20ReceiveMsg;
 
 ///////////////
@@ -25,6 +25,7 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub swap_venues: Vec<SwapVenue>,
     pub ibc_transfer_contract_address: String,
+    pub hyperlane_transfer_contract_address: Option<String>,
 }
 
 ///////////////
@@ -152,6 +153,13 @@ pub enum Action {
     ContractCall {
         contract_address: String,
         msg: Binary,
+    },
+    HplTransfer {
+        dest_domain: u32,
+        recipient: HexBinary,
+        hook: Option<String>,
+        metadata: Option<HexBinary>,
+        warp_address: String,
     },
 }
 

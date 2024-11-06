@@ -12,6 +12,12 @@
       "swap_venues"
     ],
     "properties": {
+      "hyperlane_transfer_contract_address": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "ibc_transfer_contract_address": {
         "type": "string"
       },
@@ -426,6 +432,53 @@
               }
             },
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "hpl_transfer"
+            ],
+            "properties": {
+              "hpl_transfer": {
+                "type": "object",
+                "required": [
+                  "dest_domain",
+                  "recipient",
+                  "warp_address"
+                ],
+                "properties": {
+                  "dest_domain": {
+                    "type": "integer",
+                    "format": "uint32",
+                    "minimum": 0.0
+                  },
+                  "hook": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "metadata": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/HexBinary"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "recipient": {
+                    "$ref": "#/definitions/HexBinary"
+                  },
+                  "warp_address": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
           }
         ]
       },
@@ -532,6 +585,10 @@
           }
         },
         "additionalProperties": false
+      },
+      "HexBinary": {
+        "description": "This is a wrapper around Vec<u8> to add hex de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is similar to `cosmwasm_std::Binary` but uses hex. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+        "type": "string"
       },
       "IbcFee": {
         "description": "COMMON TYPES ///",

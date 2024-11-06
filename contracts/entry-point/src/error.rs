@@ -69,6 +69,9 @@ pub enum ContractError {
     )]
     NonNativeIbcTransfer,
 
+    #[error("Hyperlane Transfer Adapter Only Supports Native Coins")]
+    NonNativeHplTransfer,
+
     #[error("Reply id: {0} not valid")]
     ReplyIdError(u64),
 
