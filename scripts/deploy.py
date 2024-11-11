@@ -201,6 +201,8 @@ def main():
                 swap_adapter_instantiate_args["drop_factory_contract_address"] = venue["drop_factory_contract_address"]
             if "dex_module_address" in venue:
                 swap_adapter_instantiate_args["dex_module_address"] = venue["dex_module_address"]
+            if "astrovault_router_contract_address" in venue:
+                swap_adapter_instantiate_args["astrovault_router_contract_address"] = venue["astrovault_router_contract_address"]
             
             swap_adapter_contract_address = instantiate_contract(
                 client, 
@@ -408,7 +410,7 @@ def store_contract(
     if CHAIN == "osmosis":
         gas_limit = 15000000
     else:
-        gas_limit = 5000000
+        gas_limit = 7000000
         
     if permissioned_uploader_address is not None:
         msg = MsgStoreCode(
