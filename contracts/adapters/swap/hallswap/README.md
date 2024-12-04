@@ -56,7 +56,7 @@ Swaps the coin sent using the operations provided.
 
 ### `simulate_swap_exact_coin_in`
 
-Returns the coin out that would be received from swapping the `coin_in` specified in the call (swapped through the `swap_operatons` provided)
+Returns the coin out that would be received from swapping the `coin_in` specified in the call (swapped through the `swap_operations` provided)
 
 Query:
 
