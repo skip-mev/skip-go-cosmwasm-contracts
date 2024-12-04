@@ -62,7 +62,7 @@ Note: This function can be called by anyone as the contract is assumed to have n
 
 ### `simulate_swap_exact_coin_out`
 
-Returns the coin in required to receive the `coin_out` specified in the call (swapped through the `swap_operatons` provided)
+Returns the coin in required to receive the `coin_out` specified in the call (swapped through the `swap_operations` provided)
 
 Query:
 ``` json
@@ -93,7 +93,7 @@ Response:
 
 ### `simulate_swap_exact_coin_in`
 
-Returns the coin out that would be received from swapping the `coin_in` specified in the call (swapped through the `swap_operatons` provided)
+Returns the coin out that would be received from swapping the `coin_in` specified in the call (swapped through the `swap_operations` provided)
 
 Query:
 ``` json
