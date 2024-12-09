@@ -90,22 +90,6 @@ pub struct SwapResult {
     pub return_amount: Uint128,
 }
 
-/*
-#[cw_serde]
-pub enum ExecuteMsg {
-    // SNIP20 receiver interface
-    Receive(Snip20ReceiveMsg),
-    SwapTokensForExact {
-        /// The token type to swap from.
-        offer: TokenAmount,
-        expected_return: Option<Uint128>,
-        path: Vec<Hop>,
-        recipient: Option<String>,
-        padding: Option<String>,
-    },
-}
-*/
-
 #[cw_serde]
 pub enum QueryMsg {
     SwapSimulation {

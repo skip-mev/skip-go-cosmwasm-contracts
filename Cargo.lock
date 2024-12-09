@@ -2343,6 +2343,7 @@ version = "0.3.0"
 dependencies = [
  "cosmwasm-schema",
  "cw2 1.1.2",
+ "cw20 1.1.2",
  "schemars",
  "secret-cosmwasm-std",
  "secret-storage-plus",
