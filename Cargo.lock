@@ -2020,7 +2020,6 @@ dependencies = [
  "skip",
  "test-case",
  "thiserror",
- "white-whale-std",
 ]
 
 [[package]]

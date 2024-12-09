@@ -4,8 +4,8 @@ use crate::{
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, wasm_execute, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
-    Response, Uint128,
+    ensure, entry_point, to_json_binary, wasm_execute, Binary, Decimal, Deps, DepsMut, Env,
+    MessageInfo, Response, Uint128,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
@@ -113,6 +113,12 @@ fn execute_swap(
     // Get coin in from the message info, error if there is not exactly one coin sent
     let coin_in = one_coin(&info)?;
 
+    // sanity check
+    ensure!(
+        coin_in.amount != Uint128::zero(),
+        ContractError::NoOfferAssetAmount
+    );
+
     // Create a response object to return
     let response: Response = Response::new().add_attribute("action", "execute_swap");
 
@@ -125,6 +131,11 @@ fn execute_swap(
             pool_identifier: op.pool.clone(),
         })
         .collect();
+
+    ensure!(
+        !mantra_swap_operations.is_empty(),
+        ContractError::SwapOperationsEmpty
+    );
 
     let msg = MantraPoolManagerExecuteMsg::ExecuteSwapOperations {
         operations: mantra_swap_operations,

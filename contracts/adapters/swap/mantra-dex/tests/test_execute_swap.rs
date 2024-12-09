@@ -1,15 +1,19 @@
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_json_binary, Addr, Coin,
+    to_json_binary, Addr, Coin, Decimal,
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_go_swap_adapter_white_whale::{
-    error::{ContractError, ContractResult},
-    state::ENTRY_POINT_CONTRACT_ADDRESS,
+use skip_go_swap_adapter_mantra_dex::error::{ContractError, ContractResult};
+use skip_go_swap_adapter_mantra_dex::state::{
+    ENTRY_POINT_CONTRACT_ADDRESS, MANTRA_DEX_POOL_MANAGER_ADDRESS,
 };
 use test_case::test_case;
+
+use skip_go_swap_adapter_mantra_dex::pool_manager::{
+    ExecuteMsg as MantraPoolManagerExecuteMsg, SwapOperation as MantraSwapOperation,
+};
 
 /*
 Test Cases:
@@ -52,34 +56,22 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
-                        operation: SwapOperation {
-                            pool: "pool_1".to_string(),
-                            denom_in: "os".to_string(),
-                            denom_out: "ua".to_string(),
-                            interface: None,
-                        }
+                    contract_addr: "mantra_pool_manager".to_string(),
+                    msg: to_json_binary(&MantraPoolManagerExecuteMsg::ExecuteSwapOperations {
+                        operations: vec![MantraSwapOperation::MantraSwap {
+                            pool_identifier: "pool_1".to_string(),
+                            token_in_denom: "os".to_string(),
+                            token_out_denom: "ua".to_string(),
+                        }],
+                        minimum_receive: None,
+                        receiver: Some("entry_point".to_string()),
+                        max_spread: Some(Decimal::percent(50)),
                     })?,
-                    funds: vec![],
+                    funds: vec![Coin::new(100, "os")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "ua".to_string(),
-                        swapper: Addr::unchecked("entry_point"),
-                    })?,
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
+            }
         ],
         expected_error: None,
     };
@@ -106,51 +98,28 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
-                        operation: SwapOperation {
-                            pool: "pool_1".to_string(),
-                            denom_in: "os".to_string(),
-                            denom_out: "ua".to_string(),
-                            interface: None,
+                    contract_addr: "mantra_pool_manager".to_string(),
+                    msg: to_json_binary(&MantraPoolManagerExecuteMsg::ExecuteSwapOperations {
+                        operations: vec![MantraSwapOperation::MantraSwap {
+                            pool_identifier: "pool_1".to_string(),
+                            token_in_denom: "os".to_string(),
+                            token_out_denom: "ua".to_string(),
+                        },
+                        MantraSwapOperation::MantraSwap {
+                            pool_identifier: "pool_2".to_string(),
+                            token_in_denom: "ua".to_string(),
+                            token_out_denom: "un".to_string(),
                         }
+                        ],
+                        minimum_receive: None,
+                        receiver: Some("entry_point".to_string()),
+                        max_spread: Some(Decimal::percent(50)),
                     })?,
-                    funds: vec![],
+                    funds: vec![Coin::new(100, "os")],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::WhiteWhalePoolSwap {
-                        operation: SwapOperation {
-                            pool: "pool_2".to_string(),
-                            denom_in: "ua".to_string(),
-                            denom_out: "un".to_string(),
-                            interface: None,
-                        }
-                    })?,
-                    funds: vec![],
-                }.into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-            SubMsg {
-                id: 0,
-                msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
-                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "un".to_string(),
-                        swapper: Addr::unchecked("entry_point"),
-                    })?,
-                    funds: vec![],
-                }
-                .into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
+            }
         ],
         expected_error: None,
     };
@@ -212,9 +181,13 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
 
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
+    MANTRA_DEX_POOL_MANAGER_ADDRESS.save(
+        deps.as_mut().storage,
+        &Addr::unchecked("mantra_pool_manager"),
+    )?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_go_swap_adapter_white_whale::contract::execute(
+    let res = skip_go_swap_adapter_mantra_dex::contract::execute(
         deps.as_mut(),
         env,
         info,
