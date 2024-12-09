@@ -1,34 +1,35 @@
 use crate::{
     error::{ContractError, ContractResult},
-    state::{
-        ENTRY_POINT_CONTRACT, REGISTERED_TOKENS, SHADE_POOL_CODE_HASH, SHADE_ROUTER_CONTRACT,
-        VIEWING_KEY,
-    },
+    state::{REGISTERED_TOKENS, STATE},
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Addr, Binary, ContractInfo, CosmosMsg, Decimal, Deps,
-    DepsMut, Env, MessageInfo, Response, Uint128, WasmMsg,
+    entry_point, from_binary, to_binary, Addr, Binary, ContractInfo, Deps, DepsMut, Env,
+    MessageInfo, Response, Uint128, WasmMsg,
 };
 // use cw2::set_contract_version;
 use cw20::Cw20Coin;
 use secret_toolkit::snip20;
 use skip::{
-    asset::{get_current_asset_available, Asset},
+    asset::Asset,
     error::SkipError,
-    swap::{
-        get_ask_denom_for_routes, Cw20HookMsg, QueryMsg, Route,
-        SimulateSmartSwapExactAssetInResponse, SimulateSwapExactAssetInResponse,
-        SimulateSwapExactAssetOutResponse, SwapOperation,
-    },
+    swap::{Cw20HookMsg, QueryMsg, SwapOperation},
 };
 
 use crate::shade_swap_router_msg as shade_router;
 
 #[cw_serde]
+pub struct State {
+    pub entry_point_contract: ContractInfo,
+    pub shade_router_contract: ContractInfo,
+    pub shade_pool_code_hash: String,
+    pub viewing_key: String,
+}
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub entry_point_contract: ContractInfo,
-    pub shade_protocol_router_contract: ContractInfo,
+    pub shade_router_contract: ContractInfo,
     pub shade_pool_code_hash: String,
     pub viewing_key: String,
 }
@@ -36,7 +37,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub struct MigrateMsg {
     pub entry_point_contract: ContractInfo,
-    pub shade_protocol_router_contract: ContractInfo,
+    pub shade_router_contract: ContractInfo,
     pub shade_pool_code_hash: String,
     pub viewing_key: String,
 }
@@ -79,7 +80,15 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Resp
     };
 
     // Store the entry point contract address
-    ENTRY_POINT_CONTRACT.save(deps.storage, &checked_entry_point_contract)?;
+    STATE.save(
+        deps.storage,
+        &State {
+            entry_point_contract: checked_entry_point_contract.clone(),
+            shade_router_contract: msg.shade_router_contract.clone(),
+            shade_pool_code_hash: msg.shade_pool_code_hash.clone(),
+            viewing_key: msg.viewing_key.clone(),
+        },
+    )?;
 
     Ok(Response::new()
         .add_attribute("action", "migrate")
@@ -112,10 +121,15 @@ pub fn instantiate(
     };
 
     // Store the entry point contract address
-    ENTRY_POINT_CONTRACT.save(deps.storage, &checked_entry_point_contract)?;
-    SHADE_ROUTER_CONTRACT.save(deps.storage, &msg.shade_protocol_router_contract)?;
-    SHADE_POOL_CODE_HASH.save(deps.storage, &msg.shade_pool_code_hash)?;
-    VIEWING_KEY.save(deps.storage, &msg.viewing_key)?;
+    STATE.save(
+        deps.storage,
+        &State {
+            entry_point_contract: checked_entry_point_contract.clone(),
+            shade_router_contract: msg.shade_router_contract.clone(),
+            shade_pool_code_hash: msg.shade_pool_code_hash.clone(),
+            viewing_key: msg.viewing_key.clone(),
+        },
+    )?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
@@ -124,8 +138,8 @@ pub fn instantiate(
             checked_entry_point_contract.address.to_string(),
         )
         .add_attribute(
-            "shade_protocol_router_contract_address",
-            msg.shade_protocol_router_contract.address,
+            "shade_router_contract_address",
+            msg.shade_router_contract.address,
         ))
 }
 
@@ -190,16 +204,11 @@ fn execute_swap(
     operations: Vec<SwapOperation>,
     input_amount: Uint128,
 ) -> ContractResult<Response> {
-    // Get entry point contract address from storage
-    let entry_point_contract = ENTRY_POINT_CONTRACT.load(deps.storage)?;
-    // Get swap router from storage
-    let shade_router_contract = SHADE_ROUTER_CONTRACT.load(deps.storage)?;
-
-    // Get pool code hash from storage
-    let pool_code_hash = SHADE_POOL_CODE_HASH.load(deps.storage)?;
+    // Get contract state from storage
+    let state = STATE.load(deps.storage)?;
 
     // Enforce the caller is the entry point contract
-    if info.sender != entry_point_contract.address {
+    if info.sender != state.entry_point_contract.address {
         return Err(ContractError::Unauthorized);
     }
 
@@ -208,7 +217,7 @@ fn execute_swap(
     for operation in &operations {
         path.push(shade_router::Hop {
             addr: operation.pool.to_string(),
-            code_hash: pool_code_hash.clone(),
+            code_hash: state.shade_pool_code_hash.clone(),
         });
     }
 
@@ -229,7 +238,7 @@ fn execute_swap(
         .add_attribute("action", "dispatch_swaps_and_transfer_back")
         // Swap router execution
         .add_message(snip20::send_msg(
-            shade_router_contract.address.to_string(),
+            state.shade_router_contract.address.to_string(),
             input_amount,
             Some(to_binary(&shade_router::InvokeMsg::SwapTokensForExact {
                 path,
@@ -239,7 +248,7 @@ fn execute_swap(
             None,
             None,
             255,
-            shade_router_contract.code_hash,
+            state.shade_router_contract.code_hash,
             input_denom,
         )?)
         // TransferFundsBack message to self
@@ -247,7 +256,7 @@ fn execute_swap(
             contract_addr: env.contract.address.to_string(),
             code_hash: env.contract.code_hash,
             msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                swapper: entry_point_contract.address,
+                swapper: state.entry_point_contract.address,
                 return_denom,
             })?,
             funds: vec![],
@@ -261,6 +270,8 @@ fn register_tokens(
 ) -> ContractResult<Response> {
     let mut response = Response::new();
 
+    let state = STATE.load(deps.storage)?;
+
     for contract in contracts.iter() {
         // Add to storage for later use of code hash
         REGISTERED_TOKENS.save(deps.storage, contract.address.clone(), contract)?;
@@ -269,7 +280,7 @@ fn register_tokens(
             .add_attribute("register_token", contract.address.clone())
             .add_messages(vec![
                 snip20::set_viewing_key_msg(
-                    VIEWING_KEY.load(deps.storage)?,
+                    state.viewing_key.clone(),
                     None,
                     255,
                     contract.code_hash.clone(),
@@ -300,9 +311,9 @@ pub fn execute_transfer_funds_back(
         return Err(SkipError::Unauthorized);
     }
 
-    // load entry point contract for sending funds to
-    let entry_point_contract = match ENTRY_POINT_CONTRACT.load(deps.storage) {
-        Ok(contract) => contract,
+    // load state from storage
+    let state = match STATE.load(deps.storage) {
+        Ok(state) => state,
         Err(e) => return Err(SkipError::Std(e)),
     };
 
@@ -318,16 +329,10 @@ pub fn execute_transfer_funds_back(
         Err(_) => return Err(SkipError::InvalidCw20Coin),
     };
 
-    // Load viewing key for balance fetch
-    let viewing_key = match VIEWING_KEY.load(deps.storage) {
-        Ok(key) => key,
-        Err(e) => return Err(SkipError::Std(e)),
-    };
-
     let balance = match snip20::balance_query(
         deps.querier,
         env.contract.address.to_string(),
-        viewing_key,
+        state.viewing_key,
         255,
         token_contract.code_hash,
         token_contract.address.to_string(),
@@ -337,7 +342,7 @@ pub fn execute_transfer_funds_back(
     };
 
     let transfer_msg = match snip20::send_msg(
-        entry_point_contract.address.to_string(),
+        state.entry_point_contract.address.to_string(),
         balance.amount,
         None,
         None,
@@ -407,40 +412,14 @@ fn query_simulate_swap_exact_asset_in(
     Ok(asset_out)
 }
 
-/*
-// Queries the astroport pool contracts to simulate a multi-hop swap exact amount out
-fn query_simulate_swap_exact_asset_out(
-    deps: Deps,
-    asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
-) -> ContractResult<Asset> {
-    // Error if swap operations is empty
-    let Some(last_op) = swap_operations.last() else {
-        return Err(ContractError::SwapOperationsEmpty);
-    };
-
-    // Ensure asset_out's denom is the same as the last swap operation's denom out
-    if asset_out.denom() != last_op.denom_out {
-        return Err(ContractError::CoinOutDenomMismatch);
-    }
-
-    let (asset_in, _) = simulate_swap_exact_asset_out(deps, asset_out, swap_operations, false)?;
-
-    // Return the asset in needed
-    Ok(asset_in)
-}
-*/
-
 // Simulates a swap exact amount in request, returning the asset out and optionally the reverse simulation responses
 fn simulate_swap_exact_asset_in(
     deps: Deps,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
-    // Get pool code hash from storage
-    let pool_code_hash = SHADE_POOL_CODE_HASH.load(deps.storage)?;
-    // Get router data
-    let shade_router_contract = SHADE_ROUTER_CONTRACT.load(deps.storage)?;
+    // Load state from storage
+    let state = STATE.load(deps.storage)?;
     // Get contract data for asset_in
     let asset_in_contract =
         REGISTERED_TOKENS.load(deps.storage, deps.api.addr_validate(asset_in.denom())?)?;
@@ -454,13 +433,13 @@ fn simulate_swap_exact_asset_in(
     for operation in swap_operations.iter() {
         path.push(shade_router::Hop {
             addr: operation.pool.to_string(),
-            code_hash: pool_code_hash.clone(),
+            code_hash: state.shade_pool_code_hash.clone(),
         });
     }
 
     let sim_response: shade_router::QueryMsgResponse = deps.querier.query_wasm_smart(
-        &shade_router_contract.address,
-        &shade_router_contract.code_hash,
+        &state.shade_router_contract.address,
+        &state.shade_router_contract.code_hash,
         &shade_router::QueryMsg::SwapSimulation {
             offer: shade_router::TokenAmount {
                 token: shade_router::TokenType::CustomToken {
@@ -483,48 +462,3 @@ fn simulate_swap_exact_asset_in(
         amount: amount_out.u128().into(),
     }))
 }
-
-/*
-// Simulates a swap exact amount out request, returning the asset in needed and optionally the reverse simulation responses
-fn simulate_swap_exact_asset_out(
-    deps: Deps,
-    asset_out: Asset,
-    swap_operations: Vec<SwapOperation>,
-    include_responses: bool,
-) -> ContractResult<(Asset, Vec<ReverseSimulationResponse>)> {
-    let (asset_in, responses) = swap_operations.iter().rev().try_fold(
-        (asset_out, Vec::new()),
-        |(asset_in_needed, mut responses), operation| -> Result<_, ContractError> {
-            // Get the astroport ask asset type
-            let astroport_ask_asset = asset_in_needed.into_astroport_asset(deps.api)?;
-
-            // Query the astroport pool contract to get the reverse simulation response
-            let res: ReverseSimulationResponse = deps.querier.query_wasm_smart(
-                &operation.pool,
-                &PairQueryMsg::ReverseSimulation {
-                    offer_asset_info: None,
-                    ask_asset: astroport_ask_asset,
-                },
-            )?;
-
-            // Assert the operation does not exceed the max spread limit
-            assert_max_spread(res.offer_amount, res.spread_amount)?;
-
-            if include_responses {
-                responses.push(res.clone());
-            }
-
-            Ok((
-                Asset::new(
-                    deps.api,
-                    &operation.denom_in,
-                    res.offer_amount.checked_add(Uint128::one())?,
-                ),
-                responses,
-            ))
-        },
-    )?;
-
-    Ok((asset_in, responses))
-}
-*/
