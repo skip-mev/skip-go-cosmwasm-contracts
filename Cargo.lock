@@ -2189,6 +2189,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "skip-go-secret-entry-point"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cw-utils 1.0.3",
+ "cw20 1.1.2",
+ "schemars",
+ "secret-cosmwasm-std",
+ "secret-storage-plus",
+ "secret-toolkit",
+ "serde",
+ "skip",
+ "test-case",
+ "thiserror",
+]
+
+[[package]]
 name = "skip-go-swap-adapter-astroport"
 version = "0.3.0"
 dependencies = [
@@ -2342,6 +2359,7 @@ name = "skip-go-swap-adapter-shade-protocol"
 version = "0.3.0"
 dependencies = [
  "cosmwasm-schema",
+ "cw-utils 1.0.3",
  "cw2 1.1.2",
  "cw20 1.1.2",
  "schemars",
