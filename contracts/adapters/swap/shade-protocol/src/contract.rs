@@ -26,7 +26,6 @@ pub struct State {
     pub viewing_key: String,
 }
 
-/*
 #[cw_serde]
 pub struct InstantiateMsg {
     pub entry_point_contract: ContractInfo,
@@ -42,7 +41,6 @@ pub struct MigrateMsg {
     pub shade_pool_code_hash: String,
     pub viewing_key: String,
 }
-*/
 
 #[cw_serde]
 pub enum ExecuteMsg {
@@ -61,8 +59,10 @@ pub struct Snip20ReceiveMsg {
 }
 
 // Contract name and version used for migration.
+/*
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+*/
 
 ///////////////
 /// MIGRATE ///
@@ -306,7 +306,7 @@ pub fn execute_transfer_funds_back(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    swapper: Addr,
+    _swapper: Addr,
     return_denom: String,
 ) -> ContractResult<Response> {
     // Ensure the caller is the contract itself
@@ -378,16 +378,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_in,
             swap_operations,
         )?),
-        /*
-        QueryMsg::SimulateSwapExactAssetOut {
-            asset_out,
-            swap_operations,
-        } => to_binary(&query_simulate_swap_exact_asset_out(
-            deps,
-            asset_out,
-            swap_operations,
-        )?),
-        */
         _ => unimplemented!(),
     }
     .map_err(From::from)
