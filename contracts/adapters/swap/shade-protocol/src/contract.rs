@@ -1,4 +1,5 @@
 use crate::{
+    asset::Asset,
     error::{ContractError, ContractResult},
     // skip_error::ContractError,
     state::{REGISTERED_TOKENS, STATE},
@@ -11,12 +12,14 @@ use cosmwasm_std::{
 // use cw2::set_contract_version;
 use cw20::Cw20Coin;
 use secret_toolkit::snip20;
-use skip::{
-    asset::Asset,
-    swap::{Cw20HookMsg, QueryMsg, SwapOperation},
-};
 
-use crate::shade_swap_router_msg as shade_router;
+use crate::{
+    msg::{
+        Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, Snip20ReceiveMsg,
+        SwapOperation,
+    },
+    shade_swap_router_msg as shade_router,
+};
 
 #[cw_serde]
 pub struct State {
@@ -24,38 +27,6 @@ pub struct State {
     pub shade_router_contract: ContractInfo,
     pub shade_pool_code_hash: String,
     pub viewing_key: String,
-}
-
-#[cw_serde]
-pub struct InstantiateMsg {
-    pub entry_point_contract: ContractInfo,
-    pub shade_router_contract: ContractInfo,
-    pub shade_pool_code_hash: String,
-    pub viewing_key: String,
-}
-
-#[cw_serde]
-pub struct MigrateMsg {
-    pub entry_point_contract: ContractInfo,
-    pub shade_router_contract: ContractInfo,
-    pub shade_pool_code_hash: String,
-    pub viewing_key: String,
-}
-
-#[cw_serde]
-pub enum ExecuteMsg {
-    Receive(Snip20ReceiveMsg),
-    TransferFundsBack { swapper: Addr, return_denom: String },
-    RegisterTokens { contracts: Vec<ContractInfo> },
-}
-
-#[cw_serde]
-pub struct Snip20ReceiveMsg {
-    pub sender: Addr,
-    pub from: Addr,
-    pub amount: Uint128,
-    pub memo: Option<String>,
-    pub msg: Option<Binary>,
 }
 
 // Contract name and version used for migration.
