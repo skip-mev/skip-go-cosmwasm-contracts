@@ -1,4 +1,5 @@
 use cosmwasm_std::{OverflowError, StdError};
+use cw_utils;
 use skip::error::SkipError;
 use thiserror::Error;
 
@@ -35,4 +36,7 @@ pub enum ContractError {
 
     #[error("Contract has no balance of offer asset")]
     NoOfferAssetAmount,
+
+    #[error("Snip20 Coin Sent To Contract Does Not Match Asset")]
+    InvalidSnip20Coin,
 }

@@ -1,5 +1,6 @@
 use crate::{
     error::{ContractError, ContractResult},
+    // skip_error::ContractError,
     state::{REGISTERED_TOKENS, STATE},
 };
 use cosmwasm_schema::cw_serde;
@@ -12,7 +13,6 @@ use cw20::Cw20Coin;
 use secret_toolkit::snip20;
 use skip::{
     asset::Asset,
-    error::SkipError,
     swap::{Cw20HookMsg, QueryMsg, SwapOperation},
 };
 
@@ -26,6 +26,7 @@ pub struct State {
     pub viewing_key: String,
 }
 
+/*
 #[cw_serde]
 pub struct InstantiateMsg {
     pub entry_point_contract: ContractInfo,
@@ -41,6 +42,7 @@ pub struct MigrateMsg {
     pub shade_pool_code_hash: String,
     pub viewing_key: String,
 }
+*/
 
 #[cw_serde]
 pub enum ExecuteMsg {
@@ -67,7 +69,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 ///////////////
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Response> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: State) -> ContractResult<Response> {
     // Set contract version
     // set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
@@ -107,7 +109,7 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: InstantiateMsg,
+    msg: State,
 ) -> ContractResult<Response> {
     // Set contract version
     // set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -192,6 +194,7 @@ pub fn execute(
             swapper,
             return_denom,
         )?),
+        // Tokens must be registered before they can be swapped
         ExecuteMsg::RegisterTokens { contracts } => register_tokens(deps, env, contracts),
         _ => unimplemented!(),
     }
@@ -305,28 +308,28 @@ pub fn execute_transfer_funds_back(
     info: MessageInfo,
     swapper: Addr,
     return_denom: String,
-) -> Result<Response, SkipError> {
+) -> ContractResult<Response> {
     // Ensure the caller is the contract itself
     if info.sender != env.contract.address {
-        return Err(SkipError::Unauthorized);
+        return Err(ContractError::Unauthorized);
     }
 
     // load state from storage
     let state = match STATE.load(deps.storage) {
         Ok(state) => state,
-        Err(e) => return Err(SkipError::Std(e)),
+        Err(e) => return Err(ContractError::Std(e)),
     };
 
     // Validate return_denom
     let return_denom = match deps.api.addr_validate(&return_denom) {
         Ok(addr) => addr,
-        Err(_) => return Err(SkipError::InvalidCw20Coin),
+        Err(_) => return Err(ContractError::InvalidSnip20Coin),
     };
 
     // Load token contract
     let token_contract = match REGISTERED_TOKENS.load(deps.storage, return_denom) {
         Ok(contract) => contract,
-        Err(_) => return Err(SkipError::InvalidCw20Coin),
+        Err(_) => return Err(ContractError::InvalidSnip20Coin),
     };
 
     let balance = match snip20::balance_query(
@@ -334,11 +337,11 @@ pub fn execute_transfer_funds_back(
         env.contract.address.to_string(),
         state.viewing_key,
         255,
-        token_contract.code_hash,
+        token_contract.code_hash.clone(),
         token_contract.address.to_string(),
     ) {
         Ok(balance) => balance,
-        Err(e) => return Err(SkipError::Std(e)),
+        Err(e) => return Err(ContractError::Std(e)),
     };
 
     let transfer_msg = match snip20::send_msg(
@@ -348,11 +351,11 @@ pub fn execute_transfer_funds_back(
         None,
         None,
         255,
-        token_contract.code_hash,
+        token_contract.code_hash.clone(),
         token_contract.address.to_string(),
     ) {
         Ok(msg) => msg,
-        Err(e) => return Err(SkipError::Std(e)),
+        Err(e) => return Err(ContractError::Std(e)),
     };
 
     Ok(Response::new()
