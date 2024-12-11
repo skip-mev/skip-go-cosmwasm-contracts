@@ -53,6 +53,7 @@ serde                = { version = "1.0.194", default-features = false, features
 serde-cw-value       = "0.7.0"
 serde-json-wasm      = "1.0.1"
 skip                 = { version = "0.3.0", path = "./packages/skip" }
+secret-skip          = { version = "0.3.0", path = "./packages/secret-skip" }
 test-case            = "3.3.1"
 thiserror            = "1"
 white-whale-std      = "1.1.1"
