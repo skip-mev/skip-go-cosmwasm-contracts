@@ -1,6 +1,6 @@
 use cosmwasm_std::{OverflowError, StdError};
 use cw_utils;
-use skip::error::SkipError;
+use secret_skip::error::SkipError;
 use thiserror::Error;
 
 pub type ContractResult<T> = core::result::Result<T, ContractError>;

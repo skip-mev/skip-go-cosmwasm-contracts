@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use skip::swap::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use secret_skip::swap::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {

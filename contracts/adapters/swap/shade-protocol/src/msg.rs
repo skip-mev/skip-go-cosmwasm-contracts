@@ -1,6 +1,6 @@
-use crate::asset::Asset;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, ContractInfo, Uint128};
+use secret_skip::{asset::Asset, swap::SwapOperation};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -41,6 +41,7 @@ pub enum Cw20HookMsg {
     Swap { operations: Vec<SwapOperation> },
 }
 
+/*
 #[cw_serde]
 pub struct SwapOperation {
     pub pool: String,
@@ -48,6 +49,7 @@ pub struct SwapOperation {
     pub denom_out: String,
     pub interface: Option<Binary>,
 }
+*/
 
 #[cw_serde]
 pub struct Snip20ReceiveMsg {

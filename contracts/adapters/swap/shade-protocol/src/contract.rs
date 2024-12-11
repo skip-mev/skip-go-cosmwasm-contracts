@@ -1,5 +1,4 @@
 use crate::{
-    asset::Asset,
     error::{ContractError, ContractResult},
     // skip_error::ContractError,
     state::{REGISTERED_TOKENS, STATE},
@@ -9,15 +8,13 @@ use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Binary, ContractInfo, Deps, DepsMut, Env,
     MessageInfo, Response, Uint128, WasmMsg,
 };
+use secret_skip::{asset::Asset, swap::SwapOperation};
 // use cw2::set_contract_version;
 use cw20::Cw20Coin;
 use secret_toolkit::snip20;
 
 use crate::{
-    msg::{
-        Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, Snip20ReceiveMsg,
-        SwapOperation,
-    },
+    msg::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, Snip20ReceiveMsg},
     shade_swap_router_msg as shade_router,
 };
 
