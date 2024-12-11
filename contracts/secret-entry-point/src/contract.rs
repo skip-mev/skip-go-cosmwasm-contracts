@@ -5,18 +5,20 @@ use crate::{
         execute_swap_and_action, execute_swap_and_action_with_recover, execute_user_swap,
         receive_snip20,
     },
+    msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
     query::{query_ibc_transfer_adapter_contract, query_swap_venue_adapter_contract},
     reply::{reply_swap_and_action_with_recover, RECOVER_REPLY_ID},
     state::{
         BLOCKED_CONTRACT_ADDRESSES, HYPERLANE_TRANSFER_CONTRACT_ADDRESS,
-        IBC_TRANSFER_CONTRACT_ADDRESS, SWAP_VENUE_MAP,
+        IBC_TRANSFER_CONTRACT_ADDRESS, REGISTERED_TOKENS, SWAP_VENUE_MAP, VIEWING_KEY,
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_binary, Binary, ContractInfo, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdResult,
 };
+use secret_toolkit::snip20;
 // use cw2::set_contract_version;
-use skip::entry_point::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 ///////////////
 /// MIGRATE ///
@@ -50,13 +52,17 @@ pub fn instantiate(
 
     // Insert the entry point contract address into the blocked contract addresses map
     BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &env.contract.address, &())?;
+    VIEWING_KEY.save(deps.storage, &msg.viewing_key)?;
 
     // Iterate through the swap venues provided and create a map of venue names to swap adapter contract addresses
     for swap_venue in msg.swap_venues.iter() {
         // Validate the swap contract address
-        let checked_swap_contract_address = deps
-            .api
-            .addr_validate(&swap_venue.adapter_contract_address)?;
+        let checked_swap_contract = ContractInfo {
+            address: deps
+                .api
+                .addr_validate(&swap_venue.adapter_contract.address.to_string())?,
+            code_hash: swap_venue.adapter_contract.code_hash.clone(),
+        };
 
         // Prevent duplicate swap venues by erroring if the venue name is already stored
         if SWAP_VENUE_MAP.has(deps.storage, &swap_venue.name) {
@@ -64,52 +70,55 @@ pub fn instantiate(
         }
 
         // Store the swap venue name and contract address inside the swap venue map
-        SWAP_VENUE_MAP.save(
-            deps.storage,
-            &swap_venue.name,
-            &checked_swap_contract_address,
-        )?;
+        SWAP_VENUE_MAP.save(deps.storage, &swap_venue.name, &checked_swap_contract)?;
 
         // Insert the swap contract address into the blocked contract addresses map
-        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_swap_contract_address, &())?;
+        BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_swap_contract.address, &())?;
 
         // Add the swap venue and contract address to the response
         response = response
             .add_attribute("action", "add_swap_venue")
             .add_attribute("name", &swap_venue.name)
-            .add_attribute("contract_address", &checked_swap_contract_address);
+            .add_attribute("contract_address", &checked_swap_contract.address);
     }
 
     // Validate ibc transfer adapter contract addresses
-    let checked_ibc_transfer_contract_address =
-        deps.api.addr_validate(&msg.ibc_transfer_contract_address)?;
+    let checked_ibc_transfer_contract = ContractInfo {
+        address: deps
+            .api
+            .addr_validate(&msg.ibc_transfer_contract.address.to_string())?,
+        code_hash: msg.ibc_transfer_contract.code_hash.clone(),
+    };
 
     // Store the ibc transfer adapter contract address
-    IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract_address)?;
+    IBC_TRANSFER_CONTRACT_ADDRESS.save(deps.storage, &checked_ibc_transfer_contract)?;
 
     // Insert the ibc transfer adapter contract address into the blocked contract addresses map
-    BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_ibc_transfer_contract_address, &())?;
+    BLOCKED_CONTRACT_ADDRESSES.save(deps.storage, &checked_ibc_transfer_contract.address, &())?;
 
     // Add the ibc transfer adapter contract address to the response
     response = response
         .add_attribute("action", "add_ibc_transfer_adapter")
-        .add_attribute("contract_address", &checked_ibc_transfer_contract_address);
+        .add_attribute("contract_address", &checked_ibc_transfer_contract.address);
 
     // If the hyperlane transfer contract address is provided, validate and store it
-    if let Some(hyperlane_transfer_contract_address) = msg.hyperlane_transfer_contract_address {
+    if let Some(hyperlane_transfer_contract) = msg.hyperlane_transfer_contract {
         // Validate hyperlane transfer adapter contract address
-        let checked_hyperlane_transfer_contract_address = deps
-            .api
-            .addr_validate(&hyperlane_transfer_contract_address)?;
+        let checked_hyperlane_transfer_contract = ContractInfo {
+            address: deps
+                .api
+                .addr_validate(&hyperlane_transfer_contract.address.to_string())?,
+            code_hash: hyperlane_transfer_contract.code_hash.clone(),
+        };
 
         // Store the hyperlane transfer adapter contract address
         HYPERLANE_TRANSFER_CONTRACT_ADDRESS
-            .save(deps.storage, &checked_hyperlane_transfer_contract_address)?;
+            .save(deps.storage, &checked_hyperlane_transfer_contract)?;
 
         // Insert the hyperlane transfer adapter contract address into the blocked contract addresses map
         BLOCKED_CONTRACT_ADDRESSES.save(
             deps.storage,
-            &checked_hyperlane_transfer_contract_address,
+            &checked_hyperlane_transfer_contract.address,
             &(),
         )?;
 
@@ -118,7 +127,7 @@ pub fn instantiate(
             .add_attribute("action", "add_hyperlane_transfer_adapter")
             .add_attribute(
                 "contract_address",
-                &checked_hyperlane_transfer_contract_address,
+                &checked_hyperlane_transfer_contract.address,
             );
     }
 
@@ -137,6 +146,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
+        ExecuteMsg::RegisterTokens { contracts } => register_tokens(deps, env, contracts),
         ExecuteMsg::Receive(msg) => receive_snip20(deps, env, info, msg),
         ExecuteMsg::SwapAndActionWithRecover {
             sent_asset,
@@ -239,6 +249,42 @@ pub fn execute(
             recovery_addr,
         ),
     }
+}
+
+fn register_tokens(
+    deps: DepsMut,
+    env: Env,
+    contracts: Vec<ContractInfo>,
+) -> ContractResult<Response> {
+    let mut response = Response::new();
+
+    let viewing_key = VIEWING_KEY.load(deps.storage)?;
+
+    for contract in contracts.iter() {
+        // Add to storage for later use of code hash
+        REGISTERED_TOKENS.save(deps.storage, contract.address.clone(), contract)?;
+        // register receive, set viewing key, & add attribute
+        response = response
+            .add_attribute("register_token", contract.address.clone())
+            .add_messages(vec![
+                snip20::set_viewing_key_msg(
+                    viewing_key.clone(),
+                    None,
+                    255,
+                    contract.code_hash.clone(),
+                    contract.address.to_string(),
+                )?,
+                snip20::register_receive_msg(
+                    env.contract.code_hash.clone(),
+                    None,
+                    255,
+                    contract.code_hash.clone(),
+                    contract.address.to_string(),
+                )?,
+            ]);
+    }
+
+    Ok(response)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

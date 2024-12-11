@@ -1,5 +1,5 @@
-use cosmwasm_std::{OverflowError, StdError};
-use skip::error::SkipError;
+use cosmwasm_std::{Addr, OverflowError, StdError};
+use secret_skip::error::SkipError;
 use thiserror::Error;
 
 pub type ContractResult<T> = core::result::Result<T, ContractError>;
@@ -93,4 +93,10 @@ pub enum ContractError {
 
     #[error("Native Coin Not Supported")]
     NativeCoinNotSupported,
+
+    #[error("Invalid Snip20 Sender")]
+    InvalidSnip20Sender,
+
+    #[error("Snip20 Token Not Registered {0}")]
+    TokenNotRegistered(Addr),
 }

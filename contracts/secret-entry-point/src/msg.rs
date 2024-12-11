@@ -1,11 +1,17 @@
-use crate::asset::Asset;
-use skip::{
+use secret_skip::{
+    asset::Asset,
     ibc::IbcInfo,
-    swap::{Swap, SwapExactAssetOut, SwapVenue},
+    swap::{Swap, SwapExactAssetOut},
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, HexBinary, Uint128};
+use cosmwasm_std::{Addr, Binary, ContractInfo, HexBinary, Uint128};
+
+#[cw_serde]
+pub struct SwapVenue {
+    pub name: String,
+    pub adapter_contract: ContractInfo,
+}
 
 #[cw_serde]
 pub struct Snip20ReceiveMsg {
@@ -32,8 +38,9 @@ pub struct MigrateMsg {}
 #[cw_serde]
 pub struct InstantiateMsg {
     pub swap_venues: Vec<SwapVenue>,
-    pub ibc_transfer_contract_address: String,
-    pub hyperlane_transfer_contract_address: Option<String>,
+    pub ibc_transfer_contract: ContractInfo,
+    pub hyperlane_transfer_contract: Option<ContractInfo>,
+    pub viewing_key: String,
 }
 
 ///////////////
@@ -45,6 +52,9 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
+    RegisterTokens {
+        contracts: Vec<ContractInfo>,
+    },
     Receive(Snip20ReceiveMsg),
     SwapAndActionWithRecover {
         sent_asset: Option<Asset>,

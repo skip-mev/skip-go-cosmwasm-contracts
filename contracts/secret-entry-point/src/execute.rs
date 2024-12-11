@@ -1,29 +1,33 @@
 use std::vec;
 
 use crate::{
-    asset::Asset,
     error::{ContractError, ContractResult},
+    hyperlane::{ExecuteMsg as HplExecuteMsg, ExecuteMsg::HplTransfer},
     msg::{Action, Affiliate, ExecuteMsg, Snip20HookMsg, Snip20ReceiveMsg},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
         BLOCKED_CONTRACT_ADDRESSES, HYPERLANE_TRANSFER_CONTRACT_ADDRESS,
         IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE,
-        SWAP_VENUE_MAP,
+        REGISTERED_TOKENS, SWAP_VENUE_MAP, VIEWING_KEY,
     },
 };
+
+use secret_skip::asset::Asset;
+
+use secret_toolkit::snip20;
+
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
-    Response, SubMsg, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, ContractInfo, CosmosMsg, DepsMut, Env,
+    MessageInfo, Response, StdError, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20Coin;
-// use cw_utils::one_coin;
-use skip::{
-    hyperlane::{ExecuteMsg as HplExecuteMsg, ExecuteMsg::HplTransfer},
+use secret_skip::{
+    error::SkipError,
     ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
-    swap::{
-        validate_swap_operations, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg, Swap,
-        SwapExactAssetOut,
-    },
+    swap::{validate_swap_operations, Swap, SwapExactAssetOut},
+};
+use skip_go_swap_adapter_shade_protocol::msg::{
+    Cw20HookMsg as SwapHookMsg, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
 };
 
 //////////////////////////
@@ -148,7 +152,7 @@ pub fn execute_swap_and_action(
             match &sent_asset {
                 Asset::Cw20(cw20) => {
                     if cw20.address != info.sender.to_string() {
-                        return Err(ContractError::InvalidCw20Sender);
+                        return Err(ContractError::InvalidSnip20Sender);
                     }
                 }
                 Asset::Native(_) => {
@@ -168,9 +172,22 @@ pub fn execute_swap_and_action(
         return Err(ContractError::Timeout);
     }
 
+    let viewing_key = VIEWING_KEY.load(deps.storage)?;
+    let min_asset_contract =
+        REGISTERED_TOKENS.load(deps.storage, deps.api.addr_validate(min_asset.denom())?)?;
+
     // Save the current out asset amount to storage as the pre swap out asset amount
-    let pre_swap_out_asset_amount =
-        get_current_asset_available(&deps, &env, min_asset.denom())?.amount();
+    let pre_swap_out_asset_amount = match snip20::balance_query(
+        deps.querier,
+        env.contract.address.to_string(),
+        viewing_key,
+        255,
+        min_asset_contract.code_hash.clone(),
+        min_asset_contract.address.to_string(),
+    ) {
+        Ok(balance) => balance.amount,
+        Err(e) => return Err(ContractError::Std(e)),
+    };
     PRE_SWAP_OUT_ASSET_AMOUNT.save(deps.storage, &pre_swap_out_asset_amount)?;
 
     // Already validated at entrypoints (both direct and snip20_receive)
@@ -193,22 +210,31 @@ pub fn execute_swap_and_action(
 
     if let Swap::SmartSwapExactAssetIn(smart_swap) = &mut user_swap {
         if smart_swap.routes.is_empty() {
-            return Err(ContractError::Skip(skip::error::SkipError::RoutesEmpty));
+            return Err(ContractError::Skip(SkipError::RoutesEmpty));
         }
 
-        match smart_swap.amount().cmp(&remaining_asset.amount()) {
+        match smart_swap
+            .amount()
+            .cmp(&remaining_asset.amount().u128().into())
+        {
             std::cmp::Ordering::Equal => {}
             std::cmp::Ordering::Less => {
-                let diff = remaining_asset.amount().checked_sub(smart_swap.amount())?;
+                let diff = remaining_asset
+                    .amount()
+                    .checked_sub(smart_swap.amount().u128().into())?;
 
                 // If the total swap in amount is less than remaining asset,
                 // adjust the routes to match the remaining asset amount
                 let largest_route_idx = smart_swap.largest_route_index()?;
 
-                smart_swap.routes[largest_route_idx].offer_asset.add(diff)?;
+                smart_swap.routes[largest_route_idx]
+                    .offer_asset
+                    .add(diff.u128().into())?;
             }
             std::cmp::Ordering::Greater => {
-                let diff = smart_swap.amount().checked_sub(remaining_asset.amount())?;
+                let diff = smart_swap
+                    .amount()
+                    .checked_sub(remaining_asset.amount().u128().into())?;
 
                 // If the total swap in amount is greater than remaining asset,
                 // adjust the routes to match the remaining asset amount
@@ -221,6 +247,7 @@ pub fn execute_swap_and_action(
 
     let user_swap_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
+        code_hash: env.contract.code_hash.clone(),
         msg: to_binary(&ExecuteMsg::UserSwap {
             swap: user_swap,
             min_asset: min_asset.clone(),
@@ -238,6 +265,7 @@ pub fn execute_swap_and_action(
     // Create the post swap action message
     let post_swap_action_msg = WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
+        code_hash: env.contract.code_hash.clone(),
         msg: to_binary(&ExecuteMsg::PostSwapAction {
             min_asset,
             timeout_timestamp,
@@ -345,9 +373,25 @@ pub fn execute_user_swap(
 
             // Create the affiliate_fee_asset
             let affiliate_fee_asset = Asset::new(deps.api, min_asset.denom(), affiliate_fee_amount);
+            let affiliate_fee_contract = REGISTERED_TOKENS.load(
+                deps.storage,
+                deps.api.addr_validate(affiliate_fee_asset.denom())?,
+            )?;
 
             // Create the affiliate fee message
-            let affiliate_fee_msg = affiliate_fee_asset.transfer(&affiliate.address);
+            // let affiliate_fee_msg = affiliate_fee_asset.transfer(&affiliate.address);
+            let affiliate_fee_msg = match snip20::transfer_msg(
+                affiliate.address.to_string(),
+                affiliate_fee_asset.amount(),
+                None,
+                None,
+                255,
+                affiliate_fee_contract.code_hash.clone(),
+                affiliate_fee_contract.address.to_string(),
+            ) {
+                Ok(msg) => msg,
+                Err(e) => return Err(ContractError::Std(e)),
+            };
 
             // Add the affiliate fee message and attributes to the response
             affiliate_response = affiliate_response
@@ -358,6 +402,11 @@ pub fn execute_user_swap(
         }
     }
 
+    let remaining_asset_contract = REGISTERED_TOKENS.load(
+        deps.storage,
+        deps.api.addr_validate(remaining_asset.denom())?,
+    )?;
+
     // Create the user swap message
     match swap {
         Swap::SwapExactAssetIn(swap) => {
@@ -365,17 +414,35 @@ pub fn execute_user_swap(
             validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
-            let user_swap_adapter_contract_address =
+            let user_swap_adapter_contract =
                 SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
 
             // Create the user swap message args
-            let user_swap_msg_args: SwapExecuteMsg = swap.into();
+            let user_swap_msg_args = SwapHookMsg::Swap {
+                operations: swap.operations,
+            };
 
             // Create the user swap message
+            /*
             let user_swap_msg = remaining_asset.into_wasm_msg(
                 user_swap_adapter_contract_address.to_string(),
                 to_binary(&user_swap_msg_args)?,
             )?;
+            */
+
+            let user_swap_msg = match snip20::send_msg(
+                user_swap_adapter_contract.address.to_string(),
+                remaining_asset.amount(),
+                Some(to_binary(&user_swap_msg_args)?),
+                None,
+                None,
+                255,
+                remaining_asset_contract.code_hash.clone(),
+                remaining_asset_contract.address.to_string(),
+            ) {
+                Ok(msg) => msg,
+                Err(e) => return Err(ContractError::Std(e)),
+            };
 
             response = response
                 .add_message(user_swap_msg)
@@ -386,19 +453,15 @@ pub fn execute_user_swap(
             validate_swap_operations(&swap.operations, remaining_asset.denom(), min_asset.denom())?;
 
             // Get swap adapter contract address from venue name
-            let user_swap_adapter_contract_address =
+            let user_swap_adapter_contract =
                 SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
 
             // Calculate the swap asset out by adding the min asset amount to the total affiliate fee amount
             min_asset.add(total_affiliate_fee_amount)?;
 
             // Query the swap adapter to get the asset in needed to obtain the min asset plus affiliates
-            let user_swap_asset_in = query_swap_asset_in(
-                &deps,
-                &user_swap_adapter_contract_address,
-                &swap,
-                &min_asset,
-            )?;
+            let user_swap_asset_in =
+                query_swap_asset_in(&deps, &user_swap_adapter_contract, &swap, &min_asset)?;
 
             // Verify the user swap in denom is the same as the denom received from the message to the contract
             if user_swap_asset_in.denom() != remaining_asset.denom() {
@@ -422,8 +485,25 @@ pub fn execute_user_swap(
                 // Get the refund amount
                 let refund_amount = remaining_asset.amount();
 
+                let remaining_asset_contract = REGISTERED_TOKENS.load(
+                    deps.storage,
+                    deps.api.addr_validate(remaining_asset.denom())?,
+                )?;
                 // Create the refund message
-                let refund_msg = remaining_asset.transfer(&to_address);
+                // let refund_msg = remaining_asset.transfer(&to_address);
+                let refund_msg = match snip20::send_msg(
+                    to_address.to_string(),
+                    remaining_asset.amount(),
+                    None,
+                    None,
+                    None,
+                    255,
+                    remaining_asset_contract.code_hash.clone(),
+                    remaining_asset_contract.address.to_string(),
+                ) {
+                    Ok(msg) => msg,
+                    Err(e) => return Err(ContractError::Std(e)),
+                };
 
                 // Add the refund message and attributes to the response
                 response = response
@@ -434,13 +514,28 @@ pub fn execute_user_swap(
             }
 
             // Create the user swap message args
-            let user_swap_msg_args: SwapExecuteMsg = swap.into();
+            let user_swap_msg_args = swap;
 
             // Create the user swap message
+            /*
             let user_swap_msg = user_swap_asset_in.into_wasm_msg(
-                user_swap_adapter_contract_address.to_string(),
+                user_swap_adapter_contract.address.to_string(),
                 to_binary(&user_swap_msg_args)?,
             )?;
+            */
+            let user_swap_msg = match snip20::send_msg(
+                user_swap_adapter_contract.address.to_string(),
+                remaining_asset.amount(),
+                Some(to_binary(&user_swap_msg_args)?),
+                None,
+                None,
+                255,
+                remaining_asset_contract.code_hash.clone(),
+                remaining_asset_contract.address.to_string(),
+            ) {
+                Ok(msg) => msg,
+                Err(e) => return Err(ContractError::Std(e)),
+            };
 
             response = response
                 .add_message(user_swap_msg)
@@ -456,19 +551,34 @@ pub fn execute_user_swap(
                 )?;
 
                 // Get swap adapter contract address from venue name
-                let user_swap_adapter_contract_address =
+                let user_swap_adapter_contract =
                     SWAP_VENUE_MAP.load(deps.storage, &swap.swap_venue_name)?;
 
                 // Create the user swap message args
-                let user_swap_msg_args = SwapExecuteMsg::Swap {
+                let user_swap_msg_args = SwapHookMsg::Swap {
                     operations: route.operations,
                 };
 
                 // Create the user swap message
+                /*
                 let user_swap_msg = route.offer_asset.into_wasm_msg(
                     user_swap_adapter_contract_address.to_string(),
                     to_binary(&user_swap_msg_args)?,
                 )?;
+                */
+                let user_swap_msg = match snip20::send_msg(
+                    user_swap_adapter_contract.address.to_string(),
+                    remaining_asset.amount(),
+                    Some(to_binary(&user_swap_msg_args)?),
+                    None,
+                    None,
+                    255,
+                    remaining_asset_contract.code_hash.clone(),
+                    remaining_asset_contract.address.to_string(),
+                ) {
+                    Ok(msg) => msg,
+                    Err(e) => return Err(ContractError::Std(e)),
+                };
 
                 response = response
                     .add_message(user_swap_msg)
@@ -510,16 +620,28 @@ pub fn execute_post_swap_action(
 
     // Get contract balance of min out asset post swap
     // for fee deduction and transfer out amount enforcement
-    let post_swap_out_asset = get_current_asset_available(&deps, &env, min_asset.denom())?;
+    // let post_swap_out_asset = get_current_asset_available(&deps, &env, min_asset.denom())?;
+    let min_asset_contract =
+        REGISTERED_TOKENS.load(deps.storage, deps.api.addr_validate(min_asset.denom())?)?;
+    let viewing_key = VIEWING_KEY.load(deps.storage)?;
+    let post_swap_out_asset_amount = match snip20::balance_query(
+        deps.querier,
+        env.contract.address.to_string(),
+        viewing_key,
+        255,
+        min_asset_contract.code_hash.clone(),
+        min_asset_contract.address.to_string(),
+    ) {
+        Ok(balance) => balance.amount,
+        Err(e) => return Err(ContractError::Std(e)),
+    };
 
     // Set the transfer out asset to the post swap out asset amount minus the pre swap out asset amount
     // Since we only want to transfer out the amount received from the swap
     let transfer_out_asset = Asset::new(
         deps.api,
         min_asset.denom(),
-        post_swap_out_asset
-            .amount()
-            .checked_sub(pre_swap_out_asset_amount)?,
+        post_swap_out_asset_amount - pre_swap_out_asset_amount,
     );
 
     // Error if the contract balance is less than the min asset out amount
@@ -571,10 +693,13 @@ pub fn execute_action(
     // Validate and unwrap the sent asset
     let sent_asset = match sent_asset {
         Some(sent_asset) => {
-            sent_asset.validate(&deps, &env, &info)?;
+            // sent_asset.validate(&deps, &env, &info)?;
+            // TODO validate
             sent_asset
         }
-        None => one_coin(&info)?.into(),
+        None => {
+            return Err(ContractError::NativeCoinNotSupported);
+        }
     };
 
     // Error if the current block time is greater than the timeout timestamp
@@ -655,6 +780,7 @@ pub fn execute_action_with_recover(
     let sub_msg = SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
+            code_hash: env.contract.code_hash.to_string(),
             msg: to_binary(&ExecuteMsg::Action {
                 sent_asset,
                 timeout_timestamp,
@@ -690,7 +816,21 @@ fn validate_and_dispatch_action(
             deps.api.addr_validate(&to_address)?;
 
             // Create the transfer message
-            let transfer_msg = action_asset.transfer(&to_address);
+            // let transfer_msg = action_asset.transfer(&to_address);
+            let action_asset_contract = REGISTERED_TOKENS
+                .load(deps.storage, deps.api.addr_validate(action_asset.denom())?)?;
+            let transfer_msg = match snip20::transfer_msg(
+                to_address.to_string(),
+                action_asset.amount(),
+                None,
+                None,
+                255,
+                action_asset_contract.code_hash.clone(),
+                action_asset_contract.address.to_string(),
+            ) {
+                Ok(msg) => msg,
+                Err(e) => return Err(ContractError::Std(e)),
+            };
 
             // Add the transfer message to the response
             response = response
@@ -702,9 +842,12 @@ fn validate_and_dispatch_action(
             deps.api.addr_validate(&ibc_info.recover_address)?;
 
             let transfer_out_coin = match action_asset {
-                Asset::Native(coin) => coin,
+                Asset::Native(coin) => {
+                    return Err(ContractError::NativeCoinNotSupported);
+                }
                 _ => return Err(ContractError::NonNativeIbcTransfer),
             };
+            todo!("Implement IBC Transfer for Snip20");
 
             // Create the IBC transfer message
             let ibc_transfer_msg: IbcTransferExecuteMsg = IbcTransfer {
@@ -715,11 +858,12 @@ fn validate_and_dispatch_action(
             .into();
 
             // Get the IBC transfer adapter contract address
-            let ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+            let ibc_transfer_contract = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
 
             // Send the IBC transfer by calling the IBC transfer contract
             let ibc_transfer_msg = WasmMsg::Execute {
-                contract_addr: ibc_transfer_contract_address.to_string(),
+                contract_addr: ibc_transfer_contract.address.to_string(),
+                code_hash: ibc_transfer_contract.code_hash.clone(),
                 msg: to_binary(&ibc_transfer_msg)?,
                 funds: vec![transfer_out_coin],
             };
@@ -771,12 +915,12 @@ fn validate_and_dispatch_action(
             };
 
             // Get the Hyperlane transfer adapter contract address
-            let hpl_transfer_contract_address =
-                HYPERLANE_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+            let hpl_transfer_contract = HYPERLANE_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
 
             // Send the Hyperlane transfer by calling the Hyperlane transfer contract
             let hpl_transfer_msg = WasmMsg::Execute {
-                contract_addr: hpl_transfer_contract_address.to_string(),
+                contract_addr: hpl_transfer_contract.address.to_string(),
+                code_hash: hpl_transfer_contract.code_hash,
                 msg: to_binary(&hpl_transfer_msg)?,
                 funds: vec![transfer_out_coin],
             };
@@ -832,11 +976,11 @@ fn handle_ibc_transfer_fees(
     // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
     if let Some(ibc_fee_coin) = ibc_fee_coin {
         // Get the ibc transfer adapter contract address
-        let ibc_transfer_contract_address = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+        let ibc_transfer_contract = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
 
         // Create the ibc fee bank send message
         let ibc_fee_msg = BankMsg::Send {
-            to_address: ibc_transfer_contract_address.to_string(),
+            to_address: ibc_transfer_contract.address.to_string(),
             amount: vec![ibc_fee_coin],
         };
 
@@ -867,13 +1011,12 @@ fn verify_and_create_fee_swap_msg(
     )?;
 
     // Get swap adapter contract address from venue name
-    let fee_swap_adapter_contract_address =
-        SWAP_VENUE_MAP.load(deps.storage, &fee_swap.swap_venue_name)?;
+    let fee_swap_adapter_contract = SWAP_VENUE_MAP.load(deps.storage, &fee_swap.swap_venue_name)?;
 
     // Query the swap adapter to get the asset in needed for the fee swap
     let fee_swap_asset_in = query_swap_asset_in(
         deps,
-        &fee_swap_adapter_contract_address,
+        &fee_swap_adapter_contract,
         fee_swap,
         &ibc_fee_coin.clone().into(),
     )?;
@@ -888,13 +1031,36 @@ fn verify_and_create_fee_swap_msg(
     remaining_asset.sub(fee_swap_asset_in.amount())?;
 
     // Create the fee swap message args
-    let fee_swap_msg_args: SwapExecuteMsg = fee_swap.clone().into();
+    let fee_swap_msg_args = fee_swap.clone();
+
+    let fee_swap_asset_contract = REGISTERED_TOKENS.load(
+        deps.storage,
+        deps.api.addr_validate(fee_swap_asset_in.denom())?,
+    )?;
 
     // Create the fee swap message
+    /*
     let fee_swap_msg = fee_swap_asset_in.into_wasm_msg(
-        fee_swap_adapter_contract_address.to_string(),
+        fee_swap_adapter_contract.address.to_string(),
         to_binary(&fee_swap_msg_args)?,
     )?;
+    */
+    let fee_swap_msg = match snip20::send_msg(
+        fee_swap_adapter_contract.address.to_string(),
+        remaining_asset.amount(),
+        Some(to_binary(&fee_swap_msg_args)?),
+        None,
+        None,
+        255,
+        fee_swap_asset_contract.code_hash.clone(),
+        fee_swap_asset_contract.address.to_string(),
+    ) {
+        Ok(msg) => match msg {
+            CosmosMsg::Wasm(wasm_msg) => wasm_msg,
+            _ => return Err(ContractError::Std(StdError::generic_err("Invalid WasmMsg"))),
+        },
+        Err(e) => return Err(ContractError::Std(e)),
+    };
 
     Ok(fee_swap_msg)
 }
@@ -927,15 +1093,16 @@ fn verify_and_calculate_affiliate_fee_amount(
 // swap asset denom from the message. Returns the swap asset in.
 fn query_swap_asset_in(
     deps: &DepsMut,
-    swap_adapter_contract_address: &Addr,
+    swap_adapter_contract: &ContractInfo,
     swap: &SwapExactAssetOut,
     swap_asset_out: &Asset,
 ) -> ContractResult<Asset> {
     // Query the swap adapter to get the asset in needed for the fee swap
     let fee_swap_asset_in: Asset = deps.querier.query_wasm_smart(
-        swap_adapter_contract_address,
-        &SwapQueryMsg::SimulateSwapExactAssetOut {
-            asset_out: swap_asset_out.clone(),
+        swap_adapter_contract.address.clone(),
+        swap_adapter_contract.code_hash.clone(),
+        &SwapQueryMsg::SimulateSwapExactAssetIn {
+            asset_in: swap_asset_out.clone(),
             swap_operations: swap.operations.clone(),
         },
     )?;
