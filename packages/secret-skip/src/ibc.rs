@@ -67,51 +67,19 @@ pub struct IbcFee {
     pub timeout_fee: Vec<Coin>,
 }
 
-/*
-// Converts an IbcFee struct to a neutron_proto::neutron::feerefunder Fee
-impl From<IbcFee> for NeutronFee {
-    fn from(ibc_fee: IbcFee) -> Self {
-        NeutronFee {
-            recv_fee: ibc_fee
-                .recv_fee
-                .iter()
-                .map(|coin| ProtoCoin(coin.clone()).into())
-                .collect(),
-            ack_fee: ibc_fee
-                .ack_fee
-                .iter()
-                .map(|coin| ProtoCoin(coin.clone()).into())
-                .collect(),
-            timeout_fee: ibc_fee
-                .timeout_fee
-                .iter()
-                .map(|coin| ProtoCoin(coin.clone()).into())
-                .collect(),
-        }
-    }
-}
-*/
-
-/*
 // Converts an IbcFee struct to a cosmwasm_std::Coins struct
 // Must be TryFrom since adding the ibc_fees can overflow.
-impl TryFrom<IbcFee> for Coins {
+impl TryFrom<IbcFee> for Vec<Coin> {
     type Error = StdError;
 
     fn try_from(ibc_fee: IbcFee) -> Result<Self, Self::Error> {
-        let mut ibc_fees = Coins::default();
-
-        [ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
+        Ok([ibc_fee.recv_fee, ibc_fee.ack_fee, ibc_fee.timeout_fee]
             .into_iter()
             .flatten()
-            .try_for_each(|coin| ibc_fees.add(coin))?;
-
-        Ok(ibc_fees)
+            .collect())
     }
 }
-*/
 
-/*
 impl IbcFee {
     // one_coin aims to mimic the behavior of cw_utls::one_coin,
     // returing the single coin in the IbcFee struct if it exists,
@@ -120,16 +88,15 @@ impl IbcFee {
     // one_coin is used because the entry_point contract only supports
     // the handling of a single denomination for IBC fees.
     pub fn one_coin(&self) -> Result<Coin, SkipError> {
-        let ibc_fees_map: Coins = self.clone().try_into()?;
+        let ibc_fees: Vec<Coin> = self.clone().try_into()?;
 
-        if ibc_fees_map.len() != 1 {
+        if ibc_fees.len() != 1 {
             return Err(SkipError::IbcFeesNotOneCoin);
         }
 
-        Ok(ibc_fees_map.to_vec().first().unwrap().clone())
+        Ok(ibc_fees.first().unwrap().clone())
     }
 }
-*/
 
 // The IbcInfo struct defines the information for an IBC transfer standardized across all IBC Transfer Adapter contracts.
 #[cw_serde]

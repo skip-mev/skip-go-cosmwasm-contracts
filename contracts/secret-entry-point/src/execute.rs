@@ -841,31 +841,52 @@ fn validate_and_dispatch_action(
             // Validates recover address, errors if invalid
             deps.api.addr_validate(&ibc_info.recover_address)?;
 
-            let transfer_out_coin = match action_asset {
+            let transfer_out_contract = match action_asset {
                 Asset::Native(coin) => {
                     return Err(ContractError::NativeCoinNotSupported);
                 }
-                _ => return Err(ContractError::NonNativeIbcTransfer),
+                _ => REGISTERED_TOKENS
+                    .load(deps.storage, deps.api.addr_validate(action_asset.denom())?)?,
             };
-            todo!("Implement IBC Transfer for Snip20");
 
             // Create the IBC transfer message
+            // TODO send ICS20 message
+            /*
             let ibc_transfer_msg: IbcTransferExecuteMsg = IbcTransfer {
                 info: ibc_info,
-                coin: transfer_out_coin.clone(),
+                coin: action_asset.clone(),
                 timeout_timestamp,
             }
             .into();
+            */
 
             // Get the IBC transfer adapter contract address
             let ibc_transfer_contract = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
 
             // Send the IBC transfer by calling the IBC transfer contract
+            /*
             let ibc_transfer_msg = WasmMsg::Execute {
                 contract_addr: ibc_transfer_contract.address.to_string(),
                 code_hash: ibc_transfer_contract.code_hash.clone(),
                 msg: to_binary(&ibc_transfer_msg)?,
-                funds: vec![transfer_out_coin],
+                funds: vec![],
+            };*/
+
+            let ibc_transfer_msg = match snip20::send_msg(
+                ibc_transfer_contract.address.to_string(),
+                action_asset.amount(),
+                None, //Some(to_binary(&fee_swap_msg_args)?),
+                None,
+                None,
+                255,
+                transfer_out_contract.code_hash.clone(),
+                transfer_out_contract.address.to_string(),
+            ) {
+                Ok(msg) => match msg {
+                    CosmosMsg::Wasm(wasm_msg) => wasm_msg,
+                    _ => return Err(ContractError::Std(StdError::generic_err("Invalid WasmMsg"))),
+                },
+                Err(e) => return Err(ContractError::Std(e)),
             };
 
             // Add the IBC transfer message to the response
@@ -885,8 +906,16 @@ fn validate_and_dispatch_action(
                 return Err(ContractError::ContractCallAddressBlocked);
             }
 
+            let action_asset_contract = REGISTERED_TOKENS
+                .load(deps.storage, deps.api.addr_validate(action_asset.denom())?)?;
+
             // Create the contract call message
-            let contract_call_msg = action_asset.into_wasm_msg(contract_address, msg)?;
+            let contract_call_msg = WasmMsg::Execute {
+                contract_addr: action_asset_contract.address.to_string(),
+                code_hash: action_asset_contract.code_hash,
+                msg: to_binary(&msg)?,
+                funds: vec![],
+            };
 
             // Add the contract call message to the response
             response = response
