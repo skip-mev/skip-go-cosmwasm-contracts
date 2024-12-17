@@ -1,17 +1,17 @@
 use crate::error::SkipError;
 // use astroport::asset::{Asset as AstroportAsset, AssetInfo};
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, OverflowError,
-    OverflowOperation, Uint128, WasmMsg,
-};
-use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
-use cw_utils::{nonpayable, one_coin};
-/*
-use white_whale_std::pool_network::asset::{
-    Asset as WhiteWhaleAsset, AssetInfo as WhiteWhaleAssetInfo,
-};
-*/
+use cosmwasm_std::{Addr, Api, Binary, Coin, OverflowError, OverflowOperation, Uint128};
+use cw20::{Cw20Coin, Cw20CoinVerified};
+
+#[cw_serde]
+pub struct Snip20ReceiveMsg {
+    pub sender: Addr,
+    pub from: Addr,
+    pub amount: Uint128,
+    pub memo: Option<String>,
+    pub msg: Option<Binary>,
+}
 
 #[cw_serde]
 pub enum Asset {

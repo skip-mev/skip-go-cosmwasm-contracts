@@ -1,5 +1,5 @@
 use secret_skip::{
-    asset::Asset,
+    asset::{Asset, Snip20ReceiveMsg},
     ibc::IbcInfo,
     swap::{Swap, SwapExactAssetOut},
 };
@@ -11,15 +11,6 @@ use cosmwasm_std::{Addr, Binary, ContractInfo, HexBinary, Uint128};
 pub struct SwapVenue {
     pub name: String,
     pub adapter_contract: ContractInfo,
-}
-
-#[cw_serde]
-pub struct Snip20ReceiveMsg {
-    pub sender: Addr,
-    pub from: Addr,
-    pub amount: Uint128,
-    pub memo: Option<String>,
-    pub msg: Option<Binary>,
 }
 
 ///////////////

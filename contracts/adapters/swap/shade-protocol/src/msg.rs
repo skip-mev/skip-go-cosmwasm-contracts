@@ -1,6 +1,9 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, ContractInfo, Uint128};
-use secret_skip::{asset::Asset, swap::SwapOperation};
+use secret_skip::{
+    asset::{Asset, Snip20ReceiveMsg},
+    swap::SwapOperation,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -50,12 +53,3 @@ pub struct SwapOperation {
     pub interface: Option<Binary>,
 }
 */
-
-#[cw_serde]
-pub struct Snip20ReceiveMsg {
-    pub sender: Addr,
-    pub from: Addr,
-    pub amount: Uint128,
-    pub memo: Option<String>,
-    pub msg: Option<Binary>,
-}

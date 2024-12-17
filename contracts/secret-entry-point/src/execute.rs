@@ -3,7 +3,7 @@ use std::vec;
 use crate::{
     error::{ContractError, ContractResult},
     hyperlane::{ExecuteMsg as HplExecuteMsg, ExecuteMsg::HplTransfer},
-    msg::{Action, Affiliate, ExecuteMsg, Snip20HookMsg, Snip20ReceiveMsg},
+    msg::{Action, Affiliate, ExecuteMsg, Snip20HookMsg},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
         BLOCKED_CONTRACT_ADDRESSES, HYPERLANE_TRANSFER_CONTRACT_ADDRESS,
@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-use secret_skip::asset::Asset;
+use secret_skip::asset::{Asset, Snip20ReceiveMsg};
 
 use secret_toolkit::snip20;
 

@@ -1,9 +1,9 @@
-use crate::{error::SkipError, proto_coin::ProtoCoin};
+use crate::{asset::Snip20ReceiveMsg, error::SkipError, proto_coin::ProtoCoin};
 
 use std::convert::From;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Coin, StdError};
+use cosmwasm_std::{Addr, Binary, Coin, ContractInfo, StdError, Uint128};
 // use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
 
 ///////////////
@@ -13,7 +13,8 @@ use cosmwasm_std::{Coin, StdError};
 // The MigrateMsg struct defines the migration parameters used.
 #[cw_serde]
 pub struct MigrateMsg {
-    pub entry_point_contract_address: String,
+    pub entry_point_contract: ContractInfo,
+    pub ics20_contract: ContractInfo,
 }
 ///////////////////
 /// INSTANTIATE ///
@@ -22,7 +23,8 @@ pub struct MigrateMsg {
 // The InstantiateMsg struct defines the initialization parameters for the IBC Transfer Adapter contracts.
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub entry_point_contract_address: String,
+    pub entry_point_contract: ContractInfo,
+    pub ics20_contract: ContractInfo,
 }
 
 ///////////////
@@ -35,6 +37,18 @@ pub enum ExecuteMsg {
     IbcTransfer {
         info: IbcInfo,
         coin: Coin,
+        timeout_timestamp: u64,
+    },
+    RegisterTokens {
+        contracts: Vec<ContractInfo>,
+    },
+    Receive(Snip20ReceiveMsg),
+}
+
+#[cw_serde]
+pub enum Snip20HookMsg {
+    IbcTransfer {
+        ibc_info: IbcInfo,
         timeout_timestamp: u64,
     },
 }
