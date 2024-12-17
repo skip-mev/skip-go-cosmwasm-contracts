@@ -1,7 +1,4 @@
-use crate::{
-    asset::{Asset, Snip20ReceiveMsg},
-    error::SkipError,
-};
+use crate::{asset::Asset, error::SkipError, snip20::Snip20ReceiveMsg};
 
 use std::{convert::TryFrom, num::ParseIntError};
 

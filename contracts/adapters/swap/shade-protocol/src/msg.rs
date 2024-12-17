@@ -1,9 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, ContractInfo};
-use secret_skip::{
-    asset::{Asset, Snip20ReceiveMsg},
-    swap::SwapOperation,
-};
+use secret_skip::{asset::Asset, snip20::Snip20ReceiveMsg, swap::SwapOperation};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -40,7 +37,7 @@ pub enum QueryMsg {
 }
 
 #[cw_serde]
-pub enum Cw20HookMsg {
+pub enum Snip20HookMsg {
     Swap { operations: Vec<SwapOperation> },
 }
 

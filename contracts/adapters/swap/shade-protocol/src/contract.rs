@@ -9,16 +9,13 @@ use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Binary, ContractInfo, Deps, DepsMut, Env,
     MessageInfo, Response, Uint128, WasmMsg,
 };
-use secret_skip::{
-    asset::{Asset, Snip20ReceiveMsg},
-    swap::SwapOperation,
-};
+use secret_skip::{asset::Asset, snip20::Snip20ReceiveMsg, swap::SwapOperation};
 // use cw2::set_contract_version;
 use cw20::Cw20Coin;
 use secret_toolkit::snip20;
 
 use crate::{
-    msg::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
+    msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, Snip20HookMsg},
     shade_swap_router_msg as shade_router,
 };
 
@@ -135,7 +132,7 @@ pub fn receive_snip20(
 
     match snip20_msg.msg {
         Some(msg) => match from_binary(&msg)? {
-            Cw20HookMsg::Swap { operations } => {
+            Snip20HookMsg::Swap { operations } => {
                 execute_swap(deps, env, info, operations, snip20_msg.amount)
             }
         },
@@ -209,16 +206,23 @@ fn execute_swap(
         None => return Err(ContractError::SwapOperationsEmpty),
     };
 
+    let input_denom_contract = REGISTERED_TOKENS.load(
+        deps.storage,
+        deps.api.addr_validate(&input_denom.to_string())?,
+    )?;
+
     // Get shade router contract from storage
     let shade_router_contract = SHADE_ROUTER_CONTRACT.load(deps.storage)?;
+    println!("PATH {:?}", path);
 
     // Create a response object to return
     Ok(Response::new()
         .add_attribute("action", "execute_swap")
         .add_attribute("action", "dispatch_swaps_and_transfer_back")
         // Swap router execution
-        .add_message(snip20::send_msg(
+        .add_message(snip20::send_msg_with_code_hash(
             shade_router_contract.address.to_string(),
+            Some(shade_router_contract.code_hash),
             input_amount,
             Some(to_binary(&shade_router::InvokeMsg::SwapTokensForExact {
                 path,
@@ -227,9 +231,9 @@ fn execute_swap(
             })?),
             None,
             None,
-            255,
-            shade_router_contract.code_hash,
-            input_denom,
+            0,
+            input_denom_contract.code_hash,
+            input_denom_contract.address.to_string(),
         )?)
         // TransferFundsBack message to self
         .add_message(WasmMsg::Execute {

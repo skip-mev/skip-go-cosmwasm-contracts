@@ -1,4 +1,4 @@
-use crate::{asset::Snip20ReceiveMsg, error::SkipError};
+use crate::{error::SkipError, snip20::Snip20ReceiveMsg};
 
 use std::convert::From;
 
