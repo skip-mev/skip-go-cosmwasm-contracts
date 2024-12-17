@@ -18,7 +18,6 @@ use cosmwasm_std::{
     StdResult,
 };
 use secret_toolkit::snip20;
-// use cw2::set_contract_version;
 
 ///////////////
 /// MIGRATE ///
@@ -34,8 +33,10 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Re
 ///////////////////
 
 // Contract name and version used for migration.
+/*
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+*/
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

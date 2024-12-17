@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, ContractInfo, Uint128};
+use cosmwasm_std::{Addr, ContractInfo};
 use secret_skip::{
     asset::{Asset, Snip20ReceiveMsg},
     swap::SwapOperation,

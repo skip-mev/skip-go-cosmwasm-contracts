@@ -1,30 +1,26 @@
 use crate::{
     error::{ContractError, ContractResult},
-    // skip_error::ContractError,
-    state::{REGISTERED_TOKENS, STATE},
+    state::{
+        ENTRY_POINT_CONTRACT, REGISTERED_TOKENS, SHADE_POOL_CODE_HASH, SHADE_ROUTER_CONTRACT,
+        VIEWING_KEY,
+    },
 };
-use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Binary, ContractInfo, Deps, DepsMut, Env,
     MessageInfo, Response, Uint128, WasmMsg,
 };
-use secret_skip::{asset::Asset, swap::SwapOperation};
+use secret_skip::{
+    asset::{Asset, Snip20ReceiveMsg},
+    swap::SwapOperation,
+};
 // use cw2::set_contract_version;
 use cw20::Cw20Coin;
 use secret_toolkit::snip20;
 
 use crate::{
-    msg::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, Snip20ReceiveMsg},
+    msg::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
     shade_swap_router_msg as shade_router,
 };
-
-#[cw_serde]
-pub struct State {
-    pub entry_point_contract: ContractInfo,
-    pub shade_router_contract: ContractInfo,
-    pub shade_pool_code_hash: String,
-    pub viewing_key: String,
-}
 
 // Contract name and version used for migration.
 /*
@@ -37,7 +33,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 ///////////////
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: State) -> ContractResult<Response> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Response> {
     // Set contract version
     // set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
@@ -49,22 +45,28 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: State) -> ContractResult<Response>
         code_hash: msg.entry_point_contract.code_hash,
     };
 
-    // Store the entry point contract address
-    STATE.save(
-        deps.storage,
-        &State {
-            entry_point_contract: checked_entry_point_contract.clone(),
-            shade_router_contract: msg.shade_router_contract.clone(),
-            shade_pool_code_hash: msg.shade_pool_code_hash.clone(),
-            viewing_key: msg.viewing_key.clone(),
-        },
-    )?;
+    ENTRY_POINT_CONTRACT.save(deps.storage, &checked_entry_point_contract)?;
+
+    let checked_shade_router_contract = ContractInfo {
+        address: deps
+            .api
+            .addr_validate(&msg.shade_router_contract.address.to_string())?,
+        code_hash: msg.shade_router_contract.code_hash,
+    };
+
+    SHADE_ROUTER_CONTRACT.save(deps.storage, &checked_shade_router_contract)?;
+
+    VIEWING_KEY.save(deps.storage, &msg.viewing_key)?;
 
     Ok(Response::new()
         .add_attribute("action", "migrate")
         .add_attribute(
             "entry_point_contract_address",
             checked_entry_point_contract.address.to_string(),
+        )
+        .add_attribute(
+            "shade_router_contract_address",
+            checked_shade_router_contract.address.to_string(),
         ))
 }
 
@@ -77,7 +79,7 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: State,
+    msg: InstantiateMsg,
 ) -> ContractResult<Response> {
     // Set contract version
     // set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -90,16 +92,18 @@ pub fn instantiate(
         code_hash: msg.entry_point_contract.code_hash,
     };
 
-    // Store the entry point contract address
-    STATE.save(
-        deps.storage,
-        &State {
-            entry_point_contract: checked_entry_point_contract.clone(),
-            shade_router_contract: msg.shade_router_contract.clone(),
-            shade_pool_code_hash: msg.shade_pool_code_hash.clone(),
-            viewing_key: msg.viewing_key.clone(),
-        },
-    )?;
+    ENTRY_POINT_CONTRACT.save(deps.storage, &checked_entry_point_contract)?;
+
+    let checked_shade_router_contract = ContractInfo {
+        address: deps
+            .api
+            .addr_validate(&msg.shade_router_contract.address.to_string())?,
+        code_hash: msg.shade_router_contract.code_hash,
+    };
+
+    SHADE_ROUTER_CONTRACT.save(deps.storage, &checked_shade_router_contract)?;
+
+    VIEWING_KEY.save(deps.storage, &msg.viewing_key)?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
@@ -164,7 +168,6 @@ pub fn execute(
         )?),
         // Tokens must be registered before they can be swapped
         ExecuteMsg::RegisterTokens { contracts } => register_tokens(deps, env, contracts),
-        _ => unimplemented!(),
     }
 }
 
@@ -175,20 +178,23 @@ fn execute_swap(
     operations: Vec<SwapOperation>,
     input_amount: Uint128,
 ) -> ContractResult<Response> {
-    // Get contract state from storage
-    let state = STATE.load(deps.storage)?;
+    // Get entry point contract from storage
+    let entry_point_contract = ENTRY_POINT_CONTRACT.load(deps.storage)?;
 
     // Enforce the caller is the entry point contract
-    if info.sender != state.entry_point_contract.address {
+    if info.sender != entry_point_contract.address {
         return Err(ContractError::Unauthorized);
     }
+
+    // Get pool code hash from storage
+    let shade_pool_code_hash = SHADE_POOL_CODE_HASH.load(deps.storage)?;
 
     // Build shade router swap message
     let mut path = vec![];
     for operation in &operations {
         path.push(shade_router::Hop {
             addr: operation.pool.to_string(),
-            code_hash: state.shade_pool_code_hash.clone(),
+            code_hash: shade_pool_code_hash.clone(),
         });
     }
 
@@ -203,13 +209,16 @@ fn execute_swap(
         None => return Err(ContractError::SwapOperationsEmpty),
     };
 
+    // Get shade router contract from storage
+    let shade_router_contract = SHADE_ROUTER_CONTRACT.load(deps.storage)?;
+
     // Create a response object to return
     Ok(Response::new()
         .add_attribute("action", "execute_swap")
         .add_attribute("action", "dispatch_swaps_and_transfer_back")
         // Swap router execution
         .add_message(snip20::send_msg(
-            state.shade_router_contract.address.to_string(),
+            shade_router_contract.address.to_string(),
             input_amount,
             Some(to_binary(&shade_router::InvokeMsg::SwapTokensForExact {
                 path,
@@ -219,7 +228,7 @@ fn execute_swap(
             None,
             None,
             255,
-            state.shade_router_contract.code_hash,
+            shade_router_contract.code_hash,
             input_denom,
         )?)
         // TransferFundsBack message to self
@@ -227,7 +236,7 @@ fn execute_swap(
             contract_addr: env.contract.address.to_string(),
             code_hash: env.contract.code_hash,
             msg: to_binary(&ExecuteMsg::TransferFundsBack {
-                swapper: state.entry_point_contract.address,
+                swapper: entry_point_contract.address,
                 return_denom,
             })?,
             funds: vec![],
@@ -241,7 +250,7 @@ fn register_tokens(
 ) -> ContractResult<Response> {
     let mut response = Response::new();
 
-    let state = STATE.load(deps.storage)?;
+    let viewing_key = VIEWING_KEY.load(deps.storage)?;
 
     for contract in contracts.iter() {
         // Add to storage for later use of code hash
@@ -251,7 +260,7 @@ fn register_tokens(
             .add_attribute("register_token", contract.address.clone())
             .add_messages(vec![
                 snip20::set_viewing_key_msg(
-                    state.viewing_key.clone(),
+                    viewing_key.clone(),
                     None,
                     255,
                     contract.code_hash.clone(),
@@ -282,12 +291,6 @@ pub fn execute_transfer_funds_back(
         return Err(ContractError::Unauthorized);
     }
 
-    // load state from storage
-    let state = match STATE.load(deps.storage) {
-        Ok(state) => state,
-        Err(e) => return Err(ContractError::Std(e)),
-    };
-
     // Validate return_denom
     let return_denom = match deps.api.addr_validate(&return_denom) {
         Ok(addr) => addr,
@@ -300,10 +303,12 @@ pub fn execute_transfer_funds_back(
         Err(_) => return Err(ContractError::InvalidSnip20Coin),
     };
 
+    let viewing_key = VIEWING_KEY.load(deps.storage)?;
+
     let balance = match snip20::balance_query(
         deps.querier,
         env.contract.address.to_string(),
-        state.viewing_key,
+        viewing_key,
         255,
         token_contract.code_hash.clone(),
         token_contract.address.to_string(),
@@ -312,8 +317,10 @@ pub fn execute_transfer_funds_back(
         Err(e) => return Err(ContractError::Std(e)),
     };
 
+    let entry_point_contract = ENTRY_POINT_CONTRACT.load(deps.storage)?;
+
     let transfer_msg = match snip20::send_msg(
-        state.entry_point_contract.address.to_string(),
+        entry_point_contract.address.to_string(),
         balance.amount,
         None,
         None,
@@ -346,7 +353,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             asset_in,
             swap_operations,
         )?),
-        _ => unimplemented!(),
     }
     .map_err(From::from)
 }
@@ -380,7 +386,9 @@ fn simulate_swap_exact_asset_in(
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
     // Load state from storage
-    let state = STATE.load(deps.storage)?;
+    let shade_pool_code_hash = SHADE_POOL_CODE_HASH.load(deps.storage)?;
+    let shade_router_contract = SHADE_ROUTER_CONTRACT.load(deps.storage)?;
+
     // Get contract data for asset_in
     let asset_in_contract =
         REGISTERED_TOKENS.load(deps.storage, deps.api.addr_validate(asset_in.denom())?)?;
@@ -394,13 +402,13 @@ fn simulate_swap_exact_asset_in(
     for operation in swap_operations.iter() {
         path.push(shade_router::Hop {
             addr: operation.pool.to_string(),
-            code_hash: state.shade_pool_code_hash.clone(),
+            code_hash: shade_pool_code_hash.clone(),
         });
     }
 
     let sim_response: shade_router::QueryMsgResponse = deps.querier.query_wasm_smart(
-        &state.shade_router_contract.address,
-        &state.shade_router_contract.code_hash,
+        &shade_router_contract.address,
+        &shade_router_contract.code_hash,
         &shade_router::QueryMsg::SwapSimulation {
             offer: shade_router::TokenAmount {
                 token: shade_router::TokenType::CustomToken {

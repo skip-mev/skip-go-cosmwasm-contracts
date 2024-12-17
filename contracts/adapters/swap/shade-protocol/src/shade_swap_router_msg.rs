@@ -1,8 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    Addr, Binary, ContractInfo, Decimal, Decimal256, Deps, DepsMut, Env, MessageInfo, Response,
-    Uint128, Uint256, WasmMsg,
-};
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -37,11 +34,6 @@ pub struct StableTokenType {
 
 #[derive(Clone, Debug, JsonSchema)]
 pub struct TokenPair(pub TokenType, pub TokenType, pub bool);
-
-pub struct TokenPairIterator<'a> {
-    pair: &'a TokenPair,
-    index: u8,
-}
 
 impl Serialize for TokenPair {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

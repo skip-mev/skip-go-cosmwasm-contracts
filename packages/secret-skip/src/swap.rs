@@ -1,20 +1,12 @@
-use crate::{asset::Asset, error::SkipError};
+use crate::{
+    asset::{Asset, Snip20ReceiveMsg},
+    error::SkipError,
+};
 
 use std::{convert::TryFrom, num::ParseIntError};
 
-// use astroport::{asset::AssetInfo, router::SwapOperation as AstroportSwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{
-    Addr, BankMsg, Binary, ContractInfo, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response,
-    Uint128,
-};
-use cw20::Cw20Contract;
-use cw20::Cw20ReceiveMsg;
-/*
-use osmosis_std::types::osmosis::poolmanager::v1beta1::{
-    SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
-};
-*/
+use cosmwasm_std::{Addr, Binary, ContractInfo, Decimal, Uint128};
 
 ///////////////
 /// MIGRATE ///
@@ -45,7 +37,7 @@ pub struct InstantiateMsg {
 // Only the Swap message is callable by external users.
 #[cw_serde]
 pub enum ExecuteMsg {
-    Receive(Cw20ReceiveMsg),
+    Receive(Snip20ReceiveMsg),
     Swap { operations: Vec<SwapOperation> },
     TransferFundsBack { swapper: Addr, return_denom: String },
 }

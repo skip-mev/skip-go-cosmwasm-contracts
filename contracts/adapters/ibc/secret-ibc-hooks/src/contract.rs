@@ -7,12 +7,12 @@ use crate::{
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, BankMsg, Binary, Coin, ContractInfo, CosmosMsg, Deps,
-    DepsMut, Env, MessageInfo, Reply, Response, SubMsg, SubMsgResult,
+    entry_point, from_binary, to_binary, BankMsg, Binary, ContractInfo, Deps, DepsMut, Env,
+    MessageInfo, Reply, Response, SubMsg, SubMsgResult,
 };
 use cw20::Cw20Coin;
 // use cw2::set_contract_version;
-use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferResponse};
+use ibc_proto::ibc::applications::transfer::v1::MsgTransferResponse;
 use prost::Message;
 use secret_skip::{
     asset::{Asset, Snip20ReceiveMsg},
@@ -20,13 +20,11 @@ use secret_skip::{
         AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, MigrateMsg, QueryMsg,
         Snip20HookMsg,
     },
-    proto_coin::ProtoCoin,
     sudo::{OsmosisSudoMsg as SudoMsg, SudoType},
 };
 use secret_toolkit::snip20;
-use serde_cw_value::Value;
 
-const IBC_MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+// const IBC_MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 const REPLY_ID: u64 = 1;
 
 #[cw_serde]
@@ -87,8 +85,10 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Resp
 ///////////////////
 
 // Contract name and version used for migration.
+/*
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+*/
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -164,7 +164,7 @@ pub fn receive_snip20(
         Some(msg) => match from_binary(&msg)? {
             // Transfer tokens out over ICS20
             Snip20HookMsg::IbcTransfer {
-                ibc_info,
+                info: ibc_info,
                 timeout_timestamp,
             } => {
                 execute_ics20_ibc_transfer(deps, env, info, ibc_info, sent_asset, timeout_timestamp)
@@ -176,7 +176,7 @@ pub fn receive_snip20(
 
 fn execute_ics20_ibc_transfer(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     ibc_info: IbcInfo,
     sent_asset: Asset,
@@ -423,6 +423,7 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
 
 // Verifies the given memo is empty or valid json, and then adds the necessary
 // key/value pair to trigger the ibc hooks callback logic.
+/*
 fn verify_and_create_memo(memo: String, contract_address: String) -> ContractResult<String> {
     // If the memo given is empty, then set it to "{}" to avoid json parsing errors. Then,
     // get Value object from json string, erroring if the memo was not null while not being valid json
@@ -449,6 +450,7 @@ fn verify_and_create_memo(memo: String, contract_address: String) -> ContractRes
 
     Ok(memo)
 }
+*/
 
 fn register_tokens(
     deps: DepsMut,

@@ -12,8 +12,6 @@ use crate::{
     },
 };
 
-use secret_skip::asset::{Asset, Snip20ReceiveMsg};
-
 use secret_toolkit::snip20;
 
 use cosmwasm_std::{
@@ -22,12 +20,13 @@ use cosmwasm_std::{
 };
 use cw20::Cw20Coin;
 use secret_skip::{
+    asset::{Asset, Snip20ReceiveMsg},
     error::SkipError,
-    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcInfo, IbcTransfer},
+    ibc::{self, IbcInfo},
     swap::{validate_swap_operations, Swap, SwapExactAssetOut},
 };
 use skip_go_swap_adapter_shade_protocol::msg::{
-    Cw20HookMsg as SwapHookMsg, ExecuteMsg as SwapExecuteMsg, QueryMsg as SwapQueryMsg,
+    Cw20HookMsg as SwapHookMsg, QueryMsg as SwapQueryMsg,
 };
 
 //////////////////////////
@@ -680,7 +679,7 @@ pub fn execute_post_swap_action(
 pub fn execute_action(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     sent_asset: Option<Asset>,
     timeout_timestamp: u64,
     action: Action,
@@ -815,10 +814,9 @@ fn validate_and_dispatch_action(
             // Error if the destination address is not a valid address on the current chain
             deps.api.addr_validate(&to_address)?;
 
-            // Create the transfer message
-            // let transfer_msg = action_asset.transfer(&to_address);
             let action_asset_contract = REGISTERED_TOKENS
                 .load(deps.storage, deps.api.addr_validate(action_asset.denom())?)?;
+            // Create the transfer message
             let transfer_msg = match snip20::transfer_msg(
                 to_address.to_string(),
                 action_asset.amount(),
@@ -842,40 +840,24 @@ fn validate_and_dispatch_action(
             deps.api.addr_validate(&ibc_info.recover_address)?;
 
             let transfer_out_contract = match action_asset {
-                Asset::Native(coin) => {
+                Asset::Native(_) => {
                     return Err(ContractError::NativeCoinNotSupported);
                 }
                 _ => REGISTERED_TOKENS
                     .load(deps.storage, deps.api.addr_validate(action_asset.denom())?)?,
             };
 
-            // Create the IBC transfer message
-            // TODO send ICS20 message
-            /*
-            let ibc_transfer_msg: IbcTransferExecuteMsg = IbcTransfer {
-                info: ibc_info,
-                coin: action_asset.clone(),
-                timeout_timestamp,
-            }
-            .into();
-            */
-
             // Get the IBC transfer adapter contract address
             let ibc_transfer_contract = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
 
             // Send the IBC transfer by calling the IBC transfer contract
-            /*
-            let ibc_transfer_msg = WasmMsg::Execute {
-                contract_addr: ibc_transfer_contract.address.to_string(),
-                code_hash: ibc_transfer_contract.code_hash.clone(),
-                msg: to_binary(&ibc_transfer_msg)?,
-                funds: vec![],
-            };*/
-
             let ibc_transfer_msg = match snip20::send_msg(
                 ibc_transfer_contract.address.to_string(),
                 action_asset.amount(),
-                None, //Some(to_binary(&fee_swap_msg_args)?),
+                Some(to_binary(&ibc::Snip20HookMsg::IbcTransfer {
+                    info: ibc_info,
+                    timeout_timestamp,
+                })?),
                 None,
                 None,
                 255,

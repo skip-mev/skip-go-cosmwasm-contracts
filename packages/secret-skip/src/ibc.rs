@@ -1,9 +1,9 @@
-use crate::{asset::Snip20ReceiveMsg, error::SkipError, proto_coin::ProtoCoin};
+use crate::{asset::Snip20ReceiveMsg, error::SkipError};
 
 use std::convert::From;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Coin, ContractInfo, StdError, Uint128};
+use cosmwasm_std::{Coin, ContractInfo, StdError};
 // use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
 
 ///////////////
@@ -48,7 +48,7 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub enum Snip20HookMsg {
     IbcTransfer {
-        ibc_info: IbcInfo,
+        info: IbcInfo,
         timeout_timestamp: u64,
     },
 }
