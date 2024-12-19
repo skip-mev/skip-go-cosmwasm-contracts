@@ -15,29 +15,18 @@ use cw20::Cw20Coin;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransferResponse;
 use prost::Message;
 use secret_skip::{
-    asset::{Asset, Snip20ReceiveMsg},
+    asset::Asset,
     ibc::{
-        AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, MigrateMsg, QueryMsg,
-        Snip20HookMsg,
+        AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, Ics20TransferMsg, InstantiateMsg,
+        MigrateMsg, QueryMsg, Snip20HookMsg,
     },
+    snip20::Snip20ReceiveMsg,
     sudo::{OsmosisSudoMsg as SudoMsg, SudoType},
 };
 use secret_toolkit::snip20;
 
 // const IBC_MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 const REPLY_ID: u64 = 1;
-
-#[cw_serde]
-pub struct Ics20TransferMsg {
-    /// The local channel to send the packets on
-    pub channel: String,
-    /// The remote address to send to
-    /// Don't use HumanAddress as this will likely have a different Bech32 prefix than we use
-    /// and cannot be validated locally
-    pub remote_address: String,
-    /// How long the packet lives in seconds. If not specified, use default_timeout
-    pub timeout: Option<u64>,
-}
 
 ///////////////
 /// MIGRATE ///
@@ -152,7 +141,7 @@ pub fn execute(
 pub fn receive_snip20(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    mut info: MessageInfo,
     snip20_msg: Snip20ReceiveMsg,
 ) -> ContractResult<Response> {
     let sent_asset = Asset::Cw20(Cw20Coin {
@@ -160,6 +149,9 @@ pub fn receive_snip20(
         amount: snip20_msg.amount.u128().into(),
     });
 
+    // Set the sender to the originating address that triggered the snip20 send call
+    // This is later validated / enforced to be the entry point contract address
+    info.sender = deps.api.addr_validate(&snip20_msg.sender.to_string())?;
     match snip20_msg.msg {
         Some(msg) => match from_binary(&msg)? {
             // Transfer tokens out over ICS20
@@ -211,7 +203,7 @@ fn execute_ics20_ibc_transfer(
         })?),
         None,
         None,
-        255,
+        0,
         sent_asset_contract.code_hash.clone(),
         sent_asset_contract.address.to_string(),
     ) {

@@ -4,7 +4,21 @@ use std::convert::From;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, ContractInfo, StdError};
-// use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
+
+// Used with Secret network ICS20 contract
+// for auto wrapping & unrapping of snip20 tokens
+// for IBC transfers
+#[cw_serde]
+pub struct Ics20TransferMsg {
+    /// The local channel to send the packets on
+    pub channel: String,
+    /// The remote address to send to
+    /// Don't use HumanAddress as this will likely have a different Bech32 prefix than we use
+    /// and cannot be validated locally
+    pub remote_address: String,
+    /// How long the packet lives in seconds. If not specified, use default_timeout
+    pub timeout: Option<u64>,
+}
 
 ///////////////
 /// MIGRATE ///
