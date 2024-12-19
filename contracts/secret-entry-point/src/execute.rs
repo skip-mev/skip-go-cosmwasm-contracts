@@ -20,13 +20,14 @@ use cosmwasm_std::{
 };
 use cw20::Cw20Coin;
 use secret_skip::{
-    asset::{Asset, Snip20ReceiveMsg},
+    asset::Asset,
     error::SkipError,
     ibc::{self, IbcInfo},
+    snip20::Snip20ReceiveMsg,
     swap::{validate_swap_operations, Swap, SwapExactAssetOut},
 };
 use skip_go_swap_adapter_shade_protocol::msg::{
-    Cw20HookMsg as SwapHookMsg, QueryMsg as SwapQueryMsg,
+    QueryMsg as SwapQueryMsg, Snip20HookMsg as SwapHookMsg,
 };
 
 //////////////////////////
@@ -180,7 +181,7 @@ pub fn execute_swap_and_action(
         deps.querier,
         env.contract.address.to_string(),
         viewing_key,
-        255,
+        0,
         min_asset_contract.code_hash.clone(),
         min_asset_contract.address.to_string(),
     ) {

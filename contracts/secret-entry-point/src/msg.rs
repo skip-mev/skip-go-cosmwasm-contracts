@@ -1,6 +1,7 @@
 use secret_skip::{
-    asset::{Asset, Snip20ReceiveMsg},
+    asset::Asset,
     ibc::IbcInfo,
+    snip20::Snip20ReceiveMsg,
     swap::{Swap, SwapExactAssetOut},
 };
 
