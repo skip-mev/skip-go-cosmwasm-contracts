@@ -31,7 +31,7 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub swap_venues: Vec<SwapVenue>,
     pub ibc_transfer_contract: ContractInfo,
-    pub hyperlane_transfer_contract: Option<ContractInfo>,
+    // pub hyperlane_transfer_contract: Option<ContractInfo>,
     pub viewing_key: String,
 }
 

@@ -99,4 +99,7 @@ pub enum ContractError {
 
     #[error("Snip20 Token Not Registered {0}")]
     TokenNotRegistered(Addr),
+
+    #[error("Unsupported Action")]
+    UnsupportedAction,
 }

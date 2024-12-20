@@ -16,7 +16,7 @@ use skip_go_secret_entry_point::{
     error::ContractError,
     msg::{Action, Affiliate, ExecuteMsg, Snip20HookMsg},
     reply::RECOVER_REPLY_ID,
-    state::{IBC_TRANSFER_CONTRACT_ADDRESS, REGISTERED_TOKENS, SWAP_VENUE_MAP, VIEWING_KEY},
+    state::{IBC_TRANSFER_CONTRACT, REGISTERED_TOKENS, SWAP_VENUE_MAP, VIEWING_KEY},
 };
 use test_case::test_case;
 
@@ -140,11 +140,10 @@ struct Params {
         expected_error: None,
     };
     "Valid Swap And Action Msg")]
-/*
 #[test_case(
     Params {
         info_funds: vec![],
-        sent_asset: Asset::Cw20(Cw20Coin{address: "secret123".to_string(), amount: Uint128::from(1_000_000u128)}),
+        sent_asset: Asset::Cw20(Cw20Coin{address: "secret123".to_string(), amount: 1_000_000u128.into()}),
         user_swap: Swap::SwapExactAssetIn (
             SwapExactAssetIn{
                 swap_venue_name: "swap_venue_name".to_string(),
@@ -158,7 +157,10 @@ struct Params {
                 ],
             }
         ),
-        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+        min_asset: Asset::Cw20(Cw20Coin {
+            address: "secret456".to_string(),
+            amount: 1000u128.into(),
+        }),
         timeout_timestamp: 101,
         post_swap_action: Action::Transfer {
             to_address: "to_address".to_string(),
@@ -170,8 +172,9 @@ struct Params {
                 id: RECOVER_REPLY_ID,
                 msg: WasmMsg::Execute {
                     contract_addr: "entry_point".to_string(),
+                    code_hash: "code_hash".to_string(),
                     msg: to_binary(&ExecuteMsg::SwapAndAction {
-                        sent_asset: Some(Asset::Cw20(Cw20Coin{address: "secret123".to_string(), amount: Uint128::from(1_000_000u128)})),
+                        sent_asset: Some(Asset::Cw20(Cw20Coin{address: "secret123".to_string(), amount: 1_000_000u128.into()})),
                         user_swap: Swap::SwapExactAssetIn (
                             SwapExactAssetIn{
                                 swap_venue_name: "swap_venue_name".to_string(),
@@ -185,7 +188,10 @@ struct Params {
                                 ],
                             }
                         ),
-                        min_asset: Asset::Native(Coin::new(1_000_000, "osmo")),
+                        min_asset: Asset::Cw20(Cw20Coin {
+                            address: "secret456".to_string(),
+                            amount: 1000u128.into(),
+                        }),
                         timeout_timestamp: 101,
                         post_swap_action: Action::Transfer {
                             to_address: "to_address".to_string(),
@@ -202,7 +208,6 @@ struct Params {
         expected_error: None,
     };
     "Valid Swap And Action With Recover Msg")]
-*/
 fn test_execute_receive(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[("entry_point", &[])]);
@@ -265,7 +270,7 @@ fn test_execute_receive(params: Params) {
         address: Addr::unchecked("ibc_transfer_adapter"),
         code_hash: "code_hash".to_string(),
     };
-    IBC_TRANSFER_CONTRACT_ADDRESS
+    IBC_TRANSFER_CONTRACT
         .save(deps.as_mut().storage, &ibc_transfer_adapter)
         .unwrap();
 

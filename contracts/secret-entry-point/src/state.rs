@@ -4,10 +4,11 @@ use secret_storage_plus::{Item, Map};
 
 pub const BLOCKED_CONTRACT_ADDRESSES: Map<&Addr, ()> = Map::new("blocked_contract_addresses");
 pub const SWAP_VENUE_MAP: Map<&str, ContractInfo> = Map::new("swap_venue_map");
-pub const IBC_TRANSFER_CONTRACT_ADDRESS: Item<ContractInfo> =
-    Item::new("ibc_transfer_contract_address");
+pub const IBC_TRANSFER_CONTRACT: Item<ContractInfo> = Item::new("ibc_transfer_contract");
+/*
 pub const HYPERLANE_TRANSFER_CONTRACT_ADDRESS: Item<ContractInfo> =
     Item::new("hyperlane_transfer_contract_address");
+*/
 
 // Temporary state to save variables to be used in
 // reply handling in case of recovering from an error

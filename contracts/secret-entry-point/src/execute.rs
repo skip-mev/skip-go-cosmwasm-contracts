@@ -2,13 +2,12 @@ use std::vec;
 
 use crate::{
     error::{ContractError, ContractResult},
-    hyperlane::{ExecuteMsg as HplExecuteMsg, ExecuteMsg::HplTransfer},
+    //hyperlane::{ExecuteMsg as HplExecuteMsg, ExecuteMsg::HplTransfer},
     msg::{Action, Affiliate, ExecuteMsg, Snip20HookMsg},
     reply::{RecoverTempStorage, RECOVER_REPLY_ID},
     state::{
-        BLOCKED_CONTRACT_ADDRESSES, HYPERLANE_TRANSFER_CONTRACT_ADDRESS,
-        IBC_TRANSFER_CONTRACT_ADDRESS, PRE_SWAP_OUT_ASSET_AMOUNT, RECOVER_TEMP_STORAGE,
-        REGISTERED_TOKENS, SWAP_VENUE_MAP, VIEWING_KEY,
+        BLOCKED_CONTRACT_ADDRESSES, IBC_TRANSFER_CONTRACT, PRE_SWAP_OUT_ASSET_AMOUNT,
+        RECOVER_TEMP_STORAGE, REGISTERED_TOKENS, SWAP_VENUE_MAP, VIEWING_KEY,
     },
 };
 
@@ -385,7 +384,7 @@ pub fn execute_user_swap(
                 affiliate_fee_asset.amount(),
                 None,
                 None,
-                255,
+                0,
                 affiliate_fee_contract.code_hash.clone(),
                 affiliate_fee_contract.address.to_string(),
             ) {
@@ -436,7 +435,7 @@ pub fn execute_user_swap(
                 Some(to_binary(&user_swap_msg_args)?),
                 None,
                 None,
-                255,
+                0,
                 remaining_asset_contract.code_hash.clone(),
                 remaining_asset_contract.address.to_string(),
             ) {
@@ -497,7 +496,7 @@ pub fn execute_user_swap(
                     None,
                     None,
                     None,
-                    255,
+                    0,
                     remaining_asset_contract.code_hash.clone(),
                     remaining_asset_contract.address.to_string(),
                 ) {
@@ -529,7 +528,7 @@ pub fn execute_user_swap(
                 Some(to_binary(&user_swap_msg_args)?),
                 None,
                 None,
-                255,
+                0,
                 remaining_asset_contract.code_hash.clone(),
                 remaining_asset_contract.address.to_string(),
             ) {
@@ -572,7 +571,7 @@ pub fn execute_user_swap(
                     Some(to_binary(&user_swap_msg_args)?),
                     None,
                     None,
-                    255,
+                    0,
                     remaining_asset_contract.code_hash.clone(),
                     remaining_asset_contract.address.to_string(),
                 ) {
@@ -628,7 +627,7 @@ pub fn execute_post_swap_action(
         deps.querier,
         env.contract.address.to_string(),
         viewing_key,
-        255,
+        0,
         min_asset_contract.code_hash.clone(),
         min_asset_contract.address.to_string(),
     ) {
@@ -818,12 +817,13 @@ fn validate_and_dispatch_action(
             let action_asset_contract = REGISTERED_TOKENS
                 .load(deps.storage, deps.api.addr_validate(action_asset.denom())?)?;
             // Create the transfer message
-            let transfer_msg = match snip20::transfer_msg(
+            let transfer_msg = match snip20::send_msg(
                 to_address.to_string(),
                 action_asset.amount(),
                 None,
                 None,
-                255,
+                None,
+                0,
                 action_asset_contract.code_hash.clone(),
                 action_asset_contract.address.to_string(),
             ) {
@@ -849,11 +849,12 @@ fn validate_and_dispatch_action(
             };
 
             // Get the IBC transfer adapter contract address
-            let ibc_transfer_contract = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+            let ibc_transfer_contract = IBC_TRANSFER_CONTRACT.load(deps.storage)?;
 
             // Send the IBC transfer by calling the IBC transfer contract
-            let ibc_transfer_msg = match snip20::send_msg(
+            let ibc_transfer_msg = match snip20::send_msg_with_code_hash(
                 ibc_transfer_contract.address.to_string(),
+                Some(ibc_transfer_contract.code_hash),
                 action_asset.amount(),
                 Some(to_binary(&ibc::Snip20HookMsg::IbcTransfer {
                     info: ibc_info,
@@ -861,7 +862,7 @@ fn validate_and_dispatch_action(
                 })?),
                 None,
                 None,
-                255,
+                0,
                 transfer_out_contract.code_hash.clone(),
                 transfer_out_contract.address.to_string(),
             ) {
@@ -877,6 +878,7 @@ fn validate_and_dispatch_action(
                 .add_message(ibc_transfer_msg)
                 .add_attribute("action", "dispatch_action_ibc_transfer");
         }
+        /*
         Action::ContractCall {
             contract_address,
             msg,
@@ -942,6 +944,10 @@ fn validate_and_dispatch_action(
                 .add_message(hpl_transfer_msg)
                 .add_attribute("action", "dispatch_action_ibc_transfer");
         }
+        */
+        _ => {
+            return Err(ContractError::UnsupportedAction);
+        }
     };
 
     Ok(response)
@@ -964,6 +970,7 @@ fn handle_ibc_transfer_fees(
         .transpose()?;
 
     if let Some(fee_swap) = fee_swap {
+        // NOTE unsure if this works
         let ibc_fee_coin = ibc_fee_coin
             .clone()
             .ok_or(ContractError::FeeSwapWithoutIbcFees)?;
@@ -988,7 +995,7 @@ fn handle_ibc_transfer_fees(
     // Dispatch the ibc fee bank send to the ibc transfer adapter contract if needed
     if let Some(ibc_fee_coin) = ibc_fee_coin {
         // Get the ibc transfer adapter contract address
-        let ibc_transfer_contract = IBC_TRANSFER_CONTRACT_ADDRESS.load(deps.storage)?;
+        let ibc_transfer_contract = IBC_TRANSFER_CONTRACT.load(deps.storage)?;
 
         // Create the ibc fee bank send message
         let ibc_fee_msg = BankMsg::Send {
@@ -1063,7 +1070,7 @@ fn verify_and_create_fee_swap_msg(
         Some(to_binary(&fee_swap_msg_args)?),
         None,
         None,
-        255,
+        0,
         fee_swap_asset_contract.code_hash.clone(),
         fee_swap_asset_contract.address.to_string(),
     ) {
