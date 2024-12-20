@@ -77,7 +77,7 @@ struct Params {
                     amount: 100u128.into(),
                     recipient: "ics20".to_string(),
                     recipient_code_hash: Some("code_hash".to_string()),
-                    memo: None,
+                    memo: Some(r#"{"ibc_callback":"ibc_transfer"}"#.to_string()),
                     padding: None,
                     msg: Some(to_binary(&Ics20TransferMsg {
                         channel: "source_channel".to_string(),
@@ -93,12 +93,14 @@ struct Params {
         expected_error_string: "".to_string(),
     };
     "Empty String Memo")]
-    /*
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        sent_asset: Asset::Cw20(Cw20Coin { 
+            address: "secret123".to_string(),
+            amount: 100u128.into(),
+        }),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -109,23 +111,23 @@ struct Params {
         timeout_timestamp: 100,
         expected_messages: vec![SubMsg {
             id: 1,
-            msg: cosmwasm_std::CosmosMsg::Stargate {
-                type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
-                value: MsgTransfer {
-                    source_port: "transfer".to_string(),
-                    source_channel: "source_channel".to_string(),
-                    token: Some(IbcCoin {
-                        denom: "osmo".to_string(),
-                        amount: "100".to_string(),
-                    }),
-                    sender: "ibc_transfer".to_string(),
-                    receiver: "receiver".to_string(),
-                    timeout_height: None,
-                    timeout_timestamp: 100,
-                    memo: r#"{"ibc_callback":"ibc_transfer"}"#.to_string(),
-                }
-                .encode_to_vec().into(),
-            },
+            msg: WasmMsg::Execute {
+                contract_addr: "secret123".to_string(),
+                code_hash: "code_hash".to_string(),
+                msg: to_binary(&snip20::ExecuteMsg::Send {
+                    amount: 100u128.into(),
+                    recipient: "ics20".to_string(),
+                    recipient_code_hash: Some("code_hash".to_string()),
+                    memo: Some(r#"{"ibc_callback":"ibc_transfer"}"#.to_string()),
+                    padding: None,
+                    msg: Some(to_binary(&Ics20TransferMsg {
+                        channel: "source_channel".to_string(),
+                        remote_address: "receiver".to_string(),
+                        timeout: Some(100),
+                    })?),
+                })?,
+                funds: vec![],
+            }.into(),
             gas_limit: None,
             reply_on: Success,
         }
@@ -137,7 +139,10 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        sent_asset: Asset::Cw20(Cw20Coin { 
+            address: "secret123".to_string(),
+            amount: 100u128.into(),
+        }),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -148,27 +153,26 @@ struct Params {
         timeout_timestamp: 100,
         expected_messages: vec![SubMsg {
             id: 1,
-            msg: cosmwasm_std::CosmosMsg::Stargate {
-                type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
-                value: MsgTransfer {
-                    source_port: "transfer".to_string(),
-                    source_channel: "source_channel".to_string(),
-                    token: Some(IbcCoin {
-                        denom: "osmo".to_string(),
-                        amount: "100".to_string(),
-                    }),
-                    sender: "ibc_transfer".to_string(),
-                    receiver: "receiver".to_string(),
-                    timeout_height: None,
-                    timeout_timestamp: 100,
-                    memo: r#"{"ibc_callback":"ibc_transfer","pfm":"example_value","wasm":"example_contract"}"#.to_string(),
-                }
-                .encode_to_vec().into(),
-            },
+            msg: WasmMsg::Execute {
+                contract_addr: "secret123".to_string(),
+                code_hash: "code_hash".to_string(),
+                msg: to_binary(&snip20::ExecuteMsg::Send {
+                    amount: 100u128.into(),
+                    recipient: "ics20".to_string(),
+                    recipient_code_hash: Some("code_hash".to_string()),
+                    memo: Some(r#"{"ibc_callback":"ibc_transfer","pfm":"example_value","wasm":"example_contract"}"#.to_string()),
+                    padding: None,
+                    msg: Some(to_binary(&Ics20TransferMsg {
+                        channel: "source_channel".to_string(),
+                        remote_address: "receiver".to_string(),
+                        timeout: Some(100),
+                    })?),
+                })?,
+                funds: vec![],
+            }.into(),
             gas_limit: None,
             reply_on: Success,
-        }
-        ],
+        }],
         expected_error_string: "".to_string(),
     };
     "Add Ibc Callback Key/Value Pair To Other Key/Value In Memo")]
@@ -176,7 +180,10 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        sent_asset: Asset::Cw20(Cw20Coin { 
+            address: "secret123".to_string(),
+            amount: 100u128.into(),
+        }),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -193,7 +200,10 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        sent_asset: Asset::Cw20(Cw20Coin { 
+            address: "secret123".to_string(),
+            amount: 100u128.into(),
+        }),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -216,7 +226,10 @@ struct Params {
     Params {
         caller: "random".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        sent_asset: Asset::Cw20(Cw20Coin { 
+            address: "secret123".to_string(),
+            amount: 100u128.into(),
+        }),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -229,7 +242,6 @@ struct Params {
         expected_error_string: "Unauthorized".to_string(),
     };
     "Unauthorized Caller - Expect Error")]
-*/
 fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();

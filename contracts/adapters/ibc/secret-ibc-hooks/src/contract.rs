@@ -5,12 +5,12 @@ use crate::{
         IN_PROGRESS_RECOVER_ADDRESS, REGISTERED_TOKENS, VIEWING_KEY,
     },
 };
-use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, BankMsg, Binary, ContractInfo, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, SubMsg, SubMsgResult,
 };
 use cw20::Cw20Coin;
+use serde_cw_value::Value;
 // use cw2::set_contract_version;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransferResponse;
 use prost::Message;
@@ -168,7 +168,7 @@ pub fn receive_snip20(
 
 fn execute_ics20_ibc_transfer(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     ibc_info: IbcInfo,
     sent_asset: Asset,
@@ -192,6 +192,10 @@ fn execute_ics20_ibc_transfer(
     let sent_asset_contract =
         REGISTERED_TOKENS.load(deps.storage, deps.api.addr_validate(sent_asset.denom())?)?;
 
+    // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
+    let memo = verify_and_create_memo(ibc_info.memo, env.contract.address.to_string())?;
+
+    println!("memo {}", memo);
     let ibc_transfer_msg = match snip20::send_msg_with_code_hash(
         ics20_contract.address.to_string(),
         Some(ics20_contract.code_hash),
@@ -201,7 +205,7 @@ fn execute_ics20_ibc_transfer(
             remote_address: ibc_info.receiver,
             timeout: Some(timeout_timestamp),
         })?),
-        None,
+        Some(memo),
         None,
         0,
         sent_asset_contract.code_hash.clone(),
@@ -220,10 +224,7 @@ fn execute_ics20_ibc_transfer(
     // Save in progress channel id to storage, to be used in sudo handler
     IN_PROGRESS_CHANNEL_ID.save(deps.storage, &ibc_info.source_channel)?;
 
-    // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
-    // let memo = verify_and_create_memo(ibc_info.memo, env.contract.address.to_string())?;
-
-    // Create sub message from osmosis ibc transfer message to receive a reply
+    // Create sub message from ICS20 send message to receive a reply
     let sub_msg = SubMsg::reply_on_success(ibc_transfer_msg, REPLY_ID);
 
     Ok(Response::new()
@@ -331,6 +332,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
     // Get and delete the in progress recover address from storage
     let in_progress_recover_address = IN_PROGRESS_RECOVER_ADDRESS.load(deps.storage)?;
     IN_PROGRESS_RECOVER_ADDRESS.remove(deps.storage);
+    println!("IN PROG {}", in_progress_recover_address);
 
     // Get and delete the in progress channel id from storage
     let in_progress_channel_id = IN_PROGRESS_CHANNEL_ID.load(deps.storage)?;
@@ -338,6 +340,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
 
     // Set ack_id to be the channel id and sequence id from the response as a tuple
     let ack_id: AckID = (&in_progress_channel_id, resp.sequence);
+    println!("ACKID {:?}", ack_id);
 
     // Error if unique ack_id (channel id, sequence id) already exists in storage
     if ACK_ID_TO_RECOVER_ADDRESS.has(deps.storage, ack_id) {
@@ -415,7 +418,6 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
 
 // Verifies the given memo is empty or valid json, and then adds the necessary
 // key/value pair to trigger the ibc hooks callback logic.
-/*
 fn verify_and_create_memo(memo: String, contract_address: String) -> ContractResult<String> {
     // If the memo given is empty, then set it to "{}" to avoid json parsing errors. Then,
     // get Value object from json string, erroring if the memo was not null while not being valid json
@@ -442,7 +444,6 @@ fn verify_and_create_memo(memo: String, contract_address: String) -> ContractRes
 
     Ok(memo)
 }
-*/
 
 fn register_tokens(
     deps: DepsMut,
