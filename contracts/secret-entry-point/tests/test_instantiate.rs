@@ -47,24 +47,32 @@ struct Params {
         expected_error: None,
     };
     "Happy Path")]
-/*
 #[test_case(
     Params {
         swap_venues: vec![
             SwapVenue {
-                name: "neutron-astroport".to_string(),
-                adapter_contract_address: "neutron123".to_string(),
+                name: "shade-swap".to_string(),
+                adapter_contract: ContractInfo {
+                    address: Addr::unchecked("secret123".to_string()),
+                    code_hash: "code_hash".to_string(),
+                },
             },
             SwapVenue {
-                name: "neutron-astroport".to_string(),
-                adapter_contract_address: "neutron456".to_string(),
+                name: "shade-swap".to_string(),
+                adapter_contract: ContractInfo {
+                    address: Addr::unchecked("secret123".to_string()),
+                    code_hash: "code_hash".to_string(),
+                },
             },
         ],
-        ibc_transfer_contract_address: "ibc_transfer_adapter".to_string(),
+        ibc_transfer_contract: ContractInfo {
+            address: Addr::unchecked("ibc_transfer_adapter".to_string()),
+            code_hash: "code_hash".to_string(),
+        },
+        viewing_key: "viewing_key".to_string(),
         expected_error: Some(ContractError::DuplicateSwapVenueName),
     };
     "Duplicate Swap Venue Names")]
-*/
 fn test_instantiate(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies();
