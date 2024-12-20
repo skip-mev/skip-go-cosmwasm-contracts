@@ -38,7 +38,7 @@ pub fn reply_swap_and_action_with_recover(
                     return_asset.amount(),
                     None,
                     None,
-                    255,
+                    0,
                     return_asset_contract.code_hash.clone(),
                     return_asset_contract.address.to_string(),
                 ) {
