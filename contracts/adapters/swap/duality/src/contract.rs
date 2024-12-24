@@ -547,7 +547,8 @@ fn perform_duality_limit_order_query(
         .unwrap();
 
     // increase amount in to insure we will hit max_amount_out given ample liquidity
-    let amount_in = min_amount_in
+    let amount_in = min_amount_in.checked_mul(Decimal::from_str("2").unwrap())
+    .unwrap()
         .checked_mul(Decimal::bps(MAX_SLIPPAGE_BASIS_POINTS))
         .unwrap()
         .to_uint_ceil()
