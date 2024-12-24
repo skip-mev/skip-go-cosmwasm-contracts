@@ -3,8 +3,8 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    Int128, MessageInfo, Response, StdError, Uint128, WasmMsg,
+    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Int128,
+    MessageInfo, Response, StdError, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
@@ -161,15 +161,9 @@ fn create_duality_swap_msg(
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<CosmosMsg> {
     // Convert the swap operations into a Duality multi hop swap route.
-    let route = match get_route_from_swap_operations(swap_operations) {
-        Ok(route) => route,
-        Err(e) => return Err(e),
-    };
+    let route = get_route_from_swap_operations(swap_operations)?;
     // unfortunate type conversion. should't be an issue for normal people amounts
-    let amount_in: Int128 = match uint128_to_int128(coin_in.amount) {
-        Ok(amount) => amount,
-        Err(e) => return Err(e),
-    };
+    let amount_in: Int128 = uint128_to_int128(coin_in.amount)?;
 
     // amount_in * limit_sell_price > 1
     let true_limit_price: Decimal = Decimal::one()
@@ -271,7 +265,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 
 fn query_simulate_swap_exact_asset_in(
     deps: Deps,
-    env: Env,
+    _env: Env,
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
@@ -298,14 +292,10 @@ fn query_simulate_swap_exact_asset_in(
     // Convert the swap operations to a duality multi hop route.
     // Returns error un unsucessful conversion
     let duality_multi_hop_swap_route =
-    get_route_from_swap_operations_for_query(swap_operations).unwrap();
+        get_route_from_swap_operations_for_query(swap_operations).unwrap();
 
     // unfortunate type conversion. should't be an issue for normal people amounts
-    let amount_in: Int128 = match uint128_to_int128(coin_in.amount) {
-        Ok(amount) => amount,
-        Err(e) => return Err(e),
-    };
-
+    let amount_in: Int128 = uint128_to_int128(coin_in.amount)?;
     // amount_in * limit_sell_price > 1
     let true_limit_price: Decimal = Decimal::one()
         .checked_div(Decimal::from_str(&amount_in.to_string()).unwrap())
@@ -323,7 +313,8 @@ fn query_simulate_swap_exact_asset_in(
         pick_best_route: true,
     };
 
-    let simulation_result: SimulateMultiHopSwapResponse = get_simulate_multi_hop_swap(deps, query_msg)?;
+    let simulation_result: SimulateMultiHopSwapResponse =
+        get_simulate_multi_hop_swap(deps, query_msg)?;
 
     // Return the asset out
     Ok(Coin {
@@ -421,6 +412,7 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
 ///////////////////
 /// UNSUPPORTED ///
 ///////////////////
+
 // Smart swap is not supported since it cannot happen atomically right now.
 // These functions can be used as long as routes is of length 1.
 // This effectively makes them the same as their non-smart counterparts:
@@ -571,7 +563,7 @@ fn perform_duality_limit_order_query(
         token_in: swap_operation.denom_in.clone(),
         token_out: swap_operation.denom_out.clone(),
         tick_index_in_to_out,
-        amount_in: amount_in,
+        amount_in,
         order_type: LimitOrderType::FillOrKill,
         expiration_time: None,
         max_amount_out: Some(max_out.to_string()),
@@ -580,12 +572,13 @@ fn perform_duality_limit_order_query(
     };
 
     // Get the result of the simulation
-    let simulation_result: SimulatePlaceLimitOrderResponse = match get_simulate_place_limit_order(deps, query_msg) {
-        Ok(result) => result,
-        Err(e) => {
-            return Err(ContractError::Std(e));
-        }
-    };
+    let simulation_result: SimulatePlaceLimitOrderResponse =
+        match get_simulate_place_limit_order(deps, query_msg) {
+            Ok(result) => result,
+            Err(e) => {
+                return Err(ContractError::Std(e));
+            }
+        };
 
     // Return the input amount needed to yield the given output amount (max_out).
     let coin_in: Coin = match simulation_result.resp.taker_coin_in {
