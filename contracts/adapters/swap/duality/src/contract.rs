@@ -3,16 +3,15 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Addr, BalanceResponse, BankQuery, Binary, Coin, CosmosMsg,
-    Decimal, Deps, DepsMut, Env, Int128, MessageInfo, QueryRequest, Response, StdError, Uint128,
-    WasmMsg,
+    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    Int128, MessageInfo, Response, StdError, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
 use neutron_sdk::stargate::dex::types::{
-    AllTickLiquidityRequest, AllTickLiquidityResponse, EstimateMultiHopSwapRequest,
-    EstimateMultiHopSwapResponse, EstimatePlaceLimitOrderRequest, EstimatePlaceLimitOrderResponse,
-    LimitOrderType, TickLiquidity::LimitOrderTranche, TickLiquidity::PoolReserves,
+    AllTickLiquidityRequest, AllTickLiquidityResponse, LimitOrderType, SimulateMultiHopSwapRequest,
+    SimulateMultiHopSwapResponse, SimulatePlaceLimitOrderRequest, SimulatePlaceLimitOrderResponse,
+    TickLiquidity::{LimitOrderTranche, PoolReserves},
 };
 use neutron_sdk::{
     bindings::query::PageRequest,
@@ -20,7 +19,7 @@ use neutron_sdk::{
     stargate::{
         aux::create_stargate_msg,
         dex::query::{
-            get_estimate_multi_hop_swap, get_estimate_place_limit_order, get_tick_liquidity_all,
+            get_simulate_multi_hop_swap, get_simulate_place_limit_order, get_tick_liquidity_all,
         },
     },
 };
@@ -52,7 +51,7 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Re
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-const MAX_SLIPPAGE_BASIS_POINTS: i64 = 2000;
+const MAX_SLIPPAGE_BASIS_POINTS: u64 = 10_000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -166,6 +165,19 @@ fn create_duality_swap_msg(
         Ok(route) => route,
         Err(e) => return Err(e),
     };
+    // unfortunate type conversion. should't be an issue for normal people amounts
+    let amount_in: Int128 = match uint128_to_int128(coin_in.amount) {
+        Ok(amount) => amount,
+        Err(e) => return Err(e),
+    };
+
+    // amount_in * limit_sell_price > 1
+    let true_limit_price: Decimal = Decimal::one()
+        .checked_div(Decimal::from_str(&amount_in.to_string()).unwrap())
+        .unwrap()
+        .checked_mul(Decimal::from_str("1.0001").unwrap())
+        .unwrap();
+    let limit_price = get_string_price_formatted(true_limit_price);
 
     // Create the duality multi hop swap message
     let swap_msg = MsgMultiHopSwap {
@@ -173,7 +185,7 @@ fn create_duality_swap_msg(
         receiver: env.contract.address.to_string(),
         routes: vec![route],
         amount_in: coin_in.amount.into(),
-        exit_limit_price: String::from("000000000000000000000000001"),
+        exit_limit_price: limit_price,
         pick_best_route: true,
     };
 
@@ -285,11 +297,8 @@ fn query_simulate_swap_exact_asset_in(
 
     // Convert the swap operations to a duality multi hop route.
     // Returns error un unsucessful conversion
-    let duality_multi_hop_swap_route: MultiHopRoute =
-        match get_route_from_swap_operations_for_query(swap_operations) {
-            Ok(route) => route,
-            Err(e) => return Err(e),
-        };
+    let duality_multi_hop_swap_route =
+    get_route_from_swap_operations_for_query(swap_operations).unwrap();
 
     // unfortunate type conversion. should't be an issue for normal people amounts
     let amount_in: Int128 = match uint128_to_int128(coin_in.amount) {
@@ -297,27 +306,29 @@ fn query_simulate_swap_exact_asset_in(
         Err(e) => return Err(e),
     };
 
-    let dex_module_address: Addr = DEX_MODULE_ADDRESS.load(deps.storage)?;
+    // amount_in * limit_sell_price > 1
+    let true_limit_price: Decimal = Decimal::one()
+        .checked_div(Decimal::from_str(&amount_in.to_string()).unwrap())
+        .unwrap()
+        .checked_mul(Decimal::from_str("1.0001").unwrap())
+        .unwrap();
+    let limit_price = get_string_price_formatted(true_limit_price);
 
-    // Create the duality multi hop swap query
-    let query_msg: EstimateMultiHopSwapRequest = EstimateMultiHopSwapRequest {
-        // creator is the DEX for the query as it will usually have sufficient balance.
-        // this balance requirement will de depricated soon.
-        creator: dex_module_address.to_string(),
-        // Receiver cannot be the dex, it is blocked from receiving funds
-        receiver: env.contract.address.to_string(),
-        routes: vec![duality_multi_hop_swap_route.hops],
+    let query_msg: SimulateMultiHopSwapRequest = SimulateMultiHopSwapRequest {
+        sender: String::from(""),
+        receiver: String::from(""),
+        routes: duality_multi_hop_swap_route,
         amount_in: amount_in.to_string(),
-        exit_limit_price: String::from("000000000000000000000000001"),
+        exit_limit_price: limit_price,
         pick_best_route: true,
     };
 
-    let simulation_result: EstimateMultiHopSwapResponse =
-        get_estimate_multi_hop_swap(deps, query_msg)?;
+    let simulation_result: SimulateMultiHopSwapResponse = get_simulate_multi_hop_swap(deps, query_msg)?;
+
     // Return the asset out
     Ok(Coin {
         denom: denom_out,
-        amount: simulation_result.coin_out.amount,
+        amount: simulation_result.resp.coin_out.amount,
     }
     .into())
 }
@@ -332,25 +343,21 @@ fn query_simulate_swap_exact_asset_out(
     let (Some(first_op), Some(last_op)) = (swap_operations.first(), swap_operations.last()) else {
         return Err(ContractError::SwapOperationsEmpty);
     };
-    // Get coin out from asset out, error if asset in is not a
-    // native coin because Duality does not support CW20 tokens.
+    // Get coin out from asset out
     let coin_out = match asset_out {
         Asset::Native(coin) => coin,
         _ => return Err(ContractError::AssetNotNative),
     };
 
-    // Ensure coin_out's denom is the same as the last swap operation's denom out
+    // Validate coin out denom is the same last operation's denom out
     if coin_out.denom != last_op.denom_out {
         return Err(ContractError::CoinOutDenomMismatch);
     }
     let denom_in: String = first_op.denom_in.clone();
-
     let mut coin_in_res: Uint128 = coin_out.amount;
 
-    // iterate over the swap operations from last to first using taker limit orders with maxAmountOut for swaps.
+    // Process swap operations in reverse
     for swap_operation in swap_operations.iter().rev() {
-        // we use coin_in_res as the maxAmountOut on each querry. This will lead to the final iunput required to get the
-        // last output after all iterations are finished
         coin_in_res = perform_duality_limit_order_query(coin_in_res, swap_operation, deps, &env)?;
     }
 
@@ -494,11 +501,11 @@ pub fn get_route_from_swap_operations(
     Ok(MultiHopRoute { hops: route })
 }
 
-// multi-hop-swap routes are a string array of denoms to route through
-// with format [tokenA,tokenB,tokenC,tokenD]
+// multi-hop-swap routes are a vector of string arrays of denoms to route through
+// with format [[tokenA,tokenB,tokenC,tokenD]]
 pub fn get_route_from_swap_operations_for_query(
     swap_operations: Vec<SwapOperation>,
-) -> Result<MultiHopRoute, ContractError> {
+) -> Result<Vec<Vec<String>>, ContractError> {
     if swap_operations.is_empty() {
         return Err(ContractError::SwapOperationsEmpty);
     }
@@ -516,8 +523,7 @@ pub fn get_route_from_swap_operations_for_query(
         route.push(operation.denom_out.clone());
         last_denom_out = &operation.denom_out;
     }
-
-    Ok(MultiHopRoute { hops: route })
+    Ok(vec![route])
 }
 
 fn uint128_to_int128(u: Uint128) -> Result<Int128, ContractError> {
@@ -533,62 +539,61 @@ fn perform_duality_limit_order_query(
     amount_out: Uint128,
     swap_operation: &SwapOperation,
     deps: Deps,
-    env: &Env,
+    _env: &Env,
 ) -> Result<Uint128, ContractError> {
-    // Create the bank query request for the DEX balance. We do this because simulations require a balance
-    // and we don't have access to the sender's balance. The DEX should often have a sufficient balance.
-    // This is a temporary workaround untill we remove balance requirements for query.
-    let dex_module_address: Addr = DEX_MODULE_ADDRESS.load(deps.storage)?;
-
-    let dex_balance_request = QueryRequest::Bank(BankQuery::Balance {
-        address: dex_module_address.clone().into(),
-        denom: swap_operation.denom_in.clone(),
-    });
-
-    // get the DEX balance.
-    let dex_balance_simulation_result: BalanceResponse =
-        match deps.querier.query(&dex_balance_request) {
-            Ok(result) => result,
-            Err(err) => return Err(ContractError::from(err)),
-        };
-
-    // set dex balance to be the input amount
-    let input_amount: Int128 = match uint128_to_int128(dex_balance_simulation_result.amount.amount)
-    {
-        Ok(amount) => amount,
-        Err(e) => return Err(e),
-    };
-
     // convert amount_out to int.
-    let max_out: Int128 = match uint128_to_int128(amount_out) {
-        Ok(amount) => amount,
-        Err(e) => return Err(e),
-    };
+    let max_out: Int128 = uint128_to_int128(amount_out)?;
 
     // get the tick index
-    let (_, cur_tick) =
+    let (taker_price, cur_tick) =
         get_spot_price_and_tick(deps, &swap_operation.denom_out, &swap_operation.denom_in)?;
+
+    // The required amount in if we swap at the spot price
+    let min_amount_in = Decimal::from_str(&amount_out.to_string())
+        .unwrap()
+        .checked_div(taker_price)
+        .unwrap();
+
+    // increase amount in to insure we will hit max_amount_out given ample liquidity
+    let amount_in = min_amount_in
+        .checked_mul(Decimal::bps(MAX_SLIPPAGE_BASIS_POINTS))
+        .unwrap()
+        .to_uint_ceil()
+        .to_string();
+
     // add some safe but arbitrary slippage to satisfy some dex internals
-    let tick_index_in_to_out = cur_tick + MAX_SLIPPAGE_BASIS_POINTS;
+    let tick_index_in_to_out = cur_tick + MAX_SLIPPAGE_BASIS_POINTS as i64;
+
     // create the LimitOrder Message
-    let query_msg = EstimatePlaceLimitOrderRequest {
-        creator: dex_module_address.clone().to_string(),
-        receiver: env.contract.address.to_string(),
+    let query_msg = SimulatePlaceLimitOrderRequest {
+        sender: "".to_string(),
+        receiver: "".to_string(),
         token_in: swap_operation.denom_in.clone(),
         token_out: swap_operation.denom_out.clone(),
         tick_index_in_to_out,
-        amount_in: input_amount.to_string(),
+        amount_in: amount_in,
         order_type: LimitOrderType::FillOrKill,
-        // expiration_time is only valid if order_type == GOOD_TIL_TIME.
         expiration_time: None,
         max_amount_out: Some(max_out.to_string()),
+        limit_sell_price: None,
+        min_avg_sell_price: None,
     };
 
     // Get the result of the simulation
-    let simulation_result: EstimatePlaceLimitOrderResponse =
-        get_estimate_place_limit_order(deps, query_msg)?;
-    // Return the input amount needed to yeild the given output amount (max_out).
-    Ok(simulation_result.swap_in_coin.amount)
+    let simulation_result: SimulatePlaceLimitOrderResponse = match get_simulate_place_limit_order(deps, query_msg) {
+        Ok(result) => result,
+        Err(e) => {
+            return Err(ContractError::Std(e));
+        }
+    };
+
+    // Return the input amount needed to yield the given output amount (max_out).
+    let coin_in: Coin = match simulation_result.resp.taker_coin_in {
+        Some(v) => v,
+        None => return Err(ContractError::NoLiquidityToParse),
+    };
+
+    Ok(coin_in.amount)
 }
 
 fn calculate_spot_price_multi(
@@ -748,6 +753,34 @@ fn parse_and_validate_price(input: &str) -> ContractResult<Decimal> {
     Ok(spot_price)
 }
 
+fn get_string_price_formatted(price: Decimal) -> String {
+    // Convert decimal to string first
+    let price_str = price.to_string();
+
+    // Split into parts before and after decimal
+    let parts: Vec<&str> = price_str.split('.').collect();
+    let integer_part = parts[0];
+    let decimal_part = parts.get(1).unwrap_or(&"");
+
+    if integer_part != "0" {
+        let padding_needed = 27 - integer_part.len() - decimal_part.len();
+        return format!(
+            "{}{}{:0<width$}",
+            integer_part,
+            decimal_part,
+            "",
+            width = padding_needed
+        );
+    }
+    // For numbers < 1 pad to 27 - leading_zeros. add 1 to count for the integer zero
+    let leading_zeros = 1 + decimal_part.chars().take_while(|&c| c == '0').count();
+    // count the significant part
+    let significant_part: String = decimal_part.chars().skip_while(|&c| c == '0').collect();
+
+    // Use N syntax for dyynamic width specification
+    format!("{:0<N$}", significant_part, N = 27 - leading_zeros)
+}
+
 ///////////////
 /// TESTS   ///
 ///////////////
@@ -820,5 +853,22 @@ mod tests {
                 },
             },
         }
+    }
+
+    #[test_case("100000000000000.000000000001", "100000000000000000000000001" ; "edge decimal")]
+    #[test_case("0.0000001", "10000000000000000000" ; "small decimal 1")]
+    #[test_case("0.000001", "100000000000000000000" ; "small decimal 2")]
+    #[test_case("0.000000000000000001", "100000000" ; "smallest decimal")]
+    #[test_case("0.0000010001", "100010000000000000000" ; "small decimal with trailing")]
+    #[test_case("0.000001000100000001", "100010000000100000000" ; "strange small number")]
+    #[test_case("1.0001", "100010000000000000000000000" ; "number greater than 1")]
+    #[test_case("1.00010010010001", "100010010010001000000000000" ; "strange number greater than 1")]
+    #[test_case("123.321", "123321000000000000000000000" ; "three digit number with decimals")]
+    #[test_case("42", "420000000000000000000000000" ; "whole number")]
+    fn test_string_price_formatting(input: &str, expected: &str) {
+        assert_eq!(
+            get_string_price_formatted(Decimal::from_str(input).unwrap()),
+            expected
+        );
     }
 }
