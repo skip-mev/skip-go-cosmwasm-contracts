@@ -213,7 +213,6 @@ fn execute_swap(
 
     // Get shade router contract from storage
     let shade_router_contract = SHADE_ROUTER_CONTRACT.load(deps.storage)?;
-    println!("PATH {:?}", path);
 
     // Create a response object to return
     Ok(Response::new()
@@ -266,14 +265,14 @@ fn register_tokens(
                 snip20::set_viewing_key_msg(
                     viewing_key.clone(),
                     None,
-                    255,
+                    0,
                     contract.code_hash.clone(),
                     contract.address.to_string(),
                 )?,
                 snip20::register_receive_msg(
                     env.contract.code_hash.clone(),
                     None,
-                    255,
+                    0,
                     contract.code_hash.clone(),
                     contract.address.to_string(),
                 )?,
@@ -313,7 +312,7 @@ pub fn execute_transfer_funds_back(
         deps.querier,
         env.contract.address.to_string(),
         viewing_key,
-        255,
+        0,
         token_contract.code_hash.clone(),
         token_contract.address.to_string(),
     ) {
@@ -323,13 +322,14 @@ pub fn execute_transfer_funds_back(
 
     let entry_point_contract = ENTRY_POINT_CONTRACT.load(deps.storage)?;
 
-    let transfer_msg = match snip20::send_msg(
+    let send_msg = match snip20::send_msg_with_code_hash(
         entry_point_contract.address.to_string(),
+        Some(entry_point_contract.code_hash),
         balance.amount,
         None,
         None,
         None,
-        255,
+        0,
         token_contract.code_hash.clone(),
         token_contract.address.to_string(),
     ) {
@@ -338,7 +338,7 @@ pub fn execute_transfer_funds_back(
     };
 
     Ok(Response::new()
-        .add_message(transfer_msg)
+        .add_message(send_msg)
         .add_attribute("action", "dispatch_transfer_funds_back_bank_send"))
 }
 

@@ -13,7 +13,8 @@ use secret_skip::{
 use skip_go_swap_adapter_shade_protocol::{
     error::{ContractError, ContractResult},
     msg::{ExecuteMsg, Snip20HookMsg},
-    state::{ENTRY_POINT_CONTRACT, REGISTERED_TOKENS},
+    shade_swap_router_msg as shade_router,
+    state::{ENTRY_POINT_CONTRACT, REGISTERED_TOKENS, SHADE_POOL_CODE_HASH, SHADE_ROUTER_CONTRACT},
 };
 use test_case::test_case;
 
@@ -61,19 +62,19 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "swap_contract_address".to_string(),
+                    contract_addr: "secret123".to_string(),
                     code_hash: "code_hash".to_string(),
                     msg: to_binary(&snip20::ExecuteMsg::Send {
                         recipient: "shade_router".to_string(),
                         recipient_code_hash: Some("code_hash".to_string()),
                         amount: 100u128.into(),
-                        msg: Some(to_binary(&Snip20HookMsg::Swap {
-                            operations: vec![SwapOperation {
-                                pool: "pool_1".to_string(),
-                                denom_in: "secret123".to_string(),
-                                denom_out: "secret456".to_string(),
-                                interface: None,
+                        msg: Some(to_binary(&shade_router::InvokeMsg::SwapTokensForExact {
+                            path: vec![shade_router::Hop {
+                                addr: "pool_1".to_string(),
+                                code_hash: "code_hash".to_string(),
                             }],
+                            expected_return: None,
+                            recipient: None,
                         }).unwrap()),
                         memo: None,
                         padding: None,
@@ -234,6 +235,16 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
             code_hash: "code_hash".to_string(),
         },
     )?;
+    SHADE_ROUTER_CONTRACT.save(
+        deps.as_mut().storage,
+        &ContractInfo {
+            address: Addr::unchecked("shade_router".to_string()),
+            code_hash: "code_hash".to_string(),
+        },
+    )?;
+    SHADE_POOL_CODE_HASH
+        .save(deps.as_mut().storage, &"code_hash".to_string())
+        .unwrap();
 
     REGISTERED_TOKENS
         .save(
@@ -274,7 +285,7 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
         env,
         mock_info(&params.sent_asset.denom(), &vec![]),
         ExecuteMsg::Receive(Snip20ReceiveMsg {
-            sender: Addr::unchecked(params.caller),
+            sender: Addr::unchecked(params.caller.clone()),
             from: Addr::unchecked(params.caller),
             amount: params.sent_asset.amount(),
             memo: None,

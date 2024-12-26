@@ -40,13 +40,3 @@ pub enum QueryMsg {
 pub enum Snip20HookMsg {
     Swap { operations: Vec<SwapOperation> },
 }
-
-/*
-#[cw_serde]
-pub struct SwapOperation {
-    pub pool: String,
-    pub denom_in: String,
-    pub denom_out: String,
-    pub interface: Option<Binary>,
-}
-*/
