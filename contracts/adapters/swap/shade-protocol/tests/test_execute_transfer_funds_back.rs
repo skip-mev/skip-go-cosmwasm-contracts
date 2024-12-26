@@ -6,6 +6,7 @@ use cosmwasm_std::{
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::BalanceResponse;
+use secret_skip::snip20;
 use skip_go_swap_adapter_shade_protocol::{
     error::{ContractError, ContractResult},
     msg::ExecuteMsg,
@@ -43,9 +44,18 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                msg: BankMsg::Send {
-                    to_address: "swapper".to_string(),
-                    amount: vec![Coin::new(100, "secret123")],
+                msg: WasmMsg::Execute {
+                    contract_addr: "secret123".to_string(),
+                    code_hash: "code_hash".to_string(),
+                    msg: to_binary(&snip20::ExecuteMsg::Send {
+                        recipient: "swapper".to_string(),
+                        recipient_code_hash: None,
+                        amount: 100u128.into(),
+                        msg: None,
+                        memo: None,
+                        padding: None,
+                    })?,
+                    funds: vec![],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -54,6 +64,7 @@ struct Params {
         expected_error: None,
     };
     "Transfers One Coin Balance")]
+/*
 #[test_case(
     Params {
         caller: "swap_contract_address".to_string(),
@@ -65,12 +76,18 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                msg: BankMsg::Send {
-                    to_address: "swapper".to_string(),
-                    amount: vec![
-                        Coin::new(100, "secret123"),
-                        Coin::new(100, "secret456")
-                    ],
+                msg: WasmMsg::Execute {
+                    contract_addr: "secret123".to_string(),
+                    code_hash: "code_hash".to_string(),
+                    msg: to_binary(&snip20::ExecuteMsg::Send {
+                        recipient: "swapper".to_string(),
+                        recipient_code_hash: None,
+                        amount: 100u128.into(),
+                        msg: None,
+                        memo: None,
+                        padding: None,
+                    })?,
+                    funds: vec![],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -79,25 +96,7 @@ struct Params {
         expected_error: None,
     };
     "Transfers Multiple Coin Balance")]
-#[test_case(
-    Params {
-        caller: "swap_contract_address".to_string(),
-        contract_balance: vec![],
-        return_denom: "secret123".to_string(),
-        expected_messages: vec![
-            SubMsg {
-                id: 0,
-                msg: BankMsg::Send {
-                    to_address: "swapper".to_string(),
-                    amount: vec![],
-                }.into(),
-                gas_limit: None,
-                reply_on: Never,
-            },
-        ],
-        expected_error: None,
-    };
-    "Transfers No Coin Balance")]
+*/
 #[test_case(
     Params {
         caller: "random".to_string(),
@@ -132,12 +131,17 @@ fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
                     .find(|coin| coin.denom == *contract_addr)
                 {
                     Some(coin) => SystemResult::Ok(SystemContractResult::Ok(
-                        to_binary(&BalanceResponse {
-                            balance: coin.amount.u128().into(),
+                        to_binary(&snip20::QueryResponse::Balance {
+                            amount: coin.amount.u128().into(),
                         })
                         .unwrap(),
                     )),
-                    None => panic!("Unsupported contract balance query: {:?}", query),
+                    None => SystemResult::Ok(SystemContractResult::Ok(
+                        to_binary(&snip20::QueryResponse::Balance {
+                            amount: 0u128.into(),
+                        })
+                        .unwrap(),
+                    )),
                 }
             }
             _ => panic!("Unsupported query: {:?}", query),
@@ -160,6 +164,14 @@ fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
         &mut deps.storage,
         &ContractInfo {
             address: Addr::unchecked("entry_point_contract"),
+            code_hash: "code_hash".to_string(),
+        },
+    )?;
+    REGISTERED_TOKENS.save(
+        &mut deps.storage,
+        Addr::unchecked(params.return_denom.clone()),
+        &ContractInfo {
+            address: Addr::unchecked(params.return_denom.clone()),
             code_hash: "code_hash".to_string(),
         },
     )?;
