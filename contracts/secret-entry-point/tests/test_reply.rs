@@ -3,8 +3,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, ContractInfo, CosmosMsg, Reply, StdError, SubMsg,
     SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
 };
-use cw20::{Cw20Coin, Cw20ExecuteMsg};
-use secret_skip::{asset::Asset, snip20};
+use secret_skip::{asset::Asset, cw20::Cw20Coin, snip20};
 use skip_go_secret_entry_point::{
     reply::RecoverTempStorage,
     state::{RECOVER_TEMP_STORAGE, REGISTERED_TOKENS},

@@ -4,9 +4,9 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg};
 use secret_skip::{
     asset::Asset,
+    cw20::Cw20Coin,
     ibc::{self, ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo, Ics20TransferMsg},
     snip20,
 };
@@ -395,8 +395,8 @@ fn test_execute_post_swap_action(params: Params) {
     let wasm_handler = |query: &WasmQuery| -> QuerierResult {
         match query {
             WasmQuery::Smart { .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&BalanceResponse {
-                    balance: 1_000_000u128.into(),
+                to_binary(&snip20::BalanceResponse {
+                    amount: 1_000_000u128.into(),
                 })
                 .unwrap(),
             )),

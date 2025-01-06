@@ -4,9 +4,9 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
-use cw20::Cw20Coin;
 use secret_skip::{
     asset::Asset,
+    cw20::Cw20Coin,
     snip20::{self, Snip20ReceiveMsg},
     swap::SwapOperation,
 };

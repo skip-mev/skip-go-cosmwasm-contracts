@@ -5,7 +5,6 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::BalanceResponse;
 use secret_skip::snip20;
 use skip_go_swap_adapter_shade_protocol::{
     error::{ContractError, ContractResult},

@@ -1,5 +1,4 @@
 use cosmwasm_std::{OverflowError, StdError};
-use cw_utils;
 use secret_skip::error::SkipError;
 use thiserror::Error;
 
@@ -16,9 +15,10 @@ pub enum ContractError {
     #[error(transparent)]
     Skip(#[from] SkipError),
 
+    /*
     #[error(transparent)]
     Payment(#[from] cw_utils::PaymentError),
-
+    */
     #[error("Unauthorized")]
     Unauthorized,
 

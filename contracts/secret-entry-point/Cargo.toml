@@ -25,9 +25,9 @@ skip-go-swap-adapter-shade-protocol = { path = "../adapters/swap/shade-protocol"
 secret-skip = { workspace = true }
 #cosmwasm-std      = { workspace = true }
 #cw2               = { workspace = true }
-cw20              = { workspace = true }
+#cw20              = { workspace = true }
 #cw-storage-plus   = { workspace = true }
-cw-utils          = { workspace = true }
+#cw-utils          = { workspace = true }
 #skip              = { workspace = true }
 thiserror         = { workspace = true }
 serde = "1.0.114"

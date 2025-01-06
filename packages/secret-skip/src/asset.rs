@@ -1,7 +1,7 @@
+use crate::cw20::{Cw20Coin, Cw20CoinVerified};
 use crate::error::SkipError;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Api, Coin, OverflowError, OverflowOperation, Uint128};
-use cw20::{Cw20Coin, Cw20CoinVerified};
 
 #[cw_serde]
 pub enum Asset {
@@ -233,7 +233,6 @@ mod tests {
         Addr, ContractResult, QuerierResult, SystemResult, WasmQuery,
     };
     use cw20::BalanceResponse;
-    use cw_utils::PaymentError;
 
     #[test]
     fn test_default_native() {
@@ -508,10 +507,7 @@ mod tests {
 
         let res = asset.validate(&deps.as_mut(), &env, &info);
 
-        assert_eq!(
-            res,
-            Err(SkipError::Payment(PaymentError::MultipleDenoms {}))
-        );
+        assert_eq!(res, Err(SkipError::MultipleDenoms {}));
     }
 
     #[test]
@@ -565,7 +561,7 @@ mod tests {
 
         let res = asset.validate(&deps.as_mut(), &env, &info);
 
-        assert_eq!(res, Err(SkipError::Payment(PaymentError::NonPayable {})));
+        assert_eq!(res, Err(SkipError::NonPayable {}));
 
         // TEST 3: Invalid asset due to invalid cw20 balance
         let asset = Asset::Cw20(Cw20Coin {

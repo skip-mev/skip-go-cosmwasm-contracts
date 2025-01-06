@@ -1,12 +1,12 @@
 use crate::{
     asset::Asset,
     ibc::IbcInfo,
+    snip20::Snip20ReceiveMsg,
     swap::{Swap, SwapExactAssetOut, SwapVenue},
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, HexBinary, Uint128};
-use cw20::Cw20ReceiveMsg;
 
 ///////////////
 /// MIGRATE ///
@@ -37,7 +37,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
-    Receive(Cw20ReceiveMsg),
+    Receive(Snip20ReceiveMsg),
     SwapAndActionWithRecover {
         sent_asset: Option<Asset>,
         user_swap: Swap,

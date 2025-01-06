@@ -17,9 +17,9 @@ use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, ContractInfo, CosmosMsg, DepsMut, Env,
     MessageInfo, Response, StdError, SubMsg, Uint128, WasmMsg,
 };
-use cw20::Cw20Coin;
 use secret_skip::{
     asset::Asset,
+    cw20::Cw20Coin,
     error::SkipError,
     ibc::{self, IbcInfo},
     snip20::Snip20ReceiveMsg,

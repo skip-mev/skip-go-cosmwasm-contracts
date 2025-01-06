@@ -9,9 +9,8 @@ use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Binary, ContractInfo, Deps, DepsMut, Env,
     MessageInfo, Response, Uint128, WasmMsg,
 };
-use secret_skip::{asset::Asset, snip20::Snip20ReceiveMsg, swap::SwapOperation};
+use secret_skip::{asset::Asset, cw20::Cw20Coin, snip20::Snip20ReceiveMsg, swap::SwapOperation};
 // use cw2::set_contract_version;
-use cw20::Cw20Coin;
 use secret_toolkit::snip20;
 
 use crate::{
@@ -286,7 +285,7 @@ pub fn execute_transfer_funds_back(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    _swapper: Addr,
+    swapper: Addr,
     return_denom: String,
 ) -> ContractResult<Response> {
     // Ensure the caller is the contract itself
@@ -320,11 +319,10 @@ pub fn execute_transfer_funds_back(
         Err(e) => return Err(ContractError::Std(e)),
     };
 
-    let entry_point_contract = ENTRY_POINT_CONTRACT.load(deps.storage)?;
+    // let entry_point_contract = ENTRY_POINT_CONTRACT.load(deps.storage)?;
 
-    let send_msg = match snip20::send_msg_with_code_hash(
-        entry_point_contract.address.to_string(),
-        Some(entry_point_contract.code_hash),
+    let send_msg = match snip20::send_msg(
+        swapper.to_string(),
         balance.amount,
         None,
         None,

@@ -13,8 +13,15 @@ pub enum SkipError {
     #[error("Unauthorized")]
     Unauthorized,
 
+    /*
     #[error(transparent)]
-    Payment(#[from] cw_utils::PaymentError),
+    Payment(#[from] PaymentError),
+    */
+    #[error("Multiple Denoms")]
+    MultipleDenoms {},
+
+    #[error("NonPayable")]
+    NonPayable {},
 
     #[error(transparent)]
     Overflow(#[from] OverflowError),

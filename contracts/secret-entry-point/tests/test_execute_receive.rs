@@ -5,9 +5,9 @@ use cosmwasm_std::{
     ReplyOn::{Always, Never},
     StdError, SubMsg, SystemError, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::Cw20Coin;
 use secret_skip::{
     asset::Asset,
+    cw20::Cw20Coin,
     snip20::Snip20ReceiveMsg,
     swap::{Swap, SwapExactAssetIn, SwapOperation},
 };

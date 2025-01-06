@@ -16,8 +16,6 @@ pub enum ExecuteMsg {
         recipient: String,
         amount: Uint128,
         memo: Option<String>,
-        //decoys: Option<Vec<Addr>>,
-        // entropy: Option<Binary>,
         padding: Option<String>,
     },
     Send {
@@ -26,8 +24,16 @@ pub enum ExecuteMsg {
         amount: Uint128,
         msg: Option<Binary>,
         memo: Option<String>,
-        //decoys: Option<Vec<Addr>>,
-        // entropy: Option<Binary>,
         padding: Option<String>,
     },
+}
+
+#[cw_serde]
+pub enum QueryResponse {
+    Balance { amount: Uint128 },
+}
+
+#[cw_serde]
+pub struct BalanceResponse {
+    pub amount: Uint128,
 }

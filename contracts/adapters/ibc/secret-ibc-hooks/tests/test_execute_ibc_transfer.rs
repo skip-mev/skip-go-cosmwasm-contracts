@@ -14,8 +14,8 @@ use secret_skip::{
     ibc::{ExecuteMsg, IbcFee, IbcInfo, Snip20HookMsg,
     Ics20TransferMsg},
     snip20::{self, Snip20ReceiveMsg},
+    cw20::Cw20Coin,
 };
-use cw20::Cw20Coin;
 use skip_go_secret_ibc_adapter_ibc_hooks::{
     error::ContractResult,
     state::{

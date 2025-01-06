@@ -5,8 +5,7 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{BalanceResponse, Cw20Coin};
-use secret_skip::{asset::Asset, snip20, swap::SwapOperation};
+use secret_skip::{asset::Asset, cw20::Cw20Coin, snip20, swap::SwapOperation};
 use skip_go_swap_adapter_shade_protocol::{
     error::{ContractError, ContractResult},
     msg::{ExecuteMsg, Snip20HookMsg},
@@ -124,8 +123,8 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
             WasmQuery::Smart { contract_addr, .. } => {
                 if contract_addr == "secret123" {
                     SystemResult::Ok(SystemContractResult::Ok(
-                        to_binary(&BalanceResponse {
-                            balance: 100u128.into(),
+                        to_binary(&snip20::BalanceResponse {
+                            amount: 100u128.into(),
                         })
                         .unwrap(),
                     ))

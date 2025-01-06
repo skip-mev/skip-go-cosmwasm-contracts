@@ -9,13 +9,13 @@ use cosmwasm_std::{
     entry_point, from_binary, to_binary, BankMsg, Binary, ContractInfo, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, SubMsg, SubMsgResult,
 };
-use cw20::Cw20Coin;
 use serde_cw_value::Value;
 // use cw2::set_contract_version;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransferResponse;
 use prost::Message;
 use secret_skip::{
     asset::Asset,
+    cw20::Cw20Coin,
     ibc::{
         AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, Ics20TransferMsg, InstantiateMsg,
         MigrateMsg, QueryMsg, Snip20HookMsg,

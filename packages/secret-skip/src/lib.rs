@@ -1,4 +1,5 @@
 pub mod asset;
+pub mod cw20;
 pub mod entry_point;
 pub mod error;
 pub mod hyperlane;
