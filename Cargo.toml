@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members  = [
-  #"contracts/entry-point",
+  "contracts/entry-point",
   "contracts/secret-entry-point",
-  #"contracts/adapters/hyperlane",
-  "contracts/adapters/ibc/secret-ibc-hooks",
-  "contracts/adapters/swap/shade-protocol",
-  #"contracts/placeholder",
-  "packages/secret-skip",
+  "contracts/adapters/hyperlane",
+  "contracts/adapters/ibc/*",
+  "contracts/adapters/swap/*",
+  "contracts/placeholder",
+  "packages/*",
 ]
 
 [workspace.package]
@@ -31,7 +31,7 @@ dexter-weighted-pool = "1.1.1"
 dexter-lp-token      = "1.0.0"
 dexter-router        = "1.1.0"
 cosmwasm-schema      = "1.5.4"
-#cosmwasm-std         = { version = "1.5.4", features = ["stargate"] }
+cosmwasm-std         = { version = "1.5.4", features = ["stargate"] }
 cosmos-sdk-proto     = { version = "0.19", default-features = false }
 cw2                  = "1.1"
 cw20                 = "1.1"
@@ -44,19 +44,19 @@ lido-satellite       = { git = "https://github.com/hadronlabs-org/lido-satellite
 drop-factory         = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "feat/audit-fixes", features = ["library"] }
 drop-staking-base    = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "feat/audit-fixes", features = ["library"] }
 mockall              = "0.12.1"
-# neutron-proto        = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
-# neutron-sdk          = "0.10.0"
-# osmosis-std          = "0.15.3"
+neutron-proto        = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
+neutron-sdk          = "0.10.0"
+osmosis-std          = "0.15.3"
 prost                = "0.11"
-# pryzm-std            = "0.1.7"
+pryzm-std            = "0.1.7"
 serde                = { version = "1.0.194", default-features = false, features = ["derive"] }
 serde-cw-value       = "0.7.0"
 serde-json-wasm      = "1.0.1"
-#skip                 = { version = "0.3.0", path = "./packages/skip" }
+skip                 = { version = "0.3.0", path = "./packages/skip" }
 secret-skip          = { version = "0.3.0", path = "./packages/secret-skip" }
 test-case            = "3.3.1"
 thiserror            = "1"
-#white-whale-std      = "1.1.1"
+white-whale-std      = "1.1.1"
 
 [profile.release]
 codegen-units    = 1
