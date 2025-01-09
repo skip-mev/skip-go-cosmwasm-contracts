@@ -44,9 +44,9 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Re
     unimplemented!()
 }
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -409,9 +409,9 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
     Ok(response)
 }
 
-///////////////////
-/// UNSUPPORTED ///
-///////////////////
+/////////////////
+// UNSUPPORTED //
+/////////////////
 
 // Smart swap is not supported since it cannot happen atomically right now.
 // These functions can be used as long as routes is of length 1.
@@ -463,9 +463,9 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     }
 }
 
-///////////////
-/// HELPERS ///
-///////////////
+/////////////
+// HELPERS //
+/////////////
 
 // multi-hop-swap routes are a string array of denoms to route through
 // with format [tokenA,tokenB,tokenC,tokenD]
@@ -785,9 +785,9 @@ fn get_string_price_formatted(price: Decimal) -> String {
     format!("{:0<N$}", significant_part, N = 27 - leading_zeros)
 }
 
-///////////////
-/// TESTS   ///
-///////////////
+/////////////
+// TESTS   //
+/////////////
 
 #[cfg(test)]
 mod tests {

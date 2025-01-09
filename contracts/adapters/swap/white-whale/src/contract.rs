@@ -34,9 +34,9 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Re
     unimplemented!()
 }
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -67,9 +67,9 @@ pub fn instantiate(
         ))
 }
 
-///////////////
-/// RECEIVE ///
-///////////////
+/////////////
+// RECEIVE //
+/////////////
 
 // Receive is the main entry point for the contract to
 // receive cw20 tokens and execute the swap

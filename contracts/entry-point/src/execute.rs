@@ -26,9 +26,9 @@ use skip::{
     },
 };
 
-//////////////////////////
-/// RECEIVE ENTRYPOINT ///
-//////////////////////////
+////////////////////////
+// RECEIVE ENTRYPOINT //
+////////////////////////
 
 // Receive is the main entry point for the contract to
 // receive cw20 tokens and execute the swap and action message
@@ -115,9 +115,9 @@ pub fn receive_cw20(
     }
 }
 
-///////////////////////////
-/// EXECUTE ENTRYPOINTS ///
-///////////////////////////
+/////////////////////////
+// EXECUTE ENTRYPOINTS //
+/////////////////////////
 
 // Main entry point for the contract
 // Dispatches the swap and post swap action
@@ -651,9 +651,9 @@ pub fn execute_action_with_recover(
     Ok(Response::new().add_submessage(sub_msg))
 }
 
-////////////////////////
-/// HELPER FUNCTIONS ///
-////////////////////////
+//////////////////////
+// HELPER FUNCTIONS //
+//////////////////////
 
 // ACTION HELPER FUNCTIONS
 

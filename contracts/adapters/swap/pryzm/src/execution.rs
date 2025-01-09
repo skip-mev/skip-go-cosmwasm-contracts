@@ -49,7 +49,7 @@ impl SwapExecutionStep {
 
     // Returns the output denom of the step
     pub fn get_return_denom(&self) -> Result<String, ContractError> {
-        return match self {
+        match self {
             SwapExecutionStep::Swap { swap_steps } => {
                 // take the last step token_out as the return denom
                 let token_out = match swap_steps.last() {
@@ -62,7 +62,7 @@ impl SwapExecutionStep {
                 // calculate the cAsset denom by prefixing "c:" to the host chain id
                 Ok(format!("{}{}", consts::C_ASSET_PREFIX, host_chain_id))
             }
-        };
+        }
     }
 }
 

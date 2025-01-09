@@ -27,9 +27,9 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Re
     unimplemented!()
 }
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -225,9 +225,9 @@ pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Res
         .add_attribute("action", sudo_type))
 }
 
-////////////////////////
-/// HELPER FUNCTIONS ///
-////////////////////////
+//////////////////////
+// HELPER FUNCTIONS //
+//////////////////////
 
 // Helper function to get the ack_id (channel id, sequence id) from a RequestPacket
 fn get_ack_id(req: &RequestPacket) -> ContractResult<AckID> {

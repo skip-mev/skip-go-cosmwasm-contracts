@@ -40,9 +40,9 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> ContractResult<Res
     Ok(Response::default())
 }
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -90,9 +90,9 @@ pub fn instantiate(
         ))
 }
 
-///////////////
-/// RECEIVE ///
-///////////////
+/////////////
+// RECEIVE //
+/////////////
 
 // Receive is the main entry point for the contract to
 // receive cw20 tokens and execute the swap

@@ -23,9 +23,9 @@ pub struct MigrateMsg {
     pub entry_point_contract_address: String,
 }
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // The InstantiateMsg struct defines the initialization parameters for the
 // Osmosis Poolmanager and Astroport swap adapter contracts.
@@ -352,9 +352,9 @@ pub enum Swap {
     SmartSwapExactAssetIn(SmartSwapExactAssetIn),
 }
 
-////////////////////////
-/// COMMON FUNCTIONS ///
-////////////////////////
+//////////////////////
+// COMMON FUNCTIONS //
+//////////////////////
 
 // Query the contract's balance and transfer the funds back to the swapper
 pub fn execute_transfer_funds_back(

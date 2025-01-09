@@ -46,9 +46,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Resp
         ))
 }
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -275,9 +275,9 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
         .add_attribute("action", sudo_type))
 }
 
-////////////////////////
-/// HELPER FUNCTIONS ///
-////////////////////////
+//////////////////////
+// HELPER FUNCTIONS //
+//////////////////////
 
 // Verifies the given memo is empty or valid json, and then adds the necessary
 // key/value pair to trigger the ibc hooks callback logic.
