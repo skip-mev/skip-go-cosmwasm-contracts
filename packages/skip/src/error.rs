@@ -6,7 +6,6 @@ pub enum SkipError {
     /////////////
     // GENERAL //
     /////////////
-
     #[error(transparent)]
     Std(#[from] StdError),
 
@@ -22,7 +21,6 @@ pub enum SkipError {
     //////////
     // SWAP //
     //////////
-
     #[error("Swap Operations Empty")]
     SwapOperationsEmpty,
 
@@ -38,14 +36,12 @@ pub enum SkipError {
     /////////
     // IBC //
     /////////
-
     #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
     IbcFeesNotOneCoin,
 
     ///////////
     // ASSET //
     ///////////
-
     #[error("Native Coin Sent To Contract Does Not Match Asset")]
     InvalidNativeCoin,
 

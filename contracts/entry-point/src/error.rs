@@ -9,7 +9,6 @@ pub enum ContractError {
     /////////////
     // GENERAL //
     /////////////
-
     #[error(transparent)]
     Std(#[from] StdError),
 
@@ -37,7 +36,6 @@ pub enum ContractError {
     //////////////
     // FEE SWAP //
     //////////////
-
     #[error("Fee Swap Not Allowed: No IBC Fees Provided")]
     FeeSwapWithoutIbcFees,
 
@@ -47,7 +45,6 @@ pub enum ContractError {
     ///////////////
     // USER SWAP //
     ///////////////
-
     #[error("User Swap Asset In Denom Differs From Asset Sent To Contract")]
     UserSwapAssetInDenomMismatch,
 
@@ -57,7 +54,6 @@ pub enum ContractError {
     //////////////////////
     // POST SWAP ACTION //
     //////////////////////
-
     #[error("Received Less Asset From Swaps Than Minimum Asset Required")]
     ReceivedLessAssetFromSwapsThanMinAsset,
 
@@ -78,7 +74,6 @@ pub enum ContractError {
     ////////////////
     //   ACTION   //
     ////////////////
-
     #[error("No Minimum Asset Provided with Exact Out Action")]
     NoMinAssetProvided,
 
