@@ -588,6 +588,15 @@ fn perform_duality_limit_order_query(
         None => return Err(ContractError::NoLiquidityToParse),
     };
 
+    let coin_out: Coin = match simulation_result.resp.taker_coin_out {
+        Some(v) => v,
+        None => return Err(ContractError::NoLiquidityToParse),
+    };
+
+    if coin_out.amount < max_out.unsigned_abs() {
+        return Err(ContractError::InsufficientLiquidity);
+    }
+
     Ok(coin_in.amount)
 }
 
