@@ -1,7 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "InstantiateMsg",
-  "description": "INSTANTIATE ///",
   "type": "object",
   "required": [
     "ibc_transfer_contract_address",
