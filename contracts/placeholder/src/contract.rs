@@ -1,9 +1,9 @@
 use cosmwasm_std::{entry_point, DepsMut, Empty, Env, MessageInfo, Response, StdError};
 use cw2::set_contract_version;
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");

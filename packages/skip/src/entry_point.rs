@@ -16,9 +16,9 @@ use cw20::Cw20ReceiveMsg;
 #[cw_serde]
 pub struct MigrateMsg {}
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // The InstantiateMsg struct defines the initialization parameters for the entry point contract.
 #[cw_serde]

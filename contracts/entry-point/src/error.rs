@@ -6,10 +6,9 @@ pub type ContractResult<T> = core::result::Result<T, ContractError>;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
-    ///////////////
-    /// GENERAL ///
-    ///////////////
-
+    /////////////
+    // GENERAL //
+    /////////////
     #[error(transparent)]
     Std(#[from] StdError),
 
@@ -34,30 +33,27 @@ pub enum ContractError {
     #[error("IBC fee denom differs from asset received without a fee swap to convert")]
     IBCFeeDenomDiffersFromAssetReceived,
 
-    ////////////////
-    /// FEE SWAP ///
-    ////////////////
-
+    //////////////
+    // FEE SWAP //
+    //////////////
     #[error("Fee Swap Not Allowed: No IBC Fees Provided")]
     FeeSwapWithoutIbcFees,
 
     #[error("Fee Swap Asset In Denom Differs From Asset Sent To Contract")]
     FeeSwapAssetInDenomMismatch,
 
-    /////////////////
-    /// USER SWAP ///
-    /////////////////
-
+    ///////////////
+    // USER SWAP //
+    ///////////////
     #[error("User Swap Asset In Denom Differs From Asset Sent To Contract")]
     UserSwapAssetInDenomMismatch,
 
     #[error("No Refund Address Provided For Swap Exact Asset Out User Swap")]
     NoRefundAddress,
 
-    ////////////////////////
-    /// POST SWAP ACTION ///
-    ////////////////////////
-
+    //////////////////////
+    // POST SWAP ACTION //
+    //////////////////////
     #[error("Received Less Asset From Swaps Than Minimum Asset Required")]
     ReceivedLessAssetFromSwapsThanMinAsset,
 
@@ -75,10 +71,9 @@ pub enum ContractError {
     #[error("Reply id: {0} not valid")]
     ReplyIdError(u64),
 
-    //////////////////
-    ///   ACTION   ///
-    //////////////////
-
+    ////////////////
+    //   ACTION   //
+    ////////////////
     #[error("No Minimum Asset Provided with Exact Out Action")]
     NoMinAssetProvided,
 

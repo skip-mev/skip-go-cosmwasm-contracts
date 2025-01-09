@@ -3,10 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum SkipError {
-    ///////////////
-    /// GENERAL ///
-    ///////////////
-
+    /////////////
+    // GENERAL //
+    /////////////
     #[error(transparent)]
     Std(#[from] StdError),
 
@@ -19,10 +18,9 @@ pub enum SkipError {
     #[error(transparent)]
     Overflow(#[from] OverflowError),
 
-    ////////////
-    /// SWAP ///
-    ////////////
-
+    //////////
+    // SWAP //
+    //////////
     #[error("Swap Operations Empty")]
     SwapOperationsEmpty,
 
@@ -35,17 +33,15 @@ pub enum SkipError {
     #[error("Routes Empty")]
     RoutesEmpty,
 
-    ///////////
-    /// IBC ///
-    ///////////
-
+    /////////
+    // IBC //
+    /////////
     #[error("Ibc Fees Are Not A Single Coin, Either Multiple Denoms Or No Coin Specified")]
     IbcFeesNotOneCoin,
 
-    /////////////
-    /// ASSET ///
-    /////////////
-
+    ///////////
+    // ASSET //
+    ///////////
     #[error("Native Coin Sent To Contract Does Not Match Asset")]
     InvalidNativeCoin,
 

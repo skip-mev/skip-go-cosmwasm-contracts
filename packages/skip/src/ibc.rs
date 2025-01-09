@@ -15,9 +15,9 @@ use neutron_proto::neutron::feerefunder::Fee as NeutronFee;
 pub struct MigrateMsg {
     pub entry_point_contract_address: String,
 }
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // The InstantiateMsg struct defines the initialization parameters for the IBC Transfer Adapter contracts.
 #[cw_serde]

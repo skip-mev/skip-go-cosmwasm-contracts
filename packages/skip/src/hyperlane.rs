@@ -10,9 +10,9 @@ use cosmwasm_std::HexBinary;
 pub struct MigrateMsg {
     pub entry_point_contract_address: String,
 }
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // The InstantiateMsg struct defines the initialization parameters for the IBC Transfer Adapter contracts.
 #[cw_serde]

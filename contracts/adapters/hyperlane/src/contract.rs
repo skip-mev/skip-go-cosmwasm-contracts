@@ -35,9 +35,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> ContractResult<Resp
         ))
 }
 
-///////////////////
-/// INSTANTIATE ///
-///////////////////
+/////////////////
+// INSTANTIATE //
+/////////////////
 
 // Contract name and version used for migration.
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
