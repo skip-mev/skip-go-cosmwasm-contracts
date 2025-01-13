@@ -50,6 +50,11 @@ name = "neutron-duality"
 dex_module_address = "neutron1n58mly6f7er0zs6swtetqgfqs36jaarqlplf59"
 swap_adapter_path = "../artifacts/skip_go_swap_adapter_duality-aarch64.wasm"
 
+[[swap_venues]]
+name = "neutron-astrovault"
+astrovault_router_contract_address = "neutron186n2juqnuzql3vpqshad3v29qc0tmy9hqglce49wk4h24e7p0frqymkn24"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_astrovault-aarch64.wasm"
+
 [[testnet_swap_venues]]
 name = "testnet-neutron-astroport"
 swap_adapter_path = "../artifacts/skip_go_swap_adapter_astroport-aarch64.wasm"
