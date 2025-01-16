@@ -1,4 +1,4 @@
-# Osmosis IBC Transfer Adapter Contract
+# Secret IBC Transfer Adapter Contract
 
 The Osmosis IBC Transfer adapter contract is responsible for:
 1. Dispatching the IBC transfer.
