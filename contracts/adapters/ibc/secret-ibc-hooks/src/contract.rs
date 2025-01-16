@@ -184,7 +184,7 @@ fn execute_ics20_ibc_transfer(
         return Err(ContractError::Unauthorized);
     }
 
-    // Error if ibc_info.fee is not None since Osmosis does not support fees
+    // Error if ibc_info.fee is not None since Secret does not support fees
     if ibc_info.fee.is_some() {
         return Err(ContractError::IbcFeesNotSupported);
     }
