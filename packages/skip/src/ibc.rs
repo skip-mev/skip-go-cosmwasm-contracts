@@ -109,7 +109,7 @@ impl TryFrom<IbcFee> for Coins {
 
 impl IbcFee {
     // one_coin aims to mimic the behavior of cw_utls::one_coin,
-    // returing the single coin in the IbcFee struct if it exists,
+    // returning the single coin in the IbcFee struct if it exists,
     // erroring if 0 or more than 1 coins exist.
     //
     // one_coin is used because the entry_point contract only supports
