@@ -1,0 +1,33 @@
+[package]
+name          = "skip-go-ibc-adapter-ibc-callbacks"
+version       = { workspace = true }
+rust-version  = { workspace = true }
+authors       = { workspace = true }
+edition       = { workspace = true }
+license       = { workspace = true }
+homepage      = { workspace = true }
+repository    = { workspace = true }
+documentation = { workspace = true }
+keywords      = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[dependencies]
+cosmwasm-schema  = { version = "2.0.0" }
+cosmwasm-std     = { version = "2.0.0", features = ["stargate"] }
+cw2              = { version = "2.0.0" }
+cw-storage-plus  = { version = "2.0.0" }
+ibc-proto        = { workspace = true }
+prost            = { workspace = true }
+serde-json-wasm  = { workspace = true }
+serde-cw-value   = { workspace = true }
+skip2            = { workspace = true }
+thiserror        = { workspace = true }
+
+[dev-dependencies]
+test-case        = { workspace = true }
