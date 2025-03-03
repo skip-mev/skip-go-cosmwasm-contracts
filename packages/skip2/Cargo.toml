@@ -18,5 +18,7 @@ cosmwasm-schema     = { version = "2.0.0" }
 cosmwasm-std        = { version = "2.0.0", features = ["stargate"] }
 cw-utils            = { version = "2.0.0" }
 cw20                = { version = "2.0.0" }
-ibc-proto           = { workspace = true }
+ibc-proto           = { version = "0.51.1", default-features = false, features = ["std"]}
 thiserror           = { workspace = true }
+serde-cw-value      = { workspace = true }
+serde-json-wasm     = { workspace = true }

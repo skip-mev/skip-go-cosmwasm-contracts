@@ -1,9 +1,8 @@
-use crate::error::SkipError;
-
 use std::convert::From;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Coin, Coins, StdError};
+use serde_cw_value::Value;
 
 ///////////////
 /// MIGRATE ///
@@ -83,22 +82,12 @@ impl TryFrom<IbcFee> for Coins {
     }
 }
 
-impl IbcFee {
-    // one_coin aims to mimic the behavior of cw_utls::one_coin,
-    // returing the single coin in the IbcFee struct if it exists,
-    // erroring if 0 or more than 1 coins exist.
-    //
-    // one_coin is used because the entry_point contract only supports
-    // the handling of a single denomination for IBC fees.
-    pub fn one_coin(&self) -> Result<Coin, SkipError> {
-        let ibc_fees_map: Coins = self.clone().try_into()?;
-
-        if ibc_fees_map.len() != 1 {
-            return Err(SkipError::IbcFeesNotOneCoin);
-        }
-
-        Ok(ibc_fees_map.to_vec().first().unwrap().clone())
-    }
+#[cw_serde]
+#[derive(Default)]
+pub struct EurekaFee {
+    pub coin: Coin,
+    pub receiver: String,
+    pub timeout_timestamp: u64,
 }
 
 // The IbcInfo struct defines the information for an IBC transfer standardized across all IBC Transfer Adapter contracts.
@@ -109,6 +98,8 @@ pub struct IbcInfo {
     pub fee: Option<IbcFee>,
     pub memo: String,
     pub recover_address: String,
+    pub encoding: Option<String>,
+    pub eureka_fee: Option<EurekaFee>,
 }
 
 // The IbcTransfer struct defines the parameters for an IBC transfer standardized across all IBC Transfer Adapter contracts.
@@ -135,27 +126,19 @@ impl From<IbcTransfer> for ExecuteMsg {
 // ibc transfer upon receiving a successful sub msg reply.
 pub type AckID<'a> = (&'a str, u64);
 
-// The IbcLifecycleComplete enum defines the possible sudo messages that the
-// ibc transfer adapter contract on ibc-hook enabled chains can expect to received
-// from the ibc-hooks module.
+/// Top-level memo struct
 #[cw_serde]
-pub enum IbcLifecycleComplete {
-    IbcAck {
-        /// The source channel of the IBC packet
-        channel: String,
-        /// The sequence number that the packet was sent with
-        sequence: u64,
-        /// String encoded version of the ack as seen by OnAcknowledgementPacket(..)
-        ack: String,
-        /// Whether an ack is a success of failure according to the transfer spec
-        success: bool,
-    },
-    IbcTimeout {
-        /// The source channel of the IBC packet
-        channel: String,
-        /// The sequence number that the packet was sent with
-        sequence: u64,
-    },
+pub struct Memo {
+    pub wasm: WasmData,
+}
+
+/// Nested "wasm" object
+#[cw_serde]
+pub struct WasmData {
+    pub contract: String,
+
+    #[schemars(skip)]
+    pub msg: Value,
 }
 
 #[cfg(test)]
@@ -189,44 +172,5 @@ mod tests {
         assert_eq!(coins.len(), 2);
         assert_eq!(coins.amount_of("atom"), Uint128::from(200u128));
         assert_eq!(coins.amount_of("osmo"), Uint128::from(100u128));
-    }
-
-    #[test]
-    fn test_one_coin() {
-        // TEST CASE 1: No Coins
-        let ibc_fee = IbcFee {
-            recv_fee: vec![],
-            ack_fee: vec![],
-            timeout_fee: vec![],
-        };
-
-        let result = ibc_fee.one_coin();
-
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), SkipError::IbcFeesNotOneCoin);
-
-        // TEST CASE 2: One Coin
-        let ibc_fee = IbcFee {
-            recv_fee: vec![Coin::new(Uint128::new(100), "atom")],
-            ack_fee: vec![],
-            timeout_fee: vec![],
-        };
-
-        let result = ibc_fee.one_coin();
-
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Coin::new(Uint128::new(100), "atom"));
-
-        // TEST CASE 3: More Than One Coin
-        let ibc_fee = IbcFee {
-            recv_fee: vec![Coin::new(Uint128::new(100), "atom")],
-            ack_fee: vec![Coin::new(Uint128::new(100), "osmo")],
-            timeout_fee: vec![],
-        };
-
-        let result = ibc_fee.one_coin();
-
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), SkipError::IbcFeesNotOneCoin);
     }
 }
