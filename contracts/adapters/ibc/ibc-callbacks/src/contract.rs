@@ -266,7 +266,7 @@ pub fn ibc_destination_callback(
     // Create a coin to send to the contract based on the packet data
     let coin = Coin {
         denom: recv_denom.clone(),
-        amount: Uint128::from_str(&recv_denom)?,
+        amount: Uint128::from_str(&packet_data.amount)?,
     };
 
     // @NotJeremyLiu TODO: Turn this into a sub msg and figure out what the recovery case is here
