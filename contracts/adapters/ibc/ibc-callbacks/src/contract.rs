@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::{
     error::{ContractError, ContractResult},
     state::{
