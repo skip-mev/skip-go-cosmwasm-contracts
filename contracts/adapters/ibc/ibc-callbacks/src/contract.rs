@@ -442,7 +442,7 @@ fn get_recv_denom(ibc_packet: IbcPacket, packet_denom: String) -> String {
         ibc_packet.dest.port_id, ibc_packet.dest.channel_id
     );
     let denom_hash = Sha256::digest(ibc_denom.as_bytes()).to_vec();
-    format!("ibc/{}", hex::encode(denom_hash))
+    format!("ibc/{}", hex::encode_upper(denom_hash))
 }
 
 /////////////
