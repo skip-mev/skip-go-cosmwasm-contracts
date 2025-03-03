@@ -114,6 +114,8 @@ struct Params {
                 fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -130,6 +132,8 @@ struct Params {
                         fee: None,
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(1_000_000, "os"),
                     timeout_timestamp: 101,
@@ -212,6 +216,8 @@ struct Params {
                 fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -228,6 +234,8 @@ struct Params {
                         fee: None,
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(900_000, "os"),
                     timeout_timestamp: 101,
@@ -259,6 +267,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -290,6 +300,8 @@ struct Params {
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(900_000, "os"),
                     timeout_timestamp: 101,
@@ -321,6 +333,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -341,6 +355,8 @@ struct Params {
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(900_000, "os"),
                     timeout_timestamp: 101,

@@ -495,13 +495,19 @@ pub fn execute_post_swap_action(
 
     // Set the transfer out asset to the post swap out asset amount minus the pre swap out asset amount
     // Since we only want to transfer out the amount received from the swap
-    let transfer_out_asset = Asset::new(
+    let mut transfer_out_asset = Asset::new(
         deps.api,
         min_asset.denom(),
         post_swap_out_asset
             .amount()
             .checked_sub(pre_swap_out_asset_amount)?,
     );
+
+    // If the post swap action is an IBC transfer, then handle
+    // the Eureka fee if needed
+    if let Action::IbcTransfer { ibc_info, .. } = &post_swap_action {
+        response = handle_eureka_fee(env, ibc_info, &mut transfer_out_asset, response)?;
+    }
 
     // Error if the contract balance is less than the min asset out amount
     if transfer_out_asset.amount() < min_asset.amount() {
@@ -568,10 +574,12 @@ pub fn execute_action(
 
     // If the post swap action is an IBC transfer, then handle the ibc fees
     // by either creating a fee swap message or deducting the ibc fees from
-    // the remaining asset received amount.
+    // the remaining asset received amount. Also handle the eureka fee if needed.
     if let Action::IbcTransfer { ibc_info, fee_swap } = &action {
         response =
             handle_ibc_transfer_fees(&deps, ibc_info, fee_swap, &mut remaining_asset, response)?;
+
+        response = handle_eureka_fee(env, ibc_info, &mut remaining_asset, response)?;
     }
 
     // Validate and determine the asset to be used for the action
@@ -825,6 +833,46 @@ fn handle_ibc_transfer_fees(
         response = response
             .add_message(ibc_fee_msg)
             .add_attribute("action", "dispatch_ibc_fee_bank_send");
+    }
+
+    Ok(response)
+}
+
+// Verify and dispath the eureka fee payment,
+// deducting the eureka fee amount from the remaining asset amount
+fn handle_eureka_fee(
+    env: Env,
+    ibc_info: &IbcInfo,
+    remaining_asset: &mut Asset,
+    mut response: Response,
+) -> Result<Response, ContractError> {
+    // Handle the eureka fee
+    if let Some(eureka_fee) = &ibc_info.eureka_fee {
+        // Error if the current block time is greater than the Eureka Fee timeout timestamp
+        if env.block.time.nanos() > eureka_fee.timeout_timestamp {
+            return Err(ContractError::EurekaFeeTimeout);
+        }
+
+        // Ensure the remaining asset denom is the same as the eureka fee denom
+        if remaining_asset.denom() != eureka_fee.coin.denom.clone() {
+            return Err(ContractError::RemainingAssetAndEurekaFeeDenomMismatch);
+        }
+
+        // Deduct the eureka fee coin amount from the remaining asset amount
+        remaining_asset.sub(eureka_fee.coin.amount)?;
+
+        // Create the eureka fee bank send message to the eureka fee receiver
+        let eureka_fee_bank_send = BankMsg::Send {
+            to_address: eureka_fee.receiver.clone(),
+            amount: vec![eureka_fee.coin.clone()],
+        };
+
+        response = response
+            .add_message(eureka_fee_bank_send)
+            .add_attribute("action", "dispatch_eureka_fee_bank_send")
+            .add_attribute("eureka_fee_denom", eureka_fee.coin.denom.clone())
+            .add_attribute("eureka_fee_amount", eureka_fee.coin.amount)
+            .add_attribute("eureka_fee_receiver", eureka_fee.receiver.clone());
     }
 
     Ok(response)

@@ -276,6 +276,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -338,6 +340,8 @@ struct Params {
                                 }),
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
+                                encoding: None,
+                                eureka_fee: None,
                             },
                             fee_swap: None,
                         },
@@ -382,6 +386,8 @@ struct Params {
                 fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -430,6 +436,8 @@ struct Params {
                                 fee: None,
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
+                                encoding: None,
+                                eureka_fee: None,
                             },
                             fee_swap: None,
                         },
@@ -478,6 +486,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -573,6 +583,8 @@ struct Params {
                                 }),
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
+                                encoding: None,
+                                eureka_fee: None,
                             },
                             fee_swap: Some(
                                 SwapExactAssetOut {
@@ -791,6 +803,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -893,6 +907,8 @@ struct Params {
                                 }),
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
+                                encoding: None,
+                                eureka_fee: None,
                             },
                             fee_swap: Some(
                                 SwapExactAssetOut {
@@ -1039,6 +1055,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1097,6 +1115,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1151,6 +1171,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1205,6 +1227,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1259,6 +1283,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -1296,6 +1322,8 @@ struct Params {
                 fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1350,6 +1378,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1404,6 +1434,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1458,6 +1490,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1629,6 +1663,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: Some(
                 SwapExactAssetOut {
@@ -1740,6 +1776,8 @@ struct Params {
                     timeout_fee: vec![Coin::new(100_000, "untrn")],
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -1820,6 +1858,8 @@ struct Params {
                                 }),
                                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                                     .to_string(),
+                                encoding: None,
+                                eureka_fee: None,
                             },
                             fee_swap: None,
                         },
