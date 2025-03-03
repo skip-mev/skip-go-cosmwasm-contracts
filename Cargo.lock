@@ -3248,8 +3248,8 @@ dependencies = [
 name = "skip-go-swap-adapter-mantra-dex"
 version = "0.3.0"
 dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
+ "cosmwasm-schema 1.5.5",
+ "cosmwasm-std 1.5.5",
  "cw-storage-plus 1.2.0",
  "cw-utils 1.0.3",
  "cw2 1.1.2",
