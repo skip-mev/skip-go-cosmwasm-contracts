@@ -5,19 +5,27 @@ use crate::{
         IN_PROGRESS_RECOVER_ADDRESS,
     },
 };
+use alloy_sol_types::SolType;
 use cosmwasm_std::{
-    entry_point, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, SubMsg, SubMsgResult,
+    ensure_eq, entry_point, from_json, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps,
+    DepsMut, Env, IbcAckCallbackMsg, IbcBasicResponse, IbcDestinationCallbackMsg, IbcPacket,
+    IbcSourceCallbackMsg, IbcTimeoutCallbackMsg, MessageInfo, Reply, Response, StdError, StdResult,
+    SubMsg, SubMsgResult, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
-use ibc_proto::ibc::applications::transfer::v1::{MsgTransfer, MsgTransferResponse};
+use ibc_eureka_solidity_types::msgs::IICS20TransferMsgs::FungibleTokenPacketData as AbiFungibleTokenPacketData;
+use ibc_proto::ibc::applications::transfer::v1::{
+    FungibleTokenPacketData, MsgTransfer, MsgTransferResponse,
+};
 use prost::Message;
 use serde_cw_value::Value;
+use sha2::{Digest, Sha256};
 use skip2::{
-    ibc::{AckID, ExecuteMsg, IbcInfo, IbcLifecycleComplete, InstantiateMsg, MigrateMsg, QueryMsg},
+    callbacks::SourceCallbackType,
+    ibc::{AckID, ExecuteMsg, IbcInfo, InstantiateMsg, Memo, MigrateMsg, QueryMsg},
     proto_coin::ProtoCoin,
-    sudo::{OsmosisSudoMsg as SudoMsg, SudoType},
 };
+use std::{collections::BTreeMap, str::FromStr};
 
 const IBC_MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 const REPLY_ID: u64 = 1;
@@ -118,11 +126,6 @@ fn execute_ibc_transfer(
         return Err(ContractError::Unauthorized);
     }
 
-    // Error if ibc_info.fee is not None since Osmosis does not support fees
-    if ibc_info.fee.is_some() {
-        return Err(ContractError::IbcFeesNotSupported);
-    }
-
     // Save in progress recover address to storage, to be used in sudo handler
     IN_PROGRESS_RECOVER_ADDRESS.save(
         deps.storage,
@@ -135,7 +138,10 @@ fn execute_ibc_transfer(
     // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
     let memo = verify_and_create_memo(ibc_info.memo, env.contract.address.to_string())?;
 
-    // Create osmosis ibc transfer message
+    // If the encoding is None, set it to "" which is treated as classic encoding
+    let encoding = ibc_info.encoding.unwrap_or_default();
+
+    // Create an ibc transfer message
     let msg = MsgTransfer {
         source_port: "transfer".to_string(),
         source_channel: ibc_info.source_channel,
@@ -145,15 +151,16 @@ fn execute_ibc_transfer(
         timeout_height: None,
         timeout_timestamp,
         memo,
+        encoding,
     };
 
-    // Create stargate message from osmosis ibc transfer message
+    // Create stargate message from the ibc transfer message
     let msg = CosmosMsg::Stargate {
         type_url: IBC_MSG_TRANSFER_TYPE_URL.to_string(),
         value: msg.encode_to_vec().into(),
     };
 
-    // Create sub message from osmosis ibc transfer message to receive a reply
+    // Create sub message from the ibc transfer message to receive a reply
     let sub_msg = SubMsg::reply_on_success(msg, REPLY_ID);
 
     Ok(Response::new()
@@ -219,38 +226,102 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
     Ok(Response::new().add_attribute("action", "sub_msg_reply_success"))
 }
 
-////////////
-/// SUDO ///
-////////////
-
-// Handles the ibc callback from the ibc hooks module
-// Upon success, removes the in progress ibc transfer from storage and returns immediately.
-// Upon error or timeout, sends the attempted ibc transferred funds back to the user's recover address.
 #[entry_point]
-pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
-    // Get the channel id, sequence id, and sudo type from the sudo message
-    let (channel, sequence, sudo_type) = match msg {
-        SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcAck {
-            channel,
-            sequence,
-            ack: _,
-            success,
+pub fn ibc_destination_callback(
+    _deps: DepsMut,
+    _env: Env,
+    msg: IbcDestinationCallbackMsg,
+) -> ContractResult<IbcBasicResponse> {
+    // Require that the packet was sent to the transfer port
+    ensure_eq!(
+        msg.packet.dest.port_id,
+        "transfer",
+        StdError::generic_err("only want to handle transfer packets")
+    );
+
+    // Require that the packet was successfully received
+    // TODO: This fails due to the msg.ack.data having extra bytes then just the
+    // scucess ack. Leaving out for now as may be fine.
+    // To think more on if we have to verify success here.
+    // ensure_eq!(
+    //     msg.ack.data,
+    //     StdAck::success(b"\x01").to_binary(),
+    //     StdError::generic_err("only want to handle successful transfers")
+    // );
+
+    // Create the response
+    let mut response = IbcBasicResponse::new().add_attribute("action", "ibc_destination_callback");
+
+    // Get the packet data
+    let packet_data = get_fungible_token_packet_data(msg.packet.data.clone())?;
+
+    // Get this chain's denom for the packet
+    let recv_denom = get_recv_denom(msg.packet, packet_data.denom.clone());
+
+    // Decode the memo to get the contract address and message to execute
+    let (contract_addr, msg) = get_contract_addr_and_msg_from_ibc_hooks_memo(packet_data.memo)?;
+
+    // Create a coin to send to the contract based on the packet data
+    let coin = Coin {
+        denom: recv_denom.clone(),
+        amount: Uint128::from_str(&recv_denom)?,
+    };
+
+    // @NotJeremyLiu TODO: Turn this into a sub msg and figure out what the recovery case is here
+    // Execute the message
+    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr,
+        msg,
+        funds: vec![coin],
+    });
+
+    // Add the message to the response
+    response = response.add_message(msg);
+
+    // Return the response
+    Ok(response)
+}
+
+#[entry_point]
+pub fn ibc_source_callback(
+    deps: DepsMut,
+    env: Env,
+    msg: IbcSourceCallbackMsg,
+) -> ContractResult<IbcBasicResponse> {
+    // Get the channel id, sequence id, and source callback type from the message
+    let (channel, sequence, callback_type) = match msg {
+        IbcSourceCallbackMsg::Acknowledgement(IbcAckCallbackMsg {
+            acknowledgement,
+            original_packet,
+            relayer: _,
+            ..
         }) => {
             // Remove the AckID <> in progress ibc transfer from storage
             // and return immediately if the ibc transfer was successful
             // since no further action is needed.
-            if success {
-                let ack_id: AckID = (&channel, sequence);
+            let ack_str = String::from_utf8_lossy(&acknowledgement.data);
+            if ack_str.contains("{\"result\":\"AQ==\"}") {
+                let ack_id: AckID = (&original_packet.src.channel_id, original_packet.sequence);
                 ACK_ID_TO_RECOVER_ADDRESS.remove(deps.storage, ack_id);
 
-                return Ok(Response::new().add_attribute("action", SudoType::Response));
+                return Ok(
+                    IbcBasicResponse::new().add_attribute("action", SourceCallbackType::Response)
+                );
             }
 
-            (channel, sequence, SudoType::Error)
+            (
+                original_packet.src.channel_id,
+                original_packet.sequence,
+                SourceCallbackType::Error,
+            )
         }
-        SudoMsg::IbcLifecycleComplete(IbcLifecycleComplete::IbcTimeout { channel, sequence }) => {
-            (channel, sequence, SudoType::Timeout)
-        }
+        IbcSourceCallbackMsg::Timeout(IbcTimeoutCallbackMsg {
+            packet, relayer: _, ..
+        }) => (
+            packet.src.channel_id,
+            packet.sequence,
+            SourceCallbackType::Timeout,
+        ),
     };
 
     // Get and remove the AckID <> in progress recover address from storage
@@ -258,7 +329,7 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
     let to_address = ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, ack_id)?;
     ACK_ID_TO_RECOVER_ADDRESS.remove(deps.storage, ack_id);
 
-    // Get all coins from contract's balance, which will be the the
+    // Get all coins from contract's balance, which will be the
     // failed ibc transfer coin and any leftover dust on the contract
     let amount = deps.querier.query_all_balances(env.contract.address)?;
 
@@ -270,9 +341,9 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
     // Create bank send message to send funds back to user's recover address
     let bank_send_msg = BankMsg::Send { to_address, amount };
 
-    Ok(Response::new()
+    Ok(IbcBasicResponse::new()
         .add_message(bank_send_msg)
-        .add_attribute("action", sudo_type))
+        .add_attribute("action", callback_type))
 }
 
 //////////////////////
@@ -280,32 +351,96 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> ContractResult<Response> {
 //////////////////////
 
 // Verifies the given memo is empty or valid json, and then adds the necessary
-// key/value pair to trigger the ibc hooks callback logic.
+// key/value pair to trigger the src hooks callback logic.
 fn verify_and_create_memo(memo: String, contract_address: String) -> ContractResult<String> {
     // If the memo given is empty, then set it to "{}" to avoid json parsing errors. Then,
     // get Value object from json string, erroring if the memo was not null while not being valid json
-    let mut memo: Value = serde_json_wasm::from_str(if memo.is_empty() { "{}" } else { &memo })?;
+    let memo_str = if memo.is_empty() { "{}" } else { &memo };
 
-    // Transform the Value object into a Value map representation of the json string
-    // and insert the necessary key value pair into the memo map to trigger
-    // the ibc hooks callback logic. That key value pair is:
-    // { "ibc_callback": <CALLBACK_CONTRACT_ADDRESS> }
-    //
-    // If the "ibc_callback" key was already set, this will override
-    // the value with the current contract address.
-    if let Value::Map(ref mut memo) = memo {
-        memo.insert(
-            Value::String("ibc_callback".to_string()),
-            Value::String(contract_address),
-        )
-    } else {
-        unreachable!()
+    // Parse the memo into a `Value`, ensuring it's a JSON object (Value::Map).
+    let mut memo_map = match serde_json_wasm::from_str::<Value>(memo_str)
+        .map_err(|e| StdError::generic_err(format!("Error parsing memo: {e}")))?
+    {
+        Value::Map(m) => m,
+        _ => return Err(ContractError::Std(StdError::generic_err("Invalid memo"))),
     };
 
-    // Transform the memo Value map back into a json string
-    let memo = serde_json_wasm::to_string(&memo)?;
+    // Create and insert the "src_callback" map containing only the "address".
+    let mut src_callback_map = BTreeMap::new();
+    src_callback_map.insert(
+        Value::String("address".into()),
+        Value::String(contract_address),
+    );
+    memo_map.insert(
+        Value::String("src_callback".into()),
+        Value::Map(src_callback_map),
+    );
 
-    Ok(memo)
+    // Serialize the updated memo back to JSON.
+    let updated_memo = serde_json_wasm::to_string(&Value::Map(memo_map))
+        .map_err(|e| StdError::generic_err(format!("Error serializing memo: {e}")))?;
+
+    Ok(updated_memo)
+}
+
+// Parses the given memo string to get the contract address and message to execute,
+// decoding the ibc hooks memo
+fn get_contract_addr_and_msg_from_ibc_hooks_memo(memo: String) -> StdResult<(String, Binary)> {
+    // Convert the memo string to an IBC Hooks Memo struct
+    let hooks_memo: Memo = from_json(&memo)?;
+
+    // Return the contract address and the msg as a binary
+    Ok((
+        hooks_memo.wasm.contract,
+        to_json_binary(&hooks_memo.wasm.msg)?,
+    ))
+}
+
+fn get_fungible_token_packet_data(packet_data: Binary) -> ContractResult<FungibleTokenPacketData> {
+    // Try to parse the packet data as a JSON encoded FungibleTokenPacketData
+    if let Ok(ftpd) = from_json::<FungibleTokenPacketData>(&packet_data) {
+        return Ok(ftpd);
+    }
+
+    // Try to parse the packet data as an ABI encoded FungibleTokenPacketData
+    if let Ok(ftpd) = AbiFungibleTokenPacketData::abi_decode(&packet_data, true) {
+        // Convert the ABI encoded FungibleTokenPacketData to a protobuf encoded FungibleTokenPacketData
+        let ftpd_proto = FungibleTokenPacketData {
+            denom: ftpd.denom,
+            amount: ftpd.amount.to_string(),
+            sender: ftpd.sender,
+            receiver: ftpd.receiver,
+            memo: ftpd.memo,
+        };
+        return Ok(ftpd_proto);
+    }
+
+    // Try to parse the packet data as a protobuf encoded FungibleTokenPacketData
+    if let Ok(ftpd) = FungibleTokenPacketData::decode(&*packet_data) {
+        return Ok(ftpd);
+    }
+
+    Err(ContractError::FailedToDecodePacketData)
+}
+
+fn get_recv_denom(ibc_packet: IbcPacket, packet_denom: String) -> String {
+    let prefix = format!("{}/{}/", ibc_packet.src.port_id, ibc_packet.src.channel_id);
+
+    // Check if the packet is returning to the origin
+    // If so return the original denom
+    let is_returning_to_origin = packet_denom.starts_with(&prefix);
+    if is_returning_to_origin {
+        let ibc_denom = packet_denom.trim_start_matches(&prefix).to_string();
+        return ibc_denom;
+    }
+
+    // Create and return the proper ibc denom
+    let ibc_denom = format!(
+        "{}/{}/{packet_denom}",
+        ibc_packet.dest.port_id, ibc_packet.dest.channel_id
+    );
+    let denom_hash = Sha256::digest(ibc_denom.as_bytes()).to_vec();
+    format!("ibc/{}", hex::encode(denom_hash))
 }
 
 /////////////
@@ -324,3 +459,169 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     }
     .map_err(From::from)
 }
+
+// Scratch Tests
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use alloy_sol_types::SolType;
+//     use cosmwasm_std::{from_base64, from_json, IbcTimeout, SubMsgResponse, Timestamp};
+//     use ibc_eureka_solidity_types::msgs::IICS20TransferMsgs::FungibleTokenPacketData as AbiFungibleTokenPacketData;
+//     use serde_json_wasm::from_slice;
+
+//     use ibc_proto::ibc::applications::transfer::v1::FungibleTokenPacketData;
+
+//     use cosmwasm_std::IbcEndpoint;
+
+//     #[test]
+//     fn test_reply() {
+//         let sub_msg_result = SubMsgResult::Ok(SubMsgResponse {
+//             events: vec![],
+//             data: Some(Binary::new(b"11".to_vec())),
+//             msg_responses: vec![],
+//         });
+//         let reply = Reply {
+//             id: 1,
+//             payload: Binary::default(),
+//             gas_used: 0,
+//             result: sub_msg_result,
+//         };
+//         println!("{:#?}", reply);
+//         //let resp: MsgTransferResponse = MsgTransferResponse::decode(Binary::new(b"0803".to_vec()).as_slice()).unwrap();
+//         let resp: MsgTransferResponse =
+//             MsgTransferResponse::decode(Binary::from(vec![0x08, 0x03]).as_slice()).unwrap();
+//         println!("{:#?}", resp);
+//     }
+
+//     #[test]
+//     fn test_get_recv_denom_new_denom() {
+//         let timeout = IbcTimeout::with_timestamp(Timestamp::from_nanos(1));
+//         let ibc_packet = IbcPacket::new(
+//             Binary::default(),
+//             IbcEndpoint {
+//                 port_id: "transfer".to_string(),
+//                 channel_id: "client-6".to_string(),
+//             },
+//             IbcEndpoint {
+//                 port_id: "transfer".to_string(),
+//                 channel_id: "08-wasm-0".to_string(),
+//             },
+//             1,
+//             timeout,
+//         );
+
+//         let packet_denom = "0xc30edcad074f093882d80424962415cf61494258".to_string();
+//         let recv_denom = get_recv_denom(ibc_packet, packet_denom);
+//         assert_eq!(
+//             recv_denom,
+//             "ibc/68afe084b6adf1e1df3867675072f23bf12f270033bd4ce65a10dd7d05d411e1".to_string()
+//         );
+//     }
+
+//     #[test]
+//     fn test_get_recv_denom_returning_denom() {
+//         let timeout = IbcTimeout::with_timestamp(Timestamp::from_nanos(1));
+//         let ibc_packet = IbcPacket::new(
+//             Binary::default(),
+//             IbcEndpoint {
+//                 port_id: "transfer".to_string(),
+//                 channel_id: "client-6".to_string(),
+//             },
+//             IbcEndpoint {
+//                 port_id: "transfer".to_string(),
+//                 channel_id: "08-wasm-0".to_string(),
+//             },
+//             1,
+//             timeout,
+//         );
+
+//         let packet_denom = "transfer/client-6/stake".to_string();
+//         let recv_denom = get_recv_denom(ibc_packet, packet_denom);
+//         assert_eq!(recv_denom, "stake".to_string());
+//     }
+
+//     #[test]
+//     fn test_get_fungible_token_packet_data() {
+//         let msg_packet_data_str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACoweGMzMGVkY2FkMDc0ZjA5Mzg4MmQ4MDQyNDk2MjQxNWNmNjE0OTQyNTgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACoweDk1MjQ0ZjkwZTExMDQ3YTBkYzA3MjhmMjBjZWZhYzI5ZTZjYTFlYTMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEFjb3Ntb3MxZ2hkNzUzc2hqdXdleHh5d21nczR4ejd4MnE3MzJ2Y25rbTZoMnB5djlzNmFoM2h5bHZycWEwZHI1cQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYnsiZGVzdF9jYWxsYmFjayI6IHsiYWRkcmVzcyI6ImNvc21vczFnaGQ3NTNzaGp1d2V4eHl3bWdzNHh6N3gycTczMnZjbmttNmgycHl2OXM2YWgzaHlsdnJxYTBkcjVxIn19AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+//         let msg_packet_data: Binary = from_base64(msg_packet_data_str).unwrap().into();
+
+//         let packet_data = get_fungible_token_packet_data(msg_packet_data).unwrap();
+//         println!("{:#?}", packet_data);
+//     }
+
+//     #[test]
+//     fn test_msg_packet_data() {
+//         let msg_packet_data_str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACoweGMzMGVkY2FkMDc0ZjA5Mzg4MmQ4MDQyNDk2MjQxNWNmNjE0OTQyNTgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACoweDk1MjQ0ZjkwZTExMDQ3YTBkYzA3MjhmMjBjZWZhYzI5ZTZjYTFlYTMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEFjb3Ntb3MxZ2hkNzUzc2hqdXdleHh5d21nczR4ejd4MnE3MzJ2Y25rbTZoMnB5djlzNmFoM2h5bHZycWEwZHI1cQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYnsiZGVzdF9jYWxsYmFjayI6IHsiYWRkcmVzcyI6ImNvc21vczFnaGQ3NTNzaGp1d2V4eHl3bWdzNHh6N3gycTczMnZjbmttNmgycHl2OXM2YWgzaHlsdnJxYTBkcjVxIn19AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+//         let msg_packet_data: Binary = from_base64(msg_packet_data_str).unwrap().into();
+//         // //let packet_data_proto: FungibleTokenPacketData = FungibleTokenPacketData::decode(&*msg_packet_data).unwrap();
+//         // // Try to parse the packet data as a JSON encoded FungibleTokenPacketData
+//         if let Ok(ftpd) = from_json::<FungibleTokenPacketData>(&msg_packet_data) {
+//             println!("Parsed entire thing as JSON!\n{:#?}", ftpd);
+//         }
+
+//         // Try to parse the packet data as an ABI encoded FungibleTokenPacketData
+//         if let Ok(ftpd) = AbiFungibleTokenPacketData::abi_decode(&msg_packet_data, true) {
+//             println!("Parsed entire thing as ABI!");
+//             // Print Denom
+//             println!("Denom: {}", ftpd.denom);
+//             // Print Amount
+//             println!("Amount: {}", ftpd.amount);
+//             // Print Sender
+//             println!("Sender: {}", ftpd.sender);
+//             // Print Receiver
+//             println!("Receiver: {}", ftpd.receiver);
+//             // Print Memo
+//             println!("Memo: {}", ftpd.memo);
+//         }
+//     }
+
+//     #[test]
+//     fn test_valid_memo() {
+//         // A valid JSON structure containing the fields "wasm" -> { "contract", "msg" }
+//         let memo = r#"
+//         {
+//             "wasm": {
+//                 "contract": "some_contract_address",
+//                 "msg": {
+//                     "some_key": "some_value",
+//                     "another_key": 123
+//                 }
+//             }
+//         }
+//         "#;
+
+//         let result = get_contract_addr_and_msg_from_ibc_hooks_memo(memo.to_string());
+//         assert!(result.is_ok());
+
+//         let (contract_addr, msg_bin) = result.unwrap();
+//         assert_eq!(contract_addr, "some_contract_address");
+
+//         // If we want to check the contents of the msg, we can parse the Binary back to JSON.
+//         let msg_val: Value = from_slice(&msg_bin).unwrap();
+//         // e.g. ensure we got the same structure back
+//         let expected_msg =
+//             serde_json_wasm::from_str(r#"{ "some_key":"some_value", "another_key":123 }"#).unwrap();
+//         assert_eq!(msg_val, expected_msg);
+//     }
+
+//     #[test]
+//     fn test_valid_ack_data() {
+//         let ack_data = StdAck::success(b"\x01").to_binary();
+//         println!("{:?}", ack_data);
+//         assert_eq!(ack_data, br#"{"result":"AQ=="}"#);
+//         println!("{}", ack_data.to_string());
+
+//         let success_result_ack: Binary = br#"{"result":"AQ=="}"#.into();
+//         println!("{:?}", success_result_ack);
+//         println!("{}", success_result_ack.to_string());
+//         let b64_data = success_result_ack.to_base64();
+//         println!("{}", b64_data);
+
+//         let b64_data_on_chain = "ChF7InJlc3VsdCI6IkFRPT0ifQ==";
+//         let ack_binary = from_base64(b64_data_on_chain).unwrap();
+//         println!("{:?}", ack_binary);
+//         let ack_str_utf8 = String::from_utf8_lossy(&ack_binary);
+//         println!("ack_str_utf8:{}", ack_str_utf8);
+//     }
+// }

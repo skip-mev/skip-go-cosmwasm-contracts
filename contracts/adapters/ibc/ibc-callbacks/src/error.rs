@@ -1,4 +1,4 @@
-use cosmwasm_std::{OverflowError, StdError};
+use cosmwasm_std::StdError;
 use thiserror::Error;
 
 pub type ContractResult<T> = core::result::Result<T, ContractError>;
@@ -10,18 +10,6 @@ pub enum ContractError {
 
     #[error(transparent)]
     Decode(#[from] prost::DecodeError),
-
-    #[error(transparent)]
-    JsonDecode(#[from] serde_json_wasm::de::Error),
-
-    #[error(transparent)]
-    JsonEncode(#[from] serde_json_wasm::ser::Error),
-
-    #[error(transparent)]
-    Overflow(#[from] OverflowError),
-
-    #[error("IBC fees are not supported, vectors must be empty")]
-    IbcFeesNotSupported,
 
     #[error("SubMsgResponse does not contain data")]
     MissingResponseData,
@@ -37,4 +25,7 @@ pub enum ContractError {
         channel_id: String,
         sequence_id: u64,
     },
+
+    #[error("Failed to decode packet data into fungible token packet data")]
+    FailedToDecodePacketData,
 }
