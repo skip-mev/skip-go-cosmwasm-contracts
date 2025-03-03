@@ -22,12 +22,16 @@ cosmwasm-schema  = { version = "2.0.0" }
 cosmwasm-std     = { version = "2.0.0", features = ["stargate"] }
 cw2              = { version = "2.0.0" }
 cw-storage-plus  = { version = "2.0.0" }
-ibc-proto        = { workspace = true }
-prost            = { workspace = true }
+ibc-proto        = { git = "https://github.com/NotJeremyLiu/ibc-proto-rs", branch = "jl/ftp-v1", default-features = false, features = ["std", "serde"]}
+prost            = { version = "0.13.5" }
+ibc-eureka-solidity-types = {git = "https://github.com/cosmos/solidity-ibc-eureka", branch="serdar/309-callbacks-pkg"}
 serde-json-wasm  = { workspace = true }
 serde-cw-value   = { workspace = true }
 skip2            = { workspace = true }
 thiserror        = { workspace = true }
+alloy-sol-types  = { version = "0.8", default-features = false, features=["json"]}
+hex              = { version = "0.4", default-features = false }
+sha2             = { version = "0.10", default-features = false }
 
 [dev-dependencies]
 test-case        = { workspace = true }
