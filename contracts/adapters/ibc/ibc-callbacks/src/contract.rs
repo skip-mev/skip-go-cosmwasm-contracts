@@ -242,14 +242,12 @@ pub fn ibc_destination_callback(
     );
 
     // Require that the packet was successfully received
-    // TODO: This fails due to the msg.ack.data having extra bytes then just the
-    // scucess ack. Leaving out for now as may be fine.
-    // To think more on if we have to verify success here.
-    // ensure_eq!(
-    //     msg.ack.data,
-    //     StdAck::success(b"\x01").to_binary(),
-    //     StdError::generic_err("only want to handle successful transfers")
-    // );
+    // Need to decode and check string contains bytes at the beginning 
+    // such that StdAck::success(b"\x01").to_binary() doesn't equal
+    let ack_str = String::from_utf8_lossy(&msg.ack.data);
+    if !ack_str.contains("{\"result\":\"AQ==\"}") {
+        return Err(ContractError::ReceivePacketFailed);
+    }
 
     // Create the response
     let mut response = IbcBasicResponse::new().add_attribute("action", "ibc_destination_callback");
@@ -468,7 +466,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 // mod tests {
 //     use super::*;
 //     use alloy_sol_types::SolType;
-//     use cosmwasm_std::{from_base64, from_json, IbcTimeout, SubMsgResponse, Timestamp};
+//     use cosmwasm_std::{from_base64, from_json, IbcTimeout, SubMsgResponse, Timestamp, StdAck};
 //     use ibc_eureka_solidity_types::msgs::IICS20TransferMsgs::FungibleTokenPacketData as AbiFungibleTokenPacketData;
 //     use serde_json_wasm::from_slice;
 
@@ -625,5 +623,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 //         println!("{:?}", ack_binary);
 //         let ack_str_utf8 = String::from_utf8_lossy(&ack_binary);
 //         println!("ack_str_utf8:{}", ack_str_utf8);
+
+//         if !ack_str_utf8.contains("{\"result\":\"AQ==\"}") {
+//             panic!("Not a success ack");
+//         }
+
+//         let other_b64_data_on_chain = "eyJyZXN1bHQiOiJBUT09In0";
+//         let other_ack_binary = from_base64(other_b64_data_on_chain).unwrap();
+//         println!("{:?}", other_ack_binary);
+//         let other_ack_str_utf8 = String::from_utf8_lossy(&other_ack_binary);
+//         println!("other_ack_str_utf8:{}", other_ack_str_utf8);
+//         if !other_ack_str_utf8.contains("{\"result\":\"AQ==\"}") {
+//             panic!("Not a success ack");
+//         }
+
+//         // Convert the base
 //     }
 // }
