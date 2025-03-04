@@ -125,14 +125,24 @@ impl IbcFee {
     }
 }
 
+#[cw_serde]
+#[derive(Default)]
+pub struct EurekaFee {
+    pub coin: Coin,
+    pub receiver: String,
+    pub timeout_timestamp: u64,
+}
+
 // The IbcInfo struct defines the information for an IBC transfer standardized across all IBC Transfer Adapter contracts.
 #[cw_serde]
 pub struct IbcInfo {
     pub source_channel: String,
     pub receiver: String,
-    pub fee: Option<IbcFee>,
+    pub fee: Option<IbcFee>, // Only used in Neutron
     pub memo: String,
     pub recover_address: String,
+    pub encoding: Option<String>,
+    pub eureka_fee: Option<EurekaFee>,
 }
 
 // The IbcTransfer struct defines the parameters for an IBC transfer standardized across all IBC Transfer Adapter contracts.
