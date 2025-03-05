@@ -41,12 +41,18 @@ pub enum ExecuteMsg {
 /// QUERY ///
 /////////////
 
+#[cw_serde]
+pub struct RecoverInfo {
+    pub address: String,
+    pub coin: Coin,
+}
+
 // The QueryMsg enum defines the queries the IBC Transfer Adapter Contract provides.
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(String)]
-    InProgressRecoverAddress {
+    #[returns(RecoverInfo)]
+    InProgressRecoverInfo {
         channel_id: String,
         sequence_id: u64,
     },

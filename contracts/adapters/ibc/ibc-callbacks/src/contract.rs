@@ -3,8 +3,8 @@
 use crate::{
     error::{ContractError, ContractResult},
     state::{
-        ACK_ID_TO_RECOVER_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_CHANNEL_ID,
-        IN_PROGRESS_RECOVER_ADDRESS,
+        ACK_ID_TO_RECOVER_INFO, ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_CHANNEL_ID,
+        IN_PROGRESS_COIN, IN_PROGRESS_RECOVER_ADDRESS,
     },
 };
 use alloy_sol_types::SolType;
@@ -24,7 +24,7 @@ use serde_cw_value::Value;
 use sha2::{Digest, Sha256};
 use skip2::{
     callbacks::SourceCallbackType,
-    ibc::{AckID, ExecuteMsg, IbcInfo, InstantiateMsg, Memo, MigrateMsg, QueryMsg},
+    ibc::{AckID, ExecuteMsg, IbcInfo, InstantiateMsg, Memo, MigrateMsg, QueryMsg, RecoverInfo},
     proto_coin::ProtoCoin,
 };
 use std::{collections::BTreeMap, str::FromStr};
@@ -128,14 +128,17 @@ fn execute_ibc_transfer(
         return Err(ContractError::Unauthorized);
     }
 
-    // Save in progress recover address to storage, to be used in sudo handler
+    // Save in progress recover address to storage, to be used in reply and source callbacks handler
     IN_PROGRESS_RECOVER_ADDRESS.save(
         deps.storage,
         &ibc_info.recover_address, // This address is verified in entry point
     )?;
 
-    // Save in progress channel id to storage, to be used in sudo handler
+    // Save in progress channel id to storage, to be used in reply and source callbacks  handler
     IN_PROGRESS_CHANNEL_ID.save(deps.storage, &ibc_info.source_channel)?;
+
+    // Save in progress coin to storage, to be used in reply and source callbacks handler
+    IN_PROGRESS_COIN.save(deps.storage, &coin)?;
 
     // Verify memo is valid json and add the necessary key/value pair to trigger the ibc hooks callback logic.
     let memo = verify_and_create_memo(ibc_info.memo, env.contract.address.to_string())?;
@@ -215,15 +218,26 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
     let ack_id: AckID = (&in_progress_channel_id, resp.sequence);
 
     // Error if unique ack_id (channel id, sequence id) already exists in storage
-    if ACK_ID_TO_RECOVER_ADDRESS.has(deps.storage, ack_id) {
+    if ACK_ID_TO_RECOVER_INFO.has(deps.storage, ack_id) {
         return Err(ContractError::AckIDAlreadyExists {
             channel_id: ack_id.0.into(),
             sequence_id: ack_id.1,
         });
     }
 
+    // Get and delete the in progress coin from storage
+    let in_progress_coin = IN_PROGRESS_COIN.load(deps.storage)?;
+    IN_PROGRESS_COIN.remove(deps.storage);
+
     // Set the in progress recover address to storage, keyed by channel id and sequence id
-    ACK_ID_TO_RECOVER_ADDRESS.save(deps.storage, ack_id, &in_progress_recover_address)?;
+    ACK_ID_TO_RECOVER_INFO.save(
+        deps.storage,
+        ack_id,
+        &RecoverInfo {
+            address: in_progress_recover_address,
+            coin: in_progress_coin,
+        },
+    )?;
 
     Ok(Response::new().add_attribute("action", "sub_msg_reply_success"))
 }
@@ -285,7 +299,7 @@ pub fn ibc_destination_callback(
 #[entry_point]
 pub fn ibc_source_callback(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     msg: IbcSourceCallbackMsg,
 ) -> ContractResult<IbcBasicResponse> {
     // Get the channel id, sequence id, and source callback type from the message
@@ -302,7 +316,7 @@ pub fn ibc_source_callback(
             let ack_str = String::from_utf8_lossy(&acknowledgement.data);
             if ack_str.contains("{\"result\":\"AQ==\"}") {
                 let ack_id: AckID = (&original_packet.src.channel_id, original_packet.sequence);
-                ACK_ID_TO_RECOVER_ADDRESS.remove(deps.storage, ack_id);
+                ACK_ID_TO_RECOVER_INFO.remove(deps.storage, ack_id);
 
                 return Ok(
                     IbcBasicResponse::new().add_attribute("action", SourceCallbackType::Response)
@@ -324,22 +338,23 @@ pub fn ibc_source_callback(
         ),
     };
 
-    // Get and remove the AckID <> in progress recover address from storage
+    // Get and remove the AckID <> in progress recover info from storage
     let ack_id: AckID = (&channel, sequence);
-    let to_address = ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, ack_id)?;
-    ACK_ID_TO_RECOVER_ADDRESS.remove(deps.storage, ack_id);
+    let recover_info = ACK_ID_TO_RECOVER_INFO.load(deps.storage, ack_id)?;
+    ACK_ID_TO_RECOVER_INFO.remove(deps.storage, ack_id);
 
-    // Get all coins from contract's balance, which will be the
-    // failed ibc transfer coin and any leftover dust on the contract
-    let amount = deps.querier.query_all_balances(env.contract.address)?;
-
-    // If amount is empty, return a no funds to refund error
-    if amount.is_empty() {
+    // If coin amount is empty, return a no funds to refund error
+    // This should not happen as it means the ibc transfer of a 0 amount
+    // coin was succesful
+    if recover_info.coin.amount.is_zero() {
         return Err(ContractError::NoFundsToRefund);
     }
 
     // Create bank send message to send funds back to user's recover address
-    let bank_send_msg = BankMsg::Send { to_address, amount };
+    let bank_send_msg = BankMsg::Send {
+        to_address: recover_info.address,
+        amount: vec![recover_info.coin],
+    };
 
     Ok(IbcBasicResponse::new()
         .add_message(bank_send_msg)
@@ -450,12 +465,12 @@ fn get_recv_denom(ibc_packet: IbcPacket, packet_denom: String) -> String {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
     match msg {
-        QueryMsg::InProgressRecoverAddress {
+        QueryMsg::InProgressRecoverInfo {
             channel_id,
             sequence_id,
-        } => to_json_binary(
-            &ACK_ID_TO_RECOVER_ADDRESS.load(deps.storage, (&channel_id, sequence_id))?,
-        ),
+        } => {
+            to_json_binary(&ACK_ID_TO_RECOVER_INFO.load(deps.storage, (&channel_id, sequence_id))?)
+        }
     }
     .map_err(From::from)
 }
@@ -637,6 +652,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 //             panic!("Not a success ack");
 //         }
 
-//         // Convert the base
+//         let other_ack_json: Value = from_json(&other_ack_binary).unwrap();
+//         println!("other_ack_binary converted to json: {:?}", other_ack_json);
+
+//         // Take ack_binary and convert to json
+//         let ack_json: Value = from_json(&ack_binary).unwrap();
+//         println!("ack_binary converted to json: {:?}", ack_json);
 //     }
 // }
