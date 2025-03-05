@@ -256,8 +256,9 @@ pub fn ibc_destination_callback(
     );
 
     // Require that the packet was successfully received
-    // Need to decode and check string contains bytes at the beginning
-    // such that StdAck::success(b"\x01").to_binary() doesn't equal
+    // Need to decode and check string contains certain values
+    // as there are bytes at the beginning such that 
+    // StdAck::success(b"\x01").to_binary() doesn't equal the ack.data
     let ack_str = String::from_utf8_lossy(&msg.ack.data);
     if !ack_str.contains("{\"result\":\"AQ==\"}") {
         return Err(ContractError::ReceivePacketFailed);
