@@ -28,4 +28,7 @@ pub enum ContractError {
 
     #[error("Failed to decode packet data into fungible token packet data")]
     FailedToDecodePacketData,
+
+    #[error("Receive packet is not successful, ibc dest callback will not process")]
+    ReceivePacketFailed,
 }
