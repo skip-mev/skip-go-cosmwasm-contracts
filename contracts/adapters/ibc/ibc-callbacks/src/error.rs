@@ -31,4 +31,7 @@ pub enum ContractError {
 
     #[error("Receive packet is not successful, ibc dest callback will not process")]
     ReceivePacketFailed,
+
+    #[error("IBC fees are not supported, vectors must be empty")]
+    IbcFeesNotSupported,
 }

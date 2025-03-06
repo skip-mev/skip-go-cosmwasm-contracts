@@ -128,6 +128,11 @@ fn execute_ibc_transfer(
         return Err(ContractError::Unauthorized);
     }
 
+    // Error if ibc_info.fee is not None since Osmosis does not support fees
+    if ibc_info.fee.is_some() {
+        return Err(ContractError::IbcFeesNotSupported);
+    }
+
     // Save in progress recover address to storage, to be used in reply and source callbacks handler
     IN_PROGRESS_RECOVER_ADDRESS.save(
         deps.storage,
