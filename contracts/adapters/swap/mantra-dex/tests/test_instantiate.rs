@@ -15,7 +15,7 @@ fn test_instantiate() {
     let sender = Addr::unchecked("sender");
 
     // Create mock info with entry point contract address
-    let info = mock_info(&sender.to_string(), &[]);
+    let info = mock_info(sender.as_ref(), &[]);
 
     // Call execute_swap with the given test parameters
     let res = skip_go_swap_adapter_mantra_dex::contract::instantiate(
