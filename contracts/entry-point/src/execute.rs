@@ -146,9 +146,7 @@ pub fn execute_swap_and_action(
     };
 
     // Error if the current block time is greater than the timeout timestamp
-    if env.block.time.nanos() > timeout_timestamp {
-        return Err(ContractError::Timeout);
-    }
+    validate_timeout_timestamp(&env, timeout_timestamp)?;
 
     // Save the current out asset amount to storage as the pre swap out asset amount
     let pre_swap_out_asset_amount =
@@ -565,9 +563,7 @@ pub fn execute_action(
     };
 
     // Error if the current block time is greater than the timeout timestamp
-    if env.block.time.nanos() > timeout_timestamp {
-        return Err(ContractError::Timeout);
-    }
+    validate_timeout_timestamp(&env, timeout_timestamp)?;
 
     // Already validated at entrypoints (both direct and cw20_receive)
     let mut remaining_asset = sent_asset;
@@ -662,6 +658,24 @@ pub fn execute_action_with_recover(
 //////////////////////
 // HELPER FUNCTIONS //
 //////////////////////
+
+// Return an error if the timeout timestamp is less than the current block time
+fn validate_timeout_timestamp(env: &Env, timeout_timestamp: u64) -> ContractResult<()> {
+    // If the timeout timestamp is greater than 9999999999, then it is in nanoseconds
+    // Otherwise, it is in seconds
+    // 9999999999 = 2286-11-20 17:46:39 UTC (in seconds), so works until then
+    let current_timestamp = if timeout_timestamp > 9999999999 {
+        env.block.time.nanos()
+    } else {
+        env.block.time.seconds()
+    };
+
+    if current_timestamp > timeout_timestamp {
+        return Err(ContractError::Timeout);
+    }
+
+    Ok(())
+}
 
 // ACTION HELPER FUNCTIONS
 

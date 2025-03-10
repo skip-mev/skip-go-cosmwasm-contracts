@@ -1918,7 +1918,7 @@ fn test_execute_swap_and_action(params: Params) {
     // Create mock env with parameters that make testing easier
     let mut env = mock_env();
     env.contract.address = Addr::unchecked("entry_point");
-    env.block.time = Timestamp::from_nanos(100);
+    env.block.time = Timestamp::from_seconds(100);
 
     // Convert info funds vector into a slice of Coin objects
     let info_funds: &[Coin] = &params.info_funds;
