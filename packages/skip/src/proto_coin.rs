@@ -2,6 +2,7 @@ use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as CosmosSdkCoin;
 use cosmwasm_schema::cw_serde;
 use ibc_proto::cosmos::base::v1beta1::Coin as IbcCoin;
 use osmosis_std::types::cosmos::base::v1beta1::Coin as OsmosisStdCoin;
+use elys_stdd::types::cosmos::base::v1beta1::Coin as ElysStdCoin;
 
 // Skip wrapper coin type that is used to wrap cosmwasm_std::Coin
 // and be able to implement type conversions on the wrapped type.
@@ -35,6 +36,17 @@ impl From<ProtoCoin> for OsmosisStdCoin {
     fn from(coin: ProtoCoin) -> Self {
         // Convert the skip coin to an osmosis coin and return it
         OsmosisStdCoin {
+            denom: coin.0.denom,
+            amount: coin.0.amount.to_string(),
+        }
+    }
+}
+
+// Converts a skip coin to an elys coin
+impl From<ProtoCoin> for ElysStdCoin {
+    fn from(coin: ProtoCoin) -> Self {
+        // Convert the skip coin to an osmosis coin and return it
+        ElysStdCoin {
             denom: coin.0.denom,
             amount: coin.0.amount.to_string(),
         }
@@ -84,5 +96,18 @@ mod tests {
 
         assert_eq!(osmosis_std_coin.denom, "uatom");
         assert_eq!(osmosis_std_coin.amount, "100");
+    }
+
+    #[test]
+    fn test_from_skip_proto_coin_to_elys_std_coin() {
+        let skip_coin = ProtoCoin(cosmwasm_std::Coin {
+            denom: "uatom".to_string(),
+            amount: Uint128::new(100),
+        });
+
+        let elys_std_coin: ElysStdCoin = skip_coin.into();
+
+        assert_eq!(elys_std_coin.denom, "uatom");
+        assert_eq!(elys_std_coin.amount, "100");
     }
 }
