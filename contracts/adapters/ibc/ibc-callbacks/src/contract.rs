@@ -450,16 +450,19 @@ fn get_recv_denom(ibc_packet: IbcPacket, packet_denom: String) -> String {
     // Check if the packet is returning to the origin
     // If so return the original denom
     let is_returning_to_origin = packet_denom.starts_with(&prefix);
-    if is_returning_to_origin {
-        let ibc_denom = packet_denom.trim_start_matches(&prefix).to_string();
-        return ibc_denom;
-    }
-
-    // Create and return the proper ibc denom
-    let ibc_denom = format!(
-        "{}/{}/{packet_denom}",
-        ibc_packet.dest.port_id, ibc_packet.dest.channel_id
-    );
+    let ibc_denom = if is_returning_to_origin {
+        let trimmed_denom = packet_denom.trim_start_matches(&prefix).to_string();
+        if !trimmed_denom.contains('/') {
+            // The denom is a base denom
+            return trimmed_denom;
+        }
+        trimmed_denom
+    } else {
+        format!(
+            "{}/{}/{packet_denom}",
+            ibc_packet.dest.port_id, ibc_packet.dest.channel_id
+        )
+    };
     let denom_hash = Sha256::digest(ibc_denom.as_bytes()).to_vec();
     format!("ibc/{}", hex::encode_upper(denom_hash))
 }
@@ -487,7 +490,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 // mod tests {
 //     use super::*;
 //     use alloy_sol_types::SolType;
-//     use cosmwasm_std::{from_base64, from_json, IbcTimeout, SubMsgResponse, Timestamp, StdAck};
+//     use cosmwasm_std::{from_base64, from_json, IbcTimeout, StdAck, SubMsgResponse, Timestamp};
 //     use ibc_eureka_solidity_types::msgs::IICS20TransferMsgs::FungibleTokenPacketData as AbiFungibleTokenPacketData;
 //     use serde_json_wasm::from_slice;
 
@@ -536,7 +539,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 //         let recv_denom = get_recv_denom(ibc_packet, packet_denom);
 //         assert_eq!(
 //             recv_denom,
-//             "ibc/68afe084b6adf1e1df3867675072f23bf12f270033bd4ce65a10dd7d05d411e1".to_string()
+//             "ibc/68AFE084B6ADF1E1DF3867675072F23BF12F270033BD4CE65A10DD7D05D411E1".to_string()
 //         );
 //     }
 
@@ -560,6 +563,28 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 //         let packet_denom = "transfer/client-6/stake".to_string();
 //         let recv_denom = get_recv_denom(ibc_packet, packet_denom);
 //         assert_eq!(recv_denom, "stake".to_string());
+//     }
+
+//     #[test]
+//     fn test_get_recv_denom_returning_multihop_denom() {
+//         let timeout = IbcTimeout::with_timestamp(Timestamp::from_nanos(1));
+//         let ibc_packet = IbcPacket::new(
+//             Binary::default(),
+//             IbcEndpoint {
+//                 port_id: "transfer".to_string(),
+//                 channel_id: "hub-testnet-sp1-4".to_string(),
+//             },
+//             IbcEndpoint {
+//                 port_id: "transfer".to_string(),
+//                 channel_id: "08-wasm-0".to_string(),
+//             },
+//             1,
+//             timeout,
+//         );
+
+//         let packet_denom = "transfer/hub-testnet-sp1-4/transfer/channel-347/ubbn".to_string();
+//         let recv_denom = get_recv_denom(ibc_packet, packet_denom);
+//         assert_eq!(recv_denom, "ibc/66D14DD6F6E1170CC4E17FB3FF485F83F6E2DC01DC4AB88399AD956920847EFF".to_string());
 //     }
 
 //     #[test]
