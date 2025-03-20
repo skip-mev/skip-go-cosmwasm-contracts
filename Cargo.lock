@@ -41,36 +41,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "astroport"
-version = "3.12.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdebdf96895f363e121710cb84bbbfa659cea1bb1470260d4976d1a7206b3b16"
-dependencies = [
- "astroport-circular-buffer",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-asset",
- "cw-storage-plus 0.15.1",
- "cw-utils 1.0.3",
- "cw20 0.15.1",
- "cw3",
- "itertools 0.10.5",
- "uint",
-]
-
-[[package]]
-name = "astroport-circular-buffer"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31c7369d3c4126804f861620db2221c15b5fa7b7718f12180e265b087c933fb6"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 0.15.1",
- "thiserror",
-]
-
-[[package]]
 name = "astrovault"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -80,7 +50,7 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw20 1.1.2",
- "cw721 0.16.0",
+ "cw721",
  "schemars",
  "serde",
  "sha2 0.10.8",
@@ -364,29 +334,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw-address-like"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "451a4691083a88a3c0630a8a88799e9d4cd6679b7ce8ff22b8da2873ff31d380"
-dependencies = [
- "cosmwasm-std",
-]
-
-[[package]]
-name = "cw-asset"
-version = "3.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c999a12f8cd8736f6f86e9a4ede5905530cb23cfdef946b9da1c506ad1b70799"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-address-like",
- "cw-storage-plus 1.2.0",
- "cw20 1.1.2",
- "thiserror",
-]
-
-[[package]]
 name = "cw-multi-test"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -404,32 +351,6 @@ dependencies = [
  "serde",
  "sha2 0.10.8",
  "thiserror",
-]
-
-[[package]]
-name = "cw-ownable"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "093dfb4520c48b5848274dd88ea99e280a04bc08729603341c7fb0d758c74321"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-address-like",
- "cw-ownable-derive",
- "cw-storage-plus 1.2.0",
- "cw-utils 1.0.3",
- "thiserror",
-]
-
-[[package]]
-name = "cw-ownable-derive"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1d3bf2e0f341bb6cc100d7d441d31cf713fbd3ce0c511f91e79f14b40a889af"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -595,21 +516,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw3"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2967fbd073d4b626dd9e7148e05a84a3bebd9794e71342e12351110ffbb12395"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-utils 1.0.3",
- "cw20 1.1.2",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "cw721"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -620,55 +526,6 @@ dependencies = [
  "cw-utils 0.16.0",
  "schemars",
  "serde",
-]
-
-[[package]]
-name = "cw721"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3c4d286625ccadc957fe480dd3bdc54ada19e0e6b5b9325379db3130569e914"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-utils 1.0.3",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw721-base"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77518e27431d43214cff4cdfbd788a7508f68d9b1f32389e6fce513e7eaccbef"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 0.16.0",
- "cw-utils 0.16.0",
- "cw2 0.16.0",
- "cw721 0.16.0",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw721-base"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da518d9f68bfda7d972cbaca2e8fcf04651d0edc3de72b04ae2bcd9289c81614"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-ownable",
- "cw-storage-plus 1.2.0",
- "cw-utils 1.0.3",
- "cw2 1.1.2",
- "cw721 0.18.0",
- "cw721-base 0.16.0",
- "schemars",
- "serde",
- "thiserror",
 ]
 
 [[package]]
@@ -851,115 +708,6 @@ name = "downcast"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1435fa1053d8b2fbbe9be7e97eca7f33d37b28409959813daefc1446a14247f1"
-
-[[package]]
-name = "drop-factory"
-version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-ownable",
- "cw-storage-plus 1.2.0",
- "cw2 1.1.2",
- "drop-helpers",
- "drop-macros",
- "drop-puppeteer-base",
- "drop-staking-base",
- "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
- "semver",
- "thiserror",
-]
-
-[[package]]
-name = "drop-helpers"
-version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
-dependencies = [
- "cosmos-sdk-proto 0.20.0",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 1.2.0",
- "hex",
- "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
- "once_cell",
- "prost 0.12.6",
- "schemars",
- "serde",
- "serde-json-wasm 1.0.1",
- "sha3",
- "thiserror",
-]
-
-[[package]]
-name = "drop-macros"
-version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "drop-proto"
-version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
-dependencies = [
- "cosmwasm-std",
- "prost 0.12.6",
- "prost-types 0.12.6",
- "tendermint-proto 0.34.1",
-]
-
-[[package]]
-name = "drop-puppeteer-base"
-version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
-dependencies = [
- "cosmos-sdk-proto 0.20.0",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-ownable",
- "cw-storage-plus 1.2.0",
- "drop-helpers",
- "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
- "prost 0.12.6",
- "prost-types 0.12.6",
- "schemars",
- "semver",
- "serde",
- "serde-json-wasm 1.0.1",
- "thiserror",
-]
-
-[[package]]
-name = "drop-staking-base"
-version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
-dependencies = [
- "astroport 3.12.2",
- "cosmos-sdk-proto 0.20.0",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-ownable",
- "cw-storage-plus 1.2.0",
- "cw-utils 1.0.3",
- "cw721 0.18.0",
- "cw721-base 0.18.0",
- "drop-helpers",
- "drop-macros",
- "drop-proto",
- "drop-puppeteer-base",
- "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
- "optfield",
- "prost 0.12.6",
- "semver",
- "serde",
- "thiserror",
-]
 
 [[package]]
 name = "dyn-clone"
@@ -1345,27 +1093,6 @@ dependencies = [
 [[package]]
 name = "neutron-sdk"
 version = "0.10.0"
-source = "git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes#2dfca1734dfc4cfba478b3067417648733d66cd9"
-dependencies = [
- "bech32",
- "cosmos-sdk-proto 0.20.0",
- "cosmwasm-schema",
- "cosmwasm-std",
- "prost 0.12.6",
- "prost-types 0.12.6",
- "protobuf 3.7.2",
- "schemars",
- "serde",
- "serde-json-wasm 1.0.1",
- "serde_json",
- "speedate",
- "tendermint-proto 0.34.1",
- "thiserror",
-]
-
-[[package]]
-name = "neutron-sdk"
-version = "0.10.0"
 source = "git+https://github.com/neutron-org/neutron-sdk?branch=patch/sim_requests#1b05eb5ae3a155313a4587ab1e7dc50f08377cdb"
 dependencies = [
  "bech32",
@@ -1421,17 +1148,6 @@ name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
-
-[[package]]
-name = "optfield"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa59f025cde9c698fcb4fcb3533db4621795374065bee908215263488f2d2a1d"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.100",
-]
 
 [[package]]
 name = "osmosis-std"
@@ -1867,7 +1583,7 @@ dependencies = [
 name = "skip"
 version = "0.3.0"
 dependencies = [
- "astroport 2.9.5",
+ "astroport",
  "cosmos-sdk-proto 0.19.0",
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1960,7 +1676,7 @@ dependencies = [
 name = "skip-go-swap-adapter-astroport"
 version = "0.3.0"
 dependencies = [
- "astroport 2.9.5",
+ "astroport",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus 1.2.0",
@@ -2011,22 +1727,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "skip-go-swap-adapter-drop"
-version = "0.3.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 1.2.0",
- "cw-utils 1.0.3",
- "cw2 1.1.2",
- "drop-factory",
- "drop-staking-base",
- "skip",
- "test-case",
- "thiserror",
-]
-
-[[package]]
 name = "skip-go-swap-adapter-duality"
 version = "0.3.0"
 dependencies = [
@@ -2061,7 +1761,7 @@ dependencies = [
 name = "skip-go-swap-adapter-hallswap"
 version = "0.3.0"
 dependencies = [
- "astroport 2.9.5",
+ "astroport",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus 1.2.0",

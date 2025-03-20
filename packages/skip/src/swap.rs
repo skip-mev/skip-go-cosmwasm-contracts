@@ -9,10 +9,12 @@ use cosmwasm_std::{
 };
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
+use elys_std::types::elys::amm::{
+    SwapAmountInRoute as ElysSwapAmountInRoute, SwapAmountOutRoute as ElysSwapAmountOutRoute,
+};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
-use elys_std::types::elys::amm::{SwapAmountInRoute as ElysSwapAmountInRoute, SwapAmountOutRoute as ElysSwapAmountOutRoute};
 
 ///////////////
 /// MIGRATE ///
@@ -293,10 +295,10 @@ impl TryFrom<SwapOperation> for ElysSwapAmountOutRoute {
     }
 }
 
-// Converts a vector of skip swap operation to vector of elys swap
+// Converts a vector of skip swap operation to vector of osmosis/elys swap
 // amount in/out routes, returning an error if any of the swap operations
 // fail to convert. This only happens if the given String for pool in the
-// swap operation is not a valid u64, which is the pool_id type for elys.
+// swap operation is not a valid u64, which is the pool_id type for osmosis/elys.
 pub fn convert_swap_operations<T>(
     swap_operations: Vec<SwapOperation>,
 ) -> Result<Vec<T>, ParseIntError>

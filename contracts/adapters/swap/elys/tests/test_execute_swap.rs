@@ -7,9 +7,7 @@ use cosmwasm_std::{
 use elys_std::types::cosmos::base::v1beta1::Coin as ElysStdCoin;
 use elys_std::types::elys::amm::{MsgUpFrontSwapExactAmountIn, SwapAmountInRoute};
 use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_go_swap_adapter_elys_amm::{
-    error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS,
-};
+use skip_go_swap_adapter_elys_amm::{error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS};
 use test_case::test_case;
 
 /*

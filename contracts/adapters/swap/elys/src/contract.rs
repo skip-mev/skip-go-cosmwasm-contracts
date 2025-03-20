@@ -3,12 +3,15 @@ use crate::{
     state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Response, Uint128, WasmMsg,
+    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    Response, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
-use elys_std::types::elys::amm::{AmmQuerier, MsgUpFrontSwapExactAmountIn, QuerySwapEstimationExactAmountOutResponse, QuerySwapEstimationResponse, SwapAmountInRoute, SwapAmountOutRoute};
+use elys_std::types::elys::amm::{
+    AmmQuerier, MsgUpFrontSwapExactAmountIn, QuerySwapEstimationExactAmountOutResponse,
+    QuerySwapEstimationResponse, SwapAmountInRoute, SwapAmountOutRoute,
+};
 use skip::{
     asset::Asset,
     proto_coin::ProtoCoin,
@@ -149,7 +152,6 @@ fn create_elys_swap_msg(
     let elys_swap_amount_in_routes: Vec<SwapAmountInRoute> =
         convert_swap_operations(swap_operations).map_err(ContractError::ParseIntPoolID)?;
 
-
     // Create the elys amm module swap exact amount in message
     // The token out min amount is set to 1 because we are not concerned
     // with the minimum amount in this contract, that gets verified in the
@@ -159,7 +161,8 @@ fn create_elys_swap_msg(
         routes: elys_swap_amount_in_routes,
         token_in: Some(ProtoCoin(coin_in).into()),
         token_out_min_amount: "1".to_string(),
-    }.into();
+    }
+    .into();
 
     Ok(swap_msg)
 }
@@ -239,16 +242,16 @@ fn query_simulate_swap_exact_asset_in(
     asset_in: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
-    let (elys_swap_amount_in_routes,coin_in,denom_out) = process_swap_exact_amount_in_query(asset_in,&swap_operations)?;
+    let (elys_swap_amount_in_routes, coin_in, denom_out) =
+        process_swap_exact_amount_in_query(asset_in, &swap_operations)?;
 
     // Query the elys module to simulate the swap exact amount in
-    let res: QuerySwapEstimationResponse = AmmQuerier::new(&deps.querier)
-        .swap_estimation(
-            elys_swap_amount_in_routes,
-            Some(coin_in.into()),
-            "0".to_string(),
-        )?;
-    
+    let res: QuerySwapEstimationResponse = AmmQuerier::new(&deps.querier).swap_estimation(
+        elys_swap_amount_in_routes,
+        Some(coin_in.into()),
+        "0".to_string(),
+    )?;
+
     let token_out_amount = match res.token_out {
         Some(token_out) => Uint128::from_str(&token_out.amount)?,
         None => return Err(ContractError::TokenOutNotFound),
@@ -290,7 +293,7 @@ fn process_swap_exact_amount_in_query(
     let elys_swap_amount_in_routes: Vec<SwapAmountInRoute> =
         convert_swap_operations(swap_operations.to_vec()).map_err(ContractError::ParseIntPoolID)?;
 
-    Ok((elys_swap_amount_in_routes, coin_in,denom_out))
+    Ok((elys_swap_amount_in_routes, coin_in, denom_out))
 }
 
 /// Helper function to validate and process swap exact amount out query
@@ -324,7 +327,7 @@ fn process_swap_exact_amount_out_query(
     let elys_swap_amount_out_routes: Vec<SwapAmountOutRoute> =
         convert_swap_operations(swap_operations.to_vec()).map_err(ContractError::ParseIntPoolID)?;
 
-    Ok((elys_swap_amount_out_routes, coin_out,denom_in))
+    Ok((elys_swap_amount_out_routes, coin_out, denom_in))
 }
 
 // Queries the elys amm module to simulate a swap exact amount out
@@ -333,7 +336,8 @@ fn query_simulate_swap_exact_asset_out(
     asset_out: Asset,
     swap_operations: Vec<SwapOperation>,
 ) -> ContractResult<Asset> {
-    let (elys_swap_amount_out_routes,coin_out,denom_in) = process_swap_exact_amount_out_query(asset_out,&swap_operations)?;
+    let (elys_swap_amount_out_routes, coin_out, denom_in) =
+        process_swap_exact_amount_out_query(asset_out, &swap_operations)?;
 
     // Query the elys amm module to simulate the swap exact amount out
     let res: QuerySwapEstimationExactAmountOutResponse = AmmQuerier::new(&deps.querier)
@@ -342,7 +346,7 @@ fn query_simulate_swap_exact_asset_out(
             Some(coin_out.into()),
             "0".to_string(),
         )?;
-    
+
     let token_in_amount = match res.token_in {
         Some(token_in) => Uint128::from_str(&token_in.amount)?,
         None => return Err(ContractError::TokenInNotFound),
@@ -371,7 +375,6 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     routes: Vec<Route>,
     include_spot_price: bool,
 ) -> ContractResult<SimulateSmartSwapExactAssetInResponse> {
-
     let mut asset_out = Asset::new(deps.api, &ask_denom, Uint128::zero());
     let mut curr_spot_price = Decimal::zero();
     for route in &routes {
@@ -379,11 +382,14 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
             deps,
             route.offer_asset.clone(),
             route.operations.clone(),
-            true
+            true,
         )?;
 
         let weight = Decimal::from_ratio(route.offer_asset.amount(), asset_in.amount());
-        curr_spot_price = curr_spot_price + (route_asset_out.spot_price.ok_or(ContractError::SpotPriceNotFound)? * weight);
+        curr_spot_price += route_asset_out
+            .spot_price
+            .ok_or(ContractError::SpotPriceNotFound)?
+            * weight;
 
         asset_out.add(route_asset_out.asset_out.amount())?;
     }
@@ -427,16 +433,16 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
     swap_operations: Vec<SwapOperation>,
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetInResponse> {
-    let (elys_swap_amount_in_routes,coin_in,denom_out) = process_swap_exact_amount_in_query(asset_in,&swap_operations)?;
+    let (elys_swap_amount_in_routes, coin_in, denom_out) =
+        process_swap_exact_amount_in_query(asset_in, &swap_operations)?;
 
     // Query the elys module to simulate the swap exact amount in
-    let res: QuerySwapEstimationResponse = AmmQuerier::new(&deps.querier)
-        .swap_estimation(
-            elys_swap_amount_in_routes,
-            Some(coin_in.into()),
-            "0".to_string(),
-        )?;
-    
+    let res: QuerySwapEstimationResponse = AmmQuerier::new(&deps.querier).swap_estimation(
+        elys_swap_amount_in_routes,
+        Some(coin_in.into()),
+        "0".to_string(),
+    )?;
+
     let token_out_amount = match res.token_out {
         Some(token_out) => Uint128::from_str(&token_out.amount)?,
         None => return Err(ContractError::TokenOutNotFound),
@@ -446,7 +452,8 @@ fn query_simulate_swap_exact_asset_in_with_metadata(
         asset_out: Coin {
             denom: denom_out,
             amount: token_out_amount,
-        }.into(),
+        }
+        .into(),
         spot_price: None,
     };
     if include_spot_price {
@@ -463,8 +470,8 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
     swap_operations: Vec<SwapOperation>,
     include_spot_price: bool,
 ) -> ContractResult<SimulateSwapExactAssetOutResponse> {
-
-    let (elys_swap_amount_out_routes,coin_out,denom_in) = process_swap_exact_amount_out_query(asset_out,&swap_operations)?;
+    let (elys_swap_amount_out_routes, coin_out, denom_in) =
+        process_swap_exact_amount_out_query(asset_out, &swap_operations)?;
 
     // Query the elys amm module to simulate the swap exact amount out
     let res: QuerySwapEstimationExactAmountOutResponse = AmmQuerier::new(&deps.querier)
@@ -473,7 +480,7 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
             Some(coin_out.into()),
             "0".to_string(),
         )?;
-    
+
     let token_in_amount = match res.token_in {
         Some(token_in) => Uint128::from_str(&token_in.amount)?,
         None => return Err(ContractError::TokenInNotFound),
@@ -483,7 +490,8 @@ fn query_simulate_swap_exact_asset_out_with_metadata(
         asset_in: Coin {
             denom: denom_in,
             amount: token_in_amount,
-        }.into(),
+        }
+        .into(),
         spot_price: None,
     };
 

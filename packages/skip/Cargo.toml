@@ -24,6 +24,6 @@ cw20                = { workspace = true }
 ibc-proto           = { workspace = true }
 neutron-proto       = { workspace = true }
 osmosis-std         = { workspace = true }
-elys-std.workspace = true
+elys-std            = { workspace = true }
 thiserror           = { workspace = true }
 white-whale-std     = { workspace = true }
