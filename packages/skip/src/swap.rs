@@ -12,7 +12,7 @@ use cw20::Cw20ReceiveMsg;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
-use elys_stdd::types::elys::amm::{SwapAmountInRoute as ElysSwapAmountInRoute, SwapAmountOutRoute as ElysSwapAmountOutRoute};
+use elys_std::types::elys::amm::{SwapAmountInRoute as ElysSwapAmountInRoute, SwapAmountOutRoute as ElysSwapAmountOutRoute};
 
 ///////////////
 /// MIGRATE ///

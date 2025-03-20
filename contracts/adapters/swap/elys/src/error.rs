@@ -35,4 +35,13 @@ pub enum ContractError {
 
     #[error("Asset Must Be Native, Osmosis Does Not Support CW20 Tokens")]
     AssetNotNative,
+
+    #[error("TokenOut Not Found in swap exact asset in estimation")]
+    TokenOutNotFound,
+
+    #[error("TokenIn Not Found in swap exact asset out estimation")]
+    TokenInNotFound,
+
+    #[error("SpotPrice Not Found")]
+    SpotPriceNotFound,
 }

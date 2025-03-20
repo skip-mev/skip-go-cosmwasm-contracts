@@ -4,8 +4,8 @@ use cosmwasm_std::{
     ReplyOn::Never,
     SubMsg, WasmMsg,
 };
-use elys_stdd::types::cosmos::base::v1beta1::Coin as ElysStdCoin;
-use elys_stdd::types::elys::amm::{MsgSwapExactAmountIn, SwapAmountInRoute};
+use elys_std::types::cosmos::base::v1beta1::Coin as ElysStdCoin;
+use elys_std::types::elys::amm::{MsgUpFrontSwapExactAmountIn, SwapAmountInRoute};
 use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_go_swap_adapter_elys_amm::{
     error::ContractResult, state::ENTRY_POINT_CONTRACT_ADDRESS,
@@ -53,10 +53,8 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                // TODO: Update the message name after new package
-                msg: MsgSwapExactAmountIn {
+                msg: MsgUpFrontSwapExactAmountIn {
                     sender: "swap_contract_address".to_string(),
-                    recipient: "swap_contract_address".to_string(),
                     routes: vec![
                         SwapAmountInRoute {
                             pool_id: 1,
@@ -114,10 +112,8 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                // TODO: Update the message name after new package
-                msg: MsgSwapExactAmountIn {
+                msg: MsgUpFrontSwapExactAmountIn {
                     sender: "swap_contract_address".to_string(),
-                    recipient: "swap_contract_address".to_string(),
                     routes: vec![
                         SwapAmountInRoute {
                             pool_id: 1,
@@ -166,10 +162,8 @@ struct Params {
         expected_messages: vec![
             SubMsg {
                 id: 0,
-                // TODO: Update the message name after new package
-                msg: MsgSwapExactAmountIn {
+                msg: MsgUpFrontSwapExactAmountIn {
                     sender: "swap_contract_address".to_string(),
-                    recipient: "swap_contract_address".to_string(),
                     routes: vec![],
                     token_in: Some(
                         ElysStdCoin {

@@ -127,7 +127,7 @@ fn test_execute_transfer_funds_back(params: Params) -> ContractResult<()> {
     let info = mock_info(&params.caller, &[]);
 
     // Call execute_swap with the given test parameters
-    let res = skip_go_swap_adapter_osmosis_poolmanager::contract::execute(
+    let res = skip_go_swap_adapter_elys_amm::contract::execute(
         deps.as_mut(),
         env,
         info,
