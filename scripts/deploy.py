@@ -55,6 +55,7 @@ if not os.path.exists(f"../deployed-contracts/{CHAIN}"):
     os.makedirs(f"../deployed-contracts/{CHAIN}")
     
 PERMISSIONED_UPLOADER_ADDRESS = None
+SWAP_VENUES = []
 
 # Choose network to deploy to based on cli args
 if NETWORK == "mainnet":
@@ -63,12 +64,14 @@ if NETWORK == "mainnet":
     CHAIN_ID = config["MAINNET_CHAIN_ID"]
     if "PERMISSIONED_UPLOADER_ADDRESS" in config:
         PERMISSIONED_UPLOADER_ADDRESS = config["PERMISSIONED_UPLOADER_ADDRESS"]
-    SWAP_VENUES = config["swap_venues"]
+    if "swap_venues" in config:
+        SWAP_VENUES = config["swap_venues"]
 elif NETWORK == "testnet":
     REST_URL = config["TESTNET_REST_URL"]
     RPC_URL = config["TESTNET_RPC_URL"]
     CHAIN_ID = config["TESTNET_CHAIN_ID"]
-    SWAP_VENUES = config["testnet_swap_venues"]
+    if "testnet_swap_venues" in config:
+        SWAP_VENUES = config["testnet_swap_venues"]
 else:
     raise Exception(
         "Must specify either 'mainnet' or 'testnet' for 2nd cli arg."
@@ -203,6 +206,8 @@ def main():
                 swap_adapter_instantiate_args["dex_module_address"] = venue["dex_module_address"]
             if "astrovault_router_contract_address" in venue:
                 swap_adapter_instantiate_args["astrovault_router_contract_address"] = venue["astrovault_router_contract_address"]
+            if "mantra_pool_manager_address" in venue:
+                swap_adapter_instantiate_args["mantra_pool_manager_address"] = venue["mantra_pool_manager_address"]
             
             swap_adapter_contract_address = instantiate_contract(
                 client, 
