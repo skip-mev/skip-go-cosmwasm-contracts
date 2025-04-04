@@ -464,7 +464,8 @@ def instantiate_contract(
     else:
         gas_limit = 300000
         
-    if permissioned_uploader_address is not None and CHAIN != "osmosis":
+    non_permissioned_chains = ["osmosis", "cosmoshub"]
+    if permissioned_uploader_address is not None and CHAIN not in non_permissioned_chains:
         msg = MsgInstantiateContract(
             sender=permissioned_uploader_address,
             admin=admin,
@@ -551,7 +552,6 @@ def clear_admin(client, wallet, contract_address, name):
     return None
 
 
-
 def instantiate2_contract(
     client, 
     wallet, 
@@ -567,7 +567,8 @@ def instantiate2_contract(
     else:
         gas_limit = 300000
 
-    if permissioned_uploader_address is not None and CHAIN != "osmosis":
+    non_permissioned_chains = ["osmosis", "cosmoshub"]
+    if permissioned_uploader_address is not None and CHAIN not in non_permissioned_chains:
         msg = MsgInstantiateContract2(
             sender=permissioned_uploader_address,
             code_id=code_id,
