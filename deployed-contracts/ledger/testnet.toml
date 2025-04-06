@@ -1,9 +1,9 @@
 [info]
-chain_id = "localnet"
+chain_id = "ledger-testnet-1"
 network = "testnet"
-deploy_date = "24/03/2025 05:57:12"
-commit_hash = "61c7411b2bb046190a942f440e03f074695dbe65"
-salt = "5"
+deploy_date = "04/04/2025 17:24:31"
+commit_hash = "909e323c7033f391220c45cac53178ec2c8b225a"
+salt = "1"
 
 [checksums]
 "skip_go_entry_point-aarch64.wasm" = "1e71af8e602516e061e241c6e69d58d6b465414af6c2dcc6a63c36bd9ba69f5f"
@@ -42,19 +42,19 @@ salt = "5"
 "skip_go_swap_adapter_white_whale.wasm" = "01da252c23ff9674e3a01432629844eb4ac17cfe594edf8cc992670569f76167"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "18"
-swap_adapter_testnet-ledger-lbtc-convert_contract_code_id = "19"
-entry_point_contract_code_id = "20"
+ibc_transfer_adapter_contract_code_id = "2"
+swap_adapter_testnet-ledger-lbtc-convert_contract_code_id = "3"
+entry_point_contract_code_id = "4"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "lom188w3894z52ljp85s98lvaqufnql60y9nvpxk8a893qj92s5rqfsqqsg8nn"
-swap_adapter_testnet-ledger-lbtc-convert_contract_address = "lom10l0ltapgnd746a6rgty5vkd33tex54ddvf2eyu3qas0050q7yehsd237s9"
-entry_point_contract_address = "lom1f64xg3u6cu5ryu5fhsfq4jgaslfl42u6zpc0u80vsuvnknehwzdq0q8xuu"
+ibc_transfer_adapter_contract_address = "lom1nc5tatafv6eyq7llkr2gv50ff9e22mnf70qgjlv737ktmt4eswrqfufmpf"
+swap_adapter_testnet-ledger-lbtc-convert_contract_address = "lom17p9rzwnnfxcjp32un9ug7yhhzgtkhvl9jfksztgw5uh69wac2pgs38h7gd"
+entry_point_contract_address = "lom1g0cwxxmj5ktxd60z3hwzt6vmxwpc8a7qm5p4pmespkhqyhmn6a8qnsxluw"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "f750b416c466dff99fb5acdba5a86a3a906849273dcb4a28a636435bf3944513"
-instantiate_ibc_transfer_adapter_tx_hash = "b37dd875c8e402d1c39f470bc61940f0d5f662454b67ceea3d5825d095605c4a"
-store_swap_adapter_testnet-ledger-lbtc-convert_tx_hash = "2666be8fb871ffb9c69c03ead0dbe05f97997e873b3ff94da4a3f7a5ce9bbfaf"
-instantiate_swap_adapter_testnet-ledger-lbtc-convert_tx_hash = "39eb6033192e83aff84f695cacd052670fc4726b920da011c58a8b3a1a6b6407"
-store_entry_point_tx_hash = "dbfebb4387f94c541a0a890c4d6fef9f7a768040a28bbabfcc0939ffca4c6987"
-instantiate_entry_point_tx_hash = "0404107f0af223ae8f959caa24d680b0787b8c5b3f090a8f3a9e0b050585d1d3"
+store_ibc_transfer_adapter_tx_hash = "65893602b69351aced347b5f73819e3b21da0d4b4ed9442603a2ec34e56ce82b"
+instantiate_ibc_transfer_adapter_tx_hash = "570a37f5bfc675adf85b9faf5ec103cfb8820812801b1ca1cb44f76f5dee9513"
+store_swap_adapter_testnet-ledger-lbtc-convert_tx_hash = "9270c8560a6d2e14c56caa41963d8cc8038ad53f4e0b3bd6d8c320c04a292c43"
+instantiate_swap_adapter_testnet-ledger-lbtc-convert_tx_hash = "33e2874ad148b6aa11e4e06d2164efa7ac7d51f8ed76eb404eb38717fb0ea69b"
+store_entry_point_tx_hash = "facf588f749e3dd428d8d02a8ad9191efc4391b5ad2f03bc2c5d61514912e64b"
+instantiate_entry_point_tx_hash = "c4fc8976836610acc6642b60831f04becd9f7043277993692e8d94159228b339"
