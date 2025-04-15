@@ -7,6 +7,7 @@ use crate::{
         IN_PROGRESS_COIN, IN_PROGRESS_RECOVER_ADDRESS,
     },
 };
+use alloy_primitives::Address;
 use alloy_sol_types::SolType;
 use cosmwasm_std::{
     ensure_eq, entry_point, from_json, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps,
@@ -30,6 +31,7 @@ use skip2::{
 use std::{collections::BTreeMap, str::FromStr};
 
 const IBC_MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+const IBC_SOLIDITY_ABI_ENCODING: &str = "application/x-solidity-abi";
 const REPLY_ID: u64 = 1;
 
 ///////////////
@@ -150,6 +152,11 @@ fn execute_ibc_transfer(
 
     // If the encoding is None, set it to "" which is treated as classic encoding
     let encoding = ibc_info.encoding.unwrap_or_default();
+
+    // If the encoding is IBC Solidity ABI encoding, error if the receiver is not a valid EVM address
+    if encoding == IBC_SOLIDITY_ABI_ENCODING && !is_valid_ethereum_address(&ibc_info.receiver) {
+        return Err(ContractError::InvalidEVMAddress);
+    };
 
     // Create an ibc transfer message
     let msg = MsgTransfer {
@@ -467,6 +474,10 @@ fn get_recv_denom(ibc_packet: IbcPacket, packet_denom: String) -> String {
     format!("ibc/{}", hex::encode_upper(denom_hash))
 }
 
+fn is_valid_ethereum_address(addr: &str) -> bool {
+    Address::from_str(addr).is_ok()
+}
+
 /////////////
 /// QUERY ///
 /////////////
@@ -497,6 +508,16 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
 //     use ibc_proto::ibc::applications::transfer::v1::FungibleTokenPacketData;
 
 //     use cosmwasm_std::IbcEndpoint;
+
+//     #[test]
+//     fn test_evm_address_validation() {
+//         let good = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+//         let bad = "0x123INVALIDADDRESS";
+
+//         assert!(is_valid_ethereum_address(good));
+//         assert!(!is_valid_ethereum_address(bad));
+
+//     }
 
 //     #[test]
 //     fn test_reply() {

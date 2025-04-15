@@ -34,4 +34,7 @@ pub enum ContractError {
 
     #[error("IBC fees are not supported, vectors must be empty")]
     IbcFeesNotSupported,
+
+    #[error("EVM Address provided is invalid")]
+    InvalidEVMAddress,
 }

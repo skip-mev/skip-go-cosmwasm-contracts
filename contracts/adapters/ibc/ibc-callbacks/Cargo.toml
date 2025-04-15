@@ -30,6 +30,7 @@ serde-cw-value   = { workspace = true }
 skip2            = { workspace = true }
 thiserror        = { workspace = true }
 alloy-sol-types  = { version = "0.8", default-features = false, features=["json"]}
+alloy-primitives = { version = "1.0.0" }
 hex              = { version = "0.4", default-features = false }
 sha2             = { version = "0.10", default-features = false }
 

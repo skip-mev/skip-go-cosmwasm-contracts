@@ -23,11 +23,13 @@ Expect Response (Output Message Is Correct, In Progress Ibc Transfer Is Saved, N
     - Empty String Memo
     - Override Already Set Source Ibc Callback Memo
     - Add Ibc Source Callback Key/Value Pair To Other Key/Value In Memo
+    - Valid EVM Address
 
 Expect Error
     - Unauthorized Caller (Only the stored entry point contract can call this function)
     - Non Empty String, Invalid Json Memo
     - Non Empty IBC Fees, IBC Fees Not Supported
+    - Invalid EVM Address When Solidiy Encoding Is Provided
 
  */
 
@@ -179,6 +181,49 @@ struct Params {
         coin: Coin::new(100u128, "osmo"),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
+            receiver: "0x24a9267cE9e0a8F4467B584FDDa12baf1Df772B5".to_string(),
+            fee: None,
+            memo: "".to_string(),
+            recover_address: "recover_address".to_string(),
+            encoding: Some("application/x-solidity-abi".to_string()),
+            eureka_fee: None,
+        },
+        timeout_timestamp: 100,
+        expected_messages: vec![SubMsg {
+            id: 1,
+            payload: Binary::default(),
+            msg: cosmwasm_std::CosmosMsg::Stargate {
+                type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
+                value: MsgTransfer {
+                    source_port: "transfer".to_string(),
+                    source_channel: "source_channel".to_string(),
+                    token: Some(IbcCoin {
+                        denom: "osmo".to_string(),
+                        amount: "100".to_string(),
+                    }),
+                    sender: "ibc_transfer".to_string(),
+                    receiver: "0x24a9267cE9e0a8F4467B584FDDa12baf1Df772B5".to_string(),
+                    timeout_height: None,
+                    timeout_timestamp: 100,
+                    memo: r#"{"src_callback":{"address":"ibc_transfer"}}"#.to_string(),
+                    encoding: "application/x-solidity-abi".to_string(),
+                }
+                .encode_to_vec().into(),
+            },
+            gas_limit: None,
+            reply_on: Success,
+        }
+        ],
+        expected_error_string: "".to_string(),
+    };
+    "Valid EVM Address When Solidiy Encoding Is Provided")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
+        coin: Coin::new(100u128, "osmo"),
+        ibc_info: IbcInfo {
+            source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
             fee: None,
             memo: "{invalid}".to_string(),
@@ -235,6 +280,25 @@ struct Params {
         expected_error_string: "Unauthorized".to_string(),
     };
     "Unauthorized Caller - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
+        coin: Coin::new(100u128, "osmo"),
+        ibc_info: IbcInfo {
+            source_channel: "source_channel".to_string(),
+            receiver: "cosmos1zhqrfu9w3sugwykef3rq8t0vlxkz72vw9pzsvv".to_string(),
+            fee: None,
+            memo: "{}".to_string(),
+            recover_address: "recover_address".to_string(),
+            encoding: Some("application/x-solidity-abi".to_string()),
+            eureka_fee: None,
+        },
+        timeout_timestamp: 100,
+        expected_messages: vec![],
+        expected_error_string: "EVM Address provided is invalid".to_string(),
+    };
+        "Invalid EVM Address When Solidiy Encoding Is Provided - Expect Error")]
 fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
