@@ -142,6 +142,7 @@ pub enum QueryMsg {
 
 // The Action enum is used to specify what action to take after a swap.
 #[cw_serde]
+#[allow(clippy::large_enum_variant)]
 pub enum Action {
     Transfer {
         to_address: String,
