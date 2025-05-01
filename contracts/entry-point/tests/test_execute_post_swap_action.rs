@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
-    to_json_binary, Addr, BankMsg, Coin, ContractResult, QuerierResult,
+    to_json_binary, Addr, BankMsg, Coin, ContractResult, OverflowError, OverflowOperation,
+    QuerierResult,
     ReplyOn::Never,
     SubMsg, SystemResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
@@ -8,7 +9,8 @@ use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg};
 use skip::{
     asset::Asset,
     entry_point::{Action, ExecuteMsg},
-    ibc::{ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
+    error::SkipError::Overflow,
+    ibc::{EurekaFee, ExecuteMsg as IbcTransferExecuteMsg, IbcFee, IbcInfo},
 };
 use skip_go_entry_point::{
     error::ContractError,
@@ -41,6 +43,9 @@ Expect Response
     // Invariants
     - Pre Swap Out Asset Contract Balance Preserved
 
+    // Eureka
+    - Ibc Transfer with Valid Eureka Fee
+
 Expect Error
     - Transfer Timeout
     - Received Less Native Asset From Swap Than Min Asset
@@ -48,6 +53,12 @@ Expect Error
     - Unauthorized Caller
     - Contract Call Address Blocked
     - Cw20 Out Asset With IBC Transfer
+
+    // Eureka
+    - Eureka fee timeout has passed
+    - Eureka fee greater than remaining asset
+    - Eureka fee denom different than remaining asset
+    - Eureka fee decreases remaining asset below min asset
  */
 
 // Define test parameters
@@ -147,6 +158,8 @@ struct Params {
                 fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -164,6 +177,8 @@ struct Params {
                         fee: None,
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(1_000_000, "os"),
                     timeout_timestamp: 101,
@@ -181,6 +196,71 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
+        min_asset: Asset::Native(Coin::new(900_000, "os")),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+                encoding: None,
+                eureka_fee: Some(EurekaFee{
+                    coin: Coin::new(100_000, "os"),
+                    receiver: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                    timeout_timestamp: 101,
+                }),
+            },
+            fee_swap: None,
+        },
+        exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
+        expected_messages: vec![SubMsg {
+            id: 0,
+            msg: BankMsg::Send {
+                to_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                amount: vec![Coin::new(100_000, "os")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        },
+        SubMsg {
+            id: 0,
+            msg: WasmMsg::Execute {
+                contract_addr: "ibc_transfer_adapter".to_string(),
+                msg: to_json_binary(&IbcTransferExecuteMsg::IbcTransfer {
+                    info: IbcInfo {
+                        source_channel: "channel-0".to_string(),
+                        receiver: "receiver".to_string(),
+                        memo: "".to_string(),
+                        fee: None,
+                        recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                            .to_string(),
+                        encoding: None,
+                        eureka_fee: Some(EurekaFee{
+                            coin: Coin::new(100_000, "os"),
+                            receiver: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                            timeout_timestamp: 101,
+                        })
+                    },
+                    coin: Coin::new(900_000, "os"),
+                    timeout_timestamp: 101,
+                })
+                .unwrap(),
+                funds: vec![Coin::new(900_000, "os")],
+            }
+            .into(),
+            gas_limit: None,
+            reply_on: Never,
+        }],
+        expected_error: None,
+    };
+    "Ibc Transfer with Valid Eureka Fee")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
         min_asset: Asset::Native(Coin::new(100_000, "os")),
         post_swap_action: Action::IbcTransfer {
             ibc_info: IbcInfo {
@@ -190,6 +270,8 @@ struct Params {
                 fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -207,6 +289,8 @@ struct Params {
                         fee: None,
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(100_000, "os"),
                     timeout_timestamp: 101,
@@ -237,6 +321,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -258,6 +344,8 @@ struct Params {
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(100_000, "os"),
                     timeout_timestamp: 101,
@@ -290,6 +378,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -311,6 +401,8 @@ struct Params {
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(100_000, "un"),
                     timeout_timestamp: 101,
@@ -420,6 +512,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -441,6 +535,8 @@ struct Params {
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(1_000_000, "os"),
                     timeout_timestamp: 101,
@@ -473,6 +569,8 @@ struct Params {
                 }),
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -494,6 +592,8 @@ struct Params {
                         }),
                         recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                             .to_string(),
+                        encoding: None,
+                        eureka_fee: None,
                     },
                     coin: Coin::new(1_000_000, "un"),
                     timeout_timestamp: 101,
@@ -545,6 +645,8 @@ struct Params {
                 fee: None,
                 recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
                     .to_string(),
+                encoding: None,
+                eureka_fee: None,
             },
             fee_swap: None,
         },
@@ -610,6 +712,118 @@ struct Params {
         expected_error: Some(ContractError::ContractCallAddressBlocked),
     };
     "Contract Call Address Blocked - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_asset: Asset::Native(Coin::new(900_000, "os")),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+                encoding: None,
+                eureka_fee: Some(EurekaFee{
+                    coin: Coin::new(100_000, "os"),
+                    receiver: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                    timeout_timestamp: 99,
+                }),
+            },
+            fee_swap: None,
+        },
+        exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
+        expected_messages: vec![],
+        expected_error: Some(ContractError::EurekaFeeTimeout),
+    };
+    "Eureka fee timeout has passed - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_asset: Asset::Native(Coin::new(900_000, "os")),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+                encoding: None,
+                eureka_fee: Some(EurekaFee{
+                    coin: Coin::new(2_000_000, "os"),
+                    receiver: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                    timeout_timestamp: 101,
+                }),
+            },
+            fee_swap: None,
+        },
+        exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
+        expected_messages: vec![],
+        expected_error: Some(ContractError::Skip(Overflow(OverflowError {
+            operation: OverflowOperation::Sub,
+            operand1: "1000000".to_string(),
+            operand2: "2000000".to_string(),
+        }))),
+    };
+    "Eureka fee greater than remaining asset")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_asset: Asset::Native(Coin::new(900_000, "os")),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+                encoding: None,
+                eureka_fee: Some(EurekaFee{
+                    coin: Coin::new(100_000, "un"),
+                    receiver: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                    timeout_timestamp: 101,
+                }),
+            },
+            fee_swap: None,
+        },
+        exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
+        expected_messages: vec![],
+        expected_error: Some(ContractError::RemainingAssetAndEurekaFeeDenomMismatch),
+    };
+    "Eureka fee denom different than remaining asset")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        min_asset: Asset::Native(Coin::new(900_000, "os")),
+        post_swap_action: Action::IbcTransfer {
+            ibc_info: IbcInfo {
+                source_channel: "channel-0".to_string(),
+                receiver: "receiver".to_string(),
+                memo: "".to_string(),
+                fee: None,
+                recover_address: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5"
+                    .to_string(),
+                encoding: None,
+                eureka_fee: Some(EurekaFee{
+                    coin: Coin::new(200_000, "os"),
+                    receiver: "cosmos1xv9tklw7d82sezh9haa573wufgy59vmwe6xxe5".to_string(),
+                    timeout_timestamp: 101,
+                }),
+            },
+            fee_swap: None,
+        },
+        exact_out: false,
+        pre_swap_out_asset_amount: Uint128::new(0),
+        expected_messages: vec![],
+        expected_error: Some(ContractError::ReceivedLessAssetFromSwapsThanMinAsset),
+    };
+    "Eureka fee decreases remaining asset below min asset")]
 fn test_execute_post_swap_action(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(

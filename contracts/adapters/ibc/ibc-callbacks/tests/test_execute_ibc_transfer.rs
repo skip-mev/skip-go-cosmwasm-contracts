@@ -1,14 +1,16 @@
+#![allow(deprecated)]
+
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    Addr, Coin,
+    Addr, Binary, Coin,
     ReplyOn::Success,
     SubMsg,
 };
 use ibc_proto::cosmos::base::v1beta1::Coin as IbcCoin;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer;
 use prost::Message;
-use skip::ibc::{ExecuteMsg, IbcFee, IbcInfo};
-use skip_go_ibc_adapter_ibc_hooks::{
+use skip2::ibc::{ExecuteMsg, IbcFee, IbcInfo};
+use skip_go_ibc_adapter_ibc_callbacks::{
     error::ContractResult,
     state::{ENTRY_POINT_CONTRACT_ADDRESS, IN_PROGRESS_CHANNEL_ID, IN_PROGRESS_RECOVER_ADDRESS},
 };
@@ -19,13 +21,15 @@ Test Cases:
 
 Expect Response (Output Message Is Correct, In Progress Ibc Transfer Is Saved, No Error)
     - Empty String Memo
-    - Override Already Set Ibc Callback Memo
-    - Add Ibc Callback Key/Value Pair To Other Key/Value In Memo
+    - Override Already Set Source Ibc Callback Memo
+    - Add Ibc Source Callback Key/Value Pair To Other Key/Value In Memo
+    - Valid EVM Address
 
 Expect Error
     - Unauthorized Caller (Only the stored entry point contract can call this function)
     - Non Empty String, Invalid Json Memo
     - Non Empty IBC Fees, IBC Fees Not Supported
+    - Invalid EVM Address When Solidiy Encoding Is Provided
 
  */
 
@@ -45,7 +49,7 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        coin: Coin::new(100u128, "osmo"),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -58,6 +62,7 @@ struct Params {
         timeout_timestamp: 100,
         expected_messages: vec![SubMsg {
             id: 1,
+            payload: Binary::default(),
             msg: cosmwasm_std::CosmosMsg::Stargate {
                 type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
                 value: MsgTransfer {
@@ -71,7 +76,8 @@ struct Params {
                     receiver: "receiver".to_string(),
                     timeout_height: None,
                     timeout_timestamp: 100,
-                    memo: r#"{"ibc_callback":"ibc_transfer"}"#.to_string(),
+                    memo: r#"{"src_callback":{"address":"ibc_transfer"}}"#.to_string(),
+                    encoding: "".to_string(),
                 }
                 .encode_to_vec().into(),
             },
@@ -86,12 +92,12 @@ struct Params {
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        coin: Coin::new(100u128, "osmo"),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
             fee: None,
-            memo: r#"{"ibc_callback":"random_address"}"#.to_string(),
+            memo: r#"{"src_callback":{"address":"random"}}"#.to_string(),
             recover_address: "recover_address".to_string(),
             encoding: None,
             eureka_fee: None,
@@ -99,6 +105,7 @@ struct Params {
         timeout_timestamp: 100,
         expected_messages: vec![SubMsg {
             id: 1,
+            payload: Binary::default(),
             msg: cosmwasm_std::CosmosMsg::Stargate {
                 type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
                 value: MsgTransfer {
@@ -112,7 +119,8 @@ struct Params {
                     receiver: "receiver".to_string(),
                     timeout_height: None,
                     timeout_timestamp: 100,
-                    memo: r#"{"ibc_callback":"ibc_transfer"}"#.to_string(),
+                    memo: r#"{"src_callback":{"address":"ibc_transfer"}}"#.to_string(),
+                    encoding: "".to_string(),
                 }
                 .encode_to_vec().into(),
             },
@@ -122,12 +130,12 @@ struct Params {
         ],
         expected_error_string: "".to_string(),
     };
-    "Override Already Set Ibc Callback Memo")]
+    "Override Already Set Ibc Source Callback Memo")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        coin: Coin::new(100u128, "osmo"),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -140,6 +148,7 @@ struct Params {
         timeout_timestamp: 100,
         expected_messages: vec![SubMsg {
             id: 1,
+            payload: Binary::default(),
             msg: cosmwasm_std::CosmosMsg::Stargate {
                 type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
                 value: MsgTransfer {
@@ -153,7 +162,8 @@ struct Params {
                     receiver: "receiver".to_string(),
                     timeout_height: None,
                     timeout_timestamp: 100,
-                    memo: r#"{"ibc_callback":"ibc_transfer","pfm":"example_value","wasm":"example_contract"}"#.to_string(),
+                    memo: r#"{"pfm":"example_value","src_callback":{"address":"ibc_transfer"},"wasm":"example_contract"}"#.to_string(),
+                    encoding: "".to_string(),
                 }
                 .encode_to_vec().into(),
             },
@@ -163,12 +173,55 @@ struct Params {
         ],
         expected_error_string: "".to_string(),
     };
-    "Add Ibc Callback Key/Value Pair To Other Key/Value In Memo")]
+    "Add Ibc Source Callback Key/Value Pair To Other Key/Value In Memo")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        coin: Coin::new(100u128, "osmo"),
+        ibc_info: IbcInfo {
+            source_channel: "source_channel".to_string(),
+            receiver: "0x24a9267cE9e0a8F4467B584FDDa12baf1Df772B5".to_string(),
+            fee: None,
+            memo: "".to_string(),
+            recover_address: "recover_address".to_string(),
+            encoding: Some("application/x-solidity-abi".to_string()),
+            eureka_fee: None,
+        },
+        timeout_timestamp: 100,
+        expected_messages: vec![SubMsg {
+            id: 1,
+            payload: Binary::default(),
+            msg: cosmwasm_std::CosmosMsg::Stargate {
+                type_url: "/ibc.applications.transfer.v1.MsgTransfer".to_string(),
+                value: MsgTransfer {
+                    source_port: "transfer".to_string(),
+                    source_channel: "source_channel".to_string(),
+                    token: Some(IbcCoin {
+                        denom: "osmo".to_string(),
+                        amount: "100".to_string(),
+                    }),
+                    sender: "ibc_transfer".to_string(),
+                    receiver: "0x24a9267cE9e0a8F4467B584FDDa12baf1Df772B5".to_string(),
+                    timeout_height: None,
+                    timeout_timestamp: 100,
+                    memo: r#"{"src_callback":{"address":"ibc_transfer"}}"#.to_string(),
+                    encoding: "application/x-solidity-abi".to_string(),
+                }
+                .encode_to_vec().into(),
+            },
+            gas_limit: None,
+            reply_on: Success,
+        }
+        ],
+        expected_error_string: "".to_string(),
+    };
+    "Valid EVM Address When Solidiy Encoding Is Provided")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
+        coin: Coin::new(100u128, "osmo"),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -180,20 +233,20 @@ struct Params {
         },
         timeout_timestamp: 100,
         expected_messages: vec![],
-        expected_error_string: "Object key is not a string.".to_string(),
+        expected_error_string: "Generic error: Error parsing memo: Object key is not a string.".to_string(),
     };
     "Non Empty String, Invalid Json Memo - Expect Error")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        coin: Coin::new(100u128, "osmo"),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
             fee: Some(IbcFee {
                 recv_fee: vec![
-                    Coin::new(100, "atom"),
+                    Coin::new(100u128, "atom"),
                 ],
                 ack_fee: vec![],
                 timeout_fee: vec![],
@@ -212,7 +265,7 @@ struct Params {
     Params {
         caller: "random".to_string(),
         ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
-        coin: Coin::new(100, "osmo"),
+        coin: Coin::new(100u128, "osmo"),
         ibc_info: IbcInfo {
             source_channel: "source_channel".to_string(),
             receiver: "receiver".to_string(),
@@ -227,6 +280,25 @@ struct Params {
         expected_error_string: "Unauthorized".to_string(),
     };
     "Unauthorized Caller - Expect Error")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
+        ibc_adapter_contract_address: Addr::unchecked("ibc_transfer".to_string()),
+        coin: Coin::new(100u128, "osmo"),
+        ibc_info: IbcInfo {
+            source_channel: "source_channel".to_string(),
+            receiver: "cosmos1zhqrfu9w3sugwykef3rq8t0vlxkz72vw9pzsvv".to_string(),
+            fee: None,
+            memo: "{}".to_string(),
+            recover_address: "recover_address".to_string(),
+            encoding: Some("application/x-solidity-abi".to_string()),
+            eureka_fee: None,
+        },
+        timeout_timestamp: 100,
+        expected_messages: vec![],
+        expected_error_string: "EVM Address provided is invalid".to_string(),
+    };
+        "Invalid EVM Address When Solidiy Encoding Is Provided - Expect Error")]
 fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
@@ -242,7 +314,7 @@ fn test_execute_ibc_transfer(params: Params) -> ContractResult<()> {
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
 
     // Call execute_ibc_transfer with the given test parameters
-    let res = skip_go_ibc_adapter_ibc_hooks::contract::execute(
+    let res = skip_go_ibc_adapter_ibc_callbacks::contract::execute(
         deps.as_mut(),
         env,
         info,
