@@ -133,7 +133,6 @@ struct Params {
         expected_error_string: "".to_string(),
     };
 "Multiple Swap Operations")]
-
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
@@ -317,7 +316,6 @@ fn test_execute_swap(params: Params) -> ContractResult<()> {
 
     Ok(())
 }
-
 
 fn get_multi_hop_msg(msg: MsgMultiHopSwap) -> ContractResult<CosmosMsg> {
     Ok(create_stargate_msg("/neutron.dex.MsgMultiHopSwap", msg))

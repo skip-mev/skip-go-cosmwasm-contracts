@@ -3,8 +3,8 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Decimal256, Deps, DepsMut, Env, Int128,
-    MessageInfo, Response, StdError, Uint128, WasmMsg,
+    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Decimal256, Deps, DepsMut, Env,
+    Int128, MessageInfo, Response, StdError, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
@@ -284,7 +284,6 @@ fn query_simulate_swap_exact_asset_in(
     // Returns error un unsucessful conversion
     let duality_multi_hop_swap_route =
         get_route_from_swap_operations_for_query(swap_operations).unwrap();
-
 
     let query_msg: SimulateMultiHopSwapRequest = SimulateMultiHopSwapRequest {
         sender: String::from(""),
@@ -739,7 +738,6 @@ fn parse_and_validate_price(input: &str) -> ContractResult<Decimal> {
     })?;
     Ok(spot_price)
 }
-
 
 /////////////
 // TESTS   //
