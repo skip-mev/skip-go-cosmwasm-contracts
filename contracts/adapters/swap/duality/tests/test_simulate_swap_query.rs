@@ -58,7 +58,7 @@ fn test_simulate_swap_exact_asset_in(params: ExactAssetInParams) -> ContractResu
     let mut deps = OwnedDeps {
         storage: MockStorage::default(),
         api: MockApi::default(),
-        querier: MockQuerier::new(),
+        querier: MockQuerier::default(),
         custom_query_type: PhantomData,
     };
 
@@ -72,7 +72,7 @@ fn test_simulate_swap_exact_asset_in(params: ExactAssetInParams) -> ContractResu
 
     let response = SimulateMultiHopSwapResponse {
         resp: MultiHopSwapResponse {
-            coin_out: Coin::new(params.coin.amount.into(), "coin").into(),
+            coin_out: Coin::new(params.coin.amount.into(), "coin"),
             route: MHRoute {
                 hops: params.swap_operations.iter().map(|op| op.denom_out.clone()).collect(),
             },
@@ -143,7 +143,7 @@ fn test_simulate_swap_exact_asset_out(params: ExactAssetOutParams) -> ContractRe
     let mut deps = OwnedDeps {
         storage: MockStorage::default(),
         api: MockApi::default(),
-        querier: MockQuerier::new(),
+        querier: MockQuerier::default(),
         custom_query_type: PhantomData,
     };
 
@@ -161,8 +161,8 @@ fn test_simulate_swap_exact_asset_out(params: ExactAssetOutParams) -> ContractRe
         resp: PlaceLimitOrderResponse {
             trancheKey: "".to_string(),
             coin_in: Some(Coin::new(amount_in.into(), "someDenom")),
-            taker_coin_out: Some(Coin::new(amount_in.into(), asset_out.denom()).into()),
-            taker_coin_in: Some(Coin::new(amount_in.into(), "someDenom").into()),
+            taker_coin_out: Some(Coin::new(amount_in.into(), asset_out.denom())),
+            taker_coin_in: Some(Coin::new(amount_in.into(), "someDenom")),
         }
     };
 

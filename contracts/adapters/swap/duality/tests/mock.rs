@@ -18,6 +18,13 @@ impl MockQuerier {
     }
 }
 
+impl Default for MockQuerier {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
 impl Querier for MockQuerier {
     fn raw_query(&self, query_raw: &[u8]) -> QuerierResult {
         let query = String::from_utf8(query_raw.to_vec()).unwrap();
@@ -29,6 +36,6 @@ impl Querier for MockQuerier {
             }
         }
 
-        return SystemResult::Err(SystemError::UnsupportedRequest { kind: "no matching response found".to_string() } );
+        SystemResult::Err(SystemError::UnsupportedRequest { kind: "no matching response found".to_string() } )
     }
 } 
