@@ -585,6 +585,28 @@
         },
         "additionalProperties": false
       },
+      "EurekaFee": {
+        "type": "object",
+        "required": [
+          "coin",
+          "receiver",
+          "timeout_timestamp"
+        ],
+        "properties": {
+          "coin": {
+            "$ref": "#/definitions/Coin"
+          },
+          "receiver": {
+            "type": "string"
+          },
+          "timeout_timestamp": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
       "HexBinary": {
         "description": "This is a wrapper around Vec<u8> to add hex de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is similar to `cosmwasm_std::Binary` but uses hex. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
         "type": "string"
@@ -628,6 +650,22 @@
           "source_channel"
         ],
         "properties": {
+          "encoding": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "eureka_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EurekaFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "fee": {
             "anyOf": [
               {

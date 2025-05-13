@@ -82,4 +82,10 @@ pub enum ContractError {
 
     #[error("Remaining Asset Less Than Min Asset with Exact Out Action")]
     RemainingAssetLessThanMinAsset,
+
+    #[error("Remaining Asset and Eureka Fee Coin Denoms Do Not Match")]
+    RemainingAssetAndEurekaFeeDenomMismatch,
+
+    #[error("Eureka Fee Timeout Timestamp Less Than Current Timestamp")]
+    EurekaFeeTimeout,
 }
