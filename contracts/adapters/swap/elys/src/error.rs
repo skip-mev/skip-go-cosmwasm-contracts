@@ -33,7 +33,7 @@ pub enum ContractError {
     #[error("coin_out denom must match the last swap operation's denom out")]
     CoinOutDenomMismatch,
 
-    #[error("Asset Must Be Native, Osmosis Does Not Support CW20 Tokens")]
+    #[error("Asset Must Be Native, Elys Does Not Support CW20 Tokens")]
     AssetNotNative,
 
     #[error("TokenOut Not Found in swap exact asset in estimation")]
