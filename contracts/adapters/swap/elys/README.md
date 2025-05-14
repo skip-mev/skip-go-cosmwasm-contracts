@@ -25,7 +25,7 @@ Instantiates a new Elys AMM swap adapter contract.
 
 Swaps the coin sent using the operations provided.
 
-Note: The `pool` string field provided in the operations must be able to be converted into a `u64` (the format used by Osmosis for pool IDs)
+Note: The `pool` string field provided in the operations must be able to be converted into a `u64` (the format used by Elys for pool IDs)
 
 ``` json
 {
