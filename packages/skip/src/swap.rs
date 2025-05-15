@@ -286,7 +286,7 @@ pub struct SwapExactAssetOut {
     pub refund_address: Option<String>,
 }
 
-// Swap object that swaps the remaining asset recevied
+// Swap object that swaps the remaining asset received
 // from the contract call minus fee swap (if present)
 #[cw_serde]
 pub struct SwapExactAssetIn {
@@ -294,7 +294,7 @@ pub struct SwapExactAssetIn {
     pub operations: Vec<SwapOperation>,
 }
 
-// Swap object that swaps the remaining asset recevied
+// Swap object that swaps the remaining asset received
 // over multiple routes from the contract call minus fee swap (if present)
 #[cw_serde]
 pub struct SmartSwapExactAssetIn {
