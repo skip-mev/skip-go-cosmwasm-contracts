@@ -59,7 +59,7 @@ struct Params {
                     receiver: "swap_contract_address".to_string(),
                     routes: vec![MultiHopRoute {hops: vec![String::from("os"),String::from("uatom")]}],
                     amount_in: String::from("100"),
-                    exit_limit_price: String::from("1000100000000000000000000"),
+                    exit_limit_price: String::from("1"),
                     pick_best_route: true,
                 })?,
                 gas_limit: None,
@@ -109,7 +109,7 @@ struct Params {
                     receiver: "swap_contract_address".to_string(),
                     routes: vec![MultiHopRoute {hops: vec![String::from("os"),String::from("uatom"), String::from("untrn")]}],
                     amount_in: String::from("100"),
-                    exit_limit_price: String::from("1000100000000000000000000"),
+                    exit_limit_price: String::from("1"),
                     pick_best_route: true,
                 })?,
                 gas_limit: None,
@@ -136,6 +136,50 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
+        info_funds: vec![Coin::new(10000000000000000000000, "os")],
+        swap_operations: vec![
+            SwapOperation {
+                pool: "1".to_string(),
+                denom_in: "os".to_string(),
+                denom_out: "uatom".to_string(),
+                interface: None,
+            }
+        ],
+        expected_messages: vec![
+            SubMsg {
+                id: 0,
+                msg: get_multi_hop_msg(MsgMultiHopSwap {
+                    creator: "swap_contract_address".to_string(),
+                    receiver: "swap_contract_address".to_string(),
+                    routes: vec![MultiHopRoute {hops: vec![String::from("os"),String::from("uatom")]}],
+                    amount_in: String::from("10000000000000000000000"),
+                    exit_limit_price: String::from("1"),
+                    pick_best_route: true,
+                })?,
+                gas_limit: None,
+                reply_on: Never,
+            },
+            SubMsg {
+                id: 0,
+                msg: WasmMsg::Execute {
+                    contract_addr: "swap_contract_address".to_string(),
+                    msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
+                        return_denom: "uatom".to_string(),
+                        swapper: Addr::unchecked("entry_point"),
+                    })?,
+                    funds: vec![],
+                }
+                .into(),
+                gas_limit: None,
+                reply_on: Never,
+            },
+        ],
+        expected_error_string: "".to_string(),
+    };
+"One Swap Operation with large amountIn")]
+#[test_case(
+    Params {
+        caller: "entry_point".to_string(),
         info_funds: vec![Coin::new(100, "os")],
         swap_operations: vec![],
         expected_messages: vec![
@@ -146,7 +190,7 @@ struct Params {
                     receiver: "swap_contract_address".to_string(),
                     routes: vec![MultiHopRoute {hops: vec![]}],
                     amount_in: String::from("100"),
-                    exit_limit_price: String::from("1000100000000000000000000"),
+                    exit_limit_price: String::from("1"),
                     pick_best_route: true,
                 })?,
                 gas_limit: None,

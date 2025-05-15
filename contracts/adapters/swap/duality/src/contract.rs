@@ -3,8 +3,8 @@ use crate::{
     state::{DEX_MODULE_ADDRESS, ENTRY_POINT_CONTRACT_ADDRESS},
 };
 use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Int128,
-    MessageInfo, Response, StdError, Uint128, WasmMsg,
+    entry_point, to_json_binary, Binary, Coin, CosmosMsg, Decimal, Decimal256, Deps, DepsMut, Env,
+    Int128, MessageInfo, Response, StdError, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
@@ -162,24 +162,15 @@ fn create_duality_swap_msg(
 ) -> ContractResult<CosmosMsg> {
     // Convert the swap operations into a Duality multi hop swap route.
     let route = get_route_from_swap_operations(swap_operations)?;
-    // unfortunate type conversion. should't be an issue for normal people amounts
-    let amount_in: Int128 = uint128_to_int128(coin_in.amount)?;
-
-    // amount_in * limit_sell_price > 1
-    let true_limit_price: Decimal = Decimal::one()
-        .checked_div(Decimal::from_str(&amount_in.to_string()).unwrap())
-        .unwrap()
-        .checked_mul(Decimal::from_str("1.0001").unwrap())
-        .unwrap();
-    let limit_price = get_string_price_formatted(true_limit_price);
 
     // Create the duality multi hop swap message
     let swap_msg = MsgMultiHopSwap {
         creator: env.contract.address.to_string(),
         receiver: env.contract.address.to_string(),
         routes: vec![route],
-        amount_in: coin_in.amount.into(),
-        exit_limit_price: limit_price,
+        amount_in: coin_in.amount.to_string(),
+        // From duality side this price represents 1/10^27 -- the smallest possible price
+        exit_limit_price: "1".to_string(),
         pick_best_route: true,
     };
 
@@ -294,22 +285,13 @@ fn query_simulate_swap_exact_asset_in(
     let duality_multi_hop_swap_route =
         get_route_from_swap_operations_for_query(swap_operations).unwrap();
 
-    // unfortunate type conversion. should't be an issue for normal people amounts
-    let amount_in: Int128 = uint128_to_int128(coin_in.amount)?;
-    // amount_in * limit_sell_price > 1
-    let true_limit_price: Decimal = Decimal::one()
-        .checked_div(Decimal::from_str(&amount_in.to_string()).unwrap())
-        .unwrap()
-        .checked_mul(Decimal::from_str("1.0001").unwrap())
-        .unwrap();
-    let limit_price = get_string_price_formatted(true_limit_price);
-
     let query_msg: SimulateMultiHopSwapRequest = SimulateMultiHopSwapRequest {
         sender: String::from(""),
         receiver: String::from(""),
         routes: duality_multi_hop_swap_route,
-        amount_in: amount_in.to_string(),
-        exit_limit_price: limit_price,
+        amount_in: coin_in.amount.to_string(),
+        // From duality side this price represents 1/10^27 -- the smallest possible price
+        exit_limit_price: "1".to_string(),
         pick_best_route: true,
     };
 
@@ -541,16 +523,16 @@ fn perform_duality_limit_order_query(
         get_spot_price_and_tick(deps, &swap_operation.denom_out, &swap_operation.denom_in)?;
 
     // The required amount in if we swap at the spot price
-    let min_amount_in = Decimal::from_str(&amount_out.to_string())
+    let min_amount_in = Decimal256::from_str(&amount_out.to_string())
         .unwrap()
-        .checked_div(taker_price)
+        .checked_div(taker_price.into())
         .unwrap();
 
     // increase amount in to insure we will hit max_amount_out given ample liquidity
     let amount_in = min_amount_in
-        .checked_mul(Decimal::from_str("2").unwrap())
+        .checked_mul(Decimal256::from_str("2").unwrap())
         .unwrap()
-        .checked_mul(Decimal::bps(MAX_SLIPPAGE_BASIS_POINTS))
+        .checked_mul(Decimal256::bps(MAX_SLIPPAGE_BASIS_POINTS))
         .unwrap()
         .to_uint_ceil()
         .to_string();
@@ -757,40 +739,13 @@ fn parse_and_validate_price(input: &str) -> ContractResult<Decimal> {
     Ok(spot_price)
 }
 
-fn get_string_price_formatted(price: Decimal) -> String {
-    // Convert decimal to string first
-    let price_str = price.to_string();
-
-    // Split into parts before and after decimal
-    let parts: Vec<&str> = price_str.split('.').collect();
-    let integer_part = parts[0];
-    let decimal_part = parts.get(1).unwrap_or(&"");
-
-    if integer_part != "0" {
-        let padding_needed = 27 - integer_part.len() - decimal_part.len();
-        return format!(
-            "{}{}{:0<width$}",
-            integer_part,
-            decimal_part,
-            "",
-            width = padding_needed
-        );
-    }
-    // For numbers < 1 pad to 27 - leading_zeros. add 1 to count for the integer zero
-    let leading_zeros = 1 + decimal_part.chars().take_while(|&c| c == '0').count();
-    // count the significant part
-    let significant_part: String = decimal_part.chars().skip_while(|&c| c == '0').collect();
-
-    // Use N syntax for dyynamic width specification
-    format!("{:0<N$}", significant_part, N = 27 - leading_zeros)
-}
-
 /////////////
 // TESTS   //
 /////////////
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use test_case::test_case;
 
@@ -857,22 +812,5 @@ mod tests {
                 },
             },
         }
-    }
-
-    #[test_case("100000000000000.000000000001", "100000000000000000000000001" ; "edge decimal")]
-    #[test_case("0.0000001", "10000000000000000000" ; "small decimal 1")]
-    #[test_case("0.000001", "100000000000000000000" ; "small decimal 2")]
-    #[test_case("0.000000000000000001", "100000000" ; "smallest decimal")]
-    #[test_case("0.0000010001", "100010000000000000000" ; "small decimal with trailing")]
-    #[test_case("0.000001000100000001", "100010000000100000000" ; "strange small number")]
-    #[test_case("1.0001", "100010000000000000000000000" ; "number greater than 1")]
-    #[test_case("1.00010010010001", "100010010010001000000000000" ; "strange number greater than 1")]
-    #[test_case("123.321", "123321000000000000000000000" ; "three digit number with decimals")]
-    #[test_case("42", "420000000000000000000000000" ; "whole number")]
-    fn test_string_price_formatting(input: &str, expected: &str) {
-        assert_eq!(
-            get_string_price_formatted(Decimal::from_str(input).unwrap()),
-            expected
-        );
     }
 }
