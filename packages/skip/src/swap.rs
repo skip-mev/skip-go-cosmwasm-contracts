@@ -9,6 +9,9 @@ use cosmwasm_std::{
 };
 use cw20::Cw20Contract;
 use cw20::Cw20ReceiveMsg;
+use elys_std::types::elys::amm::{
+    SwapAmountInRoute as ElysSwapAmountInRoute, SwapAmountOutRoute as ElysSwapAmountOutRoute,
+};
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{
     SwapAmountInRoute as OsmosisSwapAmountInRoute, SwapAmountOutRoute as OsmosisSwapAmountOutRoute,
 };
@@ -28,7 +31,7 @@ pub struct MigrateMsg {
 /////////////////
 
 // The InstantiateMsg struct defines the initialization parameters for the
-// Osmosis Poolmanager and Astroport swap adapter contracts.
+// Osmosis Poolmanager, Astroport and elys Amm swap adapter contracts.
 #[cw_serde]
 pub struct InstantiateMsg {
     pub entry_point_contract_address: String,
@@ -265,10 +268,37 @@ impl TryFrom<SwapOperation> for OsmosisSwapAmountOutRoute {
     }
 }
 
-// Converts a vector of skip swap operation to vector of osmosis swap
+// ELYS Conversions
+// Converts a skip swap operation to an elys swap amount in route
+// Error if the given String for pool in the swap operation is not a valid u64.
+impl TryFrom<SwapOperation> for ElysSwapAmountInRoute {
+    type Error = ParseIntError;
+
+    fn try_from(swap_operation: SwapOperation) -> Result<Self, Self::Error> {
+        Ok(ElysSwapAmountInRoute {
+            pool_id: swap_operation.pool.parse()?,
+            token_out_denom: swap_operation.denom_out,
+        })
+    }
+}
+
+// Converts a skip swap operation to an osmosis swap amount out route
+// Error if the given String for pool in the swap operation is not a valid u64.
+impl TryFrom<SwapOperation> for ElysSwapAmountOutRoute {
+    type Error = ParseIntError;
+
+    fn try_from(swap_operation: SwapOperation) -> Result<Self, Self::Error> {
+        Ok(ElysSwapAmountOutRoute {
+            pool_id: swap_operation.pool.parse()?,
+            token_in_denom: swap_operation.denom_in,
+        })
+    }
+}
+
+// Converts a vector of skip swap operation to vector of osmosis/elys swap
 // amount in/out routes, returning an error if any of the swap operations
 // fail to convert. This only happens if the given String for pool in the
-// swap operation is not a valid u64, which is the pool_id type for Osmosis.
+// swap operation is not a valid u64, which is the pool_id type for osmosis/elys.
 pub fn convert_swap_operations<T>(
     swap_operations: Vec<SwapOperation>,
 ) -> Result<Vec<T>, ParseIntError>

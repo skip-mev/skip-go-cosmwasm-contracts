@@ -46,6 +46,7 @@ mockall              = "0.12.1"
 neutron-proto        = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
 neutron-sdk          = "0.10.0"
 osmosis-std          = "0.15.3"
+elys-std          = "0.1.0"
 prost                = "0.11"
 pryzm-std            = "0.1.7"
 serde                = { version = "1.0.194", default-features = false, features = ["derive"] }
