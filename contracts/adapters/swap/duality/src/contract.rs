@@ -431,15 +431,15 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     if routes.len() != 1 {
         return Err(ContractError::SmartSwapUnsupported);
     }
-    let responce = query_simulate_swap_exact_asset_in_with_metadata(
+    let response = query_simulate_swap_exact_asset_in_with_metadata(
         deps,
         env,
         asset_in,
         routes[0].operations.clone(),
         include_spot_price,
     )?;
-    if *responce.asset_out.denom() == ask_denom {
-        Ok(responce)
+    if *response.asset_out.denom() == ask_denom {
+        Ok(response)
     } else {
         Err(ContractError::SmartSwapUnexpectedOut)
     }
