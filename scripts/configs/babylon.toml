@@ -1,0 +1,38 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+MAINNET_REST_URL = "https://babylon-api.polkachu.com" 
+MAINNET_RPC_URL = "https://babylon-rpc.polkachu.com"
+MAINNET_CHAIN_ID = "bbn-1"
+
+TESTNET_REST_URL = "https://babylon-testnet-api.nodes.guru"
+TESTNET_RPC_URL = "https://babylon-testnet-rpc.nodes.guru"
+TESTNET_CHAIN_ID = "bbn-test-5"
+
+ADDRESS_PREFIX = "bbn"
+DENOM = "ubbn"
+GAS_PRICE = 0.007
+
+# Contract Paths
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_callbacks.wasm"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+# ADDRESS GRANTED PERMISSION BY GOVERNANCE TO UPLOAD CONTRACATS
+PERMISSIONED_UPLOADER_ADDRESS = "bbn1raa4kyx5ypz75qqk3566c6slx2mw3qzsrlp9j9"
+
+[[swap_venues]]
+name = "babylon-tower"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_astroport.wasm"
+
+[[testnet_swap_venues]]
+name = "testnet-babylon-tower"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_astroport.wasm"
