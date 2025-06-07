@@ -1,0 +1,30 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+MAINNET_REST_URL = "https://rest.cosmoshub.goldenratiostaking.net" 
+MAINNET_RPC_URL = "https://cosmos-rpc.polkachu.com"
+MAINNET_CHAIN_ID = "cosmoshub-4"
+
+TESTNET_REST_URL = "https://rest.provider-sentry-01.ics-testnet.polypore.xyz"
+TESTNET_RPC_URL = "https://rpc.provider-sentry-01.ics-testnet.polypore.xyz"
+TESTNET_CHAIN_ID = "provider"
+
+ADDRESS_PREFIX = "cosmos"
+DENOM = "uatom"
+GAS_PRICE = 0.01
+
+# Contract Paths
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_callbacks.wasm"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+# ADDRESS GRANTED PERMISSION BY GOVERNANCE TO UPLOAD CONTRACATS
+PERMISSIONED_UPLOADER_ADDRESS = "cosmos1raa4kyx5ypz75qqk3566c6slx2mw3qzs5ps5du"

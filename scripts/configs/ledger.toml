@@ -1,0 +1,37 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+MAINNET_REST_URL = "http://rpc-mainnet.lb-mgt.com:1317"
+MAINNET_RPC_URL = "https://rpc-mainnet.lb-mgt.com"
+MAINNET_CHAIN_ID = "ledger-mainnet-1"
+
+TESTNET_REST_URL = "http://rpc-gastald.lb-mgt.com:1317"
+TESTNET_RPC_URL = "https://rpc-gastald.lb-mgt.com"
+TESTNET_CHAIN_ID = "ledger-testnet-1"
+
+ADDRESS_PREFIX = "lom"
+DENOM = "ulom"
+GAS_PRICE = 100
+
+# Contract Paths
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_callbacks.wasm"
+
+# SALT USED TO GENERATE A DETERMINSTIC ADDRESS
+SALT = "1"
+
+# @DEV MUST CHANGE SALT ACCORDINGLY TO OBTAIN THIS PRE GENERATED ADDRESS
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+[[swap_venues]]
+name = "ledger-lbtc-convert"
+mantra_pool_manager_address = "lom14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s9fver0"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_mantra_dex.wasm"
+
+[[testnet_swap_venues]]
+name = "testnet-ledger-lbtc-convert"
+mantra_pool_manager_address = "lom14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s9fver0"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_mantra_dex.wasm"
