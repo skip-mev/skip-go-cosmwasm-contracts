@@ -26,5 +26,4 @@ venv
 .venv
 .env
 
-scripts/configs/*.toml
 scripts/cosmpy/*
