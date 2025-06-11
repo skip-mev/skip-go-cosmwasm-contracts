@@ -44,6 +44,12 @@ pub struct MantraDexInstantiateMsg {
 }
 
 #[cw_serde]
+pub struct InjectiveInstantiateMsg {
+    pub entry_point_contract_address: String,
+    pub swap_contract_address: String,
+}
+
+#[cw_serde]
 pub struct AstrovaultAdapterInstantiateMsg {
     pub entry_point_contract_address: String,
     pub astrovault_router_contract_address: String,
