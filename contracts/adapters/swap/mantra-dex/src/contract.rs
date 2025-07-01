@@ -141,7 +141,7 @@ fn execute_swap(
         operations: mantra_swap_operations,
         minimum_receive: None,
         receiver: Some(entry_point_contract_address.to_string()),
-        max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
+        max_slippage: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
     };
 
     // Create swap message on MANTRA dex pool manager
