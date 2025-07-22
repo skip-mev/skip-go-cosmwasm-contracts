@@ -17,7 +17,7 @@ SALT="1"
 SALT_HEX="31" # "1" in hex
 
 # Admin addresses
-ENTRY_POINT_ADMIN="mantra10tysdwkjuqecgg9npery40dvc8ak9urhf6dj6u"
+ENTRY_POINT_ADMIN="mantra1cc0jfcd3rv3d36g6m575mdk8p2nmdjgnaf7ngq"
 ADAPTER_ADMIN="mantra1cc0jfcd3rv3d36g6m575mdk8p2nmdjgnaf7ngq"
 
 # Get script directory and workspace root
@@ -159,7 +159,7 @@ pre_generate_entry_point_address() {
 
     # Get code hash from stored contract
     CODE_HASH=$(mantrachaind query wasm code-info "$code_id" --node "$NODE_URL" --output json | jq -r '.data_hash')
-    
+
     if [ -z "$CODE_HASH" ] || [ "$CODE_HASH" == "null" ]; then
         echo "Error: Failed to get code hash for code ID $code_id"
         return 1
@@ -324,7 +324,7 @@ EOF
     if [ "$CONTRACT_ADDR" != "null" ] && [ -n "$CONTRACT_ADDR" ]; then
         echo "Entry Point contract instantiated successfully!"
         echo "Actual Address: $CONTRACT_ADDR"
-        
+
         # Verify it matches expected address
         if [ "$CONTRACT_ADDR" == "$expected_address" ]; then
             echo "✅ Address matches pre-generated address! Deterministic deployment successful."
@@ -333,7 +333,7 @@ EOF
             echo "   Expected: $expected_address"
             echo "   Actual:   $CONTRACT_ADDR"
         fi
-        
+
         echo "$CONTRACT_ADDR"
         return 0
     else
