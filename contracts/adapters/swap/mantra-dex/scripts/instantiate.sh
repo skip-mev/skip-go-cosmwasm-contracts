@@ -150,7 +150,7 @@ main() {
             ENTRY_POINT_ADDRESS="$1"
             
             # Validate that the address looks correct (basic validation)
-            if [[ ! "$ENTRY_POINT_ADDRESS" =~ ^mantra1[a-z0-9]{38}$ ]]; then
+            if [[ ! "$ENTRY_POINT_ADDRESS" =~ ^mantra1[a-z0-9]{50,}$ ]]; then
                 echo "Error: Invalid entry point address format. Expected mantra1... address"
                 exit 1
             fi

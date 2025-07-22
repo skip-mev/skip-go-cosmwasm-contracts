@@ -40,8 +40,8 @@ check_artifacts() {
     fi
     
     ENTRY_POINT_WASM=$(find "$ARTIFACTS_DIR" -name "*entry_point*.wasm" | head -n 1)
-    IBC_HOOKS_WASM=$(find "$ARTIFACTS_DIR" -name "*ibc_hooks*.wasm" | head -n 1)
-    MANTRA_DEX_WASM=$(find "$ARTIFACTS_DIR" -name "*mantra_dex*.wasm" | head -n 1)
+    IBC_HOOKS_WASM=$(find "$ARTIFACTS_DIR" -name "*ibc_adapter_ibc_hooks*.wasm" | head -n 1)
+    MANTRA_DEX_WASM=$(find "$ARTIFACTS_DIR" -name "*swap_adapter_mantra_dex*.wasm" | head -n 1)
     
     if [ -z "$ENTRY_POINT_WASM" ]; then
         echo "Error: Entry point WASM file not found in $ARTIFACTS_DIR"
@@ -72,7 +72,7 @@ store_contract() {
     local wasm_file="$1"
     local contract_name="$2"
     
-    echo "Storing $contract_name contract code on $CHAIN_ID..."
+    echo "Storing $contract_name contract code on $CHAIN_ID..." >&2
     
     STORE_RESULT=$(mantrachaind tx wasm store "$wasm_file" \
         --from "$WALLET_NAME" \
@@ -83,41 +83,151 @@ store_contract() {
         --gas-prices "0.01uom" \
         --broadcast-mode sync \
         --yes \
-        --output json)
-    
-    echo "Store transaction result for $contract_name:"
-    echo "$STORE_RESULT"
+        --output json 2>&1)
     
     # Get transaction hash
-    TXHASH=$(echo "$STORE_RESULT" | jq -r '.txhash')
+    TXHASH=$(echo "$STORE_RESULT" | jq -r '.txhash // empty' 2>/dev/null)
     
-    if [ "$TXHASH" == "null" ] || [ -z "$TXHASH" ]; then
-        echo "Error: Failed to get transaction hash for $contract_name"
+    if [ -z "$TXHASH" ]; then
+        echo "Error: Failed to get transaction hash for $contract_name" >&2
+        echo "Store result: $STORE_RESULT" >&2
         return 1
     fi
     
-    echo "Transaction submitted with hash: $TXHASH"
-    echo "Waiting for transaction to be processed..."
-    sleep 10
+    echo "Transaction submitted with hash: $TXHASH" >&2
+    echo "Waiting for transaction to be processed..." >&2
     
-    # Query the transaction result
-    TX_RESULT=$(mantrachaind query tx "$TXHASH" --node "$NODE_URL" --output json 2>/dev/null || echo "null")
+    # Wait and retry until transaction is processed
+    local retries=0
+    local max_retries=6
+    while [ $retries -lt $max_retries ]; do
+        sleep 10
+        TX_RESULT=$(mantrachaind query tx "$TXHASH" --node "$NODE_URL" --output json 2>/dev/null)
+        
+        if [ $? -eq 0 ] && [ -n "$TX_RESULT" ] && [ "$TX_RESULT" != "null" ]; then
+            break
+        fi
+        
+        retries=$((retries + 1))
+        echo "Retry $retries/$max_retries: Transaction not yet processed..." >&2
+    done
     
-    if [ "$TX_RESULT" == "null" ]; then
-        echo "Transaction not yet processed. Please check manually with:"
-        echo "mantrachaind query tx $TXHASH --node $NODE_URL"
+    if [ $retries -eq $max_retries ]; then
+        echo "Error: Transaction not processed after $max_retries attempts" >&2
+        echo "Check manually: mantrachaind query tx $TXHASH --node $NODE_URL" >&2
         return 1
     fi
     
-    # Extract code ID from transaction result
-    CODE_ID=$(echo "$TX_RESULT" | jq -r '.logs[0].events[] | select(.type=="store_code") | .attributes[] | select(.key=="code_id") | .value')
+    # Extract code ID with robust parsing
+    local CODE_ID=""
     
-    if [ "$CODE_ID" != "null" ] && [ -n "$CODE_ID" ]; then
-        echo "$contract_name stored successfully with Code ID: $CODE_ID"
+    # Try multiple parsing methods
+    # Method 1: events at root level
+    CODE_ID=$(echo "$TX_RESULT" | jq -r '.events[]? | select(.type=="store_code") | .attributes[]? | select(.key=="code_id") | .value' 2>/dev/null | head -n1)
+    
+    # Method 2: events in logs
+    if [ -z "$CODE_ID" ] || [ "$CODE_ID" == "null" ]; then
+        CODE_ID=$(echo "$TX_RESULT" | jq -r '.logs[]?.events[]? | select(.type=="store_code") | .attributes[]? | select(.key=="code_id") | .value' 2>/dev/null | head -n1)
+    fi
+    
+    # Method 3: look for any code_id in the response
+    if [ -z "$CODE_ID" ] || [ "$CODE_ID" == "null" ]; then
+        CODE_ID=$(echo "$TX_RESULT" | jq -r '.. | objects | select(has("key") and has("value") and .key=="code_id") | .value' 2>/dev/null | head -n1)
+    fi
+    
+    if [ -n "$CODE_ID" ] && [ "$CODE_ID" != "null" ]; then
+        echo "$contract_name stored successfully with Code ID: $CODE_ID" >&2
         echo "$CODE_ID"
         return 0
     else
-        echo "Error: Failed to extract Code ID for $contract_name"
+        echo "Error: Failed to extract Code ID for $contract_name" >&2
+        echo "Transaction result:" >&2
+        echo "$TX_RESULT" | jq '.' >&2
+        return 1
+    fi
+}
+
+# Generic contract instantiation function
+instantiate_contract() {
+    local code_id="$1"
+    local init_msg="$2"
+    local label="$3"
+    local contract_name="$4"
+    
+    echo "Instantiating $contract_name with Code ID: $code_id" >&2
+    echo "Instantiation message: $init_msg" >&2
+    
+    INSTANTIATE_RESULT=$(mantrachaind tx wasm instantiate "$code_id" "$init_msg" \
+        --from "$WALLET_NAME" \
+        --chain-id "$CHAIN_ID" \
+        --node "$NODE_URL" \
+        --label "$label" \
+        --admin "mantra10tysdwkjuqecgg9npery40dvc8ak9urhf6dj6u" \
+        --gas auto \
+        --gas-adjustment 1.3 \
+        --gas-prices "0.01uom" \
+        --broadcast-mode sync \
+        --yes \
+        --output json 2>&1)
+    
+    # Get transaction hash
+    TXHASH=$(echo "$INSTANTIATE_RESULT" | jq -r '.txhash // empty' 2>/dev/null)
+    
+    if [ -z "$TXHASH" ]; then
+        echo "Error: Failed to get transaction hash for $contract_name" >&2
+        echo "Instantiate result: $INSTANTIATE_RESULT" >&2
+        return 1
+    fi
+    
+    echo "Transaction submitted with hash: $TXHASH" >&2
+    echo "Waiting for transaction to be processed..." >&2
+    
+    # Wait and retry until transaction is processed
+    local retries=0
+    local max_retries=6
+    while [ $retries -lt $max_retries ]; do
+        sleep 10
+        TX_RESULT=$(mantrachaind query tx "$TXHASH" --node "$NODE_URL" --output json 2>/dev/null)
+        
+        if [ $? -eq 0 ] && [ -n "$TX_RESULT" ] && [ "$TX_RESULT" != "null" ]; then
+            break
+        fi
+        
+        retries=$((retries + 1))
+        echo "Retry $retries/$max_retries: Transaction not yet processed..." >&2
+    done
+    
+    if [ $retries -eq $max_retries ]; then
+        echo "Error: Transaction not processed after $max_retries attempts" >&2
+        echo "Check manually: mantrachaind query tx $TXHASH --node $NODE_URL" >&2
+        return 1
+    fi
+    
+    # Extract contract address with robust parsing
+    local CONTRACT_ADDR=""
+    
+    # Try multiple parsing methods
+    # Method 1: events at root level
+    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.events[]? | select(.type=="instantiate") | .attributes[]? | select(.key=="_contract_address") | .value' 2>/dev/null | head -n1)
+    
+    # Method 2: events in logs
+    if [ -z "$CONTRACT_ADDR" ] || [ "$CONTRACT_ADDR" == "null" ]; then
+        CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[]?.events[]? | select(.type=="instantiate") | .attributes[]? | select(.key=="_contract_address") | .value' 2>/dev/null | head -n1)
+    fi
+    
+    # Method 3: look for any _contract_address in the response
+    if [ -z "$CONTRACT_ADDR" ] || [ "$CONTRACT_ADDR" == "null" ]; then
+        CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.. | objects | select(has("key") and has("value") and .key=="_contract_address") | .value' 2>/dev/null | head -n1)
+    fi
+    
+    if [ -n "$CONTRACT_ADDR" ] && [ "$CONTRACT_ADDR" != "null" ]; then
+        echo "$contract_name instantiated successfully at: $CONTRACT_ADDR" >&2
+        echo "$CONTRACT_ADDR"
+        return 0
+    else
+        echo "Error: Failed to extract contract address for $contract_name" >&2
+        echo "Transaction result:" >&2
+        echo "$TX_RESULT" | jq '.' >&2
         return 1
     fi
 }
@@ -145,6 +255,7 @@ EOF
         --chain-id "$CHAIN_ID" \
         --node "$NODE_URL" \
         --label "skip-go-ibc-hooks-adapter" \
+        --admin "mantra10tysdwkjuqecgg9npery40dvc8ak9urhf6dj6u" \
         --gas auto \
         --gas-adjustment 1.3 \
         --gas-prices "0.01uom" \
@@ -177,7 +288,12 @@ EOF
     fi
     
     # Extract contract address from transaction result
-    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[0].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    
+    # Fallback: try to extract from logs if events method fails
+    if [ -z "$CONTRACT_ADDR" ] || [ "$CONTRACT_ADDR" == "null" ]; then
+        CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[]?.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    fi
     
     if [ "$CONTRACT_ADDR" != "null" ] && [ -n "$CONTRACT_ADDR" ]; then
         echo "IBC Hooks Adapter contract instantiated successfully!"
@@ -186,6 +302,81 @@ EOF
         return 0
     else
         echo "Error: Failed to extract IBC Hooks Adapter contract address"
+        return 1
+    fi
+}
+
+# Instantiate entry point contract with initial empty configuration
+instantiate_entry_point_initial() {
+    local code_id="$1"
+    
+    echo "Instantiating Entry Point contract with Code ID: $code_id"
+    
+    # Create instantiation message for entry point with empty swap venues and placeholder IBC
+    INIT_MSG=$(cat <<EOF
+{
+  "swap_venues": [],
+  "ibc_transfer_contract_address": "mantra10tysdwkjuqecgg9npery40dvc8ak9urhf6dj6u",
+  "hyperlane_transfer_contract_address": null
+}
+EOF
+)
+    
+    echo "Entry Point instantiation message:"
+    echo "$INIT_MSG"
+    
+    INSTANTIATE_RESULT=$(mantrachaind tx wasm instantiate "$code_id" "$INIT_MSG" \
+        --from "$WALLET_NAME" \
+        --chain-id "$CHAIN_ID" \
+        --node "$NODE_URL" \
+        --label "skip-go-entry-point" \
+        --admin "mantra10tysdwkjuqecgg9npery40dvc8ak9urhf6dj6u" \
+        --gas auto \
+        --gas-adjustment 1.3 \
+        --gas-prices "0.01uom" \
+        --broadcast-mode sync \
+        --yes \
+        --output json)
+    
+    echo "Entry Point instantiate transaction result:"
+    echo "$INSTANTIATE_RESULT"
+    
+    # Get transaction hash
+    TXHASH=$(echo "$INSTANTIATE_RESULT" | jq -r '.txhash')
+    
+    if [ "$TXHASH" == "null" ] || [ -z "$TXHASH" ]; then
+        echo "Error: Failed to get transaction hash for Entry Point"
+        return 1
+    fi
+    
+    echo "Transaction submitted with hash: $TXHASH"
+    echo "Waiting for transaction to be processed..."
+    sleep 10
+    
+    # Query the transaction result
+    TX_RESULT=$(mantrachaind query tx "$TXHASH" --node "$NODE_URL" --output json 2>/dev/null || echo "null")
+    
+    if [ "$TX_RESULT" == "null" ]; then
+        echo "Transaction not yet processed. Please check manually with:"
+        echo "mantrachaind query tx $TXHASH --node $NODE_URL"
+        return 1
+    fi
+    
+    # Extract contract address from transaction result
+    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    
+    # Fallback: try to extract from logs if events method fails
+    if [ -z "$CONTRACT_ADDR" ] || [ "$CONTRACT_ADDR" == "null" ]; then
+        CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[]?.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    fi
+    
+    if [ "$CONTRACT_ADDR" != "null" ] && [ -n "$CONTRACT_ADDR" ]; then
+        echo "Entry Point contract instantiated successfully!"
+        echo "Contract Address: $CONTRACT_ADDR"
+        echo "$CONTRACT_ADDR"
+        return 0
+    else
+        echo "Error: Failed to extract Entry Point contract address"
         return 1
     fi
 }
@@ -220,6 +411,7 @@ EOF
         --chain-id "$CHAIN_ID" \
         --node "$NODE_URL" \
         --label "skip-go-entry-point" \
+        --admin "mantra10tysdwkjuqecgg9npery40dvc8ak9urhf6dj6u" \
         --gas auto \
         --gas-adjustment 1.3 \
         --gas-prices "0.01uom" \
@@ -252,7 +444,12 @@ EOF
     fi
     
     # Extract contract address from transaction result
-    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[0].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    
+    # Fallback: try to extract from logs if events method fails
+    if [ -z "$CONTRACT_ADDR" ] || [ "$CONTRACT_ADDR" == "null" ]; then
+        CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[]?.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    fi
     
     if [ "$CONTRACT_ADDR" != "null" ] && [ -n "$CONTRACT_ADDR" ]; then
         echo "Entry Point contract instantiated successfully!"
@@ -291,6 +488,7 @@ EOF
         --chain-id "$CHAIN_ID" \
         --node "$NODE_URL" \
         --label "skip-go-swap-adapter-mantra-dex" \
+        --admin "mantra10tysdwkjuqecgg9npery40dvc8ak9urhf6dj6u" \
         --gas auto \
         --gas-adjustment 1.3 \
         --gas-prices "0.01uom" \
@@ -323,7 +521,12 @@ EOF
     fi
     
     # Extract contract address from transaction result
-    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[0].events[] | select(.type=="instantiate") | .attributes[] | select(.key=="_contract_address") | .value')
+    CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    
+    # Fallback: try to extract from logs if events method fails
+    if [ -z "$CONTRACT_ADDR" ] || [ "$CONTRACT_ADDR" == "null" ]; then
+        CONTRACT_ADDR=$(echo "$TX_RESULT" | jq -r '.logs[]?.events[]? | select(.type=="instantiate")? | .attributes[]? | select(.key=="_contract_address")? | .value' 2>/dev/null || echo "")
+    fi
     
     if [ "$CONTRACT_ADDR" != "null" ] && [ -n "$CONTRACT_ADDR" ]; then
         echo "Mantra DEX Adapter contract instantiated successfully!"
@@ -342,25 +545,7 @@ deploy_all() {
     echo ""
     
     # Step 1: Store all contracts
-    echo "=== STEP 1: Storing IBC Hooks Adapter Contract ==="
-    IBC_HOOKS_CODE_ID=$(store_contract "$IBC_HOOKS_WASM" "IBC Hooks Adapter")
-    if [ $? -ne 0 ]; then
-        echo "Failed to store IBC Hooks Adapter contract"
-        exit 1
-    fi
-    echo "$IBC_HOOKS_CODE_ID" > "$SCRIPT_DIR/ibc_hooks_code_id.txt"
-    echo ""
-    
-    echo "=== STEP 2: Storing Mantra DEX Adapter Contract ==="
-    MANTRA_DEX_CODE_ID=$(store_contract "$MANTRA_DEX_WASM" "Mantra DEX Adapter")
-    if [ $? -ne 0 ]; then
-        echo "Failed to store Mantra DEX Adapter contract"
-        exit 1
-    fi
-    echo "$MANTRA_DEX_CODE_ID" > "$SCRIPT_DIR/mantra_dex_code_id.txt"
-    echo ""
-    
-    echo "=== STEP 3: Storing Entry Point Contract ==="
+    echo "=== STEP 1: Storing Entry Point Contract ==="
     ENTRY_POINT_CODE_ID=$(store_contract "$ENTRY_POINT_WASM" "Entry Point")
     if [ $? -ne 0 ]; then
         echo "Failed to store Entry Point contract"
@@ -369,13 +554,36 @@ deploy_all() {
     echo "$ENTRY_POINT_CODE_ID" > "$SCRIPT_DIR/entry_point_code_id.txt"
     echo ""
     
-    # Step 4: Instantiate adapters first (they need entry point address as a placeholder)
-    echo "=== STEP 4: Creating temporary Entry Point for adapter instantiation ==="
-    # We'll use a placeholder and then update the entry point later
-    TEMP_ENTRY_POINT="mantra1000000000000000000000000000000000000000000"
+    echo "=== STEP 2: Storing IBC Hooks Adapter Contract ==="
+    IBC_HOOKS_CODE_ID=$(store_contract "$IBC_HOOKS_WASM" "IBC Hooks Adapter")
+    if [ $? -ne 0 ]; then
+        echo "Failed to store IBC Hooks Adapter contract"
+        exit 1
+    fi
+    echo "$IBC_HOOKS_CODE_ID" > "$SCRIPT_DIR/ibc_hooks_code_id.txt"
+    echo ""
+    
+    echo "=== STEP 3: Storing Mantra DEX Adapter Contract ==="
+    MANTRA_DEX_CODE_ID=$(store_contract "$MANTRA_DEX_WASM" "Mantra DEX Adapter")
+    if [ $? -ne 0 ]; then
+        echo "Failed to store Mantra DEX Adapter contract"
+        exit 1
+    fi
+    echo "$MANTRA_DEX_CODE_ID" > "$SCRIPT_DIR/mantra_dex_code_id.txt"
+    echo ""
+    
+    # Step 4: Instantiate Entry Point first with empty swap venues
+    echo "=== STEP 4: Instantiating Entry Point Contract with empty configuration ==="
+    ENTRY_POINT_ADDRESS=$(instantiate_entry_point_initial "$ENTRY_POINT_CODE_ID")
+    if [ $? -ne 0 ]; then
+        echo "Failed to instantiate Entry Point contract"
+        exit 1
+    fi
+    echo "$ENTRY_POINT_ADDRESS" > "$SCRIPT_DIR/entry_point_address.txt"
+    echo ""
     
     echo "=== STEP 5: Instantiating IBC Hooks Adapter Contract ==="
-    IBC_HOOKS_ADDRESS=$(instantiate_ibc_hooks "$IBC_HOOKS_CODE_ID" "$TEMP_ENTRY_POINT")
+    IBC_HOOKS_ADDRESS=$(instantiate_ibc_hooks "$IBC_HOOKS_CODE_ID" "$ENTRY_POINT_ADDRESS")
     if [ $? -ne 0 ]; then
         echo "Failed to instantiate IBC Hooks Adapter contract"
         exit 1
@@ -384,21 +592,12 @@ deploy_all() {
     echo ""
     
     echo "=== STEP 6: Instantiating Mantra DEX Adapter Contract ==="
-    MANTRA_DEX_ADDRESS=$(instantiate_mantra_adapter "$MANTRA_DEX_CODE_ID" "$TEMP_ENTRY_POINT")
+    MANTRA_DEX_ADDRESS=$(instantiate_mantra_adapter "$MANTRA_DEX_CODE_ID" "$ENTRY_POINT_ADDRESS")
     if [ $? -ne 0 ]; then
         echo "Failed to instantiate Mantra DEX Adapter contract"
         exit 1
     fi
     echo "$MANTRA_DEX_ADDRESS" > "$SCRIPT_DIR/mantra_dex_address.txt"
-    echo ""
-    
-    echo "=== STEP 7: Instantiating Entry Point Contract with real addresses ==="
-    ENTRY_POINT_ADDRESS=$(instantiate_entry_point "$ENTRY_POINT_CODE_ID" "$IBC_HOOKS_ADDRESS" "$MANTRA_DEX_ADDRESS")
-    if [ $? -ne 0 ]; then
-        echo "Failed to instantiate Entry Point contract"
-        exit 1
-    fi
-    echo "$ENTRY_POINT_ADDRESS" > "$SCRIPT_DIR/entry_point_address.txt"
     echo ""
     
     # Summary
@@ -423,16 +622,17 @@ deploy_all() {
     echo ""
     echo "Files created:"
     echo "  - entry_point_code_id.txt / entry_point_address.txt"
-    echo "  - ibc_hooks_code_id.txt / ibc_hooks_address.txt"
+    echo "  - ibc_hooks_code_id.txt / ibc_hooks_address.txt"  
     echo "  - mantra_dex_code_id.txt / mantra_dex_address.txt"
     echo ""
-    echo "NOTE: The adapters were initially deployed with a placeholder entry point"
-    echo "address. You may need to migrate them to use the real entry point address:"
-    echo "  Entry Point: $ENTRY_POINT_ADDRESS"
+    echo "NEXT STEPS:"
+    echo "You need to configure the Entry Point contract to register the adapters:"
+    echo "  1. Add IBC adapter: $IBC_HOOKS_ADDRESS"
+    echo "  2. Add Mantra DEX adapter: $MANTRA_DEX_ADDRESS"
     echo ""
-    echo "The Entry Point has been configured with:"
-    echo "  - Mantra DEX swap venue"
-    echo "  - IBC Hooks transfer adapter"
+    echo "The Entry Point is currently configured with:"
+    echo "  - Empty swap venues (adapters need to be registered)"
+    echo "  - Placeholder IBC transfer adapter (needs to be updated)"
 }
 
 # Main script logic

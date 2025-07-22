@@ -316,8 +316,8 @@ pub struct AssetDecimalsResponse {
 pub struct SimulationResponse {
     /// The return amount of the ask asset given the offer amount.
     pub return_amount: Uint128,
-    /// The spread amount of the swap.
-    pub spread_amount: Uint128,
+    /// The slippage amount of the swap.
+    pub slippage_amount: Uint128,
     /// The swap fee amount of the swap.
     pub swap_fee_amount: Uint128,
     /// The protocol fee amount of the swap.
@@ -333,8 +333,8 @@ pub struct SimulationResponse {
 pub struct ReverseSimulationResponse {
     /// The amount of the offer asset needed to get the ask amount.
     pub offer_amount: Uint128,
-    /// The spread amount of the swap.
-    pub spread_amount: Uint128,
+    /// The slippage amount of the swap.
+    pub slippage_amount: Uint128,
     /// The swap fee amount of the swap.
     pub swap_fee_amount: Uint128,
     /// The protocol fee amount of the swap.
