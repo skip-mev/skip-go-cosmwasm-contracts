@@ -3779,6 +3779,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "skip-go-swap-adapter-injective"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "skip",
+ "test-case",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "skip-go-swap-adapter-lido-satellite"
 version = "0.3.0"
 dependencies = [
