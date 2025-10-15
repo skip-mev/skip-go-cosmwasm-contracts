@@ -30,7 +30,7 @@ pub enum InjectiveExecuteMsg {
         route: Vec<String>,
     },
 }
-
+//
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum InjectiveQueryMsg {
