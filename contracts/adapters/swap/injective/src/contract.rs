@@ -49,6 +49,12 @@ pub enum InjectiveQueryMsg {
 }
 
 #[cw_serde]
+pub struct FPCoin {
+    pub amount: Uint128,
+    pub denom: String,
+}
+
+#[cw_serde]
 pub struct OutputQuantityResponse {
     pub result_quantity: Uint128,
     pub expected_fees: Vec<Coin>,
@@ -57,7 +63,7 @@ pub struct OutputQuantityResponse {
 #[cw_serde]
 pub struct InputQuantityResponse {
     pub result_quantity: Uint128,
-    pub expected_fees: Vec<Coin>,
+    pub expected_fees: Vec<FPCoin>,
 }
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -136,7 +142,7 @@ fn execute_swap(
 
     let injective_msg = InjectiveExecuteMsg::SwapMinOutput {
         target_denom: target_denom.clone(),
-        min_output_quantity: "0".to_string(),
+        min_output_quantity: "1".to_string(),
     };
 
     let injective_wasm_msg = wasm_execute(injective, &injective_msg, vec![coin_in])?;
