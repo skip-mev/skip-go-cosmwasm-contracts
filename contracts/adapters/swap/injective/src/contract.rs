@@ -50,14 +50,14 @@ pub enum InjectiveQueryMsg {
 
 #[cw_serde]
 pub struct FPCoin {
-    pub amount: Uint128,
+    pub amount: String,
     pub denom: String,
 }
 
 #[cw_serde]
 pub struct OutputQuantityResponse {
     pub result_quantity: Uint128,
-    pub expected_fees: Vec<Coin>,
+    pub expected_fees: Vec<FPCoin>,
 }
 
 #[cw_serde]
