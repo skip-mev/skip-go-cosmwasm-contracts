@@ -1,0 +1,32 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+MAINNET_REST_URL = "https://api.zigchain.com"
+MAINNET_RPC_URL = "https://rpc.zigchain.com"
+MAINNET_CHAIN_ID = "zig-1"
+
+TESTNET_REST_URL = "https://testnet-api.zigchain.com"
+TESTNET_RPC_URL = "https://testnet-rpc.zigchain.com"
+TESTNET_CHAIN_ID = "zig-test-2"
+
+ADDRESS_PREFIX = "zig"
+DENOM = "uzig"
+GAS_PRICE = 0.025
+
+# Contract Paths (arm64 for Apple Silicon, remove -aarch64 suffix for x86)
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point-aarch64.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_callbacks-aarch64.wasm"
+
+# SALT USED TO GENERATE A DETERMINISTIC ADDRESS
+SALT = "1"
+
+# Pre-compute this with: wasmd q wasm build-address <checksum> <deployer_address> <salt_hex>
+# Or fill in after first deployment and redeploy swap adapter via migrate
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+[[testnet_swap_venues]]
+name = "zigchain-oroswap"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_oroswap-aarch64.wasm"
