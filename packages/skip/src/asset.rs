@@ -1,5 +1,6 @@
 use crate::error::SkipError;
 use astroport::asset::{Asset as AstroportAsset, AssetInfo};
+use oroswap::asset::{Asset as OroswapAsset, AssetInfo as OroswapAssetInfo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     to_json_binary, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128,
@@ -143,6 +144,23 @@ impl Asset {
             }),
             Asset::Cw20(cw20_coin) => Ok(AstroportAsset {
                 info: AssetInfo::Token {
+                    contract_addr: api.addr_validate(&cw20_coin.address)?,
+                },
+                amount: cw20_coin.amount,
+            }),
+        }
+    }
+
+    pub fn into_oroswap_asset(&self, api: &dyn Api) -> Result<OroswapAsset, SkipError> {
+        match self {
+            Asset::Native(coin) => Ok(OroswapAsset {
+                info: OroswapAssetInfo::NativeToken {
+                    denom: coin.denom.clone(),
+                },
+                amount: coin.amount,
+            }),
+            Asset::Cw20(cw20_coin) => Ok(OroswapAsset {
+                info: OroswapAssetInfo::Token {
                     contract_addr: api.addr_validate(&cw20_coin.address)?,
                 },
                 amount: cw20_coin.amount,

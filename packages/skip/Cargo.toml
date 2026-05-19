@@ -16,6 +16,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 astroport           = { workspace = true }
+oroswap             = { workspace = true }
 cosmos-sdk-proto    = { workspace = true }
 cosmwasm-schema     = { workspace = true }
 cosmwasm-std        = { workspace = true }
