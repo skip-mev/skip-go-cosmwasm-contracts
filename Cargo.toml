@@ -41,7 +41,7 @@ cw-multi-test        = "0.20.0"
 hpl-interface        = { git = "https://github.com/many-things/cw-hyperlane.git", branch = "main", features = ["library"] }
 ibc-proto            = { version = "0.32.1", default-features = false }
 lido-satellite       = { git = "https://github.com/hadronlabs-org/lido-satellite", branch = "main", features = ["library"] }
-drop-factory         = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "feat/audit-fixes", features = ["library"] }
+drop-factory         = { git = "https://github.com/hadronlabs-org/drop-contracts.git", rev = "899ec67", features = ["library"] }
 drop-staking-base    = { git = "https://github.com/hadronlabs-org/drop-contracts.git", branch = "feat/audit-fixes", features = ["library"] }
 mockall              = "0.12.1"
 neutron-proto        = { version = "0.1.1", default-features = false, features = ["cosmwasm"] }
