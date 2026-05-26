@@ -21,12 +21,12 @@ ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point-aarch64.wasm"
 IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_callbacks-aarch64.wasm"
 
 # SALT USED TO GENERATE A DETERMINISTIC ADDRESS
-SALT = "1"
+SALT = "2"
 
 # Pre-compute this with: wasmd q wasm build-address <checksum> <deployer_address> <salt_hex>
 # Or fill in after first deployment and redeploy swap adapter via migrate
 ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
 
 [[testnet_swap_venues]]
-name = "zigchain-oroswap"
-swap_adapter_path = "../artifacts/skip_go_swap_adapter_oroswap-aarch64.wasm"
+name = "testnet-zigchain-oroswap"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_oroswap.wasm"
