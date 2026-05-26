@@ -1,0 +1,46 @@
+[info]
+chain_id = "zig-test-2"
+network = "testnet"
+deploy_date = "20/05/2026 14:52:22"
+commit_hash = "82173335c70b90e43e2e0a265dbd0b3a91889ad5"
+salt = "2"
+
+[checksums]
+"skip_go_entry_point.wasm" = "fd62732d9c41d18718d5fdd06974e0e1d0e42f940eec69a2332122382a8ec489"
+"skip_go_hyperlane_adapter.wasm" = "efcc141a17f949563313a12e56293ed3dac1c7c2ed30439e057bb85acfc6f251"
+"skip_go_ibc_adapter_ibc_callbacks.wasm" = "bd0c5a9692232d4a79f56d92ba768a4132d10108d358315bc9c48a3168d0eea2"
+"skip_go_ibc_adapter_ibc_hooks.wasm" = "ca566c8c7ab09f933947beb5fc69f7044ffb8c306c2f7df9c0f93fb2a78bfdac"
+"skip_go_ibc_adapter_neutron_transfer.wasm" = "30c24a2834d13fac85c12757083e6c51eae73c82bda0dbfba8f43982803ea34a"
+"skip_go_placeholder.wasm" = "90f301ade9311d389d3a3cafbacba26a71997988844c1c952b180f5881013bad"
+"skip_go_swap_adapter_astroport.wasm" = "6505d6d0575a7ddb9232e3bf5b74d60f589087f0c29d666b863c99e7de03bded"
+"skip_go_swap_adapter_astrovault.wasm" = "75a0845ef0b4aad6eb7d8184e33e75346d509cfe57cd3d813e556f7f5b016832"
+"skip_go_swap_adapter_dexter.wasm" = "331c474af94b8ebce7637820e8ceb46d86261c79771ad2b61b619816712be8cd"
+"skip_go_swap_adapter_drop.wasm" = "c6cb2c20ab866fd452ae088828d6884597ce70e1ab39ec3d8e1affcc2368d8d4"
+"skip_go_swap_adapter_duality.wasm" = "4d08a5fb89f72954cc4b654da21af52fda21c0d8891e8d2297b4de5244b33dcb"
+"skip_go_swap_adapter_elys_amm.wasm" = "5743526fb14a3d9f1d58698a262f71198d06fd38e42ad3b64f06364d26615c68"
+"skip_go_swap_adapter_hallswap.wasm" = "d62ff6a3eee0ec63185ee85411c640a8bb4e61e77ca59c0afc0f5cd7d5e99fb9"
+"skip_go_swap_adapter_injective.wasm" = "b54f4a8e002fbe72843da94c2de07955469b17a2665fade618dbb0e16d8f873b"
+"skip_go_swap_adapter_lido_satellite.wasm" = "37e4152a29f2fdb2ac70779efc9a98054a631e76596793d24a130d1daf372284"
+"skip_go_swap_adapter_mantra_dex.wasm" = "a9d2df254503a321525d9c5d61d85d59697afdd9cf993ed3d0f94afa8de273c2"
+"skip_go_swap_adapter_oroswap.wasm" = "cbc629a4d1acf73315c0c6a36db4df6be5303410e9b5afc29d8d3e8f3489237b"
+"skip_go_swap_adapter_osmosis_poolmanager.wasm" = "f369b69fbbab8de40bfaaf40b05cf8b37289274417115857f12a1c0bd41242c6"
+"skip_go_swap_adapter_pryzm.wasm" = "e91dfec8d60df0e0fab579746c55d8970475e74bbb6e7fa9df97fece81826b74"
+"skip_go_swap_adapter_white_whale.wasm" = "6842e9b8fd69bab07e91283b0902f8dd296f79377a858ef7e87555f4bf1a50d6"
+
+[code-ids]
+ibc_transfer_adapter_contract_code_id = "2264"
+swap_adapter_testnet-zigchain-oroswap_contract_code_id = "2265"
+entry_point_contract_code_id = "2266"
+
+[contract-addresses]
+ibc_transfer_adapter_contract_address = "zig1xa28p6mdmmczsf7m3zs4mwszn0ddvrqyl3yyaprdsll0fqfxr72s74jq49"
+swap_adapter_testnet-zigchain-oroswap_contract_address = "zig15mvjeujsv89u2sz4jfyk35crfg3zga8wjp52rcvhk4jjrwnxs66sczsqp4"
+entry_point_contract_address = "zig14fyw9d085z2hlhun27xdm9dmvqmmvjkdm7pm3gzy56ufjpj3f84qql4zp7"
+
+[tx-hashes]
+store_ibc_transfer_adapter_tx_hash = "361ec577c2eee9242382f3bdc6f57c85a28902c4923865c32067c8f5a0a178c0"
+instantiate_ibc_transfer_adapter_tx_hash = "5cb6a2a42b7b33a660c1cf9a2e2010ec50bb740986dfe0c02fc0aec72a8501bd"
+store_swap_adapter_testnet-zigchain-oroswap_tx_hash = "f272faba81364705235c66410ff1568cd7c892c464f8b24fc17498736ff3429d"
+instantiate_swap_adapter_testnet-zigchain-oroswap_tx_hash = "cf1bc346035350bf949d1e2fae6b9fb758a56d4b57d93a23ff6a30e06cdafba5"
+store_entry_point_tx_hash = "5a4a93f61eab313475ce1193ca5d244d31056799ea0cb1674bb6cdb6104d317d"
+instantiate_entry_point_tx_hash = "3dbdbc123df456ea02f91ab6b0d0bf5a1f5a4a19396024e3d17e6b04faa03857"
