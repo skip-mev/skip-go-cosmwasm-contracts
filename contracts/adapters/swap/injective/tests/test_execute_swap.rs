@@ -54,7 +54,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "injective_swap_contract_address".to_string(),
-                    msg: to_json_binary(&InjectiveExecuteMsg::SwapMinOutput { 
+                    msg: to_json_binary(&InjectiveExecuteMsg::SwapMinOutput {
                         min_output_quantity: "0".to_string(),
                         target_denom: "ua".to_string(),
                     })?,
@@ -104,7 +104,7 @@ struct Params {
                 id: 0,
                 msg: WasmMsg::Execute {
                     contract_addr: "injective_swap_contract_address".to_string(),
-                    msg: to_json_binary(&InjectiveExecuteMsg::SwapMinOutput { 
+                    msg: to_json_binary(&InjectiveExecuteMsg::SwapMinOutput {
                         min_output_quantity: "0".to_string(),
                         target_denom: "un".to_string(),
                     })?,

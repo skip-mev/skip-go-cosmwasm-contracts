@@ -1,9 +1,5 @@
 use std::vec;
 
-use oroswap::{
-    asset::{Asset as OroswapAsset, AssetInfo},
-    pair::{Cw20HookMsg as OroswapPairCw20HookMsg, ExecuteMsg as OroswapPairExecuteMsg},
-};
 use cosmwasm_std::{
     testing::{mock_dependencies_with_balances, mock_env, mock_info},
     to_json_binary, Addr, Coin, Decimal, QuerierResult,
@@ -11,6 +7,10 @@ use cosmwasm_std::{
     SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
+use oroswap::{
+    asset::{Asset as OroswapAsset, AssetInfo},
+    pair::{Cw20HookMsg as OroswapPairCw20HookMsg, ExecuteMsg as OroswapPairExecuteMsg},
+};
 use skip::swap::{ExecuteMsg, SwapOperation};
 use skip_go_swap_adapter_oroswap::error::{ContractError, ContractResult};
 use test_case::test_case;

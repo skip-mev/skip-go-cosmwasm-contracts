@@ -1,6 +1,5 @@
 use crate::error::SkipError;
 use astroport::asset::{Asset as AstroportAsset, AssetInfo};
-use oroswap::asset::{Asset as OroswapAsset, AssetInfo as OroswapAssetInfo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     to_json_binary, Api, BankMsg, Binary, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Uint128,
@@ -8,6 +7,7 @@ use cosmwasm_std::{
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
 use cw_utils::{nonpayable, one_coin};
+use oroswap::asset::{Asset as OroswapAsset, AssetInfo as OroswapAssetInfo};
 use white_whale_std::pool_network::asset::{
     Asset as WhiteWhaleAsset, AssetInfo as WhiteWhaleAssetInfo,
 };
