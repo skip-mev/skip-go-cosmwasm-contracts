@@ -1607,17 +1607,17 @@ checksum = "1435fa1053d8b2fbbe9be7e97eca7f33d37b28409959813daefc1446a14247f1"
 [[package]]
 name = "drop-factory"
 version = "1.0.0"
-source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67#899ec67f9503742b1f0b8846e551d2e3f95e44a9"
 dependencies = [
  "cosmwasm-schema 1.5.11",
  "cosmwasm-std 1.5.11",
  "cw-ownable",
  "cw-storage-plus 1.2.0",
  "cw2 1.1.2",
- "drop-helpers",
- "drop-macros",
- "drop-puppeteer-base",
- "drop-staking-base",
+ "drop-helpers 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
+ "drop-macros 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
+ "drop-puppeteer-base 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
+ "drop-staking-base 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
  "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
  "semver 1.0.26",
  "thiserror 1.0.69",
@@ -1644,9 +1644,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "drop-helpers"
+version = "1.0.0"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67#899ec67f9503742b1f0b8846e551d2e3f95e44a9"
+dependencies = [
+ "cosmos-sdk-proto 0.20.0",
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-storage-plus 1.2.0",
+ "hex",
+ "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
+ "prost 0.12.6",
+ "schemars",
+ "serde",
+ "serde-json-wasm 1.0.1",
+ "sha3",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "drop-macros"
 version = "1.0.0"
 source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
+dependencies = [
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "drop-macros"
+version = "1.0.0"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67#899ec67f9503742b1f0b8846e551d2e3f95e44a9"
 dependencies = [
  "cosmwasm-schema 1.5.11",
  "cosmwasm-std 1.5.11",
@@ -1667,6 +1698,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "drop-proto"
+version = "1.0.0"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67#899ec67f9503742b1f0b8846e551d2e3f95e44a9"
+dependencies = [
+ "cosmwasm-std 1.5.11",
+ "prost 0.12.6",
+ "prost-types 0.12.6",
+ "tendermint-proto 0.34.1",
+]
+
+[[package]]
 name = "drop-puppeteer-base"
 version = "1.0.0"
 source = "git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes#781fd3add565ee02a2dfb568e6ab49b7c5e09b2f"
@@ -1676,7 +1718,28 @@ dependencies = [
  "cosmwasm-std 1.5.11",
  "cw-ownable",
  "cw-storage-plus 1.2.0",
- "drop-helpers",
+ "drop-helpers 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes)",
+ "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
+ "prost 0.12.6",
+ "prost-types 0.12.6",
+ "schemars",
+ "semver 1.0.26",
+ "serde",
+ "serde-json-wasm 1.0.1",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "drop-puppeteer-base"
+version = "1.0.0"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67#899ec67f9503742b1f0b8846e551d2e3f95e44a9"
+dependencies = [
+ "cosmos-sdk-proto 0.20.0",
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-ownable",
+ "cw-storage-plus 1.2.0",
+ "drop-helpers 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
  "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
  "prost 0.12.6",
  "prost-types 0.12.6",
@@ -1701,10 +1764,36 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw721 0.18.0",
  "cw721-base 0.18.0",
- "drop-helpers",
- "drop-macros",
- "drop-proto",
- "drop-puppeteer-base",
+ "drop-helpers 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes)",
+ "drop-macros 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes)",
+ "drop-proto 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes)",
+ "drop-puppeteer-base 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes)",
+ "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
+ "optfield",
+ "prost 0.12.6",
+ "semver 1.0.26",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "drop-staking-base"
+version = "1.0.0"
+source = "git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67#899ec67f9503742b1f0b8846e551d2e3f95e44a9"
+dependencies = [
+ "astroport 3.12.2",
+ "cosmos-sdk-proto 0.20.0",
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-ownable",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw721 0.18.0",
+ "cw721-base 0.18.0",
+ "drop-helpers 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
+ "drop-macros 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
+ "drop-proto 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
+ "drop-puppeteer-base 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?rev=899ec67)",
  "neutron-sdk 0.10.0 (git+https://github.com/neutron-org/neutron-sdk?branch=feat/proposal-votes)",
  "optfield",
  "prost 0.12.6",
@@ -2682,6 +2771,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "oroswap-circular-buffer"
+version = "1.1.0"
+source = "git+https://github.com/oroswap/oroswap-core?tag=v1.1.0#f5374397eff6284b8960452fdc0c8271368e1b62"
+dependencies = [
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-storage-plus 1.2.0",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "oroswap-core"
+version = "1.1.0"
+source = "git+https://github.com/oroswap/oroswap-core?tag=v1.1.0#f5374397eff6284b8960452fdc0c8271368e1b62"
+dependencies = [
+ "cosmos-sdk-proto 0.19.0",
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-asset",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw20 1.1.2",
+ "itertools 0.12.1",
+ "oroswap-circular-buffer",
+ "prost 0.11.9",
+ "uint",
+]
+
+[[package]]
 name = "osmosis-std"
 version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3559,6 +3677,7 @@ dependencies = [
  "elys-std",
  "ibc-proto 0.32.1",
  "neutron-proto",
+ "oroswap-core",
  "osmosis-std",
  "thiserror 1.0.69",
  "white-whale-std",
@@ -3725,7 +3844,7 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "drop-factory",
- "drop-staking-base",
+ "drop-staking-base 1.0.0 (git+https://github.com/hadronlabs-org/drop-contracts.git?branch=feat/audit-fixes)",
  "skip",
  "test-case",
  "thiserror 1.0.69",
@@ -3818,6 +3937,22 @@ dependencies = [
  "cw-utils 1.0.3",
  "cw2 1.1.2",
  "cw20 1.1.2",
+ "skip",
+ "test-case",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "skip-go-swap-adapter-oroswap"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "oroswap-core",
  "skip",
  "test-case",
  "thiserror 1.0.69",

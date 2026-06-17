@@ -7,6 +7,7 @@ use cosmwasm_std::{
 };
 use cw20::{Cw20Coin, Cw20CoinVerified, Cw20Contract, Cw20ExecuteMsg};
 use cw_utils::{nonpayable, one_coin};
+use oroswap::asset::{Asset as OroswapAsset, AssetInfo as OroswapAssetInfo};
 use white_whale_std::pool_network::asset::{
     Asset as WhiteWhaleAsset, AssetInfo as WhiteWhaleAssetInfo,
 };
@@ -143,6 +144,23 @@ impl Asset {
             }),
             Asset::Cw20(cw20_coin) => Ok(AstroportAsset {
                 info: AssetInfo::Token {
+                    contract_addr: api.addr_validate(&cw20_coin.address)?,
+                },
+                amount: cw20_coin.amount,
+            }),
+        }
+    }
+
+    pub fn into_oroswap_asset(&self, api: &dyn Api) -> Result<OroswapAsset, SkipError> {
+        match self {
+            Asset::Native(coin) => Ok(OroswapAsset {
+                info: OroswapAssetInfo::NativeToken {
+                    denom: coin.denom.clone(),
+                },
+                amount: coin.amount,
+            }),
+            Asset::Cw20(cw20_coin) => Ok(OroswapAsset {
+                info: OroswapAssetInfo::Token {
                     contract_addr: api.addr_validate(&cw20_coin.address)?,
                 },
                 amount: cw20_coin.amount,

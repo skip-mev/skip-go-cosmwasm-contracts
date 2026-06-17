@@ -230,7 +230,7 @@ pub fn sudo(deps: DepsMut, env: Env, msg: TransferSudoMsg) -> ContractResult<Res
 //////////////////////
 
 // Helper function to get the ack_id (channel id, sequence id) from a RequestPacket
-fn get_ack_id(req: &RequestPacket) -> ContractResult<AckID> {
+fn get_ack_id(req: &RequestPacket) -> ContractResult<AckID<'_>> {
     // Get the channel id and sequence id from the request packet
     let channel_id = req
         .source_channel

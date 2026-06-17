@@ -1,36 +1,40 @@
+use core::panic;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_json_binary, Addr, Coin,
+    to_json_binary, Addr, Coin, ContractResult as SystemContractResult, QuerierResult,
     ReplyOn::Never,
-    SubMsg, WasmMsg,
+    SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
 };
-use skip::swap::{ExecuteMsg, SwapOperation};
-use skip_go_swap_adapter_injective::error::{ContractError, ContractResult};
-use skip_go_swap_adapter_injective::state::{
-    ENTRY_POINT_CONTRACT_ADDRESS, INJECTIVE_SWAP_CONTRACT_ADDRESS,
+use cw20::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg};
+use cw_utils::PaymentError::NonPayable;
+use skip::{
+    asset::Asset,
+    error::SkipError::Payment,
+    swap::{ExecuteMsg, SwapOperation},
+};
+use skip_go_swap_adapter_oroswap::{
+    error::{ContractError, ContractResult},
+    state::ENTRY_POINT_CONTRACT_ADDRESS,
 };
 use test_case::test_case;
-
-use skip_go_swap_adapter_injective::contract::InjectiveExecuteMsg;
 
 /*
 Test Cases:
 
 Expect Success
-    - One Swap Operation
-    - Multiple Swap Operations
-    - No Swap Operations (This is prevented in the entry point contract; and will not add any swap messages to the response)
+    - One Swap Operation - Cw20 In
+    - One Swap Operation - Cw20 In And Out
 
 Expect Error
-    - Unauthorized Caller (Only the stored entry point contract can call this function)
-    - No Coin Sent
-    - More Than One Coin Sent
+    - Coin sent with cw20
 
  */
+
 // Define test parameters
 struct Params {
     caller: String,
     info_funds: Vec<Coin>,
+    sent_asset: Asset,
     swap_operations: Vec<SwapOperation>,
     expected_messages: Vec<SubMsg>,
     expected_error: Option<ContractError>,
@@ -40,11 +44,15 @@ struct Params {
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "os")],
+        info_funds: vec![],
+        sent_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(100u128)
+        }),
         swap_operations: vec![
             SwapOperation {
                 pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
+                denom_in: "neutron123".to_string(),
                 denom_out: "ua".to_string(),
                 interface: None,
             }
@@ -53,12 +61,16 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "injective_swap_contract_address".to_string(),
-                    msg: to_json_binary(&InjectiveExecuteMsg::SwapMinOutput {
-                        min_output_quantity: "0".to_string(),
-                        target_denom: "ua".to_string(),
+                    contract_addr: "swap_contract_address".to_string(),
+                    msg: to_json_binary(&ExecuteMsg::OroswapPoolSwap {
+                        operation: SwapOperation {
+                            pool: "pool_1".to_string(),
+                            denom_in: "neutron123".to_string(),
+                            denom_out: "ua".to_string(),
+                            interface: None,
+                        }
                     })?,
-                    funds: vec![Coin::new(100, "os")],
+                    funds: vec![],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -66,7 +78,7 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "injective_swap_contract_address".to_string(),
+                    contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
                         return_denom: "ua".to_string(),
                         swapper: Addr::unchecked("entry_point"),
@@ -76,26 +88,24 @@ struct Params {
                 .into(),
                 gas_limit: None,
                 reply_on: Never,
-            }
+            },
         ],
         expected_error: None,
     };
-    "One Swap Operation")]
+    "One Swap Operation - Cw20 In")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "os")],
+        info_funds: vec![],
+        sent_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(100u128)
+        }),
         swap_operations: vec![
             SwapOperation {
                 pool: "pool_1".to_string(),
-                denom_in: "os".to_string(),
-                denom_out: "ua".to_string(),
-                interface: None,
-            },
-            SwapOperation {
-                pool: "pool_2".to_string(),
-                denom_in: "ua".to_string(),
-                denom_out: "un".to_string(),
+                denom_in: "neutron123".to_string(),
+                denom_out: "neutron987".to_string(),
                 interface: None,
             }
         ],
@@ -103,12 +113,16 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "injective_swap_contract_address".to_string(),
-                    msg: to_json_binary(&InjectiveExecuteMsg::SwapMinOutput {
-                        min_output_quantity: "0".to_string(),
-                        target_denom: "un".to_string(),
+                    contract_addr: "swap_contract_address".to_string(),
+                    msg: to_json_binary(&ExecuteMsg::OroswapPoolSwap {
+                        operation: SwapOperation {
+                            pool: "pool_1".to_string(),
+                            denom_in: "neutron123".to_string(),
+                            denom_out: "neutron987".to_string(),
+                            interface: None,
+                        }
                     })?,
-                    funds: vec![Coin::new(100, "os")],
+                    funds: vec![],
                 }.into(),
                 gas_limit: None,
                 reply_on: Never,
@@ -116,9 +130,9 @@ struct Params {
             SubMsg {
                 id: 0,
                 msg: WasmMsg::Execute {
-                    contract_addr: "injective_swap_contract_address".to_string(),
+                    contract_addr: "swap_contract_address".to_string(),
                     msg: to_json_binary(&ExecuteMsg::TransferFundsBack {
-                        return_denom: "un".to_string(),
+                        return_denom: "neutron987".to_string(),
                         swapper: Addr::unchecked("entry_point"),
                     })?,
                     funds: vec![],
@@ -126,81 +140,78 @@ struct Params {
                 .into(),
                 gas_limit: None,
                 reply_on: Never,
-            }
+            },
         ],
         expected_error: None,
     };
-    "Multiple Swap Operations")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        info_funds: vec![Coin::new(100, "os")],
-        swap_operations: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::SwapOperationsEmpty),
-    };
-    "No Swap Operations")]
-#[test_case(
-    Params {
-        caller: "entry_point".to_string(),
-        info_funds: vec![],
-        swap_operations: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::Payment(cw_utils::PaymentError::NoFunds{})),
-    };
-    "No Coin Sent - Expect Error")]
+    "One Swap Operation - Cw20 In And Out")]
 #[test_case(
     Params {
         caller: "entry_point".to_string(),
         info_funds: vec![
             Coin::new(100, "un"),
-            Coin::new(100, "os"),
         ],
+        sent_asset: Asset::Cw20(Cw20Coin {
+            address: "neutron123".to_string(),
+            amount: Uint128::from(100u128)
+        }),
         swap_operations: vec![],
         expected_messages: vec![],
-        expected_error: Some(ContractError::Payment(cw_utils::PaymentError::MultipleDenoms{})),
+        expected_error: Some(ContractError::Skip(Payment(NonPayable{}))),
     };
-    "More Than One Coin Sent - Expect Error")]
-#[test_case(
-    Params {
-        caller: "random".to_string(),
-        info_funds: vec![
-            Coin::new(100, "un"),
-        ],
-        swap_operations: vec![],
-        expected_messages: vec![],
-        expected_error: Some(ContractError::Unauthorized),
-    };
-    "Unauthorized Caller - Expect Error")]
+    "Coin sent with cw20 - Expect Error")]
 fn test_execute_swap(params: Params) -> ContractResult<()> {
     // Create mock dependencies
     let mut deps = mock_dependencies();
 
+    // Create mock wasm handler to handle the swap adapter contract query
+    let wasm_handler = |query: &WasmQuery| -> QuerierResult {
+        match query {
+            WasmQuery::Smart { contract_addr, .. } => {
+                if contract_addr == "neutron123" {
+                    SystemResult::Ok(SystemContractResult::Ok(
+                        to_json_binary(&BalanceResponse {
+                            balance: Uint128::from(100u128),
+                        })
+                        .unwrap(),
+                    ))
+                } else {
+                    panic!("Unsupported contract: {:?}", query);
+                }
+            }
+            _ => panic!("Unsupported query: {:?}", query),
+        }
+    };
+
+    // Update querier with mock wasm handler
+    deps.querier.update_wasm(wasm_handler);
+
     // Create mock env
     let mut env = mock_env();
-    env.contract.address = Addr::unchecked("injective_swap_contract_address");
+    env.contract.address = Addr::unchecked("swap_contract_address");
 
     // Convert info funds vector into a slice of Coin objects
     let info_funds: &[Coin] = &params.info_funds;
 
     // Create mock info with entry point contract address
-    let info = mock_info(&params.caller, info_funds);
+    let info = mock_info(params.sent_asset.denom(), info_funds);
 
     // Store the entry point contract address
     ENTRY_POINT_CONTRACT_ADDRESS.save(deps.as_mut().storage, &Addr::unchecked("entry_point"))?;
-    INJECTIVE_SWAP_CONTRACT_ADDRESS.save(
-        deps.as_mut().storage,
-        &Addr::unchecked("injective_swap_contract_address"),
-    )?;
 
     // Call execute_swap with the given test parameters
-    let res = skip_go_swap_adapter_injective::contract::execute(
+    let res = skip_go_swap_adapter_oroswap::contract::execute(
         deps.as_mut(),
         env,
         info,
-        ExecuteMsg::Swap {
-            operations: params.swap_operations.clone(),
-        },
+        ExecuteMsg::Receive(Cw20ReceiveMsg {
+            sender: params.caller,
+            amount: params.sent_asset.amount(),
+            msg: to_json_binary(&ExecuteMsg::Swap {
+                operations: params.swap_operations,
+            })
+            .unwrap(),
+        }),
     );
 
     // Assert the behavior is correct
