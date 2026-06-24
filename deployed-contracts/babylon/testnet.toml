@@ -1,7 +1,7 @@
 [info]
-chain_id = "bbn-1"
-network = "mainnet"
-deploy_date = "07/06/2025 15:20:25"
+chain_id = "bbn-test-5"
+network = "testnet"
+deploy_date = "07/06/2025 15:17:05"
 commit_hash = "0d7bfebec4416ea9e68e4521f8c81cc10280f59a"
 salt = "1"
 
@@ -26,19 +26,19 @@ salt = "1"
 "skip_go_swap_adapter_white_whale.wasm" = "c4eb808fcb79254f3a76ebeea09554590420bc4096e3d4ce612b96d4202e2d75"
 
 [code-ids]
-ibc_transfer_adapter_contract_code_id = "96"
-swap_adapter_babylon-tower_contract_code_id = "97"
-entry_point_contract_code_id = "98"
+ibc_transfer_adapter_contract_code_id = "747"
+swap_adapter_testnet-babylon-tower_contract_code_id = "748"
+entry_point_contract_code_id = "749"
 
 [contract-addresses]
-ibc_transfer_adapter_contract_address = "bbn164fjxdgf5etlpqjpeffnrksjkj6ln80cegter4c55l0uyv7uh9kq6szuu8"
-swap_adapter_babylon-tower_contract_address = "bbn1wk2jm4mcgsc5y0sqs40exwzxyylv3p3hvmkanj2qmd0zph0n0l7qt44qz8"
+ibc_transfer_adapter_contract_address = "bbn1fcfgnfuyegxqnen0ulfknpsaeg6z0ktm5u8e32h568nkcqpunuvq5tgtr0"
+swap_adapter_testnet-babylon-tower_contract_address = "bbn1zvujq5mvw6ypvf2slw5x70pwwz5mtu349eafhqv87wksze9s4seshdtm3j"
 entry_point_contract_address = "bbn1g0uuysdqydrmfum8ctn7whlevuwydeqvuw0kumqj8773ru5aglwq6vww30"
 
 [tx-hashes]
-store_ibc_transfer_adapter_tx_hash = "17d5dc5687a916ac235cdfeb17fb4caa9dfa0e5a5137e9f4935a1d6d8590b51d"
-instantiate_ibc_transfer_adapter_tx_hash = "a564b64d159005e1795c5ff501c9159486109941849ea6c968a829512d683627"
-store_swap_adapter_babylon-tower_tx_hash = "e4064eaa6a43dd9fe65e89be605dc411aec81bee83a05a3dae9db3628c81f28f"
-instantiate_swap_adapter_babylon-tower_tx_hash = "7f5efc90c8850518e12c77f192a602d37fa67857d975e67212f87362baa62b20"
-store_entry_point_tx_hash = "a40a7f1e2924d35d3c4f2c574f217dfd70cfb6805f92ab0bce481f5fc3152770"
-instantiate_entry_point_tx_hash = "deedcbdce8b37df00e561ded7361adc3e7be4c0caa621d33e211b6804e79a8af"
+store_ibc_transfer_adapter_tx_hash = "d3805112c9e32ff40a79db8fa935be6ec91c08b614f64a809ff56b74eedd1127"
+instantiate_ibc_transfer_adapter_tx_hash = "75649d43ccf52044a7552e8ae4ef3285f4869915a023b5bf40bc8ff26c5b1852"
+store_swap_adapter_testnet-babylon-tower_tx_hash = "cf86d654d476e651a38ad0f779ce15dc3b0b3d2b950e534e7fad6807602c07a6"
+instantiate_swap_adapter_testnet-babylon-tower_tx_hash = "9f586d4a220f825caa6c74b6a9b0a554d4531c14f9444bcc4c8a305ae5fa8773"
+store_entry_point_tx_hash = "63ce5cfe900b9122ee160590d145d048049baea94fd14f523c3990a88af8ccd1"
+instantiate_entry_point_tx_hash = "94411e1178f4f3031a4b1557a52d48e276bb2618bd276e7913f669a1ec45e284"
