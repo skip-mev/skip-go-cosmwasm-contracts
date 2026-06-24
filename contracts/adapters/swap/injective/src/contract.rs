@@ -2,8 +2,8 @@ use crate::error::*;
 use crate::state::{ENTRY_POINT_CONTRACT_ADDRESS, INJECTIVE_SWAP_CONTRACT_ADDRESS};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{
-    ensure, entry_point, to_json_binary, wasm_execute, Binary, Deps, DepsMut, Env, MessageInfo,
-    Response, Uint128,
+    ensure, entry_point, to_json_binary, wasm_execute, Binary, Coin, Deps, DepsMut, Env,
+    MessageInfo, Response, Uint128,
 };
 use cw2::set_contract_version;
 use cw_utils::one_coin;
@@ -50,12 +50,14 @@ pub enum InjectiveQueryMsg {
 
 #[cw_serde]
 pub struct OutputQuantityResponse {
-    pub quantity: Uint128,
+    pub result_quantity: Uint128,
+    pub expected_fees: Vec<Coin>,
 }
 
 #[cw_serde]
 pub struct InputQuantityResponse {
-    pub quantity: Uint128,
+    pub result_quantity: Uint128,
+    pub expected_fees: Vec<Coin>,
 }
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -180,7 +182,42 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> ContractResult<Binary> {
             )?)
             .map_err(Into::into)
         }
-        _ => unimplemented!(),
+        QueryMsg::SimulateSwapExactAssetOutWithMetadata {
+            asset_out,
+            swap_operations,
+            include_spot_price: _,
+        } => to_json_binary(&query_simulate_swap_exact_asset_out(
+            deps,
+            asset_out,
+            swap_operations,
+        )?)
+        .map_err(Into::into),
+        QueryMsg::SimulateSwapExactAssetInWithMetadata {
+            asset_in,
+            swap_operations,
+            include_spot_price: _,
+        } => {
+            let routes = vec![Route {
+                offer_asset: asset_in.clone(),
+                operations: swap_operations,
+            }];
+            let ask_denom = get_ask_denom_for_routes(&routes)?;
+            to_json_binary(&query_simulate_smart_swap_exact_asset_in(
+                deps, ask_denom, routes, asset_in,
+            )?)
+            .map_err(Into::into)
+        }
+        QueryMsg::SimulateSmartSwapExactAssetInWithMetadata {
+            asset_in,
+            routes,
+            include_spot_price: _,
+        } => {
+            let ask_denom = get_ask_denom_for_routes(&routes)?;
+            to_json_binary(&query_simulate_smart_swap_exact_asset_in(
+                deps, ask_denom, routes, asset_in,
+            )?)
+            .map_err(Into::into)
+        }
     }
 }
 
@@ -210,7 +247,7 @@ fn query_simulate_swap_exact_asset_in(
         },
     )?;
 
-    Ok(Asset::new(deps.api, &target_denom, resp.quantity))
+    Ok(Asset::new(deps.api, &target_denom, resp.result_quantity))
 }
 
 fn query_simulate_swap_exact_asset_out(
@@ -239,7 +276,7 @@ fn query_simulate_swap_exact_asset_out(
         },
     )?;
 
-    Ok(Asset::new(deps.api, &source_denom, resp.quantity))
+    Ok(Asset::new(deps.api, &source_denom, resp.result_quantity))
 }
 
 fn query_simulate_smart_swap_exact_asset_in(
