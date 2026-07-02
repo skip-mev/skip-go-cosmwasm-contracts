@@ -47,7 +47,7 @@ Notes:
   - `contract_call`: Calls a contract on the same chain the swap occured, using the assets received from the swap as the contract call's funds.
 - `affiliates` is a list of affiliates that will take a fee (in basis points) from the `min_coin` provided. If no affiliates are associated with a call then an empty list is to be provided.
 - The vector of coins provided in `ibc_info.fee` must all be the same denom.
-- A `fee_swap` is only valid if the `post_swap_action` is an `ibc_transfer` with a provided `ibc_info.fee`. The `coin_out` used for the fee swap is dervied from the provided `ibc_info.fee`.
+- A `fee_swap` is only valid if the `post_swap_action` is an `ibc_transfer` with a provided `ibc_info.fee`. The `coin_out` used for the fee swap is derived from the provided `ibc_info.fee`.
 - The `coin_in` used in the `user_swap` is derived based on the coin sent to the contract from the user's contract call, after accounting for the fee swap and if the `user_swap` is a `SwapExactCoinIn` or `SwapExactCoinOut`
 
 #### Examples
