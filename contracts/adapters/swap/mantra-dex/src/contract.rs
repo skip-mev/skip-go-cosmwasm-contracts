@@ -141,7 +141,7 @@ fn execute_swap(
         operations: mantra_swap_operations,
         minimum_receive: None,
         receiver: Some(entry_point_contract_address.to_string()),
-        max_spread: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
+        max_slippage: Some(MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?),
     };
 
     // Create swap message on MANTRA dex pool manager
@@ -402,9 +402,9 @@ fn query_simulate_smart_swap_exact_asset_in_with_metadata(
     Ok(response)
 }
 
-fn assert_max_spread(return_amount: Uint128, spread_amount: Uint128) -> ContractResult<()> {
+fn assert_max_spread(return_amount: Uint128, slippage_amount: Uint128) -> ContractResult<()> {
     let max_spread = MAX_ALLOWED_SLIPPAGE.parse::<Decimal>()?;
-    if Decimal::from_ratio(spread_amount, return_amount + spread_amount) > max_spread {
+    if Decimal::from_ratio(slippage_amount, return_amount + slippage_amount) > max_spread {
         return Err(ContractError::MaxSpreadAssertion {});
     }
     Ok(())
@@ -438,7 +438,7 @@ fn simulate_swap_exact_asset_in(
             )?;
 
             // Assert the operation does not exceed the max spread limit
-            assert_max_spread(res.return_amount, res.spread_amount)?;
+            assert_max_spread(res.return_amount, res.slippage_amount)?;
 
             if include_responses {
                 responses.push(res.clone());
@@ -482,7 +482,7 @@ fn simulate_swap_exact_asset_out(
             )?;
 
             // Assert the operation does not exceed the max spread limit
-            assert_max_spread(res.offer_amount, res.spread_amount)?;
+            assert_max_spread(res.offer_amount, res.slippage_amount)?;
 
             if include_responses {
                 responses.push(res.clone());
@@ -567,7 +567,7 @@ fn calculate_spot_price_from_simulation_responses(
             // Calculate the amount out without slippage
             let amount_out_without_slippage = res
                 .return_amount
-                .checked_add(res.spread_amount)?
+                .checked_add(res.slippage_amount)?
                 .checked_add(res.swap_fee_amount)?
                 .checked_add(res.protocol_fee_amount)?
                 .checked_add(res.burn_fee_amount)?
@@ -602,7 +602,7 @@ fn calculate_spot_price_from_reverse_simulation_responses(
             |(asset_in_needed, curr_spot_price), (op, res)| -> Result<_, ContractError> {
                 let amount_out_without_slippage = asset_in_needed
                     .amount()
-                    .checked_add(res.spread_amount)?
+                    .checked_add(res.slippage_amount)?
                     .checked_add(res.swap_fee_amount)?
                     .checked_add(res.protocol_fee_amount)?
                     .checked_add(res.burn_fee_amount)?
