@@ -1,0 +1,29 @@
+[info]
+chain_id = "dimension_37-1"
+network = "mainnet"
+deploy_date = "29/07/2026 15:53:43"
+commit_hash = "c25c3c30ee265725f3d9046eab8a20ec7cab4514"
+salt = "95"
+
+[checksums]
+"skip_go_entry_point.wasm" = "d72f4b9ef85545f00a594d05af4eadb80bcc85daf652e39768f60be7a8d4c926"
+"skip_go_ibc_adapter_ibc_callbacks.wasm" = "bd0c5a9692232d4a79f56d92ba768a4132d10108d358315bc9c48a3168d0eea2"
+"skip_go_swap_adapter_dezswap.wasm" = "f6aa465bab6d1e0be9cf5ddd7718a72925b0486b448b082b8c46425d3d5ff412"
+
+[code-ids]
+ibc_transfer_adapter_contract_code_id = "118"
+swap_adapter_xpla-dezswap_contract_code_id = "119"
+entry_point_contract_code_id = "120"
+
+[contract-addresses]
+ibc_transfer_adapter_contract_address = "xpla145epdy9n8s6jgasysu4nm9vq3nege70dx6t55xv3clylc5uzw2ss3ptl5k"
+swap_adapter_xpla-dezswap_contract_address = "xpla1t4jr6jzlcewruyegwr39pys3rz3k9p9nthxe3tru00hd7qfknnxqgenc5w"
+entry_point_contract_address = "xpla13rw2vu69qjla0vr47edk372ez274vp904js4rj7zdwde02905l8q8de4w7"
+
+[tx-hashes]
+store_ibc_transfer_adapter_tx_hash = "98abbe11ee96cd45327705cad1ee597dbe2100d67b6f81291fd9af2ae7402c04"
+instantiate_ibc_transfer_adapter_tx_hash = "448dab479eb8f93d2d8983a9b581eb9f50346a945099a0ce82754764d4b34b1c"
+store_swap_adapter_xpla-dezswap_tx_hash = "26cf7a94da25ddb7128857b3a646cea0f9ad4290a5fa0ef12107b5149bb517e4"
+instantiate_swap_adapter_xpla-dezswap_tx_hash = "db330f985923297691b6d5eed4bcd5a6e7471278363106c3fae6075ea1c00ff7"
+store_entry_point_tx_hash = "c005c42b00bc6a218f9591768ebb8c3a9faa37b2abd241fbfa8aebe442f8b08d"
+instantiate_entry_point_tx_hash = "0c07d2013f23f032412cd4c8879e14d782186c0ef4881da4aee68efeb005cc71"

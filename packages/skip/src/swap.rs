@@ -99,6 +99,7 @@ pub enum ExecuteMsg {
     TransferFundsBack { swapper: Addr, return_denom: String },
     AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
     OroswapPoolSwap { operation: SwapOperation }, // Only used for the oroswap swap adapter contract
+    DezswapPoolSwap { operation: SwapOperation }, // Only used for the dezswap swap adapter contract
     WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
 }
 

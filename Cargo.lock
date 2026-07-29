@@ -1070,6 +1070,17 @@ dependencies = [
 
 [[package]]
 name = "cw-storage-plus"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "648b1507290bbc03a8d88463d7cd9b04b1fa0155e5eef366c4fa052b9caaac7a"
+dependencies = [
+ "cosmwasm-std 1.5.11",
+ "schemars",
+ "serde",
+]
+
+[[package]]
+name = "cw-storage-plus"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc6cf70ef7686e2da9ad7b067c5942cd3e88dd9453f7af42f54557f8af300fb0"
@@ -1110,6 +1121,18 @@ dependencies = [
  "cosmwasm-std 2.2.2",
  "schemars",
  "serde",
+]
+
+[[package]]
+name = "cw-utils"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9dbaecb78c8e8abfd6b4258c7f4fbeb5c49a5e45ee4d910d3240ee8e1d714e1b"
+dependencies = [
+ "cosmwasm-std 1.5.11",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1172,6 +1195,18 @@ dependencies = [
 
 [[package]]
 name = "cw2"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04cf4639517490dd36b333bbd6c4fbd92e325fd0acf4683b41753bc5eb63bfc1"
+dependencies = [
+ "cosmwasm-std 1.5.11",
+ "cw-storage-plus 0.13.4",
+ "schemars",
+ "serde",
+]
+
+[[package]]
+name = "cw2"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5abb8ecea72e09afff830252963cb60faf945ce6cef2c20a43814516082653da"
@@ -1224,6 +1259,18 @@ dependencies = [
  "semver 1.0.26",
  "serde",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "cw20"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cb782b8f110819a4eb5dbbcfed25ffba49ec16bbe32b4ad8da50a5ce68fec05"
+dependencies = [
+ "cosmwasm-std 1.5.11",
+ "cw-utils 0.13.4",
+ "schemars",
+ "serde",
 ]
 
 [[package]]
@@ -1558,6 +1605,21 @@ dependencies = [
  "serde",
  "serde-json-wasm 0.5.2",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "dezswap"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6985f802adb2a329f4cac15450ff381367c624883b7111412aa2967cdd02f0a1"
+dependencies = [
+ "cosmwasm-std 1.5.11",
+ "cosmwasm-storage",
+ "cw2 0.13.4",
+ "cw20 0.13.4",
+ "protobuf 2.28.0",
+ "schemars",
+ "serde",
 ]
 
 [[package]]
@@ -3674,6 +3736,7 @@ dependencies = [
  "cosmwasm-std 1.5.11",
  "cw-utils 1.0.3",
  "cw20 1.1.2",
+ "dezswap",
  "elys-std",
  "ibc-proto 0.32.1",
  "neutron-proto",
@@ -3829,6 +3892,22 @@ dependencies = [
  "dexter-stable-pool",
  "dexter-vault",
  "dexter-weighted-pool",
+ "skip",
+ "test-case",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "skip-go-swap-adapter-dezswap"
+version = "0.3.0"
+dependencies = [
+ "cosmwasm-schema 1.5.11",
+ "cosmwasm-std 1.5.11",
+ "cw-storage-plus 1.2.0",
+ "cw-utils 1.0.3",
+ "cw2 1.1.2",
+ "cw20 1.1.2",
+ "dezswap",
  "skip",
  "test-case",
  "thiserror 1.0.69",

@@ -1,0 +1,41 @@
+# Enter your mnemonic here
+MNEMONIC = "<YOUR MNEMONIC HERE>"
+
+# Commit Hash of the commit used to build the contracts
+COMMIT_HASH = "<COMMIT HASH HERE>"
+
+MAINNET_REST_URL = "https://dimension-lcd.xpla.dev"
+MAINNET_RPC_URL = "https://dimension-rpc.xpla.dev"
+MAINNET_CHAIN_ID = "dimension_37-1"
+
+TESTNET_REST_URL = "https://cube-lcd.xpla.dev"
+TESTNET_RPC_URL = "https://cube-rpc.xpla.dev"
+TESTNET_CHAIN_ID = "cube_47-5"
+
+ADDRESS_PREFIX = "xpla"
+DENOM = "axpla"
+GAS_PRICE = 280000000000
+
+# XPLA is built on Ethermint: keys are derived with coin type 60 (m/44'/60'/0'/0/0),
+# addresses are keccak256-based (like an Ethereum/Metamask address), and txs are signed
+# with the ethsecp256k1 pubkey type instead of the standard cosmos secp256k1 one.
+ETHSECP256K1 = true
+
+# Contract Paths (arm64 for Apple Silicon, remove -aarch64 suffix for x86)
+ENTRY_POINT_CONTRACT_PATH = "../artifacts/skip_go_entry_point.wasm"
+IBC_TRANSFER_ADAPTER_PATH = "../artifacts/skip_go_ibc_adapter_ibc_callbacks.wasm"
+
+# SALT USED TO GENERATE A DETERMINISTIC ADDRESS
+SALT = "1"
+
+# Pre-compute this with: wasmd q wasm build-address <checksum> <deployer_address> <salt_hex>
+# Or fill in after first deployment and redeploy swap adapter via migrate
+ENTRY_POINT_PRE_GENERATED_ADDRESS = "<PRE GENERATED ADDRESS HERE>"
+
+[[swap_venues]]
+name = "xpla-dezswap"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_dezswap.wasm"
+
+[[testnet_swap_venues]]
+name = "testnet-xpla-dezswap"
+swap_adapter_path = "../artifacts/skip_go_swap_adapter_dezswap.wasm"

@@ -1,0 +1,29 @@
+[info]
+chain_id = "cube_47-5"
+network = "testnet"
+deploy_date = "27/07/2026 16:44:13"
+commit_hash = "c25c3c30ee265725f3d9046eab8a20ec7cab4514"
+salt = "98"
+
+[checksums]
+"skip_go_entry_point.wasm" = "d72f4b9ef85545f00a594d05af4eadb80bcc85daf652e39768f60be7a8d4c926"
+"skip_go_ibc_adapter_ibc_callbacks.wasm" = "bd0c5a9692232d4a79f56d92ba768a4132d10108d358315bc9c48a3168d0eea2"
+"skip_go_swap_adapter_dezswap.wasm" = "f6aa465bab6d1e0be9cf5ddd7718a72925b0486b448b082b8c46425d3d5ff412"
+
+[code-ids]
+ibc_transfer_adapter_contract_code_id = "2047"
+swap_adapter_testnet-xpla-dezswap_contract_code_id = "2048"
+entry_point_contract_code_id = "2049"
+
+[contract-addresses]
+ibc_transfer_adapter_contract_address = "xpla1cjvfw42qth49zcxffnwnqtlhxw357gaf780mflaa7g0r695dup7s9gaqpa"
+swap_adapter_testnet-xpla-dezswap_contract_address = "xpla15smgn6yumzv00jslmll5tp9x649ax4wsdyg2d38n8amh6ffyrq8srnjezy"
+entry_point_contract_address = "xpla1zqcq3rl44zahm3xclnvh9vycypwap3k2walhuwd5ws5027w38a8q0llvrz"
+
+[tx-hashes]
+store_ibc_transfer_adapter_tx_hash = "77e1be2a2802114e38501ba671213a7e39328c5e92e4d62bc4ff4dcf9397505e"
+instantiate_ibc_transfer_adapter_tx_hash = "b71fe241cba373bb9384268dd9af047b8d948f08730849631de1831eafbea984"
+store_swap_adapter_testnet-xpla-dezswap_tx_hash = "2489e9d0892c25a15e6eac12c23b83a3c9141973845a09123f20aa7c835feab6"
+instantiate_swap_adapter_testnet-xpla-dezswap_tx_hash = "eabfadeba7076cce1c86971875b33434b609e6fee56e2428cc1cd082219ef780"
+store_entry_point_tx_hash = "d1ca579f7aa378e550a52ef125b60886d610355678dee50d1e5a8bf4c043af11"
+instantiate_entry_point_tx_hash = "16bdb11700805fd89df081bbe6b519325893ca597cb75abbe1453624edf85aed"

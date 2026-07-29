@@ -3,16 +3,20 @@ import sys
 import toml
 import httpx
 import time
+import sha3
 from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 from google.protobuf import any_pb2
 
+import cosmpy.aerial.tx as cosmpy_tx
 from cosmpy.aerial.client import LedgerClient, NetworkConfig
 from cosmpy.aerial.tx import Transaction, SigningCfg
-from cosmpy.aerial.wallet import LocalWallet
+from cosmpy.aerial.wallet import LocalWallet, Wallet
+from cosmpy.crypto.address import Address
 from cosmpy.crypto.keypairs import PrivateKey
+from cosmpy.protos.cosmos.crypto.secp256k1.keys_pb2 import PubKey as ProtoSecp256k1PubKey
 from cosmpy.protos.cosmwasm.wasm.v1.tx_pb2 import (
     MsgStoreCode, 
     MsgInstantiateContract, 
@@ -81,6 +85,15 @@ ADDRESS_PREFIX = config["ADDRESS_PREFIX"]
 DENOM = config["DENOM"]
 GAS_PRICE = config["GAS_PRICE"]
 
+# Ethermint-based chains (e.g. XPLA) derive keys with coin type 60 instead of 118,
+# compute addresses via keccak256 instead of ripemd160(sha256(...)), and sign with the
+# ethsecp256k1 pubkey type instead of the standard cosmos secp256k1 one. Set ETHSECP256K1
+# in the chain's config file to opt into that key/signing scheme.
+IS_ETHSECP256K1 = config.get("ETHSECP256K1", False)
+ETHSECP256K1_PUBKEY_TYPE_URL = config.get(
+    "ETHSECP256K1_PUBKEY_TYPE_URL", "/cosmos.evm.crypto.v1.ethsecp256k1.PubKey"
+)
+
 # Contract Paths
 ENTRY_POINT_CONTRACT_PATH = config["ENTRY_POINT_CONTRACT_PATH"]
 IBC_TRANSFER_ADAPTER_PATH = config["IBC_TRANSFER_ADAPTER_PATH"]
@@ -97,6 +110,80 @@ MNEMONIC = config["MNEMONIC"]
 del config["MNEMONIC"]
 
 DEPLOYED_CONTRACTS_INFO = {}
+
+
+class EthSecp256k1PrivateKey(PrivateKey):
+    """ Same secp256k1 curve as cosmpy's PrivateKey, but hashes with keccak256 (like
+    Ethereum/Ethermint) instead of sha256 before signing. """
+    hash_function = sha3.keccak_256
+
+
+class EthermintWallet(Wallet):
+    """ Wallet for ethermint-based chains (coin type 60, keccak256 address, ethsecp256k1
+    pubkey type) that plugs into cosmpy's LedgerClient/Transaction the same way a
+    LocalWallet does. """
+
+    def __init__(self, private_key: EthSecp256k1PrivateKey, prefix: str):
+        self._private_key = private_key
+        self._public_key = private_key.public_key
+        uncompressed_pubkey = self._public_key._verifying_key.to_string("uncompressed")
+        keccak = sha3.keccak_256()
+        keccak.update(uncompressed_pubkey[1:])
+        self._address = Address(keccak.digest()[12:], prefix)
+
+    def address(self) -> Address:
+        return self._address
+
+    def public_key(self):
+        return self._public_key
+
+    def signer(self):
+        return self._private_key
+
+
+def _register_pubkey_any_descriptor(type_url: str):
+    """ google.protobuf's JSON parser (used by cosmpy's REST client to decode responses
+    like query_account) needs a message descriptor registered for any type_url it
+    encounters inside an Any field - e.g. an existing account's pub_key. cosmpy doesn't
+    ship the ethsecp256k1 PubKey proto, so register a minimal stand-in (same wire shape
+    as cosmos secp256k1's PubKey: a single `bytes key = 1` field) under that type name. """
+    from google.protobuf import descriptor_pb2, descriptor_pool
+
+    full_name = type_url.lstrip("/")
+    package, _, message_name = full_name.rpartition(".")
+    pool = descriptor_pool.Default()
+    try:
+        pool.FindMessageTypeByName(full_name)
+        return
+    except KeyError:
+        pass
+    file_proto = descriptor_pb2.FileDescriptorProto()
+    file_proto.name = full_name.replace(".", "_") + ".proto"
+    file_proto.package = package
+    file_proto.syntax = "proto3"
+    msg_proto = file_proto.message_type.add()
+    msg_proto.name = message_name
+    field = msg_proto.field.add()
+    field.name = "key"
+    field.number = 1
+    field.type = descriptor_pb2.FieldDescriptorProto.TYPE_BYTES
+    field.label = descriptor_pb2.FieldDescriptorProto.LABEL_OPTIONAL
+    pool.Add(file_proto)
+
+
+if IS_ETHSECP256K1:
+    _register_pubkey_any_descriptor(ETHSECP256K1_PUBKEY_TYPE_URL)
+
+    def _create_ethsecp256k1_proto_public_key(public_key):
+        proto_public_key = any_pb2.Any()
+        proto_public_key.Pack(
+            ProtoSecp256k1PubKey(key=public_key.public_key_bytes),
+            type_url_prefix="/",
+        )
+        proto_public_key.type_url = ETHSECP256K1_PUBKEY_TYPE_URL
+        return proto_public_key
+    cosmpy_tx._create_proto_public_key = _create_ethsecp256k1_proto_public_key
+
 
 def main():
     # Create network config and client
@@ -376,6 +463,15 @@ def create_wallet(client) -> LocalWallet:
         terra = LCDClient(REST_URL, CHAIN_ID)
         terra_wallet = terra.wallet(mk)
         wallet = LocalWallet(PrivateKey(terra_wallet.key.private_key), prefix="terra")
+        balance = client.query_bank_balance(str(wallet.address()), DENOM)
+        print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
+    elif IS_ETHSECP256K1:
+        seed_bytes = Bip39SeedGenerator(MNEMONIC).Generate()
+        bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.ETHEREUM).DeriveDefaultPath()
+        wallet = EthermintWallet(
+            EthSecp256k1PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes()),
+            prefix=ADDRESS_PREFIX,
+        )
         balance = client.query_bank_balance(str(wallet.address()), DENOM)
         print("Wallet Address: ", wallet.address(), " with account balance: ", balance)
     else:
