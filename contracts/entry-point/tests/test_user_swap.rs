@@ -55,6 +55,9 @@ Expect Error
     - User Swap Exact Coin Out Where Coin In Amount More Than Remaining Coin Received Amount
     - User Swap Exact Asset Out Where Asset In Amount More Than Remaining Asset Received Amount
 
+    // Smart Swap Exact Asset In
+    - SmartSwapExactAssetIn Route Offer Asset Denom Differs From Remaining Asset Denom
+
     // General
     - Unauthorized Caller
 
@@ -1171,6 +1174,37 @@ struct Params {
     expected_messages: vec![],
     expected_error: Some(ContractError::Skip(SwapOperationsAssetOutDenomMismatch)),
 }; "SmartSwapExactAssetIn With Mismatched Denom Out - Expect Error")]
+#[test_case(Params {
+    caller: "entry_point".to_string(),
+    user_swap: Swap::SmartSwapExactAssetIn(SmartSwapExactAssetIn {
+        swap_venue_name: "swap_venue_name".to_string(),
+        routes: vec![
+            Route {
+                offer_asset: Asset::Native(Coin::new(250_000, "os")),
+                operations: vec![SwapOperation {
+                    pool: "pool".to_string(),
+                    denom_in: "un".to_string(),
+                    denom_out: "os".to_string(),
+                    interface: None,
+                }],
+            },
+            Route {
+                offer_asset: Asset::Native(Coin::new(750_000, "un")),
+                operations: vec![SwapOperation {
+                    pool: "pool_2".to_string(),
+                    denom_in: "un".to_string(),
+                    denom_out: "os".to_string(),
+                    interface: None,
+                }],
+            },
+        ],
+    }),
+    remaining_asset: Asset::Native(Coin::new(1_000_000, "un")),
+    min_asset: Asset::Native(Coin::new(1_000_000, "os")),
+    affiliates: vec![],
+    expected_messages: vec![],
+    expected_error: Some(ContractError::UserSwapAssetInDenomMismatch),
+}; "SmartSwapExactAssetIn Route Offer Asset Denom Differs From Remaining Asset Denom - Expect Error")]
 fn test_execute_user_swap(params: Params) {
     // Create mock dependencies
     let mut deps = mock_dependencies_with_balances(&[(

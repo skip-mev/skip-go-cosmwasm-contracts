@@ -427,6 +427,12 @@ pub fn execute_user_swap(
         }
         Swap::SmartSwapExactAssetIn(swap) => {
             for route in swap.routes {
+                // Verify the route offer asset denom is the same as the denom received from the message to the contract,
+                // otherwise the route would spend other assets held by the contract
+                if route.offer_asset.denom() != remaining_asset.denom() {
+                    return Err(ContractError::UserSwapAssetInDenomMismatch);
+                }
+
                 // Validate swap operations
                 validate_swap_operations(
                     &route.operations,
