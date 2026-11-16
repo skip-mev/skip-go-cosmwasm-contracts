@@ -1,0 +1,31 @@
+[package]
+name          = "skip-go-swap-adapter-wasmswap"
+version       = { workspace = true }
+rust-version  = { workspace = true }
+authors       = { workspace = true }
+edition       = { workspace = true }
+license       = { workspace = true }
+homepage      = { workspace = true }
+repository    = { workspace = true }
+documentation = { workspace = true }
+keywords      = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+backtraces = ["cosmwasm-std/backtraces"]
+library = []
+
+[dependencies]
+cosmwasm-schema   = { workspace = true }
+cosmwasm-std      = { workspace = true }
+cw2               = { workspace = true }
+cw20              = { workspace = true }
+cw-storage-plus   = { workspace = true }
+cw-utils          = { workspace = true }
+skip              = { workspace = true }
+thiserror         = { workspace = true }
+
+[dev-dependencies]
+serde-json-wasm   = "1.0"

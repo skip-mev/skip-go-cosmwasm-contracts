@@ -100,6 +100,7 @@ pub enum ExecuteMsg {
     AstroportPoolSwap { operation: SwapOperation }, // Only used for the astroport swap adapter contract
     OroswapPoolSwap { operation: SwapOperation }, // Only used for the oroswap swap adapter contract
     WhiteWhalePoolSwap { operation: SwapOperation }, // Only used for the white whale swap adapter contract
+    WasmSwapPoolSwap { operation: SwapOperation }, // Only used for the wasmswap swap adapter contract
 }
 
 #[cw_serde]
