@@ -10,8 +10,8 @@ use crate::{
 use alloy_primitives::Address;
 use alloy_sol_types::SolType;
 use cosmwasm_std::{
-    ensure_eq, entry_point, from_json, to_json_binary, BankMsg, Binary, Coin, CosmosMsg, Deps,
-    DepsMut, Env, IbcAckCallbackMsg, IbcBasicResponse, IbcDestinationCallbackMsg, IbcPacket,
+    ensure, ensure_eq, entry_point, from_json, to_json_binary, BankMsg, Binary, Coin, CosmosMsg,
+    Deps, DepsMut, Env, IbcAckCallbackMsg, IbcBasicResponse, IbcDestinationCallbackMsg, IbcPacket,
     IbcSourceCallbackMsg, IbcTimeoutCallbackMsg, MessageInfo, Reply, Response, StdError, StdResult,
     SubMsg, SubMsgResult, Uint128, WasmMsg,
 };
@@ -257,7 +257,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response>
 #[entry_point]
 pub fn ibc_destination_callback(
     _deps: DepsMut,
-    _env: Env,
+    env: Env,
     msg: IbcDestinationCallbackMsg,
 ) -> ContractResult<IbcBasicResponse> {
     // Require that the packet was sent to the transfer port
@@ -281,6 +281,16 @@ pub fn ibc_destination_callback(
 
     // Get the packet data
     let packet_data = get_fungible_token_packet_data(msg.packet.data.clone())?;
+
+    // Require that this contract received the funds, since the callback fires on the memo alone
+    // and the funds forwarded below come from this contract's balance.
+    // Case-insensitive because the transfer module also accepts all-uppercase bech32 receivers.
+    ensure!(
+        packet_data
+            .receiver
+            .eq_ignore_ascii_case(env.contract.address.as_str()),
+        ContractError::Unauthorized
+    );
 
     // Get this chain's denom for the packet
     let recv_denom = get_recv_denom(msg.packet, packet_data.denom.clone());
