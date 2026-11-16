@@ -1,0 +1,17 @@
+# Cosmos Hub ICS provider testnet
+chain_id = "provider"
+bin = "gaiad"
+bech32_prefix = "cosmos"
+fee_denom = "uatom"
+rpc = "https://rpc-cosmos.testnet.cosmoslabs.kr:443"
+lcd = "https://lcd-cosmos.testnet.cosmoslabs.kr"
+
+[gas_price]
+query = "/feemarket/v1/gas_price/uatom"
+multiplier = 2.0
+fixed = "0.01"
+
+[gas]
+store = 8000000
+instantiate = 500000
+default = 500000

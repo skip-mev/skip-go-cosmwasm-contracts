@@ -1,0 +1,16 @@
+chain_id = "cosmoshub-4"
+bin = "gaiad"
+bech32_prefix = "cosmos"
+fee_denom = "uatom"
+rpc = "https://rpc-cosmos.mainnet.cosmoslabs.kr:443"
+lcd = "https://lcd-cosmos.mainnet.cosmoslabs.kr"
+
+[gas_price]
+query = "/feemarket/v1/gas_price/uatom"
+multiplier = 2.0
+fixed = "0.01"
+
+[gas]
+store = 8000000
+instantiate = 500000
+default = 500000
