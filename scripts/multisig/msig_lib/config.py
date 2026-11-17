@@ -8,7 +8,7 @@ from pathlib import Path
 from .errors import UsageError
 
 CHAINS_DIR = Path(__file__).resolve().parent.parent / "chains"
-# chain 이름은 코디네이터가 준 meta.json에서도 오므로 경로 탈출을 막는다
+# The chain name can come from a coordinator-supplied meta.json, so block path traversal
 CHAIN_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
 

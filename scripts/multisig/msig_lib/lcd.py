@@ -22,7 +22,7 @@ def get_json(base: str, path: str) -> dict:
 
 
 def _find_account_fields(obj):
-    # vesting/module 계정 등은 base_account 아래에 중첩된다
+    # vesting/module accounts nest the fields under base_account
     if isinstance(obj, dict):
         if "account_number" in obj and "sequence" in obj:
             return obj["account_number"], obj["sequence"]
@@ -56,7 +56,7 @@ def gas_price(lcd: str, query_path: str) -> Decimal:
 
 
 def code_checksum(lcd: str, code_id: str) -> str:
-    # code-info는 wasm 본문 없이 checksum만 준다; 구버전 wasmd는 /code/{id}로 대체
+    # code-info returns only the checksum without the wasm body; older wasmd falls back to /code/{id}
     try:
         return str(get_json(lcd, f"/cosmwasm/wasm/v1/code-info/{code_id}")["checksum"]).lower()
     except (ChainError, KeyError):

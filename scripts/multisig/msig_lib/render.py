@@ -1,4 +1,4 @@
-"""tx를 사람이 읽을 수 있게 출력하고, 서명자가 준 기대값과 대조한다."""
+"""Render a tx in human-readable form and check it against the signer's expected values."""
 import json
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -35,8 +35,8 @@ def _salt_repr(raw: bytes) -> str:
 def review(tx: dict, meta: dict, expect_checksums: list[str] | None = None,
            online: dict | None = None, gas_price: Decimal | None = None,
            fee_denom: str | None = None, expect_multisig: str | None = None) -> Review:
-    """online: {"code_checksums": {code_id: hex}, "addresses": {msg_index: addr}} (선택).
-    expect_multisig: 서명자가 독립적으로 알고 있는 multisig 주소. meta 값은 코디네이터가 만든 것이라 신뢰하지 않는다."""
+    """online: {"code_checksums": {code_id: hex}, "addresses": {msg_index: addr}} (optional).
+    expect_multisig: multisig address the signer knows independently. The meta value is coordinator-made and not trusted."""
     r = Review()
     multisig = meta.get("multisig", "?")
     online = online or {}

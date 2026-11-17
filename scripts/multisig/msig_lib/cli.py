@@ -1,4 +1,4 @@
-"""체인 CLI(gaiad 등) subprocess 래퍼. 서명·인코딩·주소 계산은 전부 CLI에 위임한다."""
+"""Subprocess wrapper for the chain CLI (gaiad, etc.). Signing, encoding and address derivation are all delegated to the CLI."""
 import json
 import os
 import shutil
@@ -73,7 +73,7 @@ class ChainCli:
 
     def multisign(self, tx_path, multisig_key: str, sig_paths: list, chain_id: str,
                   account_number: str, sequence: str, out_path) -> subprocess.CompletedProcess:
-        # 서명 검증을 끄는 --skip-signature-verification은 의도적으로 쓰지 않는다
+        # Intentionally never pass --skip-signature-verification
         args = ["tx", "multisign", str(tx_path), multisig_key, *map(str, sig_paths),
                 "--offline", "--chain-id", chain_id, "--account-number", account_number,
                 "--sequence", sequence, "--output-document", str(out_path)]

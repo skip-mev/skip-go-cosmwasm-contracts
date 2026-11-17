@@ -63,7 +63,7 @@ def decode_wasm(b64: str) -> bytes:
         raw = base64.b64decode(b64, validate=True)
     except Exception as e:
         raise UsageError("wasm_byte_code is not valid base64") from e
-    # CLI는 wasm을 gzip으로 감싸 넣는다; checksum은 원본 wasm 기준
+    # The CLI gzips the wasm; the checksum is over the raw wasm
     if raw[:2] == b"\x1f\x8b":
         raw = gzip.decompress(raw)
     if raw[:4] != WASM_MAGIC:
@@ -76,7 +76,7 @@ def wasm_sha256(msg: dict) -> str:
 
 
 def decode_contract_msg(value):
-    """instantiate/execute/migrate의 msg 필드: JSON 객체 또는 base64(JSON) 모두 허용."""
+    """msg field of instantiate/execute/migrate: accepts a JSON object or base64(JSON)."""
     if isinstance(value, (dict, list)):
         return value
     if isinstance(value, str):
@@ -91,14 +91,14 @@ def decode_contract_msg(value):
 
 
 def decode_salt(value: str) -> bytes:
-    # proto JSON의 bytes 필드는 항상 base64 (hex fallback은 모호해서 두지 않는다)
+    # bytes fields in proto JSON are always base64 (no hex fallback; it would be ambiguous)
     try:
         return base64.b64decode(value, validate=True)
     except Exception as e:
         raise UsageError(f"salt is not valid base64: {value!r}") from e
 
 
-# 메시지에서 서명 주체를 나타내는 필드 (wasm 계열은 sender, bank는 from_address 등)
+# Field naming the signer in each msg (sender for wasm, from_address for bank, etc.)
 SIGNER_FIELDS = ("sender", "from_address", "delegator_address", "signer", "authority")
 
 

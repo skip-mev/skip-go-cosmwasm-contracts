@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """msig: Cosmos SDK multisig tx tool (create / merge / show / sign / combine / broadcast / address).
 
-서명·인코딩은 체인 CLI(gaiad 등)에 위임하고, 이 도구는 tx 생성 보조와
-'서명 전에 사람이 내용을 확인하고 기대 checksum과 대조'하는 일만 한다.
+Signing and encoding are delegated to the chain CLI (gaiad, etc.); this tool only helps build txs
+and lets a human review the content and check it against expected checksums before signing.
 """
 import argparse
 import binascii
@@ -98,7 +98,7 @@ def load_tx_and_meta(tx_path: Path, meta_override: Path | None = None) -> tuple[
 
 
 def prepare_out(path: Path, force: bool) -> Path:
-    # 네트워크 호출·파일 쓰기 전에 이름과 덮어쓰기 여부를 먼저 확인
+    # Validate the name and overwrite before any network call or file write
     tf.meta_path(path)
     if path.exists() and not force:
         raise UsageError(f"{path} exists (use --force or -o)")
@@ -123,7 +123,7 @@ def cmd_create(args) -> None:
         salt_hex = args.salt_hex or args.salt.encode().hex()
         gas_kind, name = "instantiate", f"instantiate2_{slug(args.label)}"
     else:
-        # 구분자 `--` 하나만 제거 (그 뒤의 `--`는 CLI 인자일 수 있음)
+        # Strip only the first `--` separator (later `--` may be a CLI argument)
         tx_args = args.tx_args[1:] if args.tx_args[:1] == ["--"] else list(args.tx_args)
         if not tx_args:
             raise UsageError("pass-through needs tx arguments, e.g.: create cosmoshub tx -- wasm migrate <contract> <code_id> '{}'")
@@ -139,7 +139,7 @@ def cmd_create(args) -> None:
         tx_args = ["wasm", "store", str(wasm), *perm]
     elif args.kind == "instantiate2":
         admin = ["--no-admin"] if args.no_admin else ["--admin", multisig if args.admin == "multisig" else args.admin]
-        # salt 인자는 wasmd CLI 기본 디코더(hex)로 전달
+        # Pass salt in the wasmd CLI default encoding (hex)
         tx_args = ["wasm", "instantiate2", str(args.code_id), init_msg, salt_hex, "--label", args.label, *admin]
 
     gas = args.gas or cfg.default_gas(gas_kind)
@@ -271,7 +271,7 @@ def cmd_sign(args) -> None:
 # ---------------------------------------------------------------- combine
 
 def cli_error_line(proc) -> str:
-    # cobra는 에러 뒤에 usage 전체를 출력하므로 "Error:" 줄만 뽑는다
+    # cobra prints the full usage after an error, so keep only the "Error:" line
     lines = [l.strip() for l in (proc.stderr + "\n" + proc.stdout).splitlines() if l.strip()]
     for line in lines:
         if line.startswith("Error:"):
@@ -301,7 +301,7 @@ def cmd_combine(args) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         for s in (Path(p) for p in args.sigs):
             pubkeys = tf.sig_pubkeys(tf.read_json(s))
-            # 같은 서명자의 파일이 여러 개면 SDK가 같은 슬롯을 덮어쓰므로 1개로 센다
+            # Multiple files from the same signer overwrite the same slot in the SDK, so count them once
             if pubkeys and all(pk in seen for pk in pubkeys):
                 info(f"DUP   {s.name}  — same signer as an earlier file, ignored")
                 continue
@@ -379,7 +379,7 @@ def cmd_broadcast(args) -> None:
     missing = [a for a in (args.expect_address or []) if a not in result["contracts"]]
     if missing:
         raise CheckFailed(f"expected contract address(es) not created: {missing}")
-    # 저장된 코드가 서명한 tx의 wasm과 같은지 확인
+    # Check that the stored code matches the wasm in the signed tx
     unsigned_path = Path(str(signed)[: -len(".signed.json")] + ".json")
     if unsigned_path.exists():
         signed_sums = sorted(tf.store_checksums(tf.read_json(unsigned_path)))
@@ -401,7 +401,7 @@ def cmd_address(args) -> None:
 # ---------------------------------------------------------------- main
 
 class Parser(argparse.ArgumentParser):
-    # argparse 기본 exit 2는 '검증 실패'(2)와 겹치므로 사용법 오류는 1로 통일
+    # argparse exits 2 by default, which collides with 'verification failed' (2); use 1 for usage errors
     def error(self, message):
         self.print_usage(sys.stderr)
         self.exit(1, f"{self.prog}: error: {message}\n")
@@ -515,7 +515,7 @@ def main(argv=None) -> int:
         return e.exit_code
     except (json.JSONDecodeError, KeyError, ValueError, TypeError, AttributeError, EOFError, InvalidOperation,
             binascii.Error, gzip.BadGzipFile, zlib.error, OSError) as e:
-        # 손상된 tx/meta/sig 파일이나 CLI 출력 → traceback 대신 사용법·환경 오류로 종료
+        # Corrupt tx/meta/sig files or CLI output → exit as a usage/environment error instead of a traceback
         info(f"error: invalid input ({type(e).__name__}): {e}")
         return 1
     except KeyboardInterrupt:

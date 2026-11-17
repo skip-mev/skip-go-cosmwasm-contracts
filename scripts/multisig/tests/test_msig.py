@@ -138,7 +138,7 @@ class ExpectMultisigTest(unittest.TestCase):
         self.assertFalse(any("not verified" in w for w in r.warnings))
 
     def test_meta_swapped_multisig_blocked(self):
-        # 코디네이터가 meta와 sender를 다른 multisig로 바꿔도 서명자의 기대값과 다르면 차단
+        # Even if the coordinator swaps meta and sender to another multisig, block when it differs from the signer's expectation
         evil = "cosmos1evilmultisig"
         msg = store_msg()
         msg["sender"] = evil
@@ -169,7 +169,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 class GaiadFixtureTest(unittest.TestCase):
-    """gaiad v29.0.1 --generate-only / tx sign 실제 출력."""
+    """Real gaiad v29.0.1 --generate-only / tx sign output."""
 
     def test_store(self):
         tx = tf.read_json(FIXTURES / "gaiad_v29_store.tx.json")
@@ -237,7 +237,7 @@ class PathTest(unittest.TestCase):
 
 class VersionTest(unittest.TestCase):
     def test_parse_cli_deps_with_replace_uses_original(self):
-        # node_info의 Module.Version이 replace 이전 값이므로 로컬도 같은 기준으로 맞춘다
+        # node_info Module.Version is pre-replace, so normalize the local side the same way
         deps = [
             "github.com/cosmos/cosmos-sdk@v0.50.13 => github.com/osmosis-labs/cosmos-sdk@v0.50.13-v28-osmo-2",
             "cosmossdk.io/x/tx@v0.14.0",

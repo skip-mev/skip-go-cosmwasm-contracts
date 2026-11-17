@@ -1,18 +1,18 @@
-"""cosmos-sdk / x/tx / wasmd 버전 추출과 비교. amino-json sign bytes는 이 세 모듈이 결정한다."""
+"""Extract and compare cosmos-sdk / x/tx / wasmd versions. These three modules determine amino-json sign bytes."""
 
 TRACKED = {
     "github.com/cosmos/cosmos-sdk": "cosmos_sdk",
     "cosmossdk.io/x/tx": "x_tx",
     "github.com/CosmWasm/wasmd": "wasmd",
 }
-# 체인이 반드시 보고해야 하는 모듈 (없으면 비교 불가로 실패)
+# Modules the chain must report (missing → cannot compare, fail)
 REQUIRED_ON_CHAIN = ("cosmos_sdk",)
 
 
 def parse_build_deps(deps: list) -> dict:
-    """build_deps 파싱. 로컬 CLI("path@ver" / "path@ver => repl@ver2")와
-    LCD node_info({path, version})를 같은 기준으로 맞추기 위해 replace 이전 버전을 쓴다.
-    (SDK node_info의 Module.Version은 replace 이전 값: cmtservice/service.go)"""
+    """Parse build_deps. Uses the pre-replace version so the local CLI ("path@ver" / "path@ver => repl@ver2")
+    and LCD node_info ({path, version}) are compared on the same basis.
+    (SDK node_info Module.Version is the pre-replace value: cmtservice/service.go)"""
     out: dict = {}
     for dep in deps:
         if isinstance(dep, dict):
